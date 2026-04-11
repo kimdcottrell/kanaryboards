@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - LOCAL_MACHINE_GID=${LOCAL_MACHINE_GID}
+    tty: true
+    command: tail -f /dev/null
+    env_file:
+      - .env
+    volumes:
+      - .:/var/dev
+    ports:
+      - "4321:4321"
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+  # TODO: Hook this up to persist data in more than just the browser's localstorage
+  redis:
+    image: redis:latest
+    container_name: redis-cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:
+    driver: local

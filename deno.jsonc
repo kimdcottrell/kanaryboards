@@ -1,0 +1,15 @@
+{
+  "allowScripts": {
+    "allow": ["npm:esbuild@0.27.3", "npm:sharp@0.34.5"],
+    "deny": []
+  },
+  // WARNING: imports MUST be put in the package.json file.
+  //          failure to do this causes a ERR_UNSUPPORTED_ESM_URL_SCHEME err on project start
+  "nodeModulesDir": "auto",
+  "tasks": {
+    "dev": "deno run --allow-all astro dev",
+    "build": "deno run --allow-all astro build",
+    "preview": "deno run --allow-all astro preview",
+    "astro": "deno run --allow-all astro"
+  }
+}
