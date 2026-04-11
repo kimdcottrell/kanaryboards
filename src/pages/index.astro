@@ -20,7 +20,10 @@ import "../styles/global.css";
             <h1 class="mt-3 text-4xl font-semibold text-slate-950 sm:text-5xl">Kanary Boards</h1>
           </div>
           <p class="max-w-2xl text-slate-600">
-            A really basic kanban board project built with Deno, Astro, and Tailwind CSS. It features a simple interface for creating and managing tasks across customizable columns. The project is designed to be lightweight and easy to use, making it perfect for individuals or small teams looking to organize their workflow without the complexity of larger project management tools.
+            A really basic kanban board project built with Deno, Astro, and Tailwind CSS. <br />
+            Create rows and tasks, drag and drop them around as needed.<br />
+            Generate tasks using AI by entering a prompt describing the type of tasks you want to create, and the AI will return a list of tasks matching your description.<br />
+            Data is only persisted in local browser storage... <em><small>For now.</small></em>
           </p>
         </header>
         <KanbanBoard client:load />

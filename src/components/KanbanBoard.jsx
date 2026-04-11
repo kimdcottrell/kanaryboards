@@ -54,6 +54,9 @@ export default function KanbanBoard() {
     persistedState?.tasks || defaultTasks
   );
   const [newRowName, setNewRowName] = useState("");
+  const [newRowPrompt, setNewRowPrompt] = useState("");
+  const [taskGenerationStatus, setTaskGenerationStatus] = useState("");
+  const [isGeneratingTasks, setIsGeneratingTasks] = useState(false);
   const [defaultColumnInput, setDefaultColumnInput] = useState("");
   const [taskFormCell, setTaskFormCell] = useState(null);
   const [taskDraft, setTaskDraft] = useState(emptyTaskDraft("row-1", "col-1"));
@@ -75,7 +78,83 @@ export default function KanbanBoard() {
     return grouped;
   }, [tasks]);
 
-  const addRow = (event) => {
+  const findTodoColumnId = () => {
+    const todoColumn = columns.find((column) =>
+      column.name.toLowerCase().trim() === "todo",
+    );
+    return todoColumn?.id || columns[0]?.id;
+  };
+
+  const parseGeneratedTasks = (content) =>
+    content
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) =>
+        line
+          .replace(/^\s*[-*+\d\.\)]+\s*/, "")
+          .trim()
+          .replace(/,$/, "")
+          .trim(),
+      )
+      .filter(Boolean)
+      .slice(0, 10);
+
+  const generateTasksForRow = async (rowId) => {
+    const prompt = newRowPrompt.trim();
+    if (!prompt) return;
+
+    setIsGeneratingTasks(true);
+    setTaskGenerationStatus("Generating tasks...");
+
+    try {
+      const response = await fetch("/api/generate-tasks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt, maxTasks: 10 }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Task generation failed");
+      }
+
+      const data = await response.json();
+      const titles = Array.isArray(data.tasks)
+        ? data.tasks.map((task) => String(task).trim())
+        : [];
+      const parsedTasks = parseGeneratedTasks(titles.join("\n"));
+      const todoColId = findTodoColumnId();
+      const generatedTasks = parsedTasks.map((title) => ({
+        id: createId(),
+        rowId,
+        colId: todoColId,
+        title,
+        description: "",
+        checklist: [],
+      }));
+
+      if (generatedTasks.length > 0) {
+        setTasks((prev) => [...generatedTasks, ...prev]);
+        setTaskGenerationStatus(
+          `Added ${generatedTasks.length} task${generatedTasks.length > 1 ? "s" : ""} to Todo`,
+        );
+        setNewRowPrompt("");
+      } else {
+        setTaskGenerationStatus("No tasks were generated.");
+      }
+    } catch (error) {
+      console.error(error);
+      setTaskGenerationStatus(
+        "Unable to generate tasks. Please check your Deepseek configuration.",
+      );
+    } finally {
+      setIsGeneratingTasks(false);
+    }
+  };
+
+  const addRow = async (event) => {
     event.preventDefault();
     if (!newRowName.trim()) return;
     const row = {
@@ -85,6 +164,10 @@ export default function KanbanBoard() {
     };
     setRows([...rows, row]);
     setNewRowName("");
+
+    if (newRowPrompt.trim()) {
+      await generateTasksForRow(row.id);
+    }
   };
 
   const updateColumnsFromDefaultNames = (nextNames) => {
@@ -483,26 +566,43 @@ export default function KanbanBoard() {
         </div>
         <div class="mt-6 grid gap-3 sm:grid-cols-1">
           <form
-            class="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-5"
+            class="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-5"
             onSubmit={addRow}
           >
             <h3 class="text-lg font-semibold text-slate-900">Create a new row</h3>
-              
             <div class="flex gap-2">
               <input
                 class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-2 text-slate-900 outline-none focus:border-cyan-500"
                 type="text"
                 value={newRowName}
-                onInput={(e) => setNewRowName(e.target.value)}
-                placeholder="New row name"
+                onInput={(e) => setNewRowName(e.currentTarget.value)}
+                placeholder="A project name, a category for large project tasks, etc."
               />
-              <button
-                class="rounded-2xl bg-cyan-600 px-4 py-2 font-semibold text-white transition hover:bg-cyan-500"
-                type="submit"
-              >
-                Add
-              </button>
+              
             </div>
+            <div class="grid gap-2">
+              <label class="text-sm font-medium text-slate-700" htmlFor="newRowPrompt">
+                Generate up to 10 tasks using AI
+              </label>
+              <input
+                id="newRowPrompt"
+                class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-2 text-slate-900 outline-none focus:border-cyan-500"
+                type="text"
+                value={newRowPrompt}
+                onInput={(e) => setNewRowPrompt(e.currentTarget.value)}
+                placeholder="Enter a brief description of tasks to generate"
+              />
+              {taskGenerationStatus && (
+                <p class="text-sm text-slate-500">{taskGenerationStatus}</p>
+              )}
+            </div>
+            <button
+            class="rounded-2xl bg-cyan-600 px-4 py-2 font-semibold text-white transition hover:bg-cyan-500 disabled:bg-slate-300"
+            type="submit"
+            disabled={isGeneratingTasks}
+            >
+            {isGeneratingTasks ? "Generating…" : "Add Row"}
+            </button>
           </form>
         </div>
         <div class="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-5">

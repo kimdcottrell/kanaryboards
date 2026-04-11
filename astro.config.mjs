@@ -8,6 +8,8 @@ export default defineConfig({
 
   integrations: [preact({ devtools: true, compat: true })],
 
+  cacheDir: "../node_modules/.astro",
+
   server: {
     port: 4321,
     host: "0.0.0.0",
