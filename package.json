@@ -1,16 +1,18 @@
 {
-  "name": "politicsdoneleft",
+  "name": "kanaryboards",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "dependencies": {
+    "@astrojs/cloudflare": "^13.1.8",
     "@astrojs/preact": "^5.0.0",
     "@headlessui/react": "^2.2.9",
     "@preact/signals": "^2.8.2",
     "@tailwindcss/vite": "^4.2.1",
     "astro": "^6.0.2",
     "preact": "^10.29.0",
-    "tailwindcss": "^4.2.1"
+    "tailwindcss": "^4.2.1",
+    "wrangler": "^4.81.1"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.7",
@@ -19,6 +21,7 @@
   },
   "overrides": {
     "react": "npm:@preact/compat@latest",
-    "react-dom": "npm:@preact/compat@latest"
+    "react-dom": "npm:@preact/compat@latest",
+    "vite": "^7"
   }
 }

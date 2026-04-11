@@ -1,6 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM denoland/deno:2.7.12
-# COPY --from=denoland/deno:bin-2.7.4 /deno /usr/local/bin/deno
+FROM denoland/deno:2.7.12 as dev
 
 # Prefer not to run as root.
 ARG LOCAL_MACHINE_GID=${LOCAL_MACHINE_GID:-1000}

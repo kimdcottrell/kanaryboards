@@ -1,21 +1,16 @@
-// import preact from "npm:@astrojs/preact";
-// import tailwind from "npm:@astrojs/tailwind";
-
-// export default {
-//   integrations: [preact(), tailwind()],
-// };
 // @ts-check
 import { defineConfig, fontProviders } from 'astro/config';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import preact from '@astrojs/preact';
 import tailwindcss from '@tailwindcss/vite';
+import cloudflare from '@astrojs/cloudflare';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // https://astro.build/config
 export default defineConfig({
-//   cacheDir: "../node_modules/.astro",
-//   output: "server",
+  //   cacheDir: "../node_modules/.astro",
+  //   output: "server",
   root: "/var/dev/",
 
   server: {
@@ -24,7 +19,7 @@ export default defineConfig({
     // allowedHosts: ["pdl.local.dev"],
   },
 
-//   site: 'https://pdl.local.dev',
+  //   site: 'https://pdl.local.dev',
 
   fonts: [
     {
@@ -44,4 +39,6 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
   },
+
+  adapter: cloudflare(),
 });
