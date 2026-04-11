@@ -3,19 +3,9 @@ export const prerender = false;
 import type { APIRoute } from "astro";
 import type { APIContext } from 'astro';
 
-// export const POST: APIRoute = async ({ request }: APIContext) => {
-//   const body = await request.json();
-//   return new Response(
-//     JSON.stringify({
-//       prompt: body.prompt,
-//     }),
-//   );
-// };
-
 const getDeepseekApiKey = () => {
   if (typeof Deno !== "undefined" && typeof Deno.env?.get === "function") {
     return (
-      Deno.env.get("DEEPSEEK_API_KEY") ||
       Deno.env.get("SCITELY_API_KEY") ||
       Deno.env.get("OPENAI_API_KEY")
     );
@@ -80,16 +70,6 @@ const extractResponseText = (data: DeepseekResponse) => {
   return "";
 };
 
-
-// export const POST: APIRoute = async ({ request }: APIContext) => {
-//   const body = await request.json();
-//   return new Response(
-//     JSON.stringify({
-//       prompt: body.prompt,
-//     }),
-//   );
-// };
-
 // export async function post({ request }: { request: Request }) {
 export const POST: APIRoute = async ({ request }: APIContext) => {
   const body = (await request.json()) as GenerateTasksBody;
@@ -117,11 +97,11 @@ export const POST: APIRoute = async ({ request }: APIContext) => {
       {
         role: "system",
         content:
-          "You are an AI assistant that generates concise task titles for a kanban board. Return up to the requested number of task titles as a simple list, one task per line.",
+          `You are an AI assistant that generates concise task titles for a kanban board. The task titles should return as a simple list, one task per line. Simpler boards may have ${maxTasks/2} tasks, while more complex boards may have up to ${maxTasks} tasks.`,
       },
       {
         role: "user",
-        content: `Create up to ${maxTasks} task titles for the following project description: ${prompt}`,
+        content: `Create ${maxTasks/2} to ${maxTasks} task titles for the following project description: ${prompt}`,
       },
     ],
     temperature: 0.8,
