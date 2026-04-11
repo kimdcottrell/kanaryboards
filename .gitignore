@@ -2,3 +2,5 @@
 **/node_modules/*
 **/.astro/*
 worker-configuration.d.ts
+deno.lock
+.denoflare

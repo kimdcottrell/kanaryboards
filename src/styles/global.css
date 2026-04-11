@@ -1,10 +1,10 @@
 @import "tailwindcss";
 @plugin "daisyui" {
-  themes: pdl --default, pdl-dark --prefersdark, cupcake;
+  themes: kanaryboards --default, kanaryboards-dark --prefersdark, cupcake;
 }
 
 @plugin "daisyui/theme" {
-  name: "pdl";
+  name: "kanaryboards";
   default: true;
   prefersdark: false;
   color-scheme: "light";
@@ -40,7 +40,7 @@
 }
 
 @plugin "daisyui/theme" {
-  name: "pdl-dark";
+  name: "kanaryboards-dark";
   default: false;
   prefersdark: false;
   color-scheme: "dark";

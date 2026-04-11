@@ -4,7 +4,6 @@
     ".astro/types.d.ts",
     "src/content.config.js",
     "**/*",
-    "./worker-configuration.d.ts"
   ],
   "exclude": [
     "dist"
@@ -18,9 +17,6 @@
     "paths": {
       "@src/*": [
         "./src/*"
-      ],
-      "@public/*": [
-        "public/*"
       ],
       "react": [
         "./node_modules/preact/compat/"
