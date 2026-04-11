@@ -10,7 +10,7 @@
   "tasks": {
     "dev": "deno run --allow-all astro dev",
     "build": "deno run --allow-all astro build",
-    "preview": "deno run --allow-all astro preview",
+    "preview": "deno run --allow-all ./dist/server/entry.mjs",
     "astro": "deno run --allow-all astro"
   }
 }

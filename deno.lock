@@ -15,6 +15,7 @@
     "jsr:@std/streams@^1.0.17": "1.0.17",
     "npm:@astrojs/check@~0.9.7": "0.9.8_typescript@5.9.3",
     "npm:@astrojs/preact@5": "5.1.1_preact@10.29.1_@babel+core@7.29.0",
+    "npm:@deno/astro-adapter@~0.3.2": "0.3.2_astro@6.1.5__typescript@5.9.3",
     "npm:@headlessui/react@^2.2.9": "2.2.10_react@19.2.5_react-dom@19.2.5__react@19.2.5",
     "npm:@preact/signals@^2.8.2": "2.9.0_preact@10.29.1",
     "npm:@tailwindcss/vite@^4.2.1": "4.2.2_vite@7.3.2",
@@ -360,6 +361,12 @@
         "fast-string-width",
         "fast-wrap-ansi",
         "sisteransi"
+      ]
+    },
+    "@deno/astro-adapter@0.3.2_astro@6.1.5__typescript@5.9.3": {
+      "integrity": "sha512-nN0kQGobRs2XE3R+O/DWYQanEWpteJNsIf5TD65787qFEw2CrqkFNcNolZFJiKUF/2Y/TKyOLRjMS3F6auECVg==",
+      "dependencies": [
+        "astro"
       ]
     },
     "@emmetio/abbreviation@2.3.3": {
@@ -3338,6 +3345,7 @@
       "dependencies": [
         "npm:@astrojs/check@~0.9.7",
         "npm:@astrojs/preact@5",
+        "npm:@deno/astro-adapter@~0.3.2",
         "npm:@headlessui/react@^2.2.9",
         "npm:@preact/signals@^2.8.2",
         "npm:@tailwindcss/vite@^4.2.1",

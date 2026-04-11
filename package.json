@@ -5,6 +5,7 @@
   "type": "module",
   "dependencies": {
     "@astrojs/preact": "^5.0.0",
+    "@deno/astro-adapter": "^0.3.2",
     "@headlessui/react": "^2.2.9",
     "@preact/signals": "^2.8.2",
     "astro": "^6.0.2",
