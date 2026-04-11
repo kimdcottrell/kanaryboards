@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import Modal from "./Modal.jsx";
 
 const STORAGE_KEY = "claudekan-board-state";
 const createId = () =>
@@ -62,6 +63,12 @@ export default function KanbanBoard() {
   const [taskDraft, setTaskDraft] = useState(emptyTaskDraft("row-1", "col-1"));
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editTaskDraft, setEditTaskDraft] = useState(null);
+  const [checklistModalOpen, setChecklistModalOpen] = useState(false);
+  const [checklistModalTaskId, setChecklistModalTaskId] = useState(null);
+  const [checklistPrompt, setChecklistPrompt] = useState("");
+  const [checklistPreview, setChecklistPreview] = useState([]);
+  const [isGeneratingChecklist, setIsGeneratingChecklist] = useState(false);
+  const [checklistModalError, setChecklistModalError] = useState("");
   const [editingRowId, setEditingRowId] = useState(null);
   const [editingRowName, setEditingRowName] = useState("");
   const [draggedTask, setDraggedTask] = useState(null);
@@ -442,6 +449,114 @@ export default function KanbanBoard() {
     setEditTaskDraft(null);
   };
 
+  const checklistModalTask = useMemo(() => {
+    return tasks.find((task) => task.id === checklistModalTaskId) || null;
+  }, [tasks, checklistModalTaskId]);
+
+  const checklistPlaceholder = checklistModalTask?.title || "";
+
+  const openChecklistModal = (task) => {
+    setChecklistModalTaskId(task.id);
+    setChecklistPrompt("");
+    setChecklistPreview([]);
+    setChecklistModalError("");
+    setChecklistModalOpen(true);
+  };
+
+  const closeChecklistModal = () => {
+    setChecklistModalOpen(false);
+    setChecklistModalTaskId(null);
+    setChecklistPrompt("");
+    setChecklistPreview([]);
+    setChecklistModalError("");
+  };
+
+  const generateChecklistItems = async () => {
+    const prompt = checklistPrompt.trim() || checklistPlaceholder;
+    if (!prompt) return;
+
+    setIsGeneratingChecklist(true);
+    setChecklistModalError("");
+
+    try {
+      const response = await fetch("/api/generate-tasks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt: `Create 5-10 concise checklist item titles for the following task: ${prompt}`,
+          maxTasks: 10,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Checklist generation failed");
+      }
+
+      const data = await response.json();
+      const titles = Array.isArray(data.tasks)
+        ? data.tasks.map((task) => String(task).trim())
+        : [];
+      const items = parseGeneratedTasks(titles.join("\n")).slice(0, 10);
+      setChecklistPreview(items);
+
+      if (items.length === 0) {
+        setChecklistModalError("No checklist items were generated.");
+      }
+    } catch (error) {
+      console.error(error);
+      setChecklistModalError(
+        "Unable to generate checklist items. Please check your AI configuration.",
+      );
+    } finally {
+      setIsGeneratingChecklist(false);
+    }
+  };
+
+  const applyChecklistPreview = () => {
+    if (!checklistModalTaskId || checklistPreview.length === 0) return;
+
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === checklistModalTaskId
+          ? {
+            ...task,
+            checklist: checklistPreview.map((text) => ({
+              id: createId(),
+              text,
+              checked: false,
+            })),
+          }
+          : task,
+      ),
+    );
+
+    if (editingTaskId === checklistModalTaskId) {
+      setEditTaskDraft((prevDraft) =>
+        prevDraft && prevDraft.id === checklistModalTaskId
+          ? {
+            ...prevDraft,
+            checklist: checklistPreview.map((text) => ({
+              id: createId(),
+              text,
+              checked: false,
+            })),
+          }
+          : prevDraft,
+      );
+    }
+
+    closeChecklistModal();
+  };
+
+  const deleteTask = (taskId) => {
+    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+    if (editingTaskId === taskId) {
+      cancelEditTask();
+    }
+  };
+
   const saveTaskEdit = (event) => {
     event.preventDefault();
     if (!editTaskDraft.title.trim()) return;
@@ -713,7 +828,7 @@ export default function KanbanBoard() {
                       onDblClick={() => editRowTitle(row)}
                     >
                       {row.name}
-                    <span class="text-xs align-super pl-2" style={{
+                    <span data-tip="double click to edit" class="tooltip text-xs align-super pl-2" style={{
                         color: `${row.color}`,
                     }}> 🖉</span> </h3>
                   )}
@@ -999,14 +1114,23 @@ export default function KanbanBoard() {
                                         <p class="text-sm font-semibold text-slate-900">
                                           Checklist items
                                         </p>
-                                        <button
-                                          type="button"
-                                          class="rounded-2xl bg-slate-200 px-3 py-1 text-sm text-slate-700 transition hover:bg-slate-300"
-                                          onClick={() =>
-                                            addEditChecklistItem(true)}
-                                        >
-                                          Add item
-                                        </button>
+                                        <div class="flex items-center gap-2">
+                                          <button
+                                            type="button"
+                                            class="rounded-2xl bg-slate-200 px-3 py-1 text-sm text-slate-700 transition hover:bg-slate-300"
+                                            onClick={() => addEditChecklistItem(true)}
+                                          >
+                                            Add item
+                                          </button>
+                                          <button
+                                            type="button"
+                                            class="rounded-2xl border border-slate-300 bg-white px-3 py-1 text-sm text-slate-700 transition hover:bg-slate-100"
+                                            onClick={() => openChecklistModal(task)}
+                                            aria-label="Generate checklist items"
+                                          >
+                                            🪄
+                                          </button>
+                                        </div>
                                       </div>
                                       <div class="space-y-3">
                                         {editTaskDraft.checklist.map((
@@ -1056,10 +1180,17 @@ export default function KanbanBoard() {
                                         ))}
                                       </div>
                                     </div>
-                                    <div class="flex justify-end">
+                                    <div class="grid grid-cols-2 gap-2">
+                                      <button
+                                        type="button"
+                                        class="justify-self-start rounded-2xl bg-red-600/50 hover:bg-red-500 px-4 py-2 text-sm font-semibold text-white transition"
+                                        onClick={() => deleteTask(task.id)}
+                                      >
+                                        Delete
+                                      </button>
                                       <button
                                         type="submit"
-                                        class="rounded-2xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500"
+                                        class="ml-auto rounded-2xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500 justify-self-end"
                                       >
                                         Save
                                       </button>
@@ -1079,10 +1210,10 @@ export default function KanbanBoard() {
                                       </div>
                                       <button
                                         type="button"
-                                        class="rounded-full bg-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-300"
+                                        class="rounded-full bg-slate-200 px-3 py-2 text-md align-super text-slate-700 transition hover:bg-slate-300"
                                         onClick={() => startEditTask(task)}
                                       >
-                                        Edit
+                                        🖉
                                       </button>
                                     </div>
                                     {task.checklist &&
@@ -1159,6 +1290,80 @@ export default function KanbanBoard() {
         ))}
       </div>
 
+      <Modal open={checklistModalOpen} onClose={closeChecklistModal}>
+        <h3 class="text-xl font-semibold text-slate-900">
+          What task do you want broken down?
+        </h3>
+        <div class="mt-4 space-y-4">
+          <div class="space-y-2">
+            <input
+              class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-cyan-500"
+              type="text"
+              value={checklistPrompt}
+              placeholder={checklistPlaceholder}
+              onInput={(e) => setChecklistPrompt(e.currentTarget.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  generateChecklistItems();
+                }
+                if (event.key === "Tab" && !checklistPrompt.trim()) {
+                  event.preventDefault();
+                  setChecklistPrompt(checklistPlaceholder);
+                }
+              }}
+            />
+            <p class="text-xs text-slate-500">
+              Press Tab to fill the textbox with the task title placeholder.
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="rounded-2xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500"
+              onClick={generateChecklistItems}
+              disabled={isGeneratingChecklist}
+            >
+              {isGeneratingChecklist ? "Generating…" : "Generate Checklist Items"}
+            </button>
+            <button
+              type="button"
+              class="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+              onClick={applyChecklistPreview}
+              disabled={checklistPreview.length === 0}
+            >
+              Copy checklist items
+            </button>
+          </div>
+          {checklistModalError && (
+            <p class="text-sm text-red-600">{checklistModalError}</p>
+          )}
+          <div class="overflow-x-auto">
+            {checklistPreview.length > 0 ? (
+              <table class="table w-full">
+                <thead>
+                  <tr>
+                    <th class="text-left">#</th>
+                    <th class="text-left">Checklist item preview</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {checklistPreview.map((item, index) => (
+                    <tr key={`${item}-${index}`}>
+                      <td>{index + 1}</td>
+                      <td>{item}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p class="text-sm text-slate-500">
+                Generate checklist items to preview them here.
+              </p>
+            )}
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
