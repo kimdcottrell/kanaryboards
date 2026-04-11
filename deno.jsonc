@@ -4,8 +4,7 @@
     "deny": []
   },
   "lint": {
-    // don't lint the dist/ folder
-    "exclude": ["dist/"]
+    "exclude": ["./dist/"]
   },
   "nodeModulesDir": "auto",
   "tasks": {

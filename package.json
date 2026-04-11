@@ -7,15 +7,15 @@
     "@astrojs/preact": "^5.0.0",
     "@headlessui/react": "^2.2.9",
     "@preact/signals": "^2.8.2",
-    "@tailwindcss/vite": "^4.2.1",
     "astro": "^6.0.2",
+    "daisyui": "^5.5.19",
     "preact": "^10.29.0",
-    "tailwindcss": "^4.2.1"
+    "tailwindcss": "^4.2.1",
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.7",
-    "daisyui": "^5.5.19",
-    "typescript": "^5.9.3"
+    "@tailwindcss/vite": "^4.2.1"
   },
   "overrides": {
     "react": "npm:@preact/compat@latest",
