@@ -8,8 +8,6 @@ export default defineConfig({
 
   integrations: [preact({ devtools: true, compat: true })],
 
-  root: "/var/dev/",
-
   server: {
     port: 4321,
     host: "0.0.0.0",
