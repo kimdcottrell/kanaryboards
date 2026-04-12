@@ -1,80 +1,15 @@
 @import "tailwindcss";
+
 @plugin "daisyui" {
-  themes: kanaryboards --default, kanaryboards-dark --prefersdark, cupcake;
+  themes: dracula --default;
 }
 
-@plugin "daisyui/theme" {
-  name: "kanaryboards";
-  default: true;
-  prefersdark: false;
-  color-scheme: "light";
-  --color-base-100: oklch(100% 0 0);
-  --color-base-200: oklch(98% 0 0);
-  --color-base-300: oklch(95% 0 0);
-  --color-base-content: oklch(0.3562 0 0);
-  --color-primary: oklch(45.2% 0.181 254.944);
-  --color-primary-content: oklch(93% 0.034 272.788);
-  --color-secondary: oklch(0.6088 0.2212 251.15);
-  --color-secondary-content: oklch(94% 0.028 342.258);
-  --color-accent: oklch(0.8868 0.182186 95.3305);
-  --color-accent-content: oklch(38% 0.063 188.416);
-  --color-neutral: oklch(0.3562 0 0);
-  --color-neutral-content: oklch(92% 0.004 286.32);
-  --color-info: oklch(68.6% 0.065 247.690);
-  --color-info-content: oklch(29% 0.066 243.157);
-  --color-success: oklch(77.5% 0.175 126.280);
-  --color-success-content: oklch(37% 0.077 168.94);
-  --color-warning: oklch(83.6% 0.225 67.583);
-  --color-warning-content: oklch(41% 0.112 45.904);
-  --color-error: oklch(0.6962 0.1955 32.32);
-  --color-error-content: oklch(27% 0.105 12.094);
-  --radius-selector: 1rem;
-  --radius-field: 0.25rem;
-  --radius-box: 1rem;
-  --size-selector: 0.25rem;
-  --size-field: 0.25rem;
-  --border: 1px;
-  --depth: 1;
-  --noise: 0;
-  --font-sans: var(--font-nunito);
+@plugin "@iconify/tailwind4" {
+  prefixes: basil, hugeicons;
 }
 
-@plugin "daisyui/theme" {
-  name: "kanaryboards-dark";
-  default: false;
-  prefersdark: false;
-  color-scheme: "dark";
-  --color-base-100: oklch(21% 0.006 56.043);
-  --color-base-200: oklch(14% 0.004 49.25);
-  --color-base-300: oklch(0% 0 0);
-  --color-base-content: oklch(84.955% 0 0);
-  --color-primary: oklch(45.2% 0.181 254.944);
-  --color-primary-content: oklch(93% 0.034 272.788);
-  --color-secondary: oklch(0.6088 0.2212 251.15);
-  --color-secondary-content: oklch(94% 0.028 342.258);
-  --color-accent: oklch(0.8868 0.182186 95.3305);
-  --color-accent-content: oklch(38% 0.063 188.416);
-  --color-neutral: oklch(0.3562 0 0);
-  --color-neutral-content: oklch(92% 0.004 286.32);
-  --color-info: oklch(68.6% 0.065 247.690);
-  --color-info-content: oklch(29% 0.066 243.157);
-  --color-success: oklch(77.5% 0.175 126.280);
-  --color-success-content: oklch(37% 0.077 168.94);
-  --color-warning: oklch(83.6% 0.225 67.583);
-  --color-warning-content: oklch(41% 0.112 45.904);
-  --color-error: oklch(0.6962 0.1955 32.32);
-  --color-error-content: oklch(27% 0.105 12.094);
-  --radius-selector: 1rem;
-  --radius-field: 0.25rem;
-  --radius-box: 1rem;
-  --size-selector: 0.25rem;
-  --size-field: 0.25rem;
-  --border: 1px;
-  --depth: 1;
-  --noise: 0;
-}
-
-@theme inline {
-  --font-sans: var(--font-nunito);
-  --font-cursive: var(--font-la-belle-aurore);
+@layer utilities {
+  .bg-neutral-light-20 {
+    background-color: color-mix(in oklab, var(--color-neutral) 90%, white 10%);
+  }
 }

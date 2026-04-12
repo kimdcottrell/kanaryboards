@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import Modal from "./Modal.jsx";
 
+// import IconAi from '../assets/icons/ai.svg';
+// import IconArrowDown from '../assets/icons/arrow-down.svg';
+// import IconArrowUp from '../assets/icons/arrow-up.svg';
+// import IconEdit from '../assets/icons/edit.svg';
+// import IconEnd from '../assets/icons/end.svg';
+// import IconMinimize from '../assets/icons/minimize.svg';
+// import IconPaint from '../assets/icons/paint.svg';
+// import IconSearch from '../assets/icons/search.svg';
+// import IconSettings from '../assets/icons/settings.svg';
+// import IconStar from '../assets/icons/star.svg';
+
 const STORAGE_KEY = "claudekan-board-state";
 const createId = () =>
   `${Math.random().toString(36).slice(2, 10)}-${Date.now()}`;
@@ -13,7 +24,7 @@ const rowColorOptions = [
   { label: "Amber", value: "#f59e0b" },
   { label: "Rose", value: "#fb7185" },
   { label: "Violet", value: "#a855f7" },
-  { label: "Slate", value: "#64748b" },
+  { label: "base", value: "#64748b" },
 ];
 
 const defaultRows = [];
@@ -63,6 +74,7 @@ export default function KanbanBoard() {
   const [taskDraft, setTaskDraft] = useState(emptyTaskDraft("row-1", "col-1"));
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editTaskDraft, setEditTaskDraft] = useState(null);
+  const [taskEditModalOpen, setTaskEditModalOpen] = useState(false);
   const [checklistModalOpen, setChecklistModalOpen] = useState(false);
   const [checklistModalTaskId, setChecklistModalTaskId] = useState(null);
   const [checklistPrompt, setChecklistPrompt] = useState("");
@@ -117,8 +129,7 @@ export default function KanbanBoard() {
     try {
       const response = await fetch("/api/generate-tasks", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+        headers: { "Content-Type": "application/json",
         },
         body: JSON.stringify({ prompt, maxTasks: 10 }),
       });
@@ -153,8 +164,7 @@ export default function KanbanBoard() {
       }
     } catch (error) {
       console.error(error);
-      setTaskGenerationStatus(
-        "Unable to generate tasks. Please check your Deepseek configuration.",
+      setTaskGenerationStatus( "Unable to generate tasks. Please check your Deepseek configuration.",
       );
     } finally {
       setIsGeneratingTasks(false);
@@ -334,8 +344,7 @@ export default function KanbanBoard() {
 
   const confirmResetBoard = () => {
     if (typeof window === "undefined") return;
-    const confirmed = window.confirm(
-      "Reset the board? This will clear all projects and cards.",
+    const confirmed = window.confirm( "Reset the board? This will clear all projects and cards.",
     );
     if (confirmed) {
       resetBoard();
@@ -442,11 +451,13 @@ export default function KanbanBoard() {
         ? task.checklist
         : [{ id: createId(), text: "", checked: false }],
     });
+    setTaskEditModalOpen(true);
   };
 
   const cancelEditTask = () => {
     setEditingTaskId(null);
     setEditTaskDraft(null);
+    setTaskEditModalOpen(false);
   };
 
   const checklistModalTask = useMemo(() => {
@@ -481,8 +492,7 @@ export default function KanbanBoard() {
     try {
       const response = await fetch("/api/generate-tasks", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+        headers: { "Content-Type": "application/json",
         },
         body: JSON.stringify({
           prompt: `Create 5-10 concise checklist item titles for the following task: ${prompt}`,
@@ -506,8 +516,7 @@ export default function KanbanBoard() {
       }
     } catch (error) {
       console.error(error);
-      setChecklistModalError(
-        "Unable to generate checklist items. Please check your AI configuration.",
+      setChecklistModalError( "Unable to generate checklist items. Please check your AI configuration.",
       );
     } finally {
       setIsGeneratingChecklist(false);
@@ -614,130 +623,129 @@ export default function KanbanBoard() {
 
   return (
     <div class="space-y-8 w-full">
-      <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-300/20">
-        <div class="navbar p-0">
-          <div class="flex-1">
-            <h2 class="text-3xl font-semibold text-slate-900">Board Configuration</h2>
-            <p class="mt-3 max-w-2xl text-slate-600">
+      <section class="rounded bg-base-300 p-4 shadow-xl shadow-base-300/20">
+        <div class="navbar flex justify-between items-start gap-4">
+          <div class="">
+            <h2 class="text-3xl font-semibold">Board Configuration</h2>
+            <p class="mt-3 max-w-2xl">
               Add rows and columns, then place tasks into each column. Each task
               can include a title, description, and optional checklist.
             </p>
           </div>
-          <div class="flex-none">
+          <div class="">
             <button
               type="button"
-              class="btn btn-error btn text-white"
+              class="btn btn-error btn"
               onClick={confirmResetBoard}
             >
               Reset Board
             </button>
           </div>
         </div>
-        <div class="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-5">
+        <div class="rounded mt-6 bg-base-200 p-5">
           <div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 class="text-lg font-semibold text-slate-900">
+              <h3 class="text-lg font-semibold">
                 Default column settings
               </h3>
-              <p class="text-sm text-slate-600">
+              <p class="text-sm">
                 Manage the default column set used across projects. Drag badges
                 to reorder, click x to remove, or add a new default column.
               </p>
             </div>
           </div>
-          <div class="flex flex-wrap items-center gap-2">
+          <div class="flex flex-wrap items-baseline gap-2">
+            
             {defaultColumnNames.map((name, index) => (
-              <div
+              <div class="join">
+                <button 
                 key={name}
                 draggable="true"
                 onDragStart={handleDefaultColumnDragStart(index)}
                 onDragOver={handleDefaultColumnDragOver}
                 onDrop={handleDefaultColumnDrop(index)}
                 onDragEnd={() => setDraggedDefaultIndex(null)}
-                class="badge badge-outline badge-primary flex items-center gap-2 cursor-grab"
-              >
-                <span>{name}</span>
-                <button
-                  type="button"
-                  class="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-700"
+                class="btn join-item btn-accent cursor-grab">{name}</button>
+                <button 
                   onClick={(event) => {
                     event.stopPropagation();
                     removeDefaultColumn(name);
                   }}
-                >
-                  ×
+                  class="btn join-item btn-accent btn-soft border-accent">
+                  <span class="iconify basil--cross-outline text-xl font-bold"></span>
                 </button>
               </div>
             ))}
-            <input
-              class="min-w-[14rem] rounded-full border border-slate-300 bg-white px-4 py-2 text-slate-900 outline-none focus:border-cyan-500"
-              type="text"
-              value={defaultColumnInput}
-              onInput={(e) => setDefaultColumnInput(e.currentTarget.value)}
-              onKeyDown={handleDefaultColumnInputKeyDown}
-              placeholder="Add default column"
-            />
+            <fieldset class="fieldset">
+              <input
+                class="input input-accent"
+                type="text"
+                value={defaultColumnInput}
+                onInput={(e) => setDefaultColumnInput(e.currentTarget.value)}
+                onKeyDown={handleDefaultColumnInputKeyDown}
+                placeholder="Add new column"
+              />
+              <p class="label">Hit enter to create</p>
+            </fieldset>
+            
           </div>
         </div>
-        <div class="mt-6 grid gap-3 sm:grid-cols-1">
+        <div class="rounded bg-base-200 mt-6 p-5">
+          <h3 class="text-lg font-semibold">Create a new row</h3>
           <form
-            class="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-5"
+            class="space-y-4"
             onSubmit={addRow}
           >
-            <h3 class="text-lg font-semibold text-slate-900">Create a new row</h3>
-            <div class="flex gap-2">
+            <fieldset class="fieldset w-auto">
+              <label class="fieldset-legend">What should the row be named?</label>
               <input
-                class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-2 text-slate-900 outline-none focus:border-cyan-500"
+                class="input input-secondary w-full validator"
                 type="text"
                 value={newRowName}
                 onInput={(e) => setNewRowName(e.currentTarget.value)}
                 placeholder="A project name, a category for large project tasks, etc."
+                required
               />
-              
-            </div>
-            <div class="grid gap-2">
-              <label class="text-sm font-medium text-slate-700" htmlFor="newRowPrompt">
-                Generate up to 10 tasks using AI
-              </label>
-              <input
-                id="newRowPrompt"
-                class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-2 text-slate-900 outline-none focus:border-cyan-500"
+              <span class="validator-hint hidden">Required</span>
+
+              <label class="fieldset-legend" htmlFor="newRowPrompt">Generate up to 10 tasks using AI</label>
+              <input id="newRowPrompt"
+                class="input w-full input-secondary"
                 type="text"
                 value={newRowPrompt}
                 onInput={(e) => setNewRowPrompt(e.currentTarget.value)}
-                placeholder="Enter a brief description of tasks to generate"
-              />
-              {taskGenerationStatus && (
-                <p class="text-sm text-slate-500">{taskGenerationStatus}</p>
-              )}
-            </div>
+                placeholder="Enter a brief description of tasks to generate" />
+
+              
+            </fieldset>
             <button
-            class="rounded-2xl bg-cyan-600 px-4 py-2 font-semibold text-white transition hover:bg-cyan-500 disabled:bg-slate-300"
-            type="submit"
-            disabled={isGeneratingTasks}
-            >
-            {isGeneratingTasks ? "Generating…" : "Add Row"}
+              class="btn btn-secondary mt-4"
+              type="submit"
+              disabled={isGeneratingTasks}
+              >
+              {isGeneratingTasks ? taskGenerationStatus : "Add Row"}
             </button>
+            
           </form>
         </div>
-        <div class="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-5">
-          <div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="mt-6 rounded bg-base-200 p-5">
+          <div class="mb-4 flex flex-col gap-4 flex-row items-baseline justify-between">
             <div>
-              <h3 class="text-lg font-semibold text-slate-900">
+              <h3 class="text-lg font-semibold">
                 Row settings
               </h3>
-              <p class="text-sm text-slate-600">
+              <p class="text-sm">
                 Use the arrow buttons to move rows up or down and pick a color
                 for each project row.
               </p>
             </div>
           </div>
           <div class="overflow-x-auto">
-            <ul class="list bg-base-100 rounded-box shadow-md">
+            <ul class="list bg-base-100 rounded space-y-2 shadow-md">
               {rows.map((row, index) => (
                 <li
                   key={row.id}
-                  class="grid grid-cols-3 list-row gap-3 mb-2 border"
+                  class="grid grid-cols-3 list-row gap-3 border"
                   style={{
                     backgroundColor: `${row.color}22`,
                     borderColor: row.color,
@@ -748,7 +756,7 @@ export default function KanbanBoard() {
                   </div>
                   <div>
                     <select
-                        class="max-w-xs rounded-full border bg-white px-3 py-1 text-sm text-slate-900 outline-none"
+                        class="max-w-xs rounded border px-3 py-1 text-sm outline-none"
                         style={{ borderColor: row.color }}
                         value={row.color}
                         onChange={(e) =>
@@ -783,7 +791,9 @@ export default function KanbanBoard() {
                       ⌄
                     </button>
                   </div>
+                  
                 </li>
+                
               ))}
             </ul>
           </div>
@@ -795,10 +805,9 @@ export default function KanbanBoard() {
         {rows.map((row) => (
           <section
             key={row.id}
-            class="space-y-4 rounded-[2rem] border p-5 shadow-lg shadow-slate-300/10"
+            class="space-y-4 rounded p-5 shadow-lg shadow-base-300/10"
             style={{
               backgroundColor: `${row.color}1a`,
-              borderColor: row.color,
             }}
           >
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -806,7 +815,7 @@ export default function KanbanBoard() {
                 {editingRowId === row.id
                   ? (
                     <input
-                      class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-2 text-2xl font-semibold text-slate-900 outline-none focus:border-cyan-500"
+                      class="w-full rounded border border-base-300 px-4 py-2 text-2xl font-semibold outline-none focus:border-cyan-500"
                       type="text"
                       value={editingRowName}
                       onInput={(e) => setEditingRowName(e.currentTarget.value)}
@@ -824,30 +833,29 @@ export default function KanbanBoard() {
                   )
                   : (
                     <h3
-                      class="text-2xl font-semibold text-slate-900"
+                      class="text-2xl font-semibold"
                       onDblClick={() => editRowTitle(row)}
                     >
                       {row.name}
                     <span data-tip="double click to edit" class="tooltip text-xs align-super pl-2" style={{
                         color: `${row.color}`,
-                    }}> 🖉</span> </h3>
+                    }}> <span class="iconify hugeicons--pencil-edit-02 text-xl"></span></span> </h3>
                   )}
               </div>
               <div class="flex flex-col gap-3 sm:items-end">
                 <button
                   type="button"
-                  class="btn btn-square btn-ghost btn-sm text-xl"
-                  style={{ color: row.color, borderColor: row.color }}
+                  class="btn btn-error btn-square btn-sm opacity-80 hover:opacity-100 text-xl"
                   onClick={() => deleteRow(row.id)}
                   aria-label={`Delete project ${row.name}`}
                 >
-                  ×
+                  <span class="iconify basil--cross-outline text-xl"></span>
                 </button>
               </div>
             </div>
 
             <div class="overflow-x-auto pb-4">
-              <div class="flex gap-5 min-w-[90rem]">
+              <div class="flex gap-5">
                 {columns.map((column) => {
                   const cellKey = `${row.id}|${column.id}`;
                   const cellTasks = tasksByCell[cellKey] || [];
@@ -858,7 +866,7 @@ export default function KanbanBoard() {
                   return (
                     <div
                       key={column.id}
-                      class="flex min-w-[22rem] flex-col gap-4 rounded-[1.75rem] p-4 shadow-lg shadow-slate-300/10"
+                      class="flex min-w-1/4 flex-col rounded gap-4 p-4 shadow-lg shadow-base-300/10"
                       style={{
                         backgroundColor: `${row.color}15`,
                         border: `1px solid ${row.color}22`,
@@ -868,38 +876,36 @@ export default function KanbanBoard() {
                     >
                       <div class="flex items-center justify-between gap-3">
                         <div>
-                          <h4 class="text-xl font-semibold text-slate-900">
+                          <h4 class="text-xl font-semibold">
                             {column.name}
                           </h4>
                         </div>
                         <div class="flex items-center gap-2">
                           <button
-                            class="rounded-full px-4 py-2 text-sm font-semibold transition"
+                            class="btn btn-sm"
                             type="button"
                             style={{
-                              color: row.color,
-                              border: `1px solid ${row.color}`,
-                              backgroundColor: `${row.color}1a`,
+                              backgroundColor: `${row.color}`,
                             }}
                             onClick={() => openTaskForm(row.id, column.id)}
                           >
-                            + Add card
+                            <span class="iconify hugeicons--credit-card-add text-xl text-base-100"></span>
                           </button>
                         </div>
                       </div>
-                      <div class="space-y-4 rounded-[1.5rem] bg-white p-3">
+                      <div class="space-y-4 rounded p-3">
                         {!isActiveForm && cellTasks.length === 0 && (
-                          <p class="text-sm text-slate-500">No cards yet.</p>
+                          <p class="text-sm">No cards yet.</p>
                         )}
                         {isActiveForm && (
-                          <article class="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm shadow-slate-900/5">
+                          <article class="overflow-hidden rounded border border-base-200 p-4 shadow-sm shadow-base-900/5">
                             <form class="space-y-4" onSubmit={createTask}>
                               <div>
-                                <label class="block text-sm font-medium text-slate-700">
+                                <label class="block text-sm font-medium">
                                   Title
                                 </label>
                                 <input
-                                  class="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-2 text-slate-900 outline-none focus:border-cyan-500"
+                                  class="mt-2 w-full rounded border border-base-300 px-4 py-2 outline-none focus:border-cyan-500"
                                   type="text"
                                   value={taskDraft.title}
                                   onInput={(e) =>
@@ -911,11 +917,11 @@ export default function KanbanBoard() {
                                 />
                               </div>
                               <div>
-                                <label class="block text-sm font-medium text-slate-700">
+                                <label class="block text-sm font-medium">
                                   Description
                                 </label>
                                 <textarea
-                                  class="mt-2 h-24 w-full rounded-2xl border border-slate-300 bg-white px-4 py-2 text-slate-900 outline-none focus:border-cyan-500"
+                                  class="mt-2 h-24 w-full rounded border border-base-300 px-4 py-2 outline-none focus:border-cyan-500"
                                   value={taskDraft.description}
                                   onInput={(e) =>
                                     setTaskDraft({
@@ -924,14 +930,14 @@ export default function KanbanBoard() {
                                     })}
                                 />
                               </div>
-                              <div class="space-y-3 rounded-2xl border border-slate-300 bg-white p-4">
+                              <div class="space-y-3 rounded border border-base-300 p-4">
                                 <div class="flex items-center justify-between gap-3">
-                                  <p class="text-sm font-semibold text-slate-900">
+                                  <p class="text-sm font-semibold">
                                     Checklist items
                                   </p>
                                   <button
                                     type="button"
-                                    class="rounded-2xl bg-slate-200 px-3 py-1 text-sm text-slate-700 transition hover:bg-slate-300"
+                                    class="rounded px-3 py-1 text-sm transition"
                                     onClick={() => addChecklistItem(true)}
                                   >
                                     Add item
@@ -941,27 +947,25 @@ export default function KanbanBoard() {
                                   {taskDraft.checklist.map((item, index) => (
                                     <div
                                       key={item.id}
-                                      class="flex items-center gap-3 rounded-2xl border border-slate-300 bg-slate-50 px-3 py-2"
+                                      class="flex items-center gap-3 rounded border border-base-300 px-3 py-2"
                                     >
                                       <input
                                         type="checkbox"
                                         checked={item.checked}
                                         onInput={() =>
                                           updateChecklistItem(
-                                            item.id,
-                                            "checked",
+                                            item.id, "checked",
                                             !item.checked,
                                           )}
-                                        class="h-4 w-4 rounded border-slate-300 bg-white text-cyan-500 focus:ring-cyan-400"
+                                        class="h-4 w-4 rounded border-base-300 focus:ring-cyan-400"
                                       />
                                       <input
-                                        class="w-full bg-transparent text-slate-900 outline-none placeholder:text-slate-500"
+                                        class="w-full bg-transparent outline-none placeholder:"
                                         type="text"
                                         value={item.text}
                                         onInput={(e) =>
                                           updateChecklistItem(
-                                            item.id,
-                                            "text",
+                                            item.id, "text",
                                             e.currentTarget.value,
                                           )}
                                         onKeyDown={(e) =>
@@ -982,23 +986,23 @@ export default function KanbanBoard() {
                               <div class="flex justify-end gap-2">
                                 <button
                                   type="button"
-                                  class="rounded-2xl bg-slate-200 px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-300"
+                                  class="rounded px-4 py-2 text-sm transition"
                                   onClick={closeTaskForm}
                                 >
                                   Cancel
                                 </button>
                                 <button
                                   type="submit"
-                                  class="rounded-2xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500"
+                                  class="rounded px-4 py-2 text-sm font-semibold transition"
                                 >
-                                  Create card
+                                  Create task
                                 </button>
                               </div>
                             </form>
                           </article>
                         )}
                         {cellTasks.map((task) => {
-                          const isEditing = editingTaskId === task.id;
+                          const isEditing = task.id === editingTaskId;
 
                           return (
                             <article
@@ -1014,269 +1018,75 @@ export default function KanbanBoard() {
                                     event,
                                   )}
                               onDragEnd={handleDragEnd}
-                              class="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm shadow-slate-900/5"
+                              class="overflow-hidden rounded shadow-sm shadow-base-900/5"
                             >
-                              {isEditing && editTaskDraft
-                                ? (
-                                  <form
-                                    class="space-y-4"
-                                    onSubmit={saveTaskEdit}
-                                  >
-                                    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                                      <div class="w-full">
-                                        <label class="block text-sm font-medium text-slate-700">
-                                          Title
-                                        </label>
-                                        <input
-                                          class="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-2 text-slate-900 outline-none focus:border-cyan-500"
-                                          type="text"
-                                          value={editTaskDraft.title}
-                                          onInput={(e) =>
-                                            setEditTaskDraft({
-                                              ...editTaskDraft,
-                                              title: e.currentTarget.value,
-                                            })}
-                                          required
-                                        />
-                                      </div>
+                              
+                                <div class="block">
+                                  <div class="join-item bg-neutral-800/80 p-4">
+                                    <div class="flex items-center justify-between gap-3">
+                                      <h5 class="text-base font-semibold">
+                                        {task.title}
+                                      </h5>
                                       <button
                                         type="button"
-                                        class="h-fit rounded-full bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-300"
-                                        onClick={cancelEditTask}
-                                      >
-                                        Cancel
-                                      </button>
-                                    </div>
-                                    <div>
-                                      <label class="block text-sm font-medium text-slate-700">
-                                        Description
-                                      </label>
-                                      <textarea
-                                        class="mt-2 h-24 w-full rounded-2xl border border-slate-300 bg-white px-4 py-2 text-slate-900 outline-none focus:border-cyan-500"
-                                        value={editTaskDraft.description}
-                                        onInput={(e) =>
-                                          setEditTaskDraft({
-                                            ...editTaskDraft,
-                                            description: e.currentTarget.value,
-                                          })}
-                                      />
-                                    </div>
-                                    <div>
-                                      <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-                                        Status
-                                      </p>
-                                      <select
-                                        id={`column-select-${task.id}`}
-                                        class="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-cyan-500"
-                                        value={editTaskDraft.colId}
-                                        onChange={(e) =>
-                                          setEditTaskDraft({
-                                            ...editTaskDraft,
-                                            colId: e.currentTarget.value,
-                                          })}
-                                      >
-                                        {columns.map((option) => (
-                                          <option
-                                            key={option.id}
-                                            value={option.id}
-                                          >
-                                            {option.name}
-                                          </option>
-                                        ))}
-                                      </select>
-                                    </div>
-                                    <div>
-                                      <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-                                        Row
-                                      </p>
-                                      <select
-                                        id={`row-select-${task.id}`}
-                                        class="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-cyan-500"
-                                        value={editTaskDraft.rowId}
-                                        onChange={(e) =>
-                                          setEditTaskDraft({
-                                            ...editTaskDraft,
-                                            rowId: e.currentTarget.value,
-                                          })}
-                                      >
-                                        {rows.map((option) => (
-                                          <option
-                                            key={option.id}
-                                            value={option.id}
-                                          >
-                                            {option.name}
-                                          </option>
-                                        ))}
-                                      </select>
-                                    </div>
-                                    <div class="space-y-3 rounded-2xl border border-slate-300 bg-white p-4">
-                                      <div class="flex items-center justify-between gap-3">
-                                        <p class="text-sm font-semibold text-slate-900">
-                                          Checklist items
-                                        </p>
-                                        <div class="flex items-center gap-2">
-                                          <button
-                                            type="button"
-                                            class="rounded-2xl bg-slate-200 px-3 py-1 text-sm text-slate-700 transition hover:bg-slate-300"
-                                            onClick={() => addEditChecklistItem(true)}
-                                          >
-                                            Add item
-                                          </button>
-                                          <button
-                                            type="button"
-                                            class="rounded-2xl border border-slate-300 bg-white px-3 py-1 text-sm text-slate-700 transition hover:bg-slate-100"
-                                            onClick={() => openChecklistModal(task)}
-                                            aria-label="Generate checklist items"
-                                          >
-                                            🪄
-                                          </button>
-                                        </div>
-                                      </div>
-                                      <div class="space-y-3">
-                                        {editTaskDraft.checklist.map((
-                                          item,
-                                          index,
-                                        ) => (
-                                          <div
-                                            key={item.id}
-                                            class="flex items-center gap-3 rounded-2xl border border-slate-300 bg-slate-50 px-3 py-2"
-                                          >
-                                            <input
-                                              type="checkbox"
-                                              checked={item.checked}
-                                              onInput={() =>
-                                                updateEditChecklistItem(
-                                                  item.id,
-                                                  "checked",
-                                                  !item.checked,
-                                                )}
-                                              class="h-4 w-4 rounded border-slate-300 bg-white text-cyan-500 focus:ring-cyan-400"
-                                            />
-                                            <input
-                                              class="w-full bg-transparent text-slate-900 outline-none placeholder:text-slate-500"
-                                              type="text"
-                                              value={item.text}
-                                              onInput={(e) =>
-                                                updateEditChecklistItem(
-                                                  item.id,
-                                                  "text",
-                                                  e.currentTarget.value,
-                                                )}
-                                              onKeyDown={(e) =>
-                                                handleChecklistKeyDown(
-                                                  e,
-                                                  index,
-                                                  editTaskDraft.checklist,
-                                                  addEditChecklistItem,
-                                                )}
-                                              ref={(el) =>
-                                                setChecklistInputRef(
-                                                  item.id,
-                                                  el,
-                                                )}
-                                              placeholder="Checklist item"
-                                            />
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                    <div class="grid grid-cols-2 gap-2">
-                                      <button
-                                        type="button"
-                                        class="justify-self-start rounded-2xl bg-red-600/50 hover:bg-red-500 px-4 py-2 text-sm font-semibold text-white transition"
-                                        onClick={() => deleteTask(task.id)}
-                                      >
-                                        Delete
-                                      </button>
-                                      <button
-                                        type="submit"
-                                        class="ml-auto rounded-2xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500 justify-self-end"
-                                      >
-                                        Save
-                                      </button>
-                                    </div>
-                                  </form>
-                                )
-                                : (
-                                  <div class="space-y-3">
-                                    <div class="flex items-start justify-between gap-3">
-                                      <div>
-                                        <h5 class="text-base font-semibold text-slate-900">
-                                          {task.title}
-                                        </h5>
-                                        <p class="mt-1 text-sm text-slate-600">
-                                          {task.description}
-                                        </p>
-                                      </div>
-                                      <button
-                                        type="button"
-                                        class="rounded-full bg-slate-200 px-3 py-2 text-md align-super text-slate-700 transition hover:bg-slate-300"
+                                        class="btn btn-sm btn-soft btn-accent text-md transition"
                                         onClick={() => startEditTask(task)}
                                       >
-                                        🖉
+                                        <span class="iconify hugeicons--pencil-edit-02 text-xl"></span>
                                       </button>
                                     </div>
-                                    {task.checklist &&
-                                      task.checklist.length > 0 && (
-                                      <div class="space-y-2 rounded-3xl bg-slate-100 p-3">
-                                        <p class="text-xs uppercase tracking-[0.18em] text-cyan-600">
-                                          Checklist
-                                        </p>
-                                        <div class="space-y-2">
-                                          {task.checklist.map((item) => (
-                                            <label
-                                              key={item.id}
-                                              class="flex items-center gap-2 text-sm text-slate-700"
-                                            >
-                                              <input
-                                                type="checkbox"
-                                                checked={item.checked}
-                                                onInput={() =>
-                                                  toggleTaskChecklist(
-                                                    task.id,
-                                                    item.id,
-                                                  )}
-                                                class="h-4 w-4 rounded border-slate-300 bg-white text-cyan-500 focus:ring-cyan-400"
-                                              />
-                                              <span
-                                                class={item.checked
-                                                  ? "line-through text-slate-500"
-                                                  : ""}
-                                              >
-                                                {item.text}
-                                              </span>
-                                            </label>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
-                                    <div>
-                                      <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
-                                        Status
+                                    
+                                  </div>
+                                  {task.description && (
+                                    <div class="bg-neutral-800/40 p-4">
+                                      <p class="text-xs uppercase tracking-[0.18em]">
+                                        Description
                                       </p>
-                                      <select
-                                        id={`column-select-${task.id}`}
-                                        class="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-cyan-500"
-                                        value={task.colId}
-                                        onChange={(e) =>
-                                          moveTaskToColumn(
-                                            task.id,
-                                            row.id,
-                                            e.currentTarget.value,
-                                          )}
-                                      >
-                                        {columns.map((option) => (
-                                          <option
-                                            key={option.id}
-                                            value={option.id}
+                                      <p class="mt-1 text-sm">
+                                        {task.description}
+                                      </p>
+                                    </div>
+                                  )}
+                                
+                                
+                  
+                    
+                                {task.checklist &&
+                                  task.checklist.length > 0 && (
+                                  <div class="space-y-2 bg-neutral-800/40 p-4">
+                                    <p class="text-xs uppercase tracking-[0.18em]">
+                                      Checklist
+                                    </p>
+                                    <div class="space-y-2">
+                                      {task.checklist.map((item) => (
+                                        <label
+                                          key={item.id}
+                                          class="flex items-center gap-2 text-sm"
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            checked={item.checked}
+                                            onInput={() =>
+                                              toggleTaskChecklist(
+                                                task.id,
+                                                item.id,
+                                              )}
+                                            class="h-4 w-4 rounded border-base-300 focus:ring-cyan-400"
+                                          />
+                                          <span
+                                            class={item.checked
+                                              ? "line-through "
+                                              : ""}
                                           >
-                                            {option.name}
-                                          </option>
-                                        ))}
-                                      </select>
+                                            {item.text}
+                                          </span>
+                                        </label>
+                                      ))}
                                     </div>
                                   </div>
                                 )}
+                              
+                              </div>
                             </article>
                           );
                         })}
@@ -1291,13 +1101,13 @@ export default function KanbanBoard() {
       </div>
 
       <Modal open={checklistModalOpen} onClose={closeChecklistModal}>
-        <h3 class="text-xl font-semibold text-slate-900">
+        <h3 class="text-xl font-semibold">
           What task do you want broken down?
         </h3>
         <div class="mt-4 space-y-4">
           <div class="space-y-2">
             <input
-              class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-cyan-500"
+              class="w-full rounded border border-base-300 px-4 py-3 outline-none focus:border-cyan-500"
               type="text"
               value={checklistPrompt}
               placeholder={checklistPlaceholder}
@@ -1313,14 +1123,14 @@ export default function KanbanBoard() {
                 }
               }}
             />
-            <p class="text-xs text-slate-500">
+            <p class="text-xs">
               Press Tab to fill the textbox with the task title placeholder.
             </p>
           </div>
           <div class="flex flex-wrap gap-2">
             <button
               type="button"
-              class="rounded-2xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500"
+              class="rounded px-4 py-2 text-sm font-semibold transition"
               onClick={generateChecklistItems}
               disabled={isGeneratingChecklist}
             >
@@ -1328,7 +1138,7 @@ export default function KanbanBoard() {
             </button>
             <button
               type="button"
-              class="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+              class="rounded px-4 py-2 text-sm font-semibold transition hover:"
               onClick={applyChecklistPreview}
               disabled={checklistPreview.length === 0}
             >
@@ -1336,7 +1146,7 @@ export default function KanbanBoard() {
             </button>
           </div>
           {checklistModalError && (
-            <p class="text-sm text-red-600">{checklistModalError}</p>
+            <p class="text-sm">{checklistModalError}</p>
           )}
           <div class="overflow-x-auto">
             {checklistPreview.length > 0 ? (
@@ -1357,13 +1167,171 @@ export default function KanbanBoard() {
                 </tbody>
               </table>
             ) : (
-              <p class="text-sm text-slate-500">
+              <p class="text-sm">
                 Generate checklist items to preview them here.
               </p>
             )}
           </div>
         </div>
       </Modal>
+
+      <Modal open={taskEditModalOpen} onClose={cancelEditTask}>
+        <h3 class="text-xl font-semibold">Edit task</h3>
+        {editTaskDraft ? (
+          <form class="mt-4 space-y-4" onSubmit={saveTaskEdit}>
+            <div>
+              <label class="block text-sm font-medium">
+                Title
+              </label>
+              <input
+                class="mt-2 w-full rounded border border-base-300 px-4 py-2 outline-none focus:border-cyan-500"
+                type="text"
+                value={editTaskDraft.title}
+                onInput={(e) =>
+                  setEditTaskDraft({
+                    ...editTaskDraft,
+                    title: e.currentTarget.value,
+                  })}
+                required
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium">
+                Description
+              </label>
+              <textarea
+                class="mt-2 h-24 w-full rounded border border-base-300 px-4 py-2 outline-none focus:border-cyan-500"
+                value={editTaskDraft.description}
+                onInput={(e) =>
+                  setEditTaskDraft({
+                    ...editTaskDraft,
+                    description: e.currentTarget.value,
+                  })}
+              />
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.18em]">
+                Status
+              </p>
+              <select
+                id={`edit-column-select-${editTaskDraft.id}`}
+                class="mt-2 w-full rounded border border-base-300 px-3 py-2 text-sm outline-none focus:border-cyan-500"
+                value={editTaskDraft.colId}
+                onChange={(e) =>
+                  setEditTaskDraft({
+                    ...editTaskDraft,
+                    colId: e.currentTarget.value,
+                  })}
+              >
+                {columns.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.18em]">
+                Row
+              </p>
+              <select
+                id={`edit-row-select-${editTaskDraft.id}`}
+                class="mt-2 w-full rounded border border-base-300 px-3 py-2 text-sm outline-none focus:border-cyan-500"
+                value={editTaskDraft.rowId}
+                onChange={(e) =>
+                  setEditTaskDraft({
+                    ...editTaskDraft,
+                    rowId: e.currentTarget.value,
+                  })}
+              >
+                {rows.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div class="space-y-3 rounded border border-base-300 p-4">
+              <div class="flex items-center justify-between gap-3">
+                <p class="text-sm font-semibold">
+                  Checklist items
+                </p>
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    class="rounded px-3 py-1 text-sm transition"
+                    onClick={() => addEditChecklistItem(true)}
+                  >
+                    Add item
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded border border-base-300 px-3 py-1 text-sm transition"
+                    onClick={() => openChecklistModal(editTaskDraft)}
+                    aria-label="Generate checklist items"
+                  >
+                    🪄
+                  </button>
+                </div>
+              </div>
+              <div class="space-y-3">
+                {editTaskDraft.checklist.map((item, index) => (
+                  <div
+                    key={item.id}
+                    class="flex items-center gap-3 rounded border border-base-300 px-3 py-2"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={item.checked}
+                      onInput={() =>
+                        updateEditChecklistItem(item.id, "checked", !item.checked)
+                      }
+                      class="h-4 w-4 rounded border-base-300 focus:ring-cyan-400"
+                    />
+                    <input
+                      class="w-full bg-transparent outline-none placeholder:"
+                      type="text"
+                      value={item.text}
+                      onInput={(e) =>
+                        updateEditChecklistItem(
+                          item.id, "text",
+                          e.currentTarget.value,
+                        )}
+                      onKeyDown={(e) =>
+                        handleChecklistKeyDown(
+                          e,
+                          index,
+                          editTaskDraft.checklist,
+                          addEditChecklistItem,
+                        )}
+                      ref={(el) => setChecklistInputRef(item.id, el)}
+                      placeholder="Checklist item"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                class="justify-self-start rounded px-4 py-2 text-sm font-semibold transition"
+                onClick={() => deleteTask(editTaskDraft.id)}
+              >
+                Delete
+              </button>
+              <button
+                type="submit"
+                class="ml-auto rounded px-4 py-2 text-sm font-semibold transition justify-self-end"
+              >
+                Save
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p class="mt-4 text-sm">Loading task…</p>
+        )}
+      </Modal>
     </div>
   );
 }
+

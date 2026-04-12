@@ -7,8 +7,8 @@ import tailwindcss from '@tailwindcss/vite';
 // https://astro.build/config
 export default defineConfig({
   adapter: deno(),
-  
-  integrations: [preact({ devtools: true, compat: true })],
+
+  integrations: [ preact({ devtools: true, compat: true })],
 
   server: {
     port: 4321,
