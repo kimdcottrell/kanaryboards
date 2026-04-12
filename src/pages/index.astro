@@ -9,23 +9,11 @@ import "../styles/global.css";
     <title>Kanary Boards</title>
   </head>
   <body>
-    <nav class="navbar bg-base-300 shadow-sm">
+    <nav class="navbar md:px-20 sm:px-10 bg-base-300 shadow-sm">
         <a class="text-xl font-bold">An AI-native Kanban Board project by Kim D. Cottrell</a>
     </nav>
-    <main class="min-h-screen sm:p-10">
+    <main class="min-h-screen">
       <section class="mx-auto w-full">
-        <header class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p class="text-sm uppercase tracking-[0.3em]">Organize your workflow</p>
-            <h1 class="mt-3 text-4xl font-semibold sm:text-5xl">Kanary Boards</h1>
-          </div>
-          <p class="max-w-2xl">
-            A really basic kanban board project built with Deno, Astro, and Tailwind CSS. <br />
-            Create rows and tasks, drag and drop them around as needed.<br />
-            Generate tasks using AI by entering a prompt describing the type of tasks you want to create, and the AI will return a list of tasks matching your description.<br />
-            Data is only persisted in local browser storage... <em><small>For now.</small></em>
-          </p>
-        </header>
         <KanbanBoard client:load />
       </section>
     </main>

@@ -20,7 +20,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.7",
-    "@tailwindcss/vite": "^4.2.1"
+    "@tailwindcss/vite": "^4.2.1",
+    "preact-mcp": "^0.1.1"
   },
   "overrides": {
     "react": "npm:@preact/compat@latest",

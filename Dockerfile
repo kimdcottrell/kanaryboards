@@ -20,6 +20,7 @@ RUN mkdir -p /home/deno /var/dev /home/.deno/bin; \
     chown -R deno:deno /home; \
     chown -R deno:deno /var/dev; \
     chown -R deno:deno /deno-dir; \
+    chown -R deno:deno /tmp; \
     chown -R deno:deno /usr/local/bin;
 
 # scripts that require node in the shebang of /usr/env/bin/ need this
