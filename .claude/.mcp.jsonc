@@ -1,0 +1,39 @@
+{
+  "mcpServers": {
+    "Astro docs": {
+      "type": "http",
+      "url": "https://mcp.docs.astro.build/mcp"
+    },
+    "Daisy UI docs": {
+      "type": "http",
+      "url": "https://daisyui.com/llms.txt"
+    },
+    "Deno docs": {
+      "type": "http",
+      "url": "https://docs.deno.com/llms.txt"
+    },
+    "Zod docs": {
+      "type": "http",
+      "url": "https://zod.dev/llms.txt"
+    },
+    "React docs": {
+      "type": "http",
+      "url": "https://react.dev/llms.txt"
+    },
+    "TypeScript docs": {
+      "type": "http",
+      "url": "https://www.typescriptlang.org/llms.txt"
+    },
+    "Preact docs": {
+      "type": "http",
+      "url": "https://preact.dev/llms.txt"
+    },
+    "Playwright docs": {
+      "type": "http",
+      "url": "https://playwright.dev/llms.txt"
+    },
+    "Tailwind docs": {
+      "type": "http",
+      "url": "https://raw.githubusercontent.com/rgfx/tailwind-llms/refs/heads/main/tailwind-llms.txt"
+  }
+}

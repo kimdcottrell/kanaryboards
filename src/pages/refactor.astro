@@ -1,0 +1,43 @@
+---
+import "../styles/global.css";
+
+import BoardWrapper from "../components/refactor/BoardWrapper";
+---
+
+<html lang="en" data-theme="dracula">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Kanary Boards v2</title>
+    </head>
+    <body>
+        <nav class="navbar bg-base-300 shadow-sm">
+            <a class="text-xl font-bold">
+                An AI-native Kanban Board project by Kim D. Cottrell
+            </a>
+        </nav>
+        <main class="min-h-screen sm:p-10">
+            <section class="mx-auto w-full">
+                <div class="space-y-8 w-full">
+                    <BoardWrapper client:only="preact" />
+                </div>
+            </section>
+            <footer class="mt-10 py-6 text-center text-sm">
+                <p>
+                    Made with Claude and <a
+                        href="https://kimdcottrell.com"
+                        class="hover:underline">Kim D. Cottrell</a
+                    >.
+                </p>
+                <p>
+                    Powered by Deno (a JavaScript runtime and Node.js
+                    alternative), Astro, and Tailwind CSS.
+                </p>
+                <p>
+                    AI-powered content generation achieved through the SciTely
+                    API and the Deepseek v3.2 model.
+                </p>
+            </footer>
+        </main>
+    </body>
+</html>

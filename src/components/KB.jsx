@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
+import { computed, signal } from "@preact/signals";
 import Modal from "./Modal.jsx";
 
 const STORAGE_KEY = "claudekan-board-state";
@@ -43,17 +44,36 @@ export default function KanbanBoard() {
   const initialDefaultColumns = persistedState?.defaultColumnNames ||
     initialDefaultColumnNames;
 
-  const [rows, setRows] = useState(() => persistedState?.rows || defaultRows);
-  const [defaultColumnNames, setDefaultColumnNames] = useState(
-    initialDefaultColumns,
+  const rows = signal(persistedState?.rows || defaultRows);
+  const defaultColumnNames = signal(initialDefaultColumns);
+  const columns = signal(
+    persistedState?.columns ||
+      initialDefaultColumns.map((name) => ({ id: createId(), name })),
   );
-  const [columns, setColumns] = useState(() => {
-    if (persistedState?.columns) return persistedState.columns;
-    return initialDefaultColumns.map((name) => ({ id: createId(), name }));
-  });
-  const [tasks, setTasks] = useState(() =>
-    persistedState?.tasks || defaultTasks
-  );
+  const tasks = signal(persistedState?.tasks || defaultTasks);
+
+  const updateRows = (updater) => {
+    rows.value = typeof updater === "function" ? updater(rows.value) : updater;
+  };
+
+  const updateColumns = (updater) => {
+    columns.value = typeof updater === "function"
+      ? updater(columns.value)
+      : updater;
+  };
+
+  const updateTasks = (updater) => {
+    tasks.value = typeof updater === "function"
+      ? updater(tasks.value)
+      : updater;
+  };
+
+  const updateDefaultColumnNames = (updater) => {
+    defaultColumnNames.value = typeof updater === "function"
+      ? updater(defaultColumnNames.value)
+      : updater;
+  };
+
   const [newRowName, setNewRowName] = useState("");
   const [newRowPrompt, setNewRowPrompt] = useState("");
   const [taskGenerationStatus, setTaskGenerationStatus] = useState("");
@@ -76,21 +96,21 @@ export default function KanbanBoard() {
   const [draggedDefaultIndex, setDraggedDefaultIndex] = useState(null);
   const checklistInputRefs = useRef({});
 
-  const tasksByCell = useMemo(() => {
+  const tasksByCell = computed(() => {
     const grouped = {};
-    tasks.forEach((task) => {
+    tasks.value.forEach((task) => {
       const key = `${task.rowId}|${task.colId}`;
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(task);
     });
     return grouped;
-  }, [tasks]);
+  });
 
   const findTodoColumnId = () => {
-    const todoColumn = columns.find((column) =>
+    const todoColumn = columns.value.find((column) =>
       column.name.toLowerCase().trim() === "todo"
     );
-    return todoColumn?.id || columns[0]?.id;
+    return todoColumn?.id || columns.value[0]?.id;
   };
 
   const parseGeneratedTasks = (content) =>
@@ -113,10 +133,10 @@ export default function KanbanBoard() {
     if (!prompt) return;
 
     setIsGeneratingTasks(true);
-    setTaskGenerationStatus("Generating tasks...");
+    setTaskGenerationStatus("Generating tasks.value...");
 
     try {
-      const response = await fetch("/api/generate-tasks", {
+      const response = await fetch("/api/generate-tasks.value", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt, maxTasks: 10 }),
@@ -127,8 +147,8 @@ export default function KanbanBoard() {
       }
 
       const data = await response.json();
-      const titles = Array.isArray(data.tasks)
-        ? data.tasks.map((task) => String(task).trim())
+      const titles = Array.isArray(data.tasks.value)
+        ? data.tasks.value.map((task) => String(task).trim())
         : [];
       const parsedTasks = parseGeneratedTasks(titles.join("\n"));
       const todoColId = findTodoColumnId();
@@ -142,7 +162,7 @@ export default function KanbanBoard() {
       }));
 
       if (generatedTasks.length > 0) {
-        setTasks((prev) => [...generatedTasks, ...prev]);
+        updateTasks((prev) => [...generatedTasks, ...prev]);
         setTaskGenerationStatus(
           `Added ${generatedTasks.length} task${
             generatedTasks.length > 1 ? "s" : ""
@@ -150,12 +170,12 @@ export default function KanbanBoard() {
         );
         setNewRowPrompt("");
       } else {
-        setTaskGenerationStatus("No tasks were generated.");
+        setTaskGenerationStatus("No tasks.value were generated.");
       }
     } catch (error) {
       console.error(error);
       setTaskGenerationStatus(
-        "Unable to generate tasks. Please check your Deepseek configuration.",
+        "Unable to generate tasks.value. Please check your Deepseek configuration.",
       );
     } finally {
       setIsGeneratingTasks(false);
@@ -170,7 +190,7 @@ export default function KanbanBoard() {
       name: newRowName.trim(),
       color: rowColorOptions[0].value,
     };
-    setRows([...rows, row]);
+    updateRows([...rows.value, row]);
     setNewRowName("");
 
     if (newRowPrompt.trim()) {
@@ -179,14 +199,14 @@ export default function KanbanBoard() {
   };
 
   const updateColumnsFromDefaultNames = (nextNames) => {
-    setDefaultColumnNames(nextNames);
-    setColumns((prevColumns) => {
+    updateDefaultColumnNames(nextNames);
+    updateColumns((prevColumns) => {
       const nextColumns = nextNames.map((name) => {
         const existing = prevColumns.find((column) => column.name === name);
         return existing || { id: createId(), name };
       });
       const nextColumnIds = nextColumns.map((column) => column.id);
-      setTasks((prevTasks) =>
+      updateTasks((prevTasks) =>
         prevTasks.filter((task) => nextColumnIds.includes(task.colId))
       );
       return nextColumns;
@@ -195,19 +215,19 @@ export default function KanbanBoard() {
 
   const addDefaultColumn = (name) => {
     const trimmed = name.trim();
-    if (!trimmed || defaultColumnNames.includes(trimmed)) return;
-    updateColumnsFromDefaultNames([...defaultColumnNames, trimmed]);
+    if (!trimmed || defaultColumnNames.value.includes(trimmed)) return;
+    updateColumnsFromDefaultNames([...defaultColumnNames.value, trimmed]);
     setDefaultColumnInput("");
   };
 
   const removeDefaultColumn = (name) => {
     updateColumnsFromDefaultNames(
-      defaultColumnNames.filter((columnName) => columnName !== name),
+      defaultColumnNames.value.filter((columnName) => columnName !== name),
     );
   };
 
   const moveDefaultColumn = (fromIndex, toIndex) => {
-    const nextNames = [...defaultColumnNames];
+    const nextNames = [...defaultColumnNames.value];
     const [moved] = nextNames.splice(fromIndex, 1);
     nextNames.splice(toIndex, 0, moved);
     updateColumnsFromDefaultNames(nextNames);
@@ -245,25 +265,25 @@ export default function KanbanBoard() {
       fromIndex === toIndex ||
       fromIndex < 0 ||
       toIndex < 0 ||
-      toIndex >= rows.length
+      toIndex >= rows.value.length
     ) return;
-    const nextRows = [...rows];
+    const nextRows = [...rows.value];
     const [moved] = nextRows.splice(fromIndex, 1);
     nextRows.splice(toIndex, 0, moved);
-    setRows(nextRows);
+    updateRows(nextRows);
   };
 
   const moveRowUp = (index) => moveRow(index, index - 1);
   const moveRowDown = (index) => moveRow(index, index + 1);
 
   const deleteColumn = (columnId) => {
-    setColumns(columns.filter((column) => column.id !== columnId));
-    setTasks(tasks.filter((task) => task.colId !== columnId));
+    updateColumns(columns.filter((column) => column.id !== columnId));
+    updateTasks(tasks.filter((task) => task.colId !== columnId));
     if (taskFormCell?.colId === columnId) {
       setTaskFormCell(null);
     }
     if (editingTaskId) {
-      const editingTask = tasks.find((task) => task.id === editingTaskId);
+      const editingTask = tasks.value.find((task) => task.id === editingTaskId);
       if (editingTask?.colId === columnId) {
         setEditingTaskId(null);
         setEditTaskDraft(null);
@@ -272,13 +292,13 @@ export default function KanbanBoard() {
   };
 
   const deleteRow = (rowId) => {
-    setRows(rows.filter((row) => row.id !== rowId));
-    setTasks(tasks.filter((task) => task.rowId !== rowId));
+    updateRows(rows.filter((row) => row.id !== rowId));
+    updateTasks(tasks.filter((task) => task.rowId !== rowId));
     if (taskFormCell?.rowId === rowId) {
       setTaskFormCell(null);
     }
     if (editingTaskId) {
-      const editingTask = tasks.find((task) => task.id === editingTaskId);
+      const editingTask = tasks.value.find((task) => task.id === editingTaskId);
       if (editingTask?.rowId === rowId) {
         setEditingTaskId(null);
         setEditTaskDraft(null);
@@ -291,7 +311,9 @@ export default function KanbanBoard() {
   };
 
   const updateRowColor = (rowId, color) => {
-    setRows(rows.map((row) => (row.id === rowId ? { ...row, color } : row)));
+    updateRows(
+      rows.value.map((row) => (row.id === rowId ? { ...row, color } : row)),
+    );
   };
 
   const editRowTitle = (row) => {
@@ -305,8 +327,10 @@ export default function KanbanBoard() {
       setEditingRowId(null);
       return;
     }
-    setRows(
-      rows.map((row) => (row.id === rowId ? { ...row, name: trimmed } : row)),
+    updateRows(
+      rows.value.map((
+        row,
+      ) => (row.id === rowId ? { ...row, name: trimmed } : row)),
     );
     setEditingRowId(null);
   };
@@ -321,9 +345,11 @@ export default function KanbanBoard() {
   };
 
   const resetBoard = () => {
-    setRows(defaultRows);
-    setColumns(defaultColumnNames.map((name) => ({ id: createId(), name })));
-    setTasks(defaultTasks);
+    updateRows(defaultRows);
+    updateColumns(
+      defaultColumnNames.value.map((name) => ({ id: createId(), name })),
+    );
+    updateTasks(defaultTasks);
     setTaskFormCell(null);
     setEditingTaskId(null);
     setEditTaskDraft(null);
@@ -407,7 +433,7 @@ export default function KanbanBoard() {
   const createTask = (event) => {
     event.preventDefault();
     if (!taskDraft.title.trim()) return;
-    setTasks([
+    updateTasks([
       {
         id: createId(),
         rowId: taskDraft.rowId,
@@ -416,14 +442,14 @@ export default function KanbanBoard() {
         description: taskDraft.description.trim(),
         checklist: taskDraft.checklist.filter((item) => item.text.trim()),
       },
-      ...tasks,
+      ...tasks.value,
     ]);
     closeTaskForm();
   };
 
   const toggleTaskChecklist = (taskId, itemId) => {
-    setTasks(
-      tasks.map((task) => {
+    updateTasks(
+      tasks.value.map((task) => {
         if (task.id !== taskId) return task;
         return {
           ...task,
@@ -452,11 +478,11 @@ export default function KanbanBoard() {
     setTaskEditModalOpen(false);
   };
 
-  const checklistModalTask = useMemo(() => {
-    return tasks.find((task) => task.id === checklistModalTaskId) || null;
-  }, [tasks, checklistModalTaskId]);
+  const checklistModalTask = computed(() => {
+    return tasks.value.find((task) => task.id === checklistModalTaskId) || null;
+  });
 
-  const checklistPlaceholder = checklistModalTask?.title || "";
+  const checklistPlaceholder = checklistModalTask.value?.title || "";
 
   const openChecklistModal = (task) => {
     setChecklistModalTaskId(task.id);
@@ -482,7 +508,7 @@ export default function KanbanBoard() {
     setChecklistModalError("");
 
     try {
-      const response = await fetch("/api/generate-tasks", {
+      const response = await fetch("/api/generate-tasks.value", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -497,8 +523,8 @@ export default function KanbanBoard() {
       }
 
       const data = await response.json();
-      const titles = Array.isArray(data.tasks)
-        ? data.tasks.map((task) => String(task).trim())
+      const titles = Array.isArray(data.tasks.value)
+        ? data.tasks.value.map((task) => String(task).trim())
         : [];
       const items = parseGeneratedTasks(titles.join("\n")).slice(0, 10);
       setChecklistPreview(items);
@@ -519,7 +545,7 @@ export default function KanbanBoard() {
   const applyChecklistPreview = () => {
     if (!checklistModalTaskId || checklistPreview.length === 0) return;
 
-    setTasks((prevTasks) =>
+    updateTasks((prevTasks) =>
       prevTasks.map((task) =>
         task.id === checklistModalTaskId
           ? {
@@ -553,7 +579,7 @@ export default function KanbanBoard() {
   };
 
   const deleteTask = (taskId) => {
-    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+    updateTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
     if (editingTaskId === taskId) {
       cancelEditTask();
     }
@@ -562,8 +588,8 @@ export default function KanbanBoard() {
   const saveTaskEdit = (event) => {
     event.preventDefault();
     if (!editTaskDraft.title.trim()) return;
-    setTasks(
-      tasks.map((task) =>
+    updateTasks(
+      tasks.value.map((task) =>
         task.id === editingTaskId
           ? {
             ...task,
@@ -592,8 +618,8 @@ export default function KanbanBoard() {
   };
 
   const moveTaskToColumn = (taskId, rowId, colId) => {
-    setTasks(
-      tasks.map((task) => task.id === taskId ? { ...task, colId } : task),
+    updateTasks(
+      tasks.value.map((task) => task.id === taskId ? { ...task, colId } : task),
     );
   };
 
@@ -610,19 +636,46 @@ export default function KanbanBoard() {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ rows, columns, tasks, defaultColumnNames }),
+      JSON.stringify({
+        rows: rows.value,
+        columns: columns.value,
+        tasks: tasks.value,
+        defaultColumnNames: defaultColumnNames.value,
+      }),
     );
-  }, [rows, columns, tasks, defaultColumnNames]);
+  }, [rows.value, columns.value, tasks.value, defaultColumnNames.value]);
 
   return (
-    <div class="space-y-8 w-full">
-      <section class="rounded bg-base-300 p-4 shadow-xl shadow-base-300/20">
+    <div class="w-full">
+      <header class="m-20 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p class="text-sm uppercase tracking-[0.3em]">
+            Organize your workflow
+          </p>
+          <h1 class="mt-3 text-4xl font-semibold sm:text-5xl">Kanary Boards</h1>
+        </div>
+        <p class="max-w-2xl">
+          A really basic kanban board project built with Deno, Astro, and
+          Tailwind CSS. <br />
+          Create rows.value and tasks.value, drag and drop them around as
+          needed.<br />
+          Generate tasks.value using AI by entering a prompt describing the type
+          of tasks.value you want to create, and the AI will return a list of
+          tasks.value matching your description.<br />
+          Data is only persisted in local browser storage...{" "}
+          <em>
+            <small>For now.</small>
+          </em>
+        </p>
+      </header>
+      <section class="mx-20 rounded bg-base-300 p-4 shadow-xl shadow-base-300/20">
         <div class="navbar flex justify-between items-start gap-4">
           <div class="">
             <h2 class="text-3xl font-semibold">Board Configuration</h2>
             <p class="mt-3 max-w-2xl">
-              Add rows and columns, then place tasks into each column. Each task
-              can include a title, description, and optional checklist.
+              Add rows.value and columns.value, then place tasks.value into each
+              column. Each task can include a title, description, and optional
+              checklist.
             </p>
           </div>
           <div class="">
@@ -635,7 +688,7 @@ export default function KanbanBoard() {
             </button>
           </div>
         </div>
-        <div class="rounded mt-6 bg-base-200 p-5">
+        <div class="rounded mt-6 bg-base-content/8 p-5">
           <div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 class="text-lg font-semibold">
@@ -648,7 +701,7 @@ export default function KanbanBoard() {
             </div>
           </div>
           <div class="flex flex-wrap items-baseline gap-2">
-            {defaultColumnNames.map((name, index) => (
+            {defaultColumnNames.value.map((name, index) => (
               <div class="join">
                 <button
                   key={name}
@@ -686,7 +739,7 @@ export default function KanbanBoard() {
             </fieldset>
           </div>
         </div>
-        <div class="rounded bg-base-200 mt-6 p-5">
+        <div class="rounded bg-base-content/8 mt-6 p-5">
           <h3 class="text-lg font-semibold">Create a new row</h3>
           <form
             class="space-y-4"
@@ -701,13 +754,13 @@ export default function KanbanBoard() {
                 type="text"
                 value={newRowName}
                 onInput={(e) => setNewRowName(e.currentTarget.value)}
-                placeholder="A project name, a category for large project tasks, etc."
+                placeholder="A project name, a category for large project tasks.value, etc."
                 required
               />
               <span class="validator-hint hidden">Required</span>
 
               <label class="fieldset-legend" htmlFor="newRowPrompt">
-                Generate up to 10 tasks using AI
+                Generate up to 10 tasks.value using AI
               </label>
               <input
                 id="newRowPrompt"
@@ -715,7 +768,7 @@ export default function KanbanBoard() {
                 type="text"
                 value={newRowPrompt}
                 onInput={(e) => setNewRowPrompt(e.currentTarget.value)}
-                placeholder="Enter a brief description of tasks to generate"
+                placeholder="Enter a brief description of tasks.value to generate"
               />
             </fieldset>
             <button
@@ -727,21 +780,21 @@ export default function KanbanBoard() {
             </button>
           </form>
         </div>
-        <div class="mt-6 rounded bg-base-200 p-5">
-          <div class="mb-4 flex flex-col gap-4 flex-row items-baseline justify-between">
+        <div class="mt-6 rounded bg-base-content/8 p-5">
+          <div class="mb-4 flex gap-4 flex-row items-baseline justify-between">
             <div>
               <h3 class="text-lg font-semibold">
                 Row settings
               </h3>
               <p class="text-sm">
-                Use the arrow buttons to move rows up or down and pick a color
-                for each project row.
+                Use the arrow buttons to move rows.value up or down and pick a
+                color for each project row.
               </p>
             </div>
           </div>
           <div class="overflow-x-auto">
-            <ul class="list bg-base-100 rounded space-y-2 shadow-md">
-              {rows.map((row, index) => (
+            <ul class="list rounded space-y-2 shadow-md">
+              {rows.value.map((row, index) => (
                 <li
                   key={row.id}
                   class="grid grid-cols-3 list-row gap-3 border"
@@ -784,10 +837,10 @@ export default function KanbanBoard() {
                     <button
                       type="button"
                       class={`btn btn-square btn-ghost ${
-                        index === rows.length - 1 ? "hidden" : ""
+                        index === rows.value.length - 1 ? "hidden" : ""
                       }`}
                       style={{ color: row.color, borderColor: row.color }}
-                      disabled={index === rows.length - 1}
+                      disabled={index === rows.value.length - 1}
                       onClick={() => moveRowDown(index)}
                       aria-label={`Move ${row.name} down`}
                     >
@@ -802,7 +855,7 @@ export default function KanbanBoard() {
       </section>
 
       <div class="space-y-10">
-        {rows.map((row) => (
+        {rows.value.map((row) => (
           <section
             key={row.id}
             class="space-y-4 rounded p-5 shadow-lg shadow-base-300/10"
@@ -863,10 +916,10 @@ export default function KanbanBoard() {
             </div>
 
             <div class="overflow-x-auto pb-4">
-              <div class="flex gap-5">
-                {columns.map((column) => {
+              <div class="flex flex-nowrap gap-5 min-w-full">
+                {columns.value.map((column) => {
                   const cellKey = `${row.id}|${column.id}`;
-                  const cellTasks = tasksByCell[cellKey] || [];
+                  const cellTasks = tasksByCell.value[cellKey] || [];
                   const isActiveForm = taskFormCell &&
                     taskFormCell.rowId === row.id &&
                     taskFormCell.colId === column.id;
@@ -874,8 +927,11 @@ export default function KanbanBoard() {
                   return (
                     <div
                       key={column.id}
-                      class="flex min-w-1/4 flex-col rounded gap-4 p-4 shadow-lg shadow-base-300/10"
+                      class="flex flex-col rounded gap-4 p-4 shadow-lg shadow-base-300/10"
                       style={{
+                        flex: "0 0 calc((100% - 2.5rem) / 3)",
+                        maxWidth: "calc((100% - 2.5rem) / 3)",
+                        minWidth: "240px",
                         backgroundColor: `${row.color}15`,
                         border: `1px solid ${row.color}22`,
                       }}
@@ -1232,7 +1288,7 @@ export default function KanbanBoard() {
                       colId: e.currentTarget.value,
                     })}
                 >
-                  {columns.map((option) => (
+                  {columns.value.map((option) => (
                     <option key={option.id} value={option.id}>
                       {option.name}
                     </option>
@@ -1253,7 +1309,7 @@ export default function KanbanBoard() {
                       rowId: e.currentTarget.value,
                     })}
                 >
-                  {rows.map((option) => (
+                  {rows.value.map((option) => (
                     <option key={option.id} value={option.id}>
                       {option.name}
                     </option>
