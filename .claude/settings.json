@@ -1,3 +1,16 @@
 {
-  "enabledMcpjsonServers": ["Astro docs"]
+  "enabledMcpjsonServers": [
+    "Astro docs",
+    "Daisy UI docs",
+    "Deno docs",
+    "Docker docs",
+    "Google GenAI docs",
+    "Zod docs",
+    "React docs",
+    "Preact docs",
+    "Tailwind docs"
+  ],
+  "enabledPlugins": {
+    "typescript-lsp@claude-plugins-official": true
+  }
 }

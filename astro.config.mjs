@@ -8,7 +8,11 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   adapter: deno(),
 
-  integrations: [ preact({ devtools: true, compat: true })],
+  integrations: [preact({ devtools: true, compat: true })],
+
+  security: {
+    checkOrigin: false
+  },
 
   server: {
     port: 4321,

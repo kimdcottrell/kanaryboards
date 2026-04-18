@@ -19,6 +19,20 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+  mcp_typescript:
+    build:
+      image: denoland/deno:2.7.12
+    command: 
+    - /bin/sh
+    - -c
+    - |
+      deno add npm:@modelcontextprotocol/server
+    env_file:
+      - .env
+    volumes:
+      - .:/var/dev
+    ports:
+      - "4322:4321"
 
   # TODO: Hook this up to persist data in more than just the browser's localstorage
   redis:

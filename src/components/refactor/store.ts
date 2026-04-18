@@ -153,6 +153,19 @@ export function useBoard() {
     }
   };
 
+  const handleNewRowPromptKeyDown = (
+    event: KeyboardEvent,
+  ) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      console.log("[DEBUG] Generate tasks via prompt enter");
+      const rowId = rows[0]?.id;
+      if (rowId && newRowPrompt.trim()) {
+        generateTasksForRow(rowId);
+      }
+    }
+  };
+
   const handleDefaultColumnDragStart = (index: number) => (
     event: DragEvent,
   ) => {
@@ -494,8 +507,8 @@ export function useBoard() {
       }
 
       const data = await response.json();
-      const titles = Array.isArray(data.tasks)
-        ? data.tasks.map((task) => String(task).trim())
+      const titles = Array.isArray(data.response)
+        ? data.response.map((task) => String(task).trim())
         : [];
       const parsedTasks = parseGeneratedTasks(titles.join("\n"));
       const todoColId = findTodoColumnId();
@@ -552,9 +565,14 @@ export function useBoard() {
     setChecklistModalError("");
   };
 
-  const generateChecklistItems = async () => {
-    console.log("[DEBUG] Generate checklist items - prompt:", checklistPrompt.trim() || checklistPlaceholder);
-    const prompt = checklistPrompt.trim() || checklistPlaceholder;
+  const generateChecklistItems = async (task?: any) => {
+    const taskTitle = task?.title || checklistPlaceholder;
+    // If a task is passed, set it as the modal task (for applying items)
+    if (task?.id) {
+      setChecklistModalTaskId(task.id);
+    }
+    console.log("[DEBUG] Generate checklist items - prompt:", checklistPrompt.trim() || taskTitle);
+    const prompt = checklistPrompt.trim() || taskTitle;
     if (!prompt) return;
 
     setIsGeneratingChecklist(true);
@@ -565,8 +583,7 @@ export function useBoard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt:
-            `Create 5-10 concise checklist item titles for the following task: ${prompt}`,
+          prompt: prompt,
           maxTasks: 10,
         }),
       });
@@ -576,8 +593,8 @@ export function useBoard() {
       }
 
       const data = await response.json();
-      const titles = Array.isArray(data.tasks)
-        ? data.tasks.map((task) => String(task).trim())
+      const titles = Array.isArray(data.response)
+        ? data.response.map((task) => String(task).trim())
         : [];
       const items = parseGeneratedTasks(titles.join("\n")).slice(0, 10);
       setChecklistPreview(items);
@@ -734,6 +751,7 @@ export function useBoard() {
     handleDefaultColumnDragOver,
     handleDefaultColumnDrop,
     deleteColumn,
+    handleNewRowPromptKeyDown,
     // Handlers - Rows
     moveRow,
     moveRowUp,

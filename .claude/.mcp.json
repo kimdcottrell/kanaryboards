@@ -12,6 +12,14 @@
       "type": "http",
       "url": "https://docs.deno.com/llms.txt"
     },
+    "Docker docs": {
+      "type": "http",
+      "url": "https://docs.docker.com/llms.txt"
+    },
+    "Google GenAI docs": {
+      "type": "http",
+      "url": "https://raw.githubusercontent.com/googleapis/js-genai/refs/heads/main/codegen_instructions.md"
+    },
     "Zod docs": {
       "type": "http",
       "url": "https://zod.dev/llms.txt"
@@ -20,17 +28,9 @@
       "type": "http",
       "url": "https://react.dev/llms.txt"
     },
-    "TypeScript docs": {
-      "type": "http",
-      "url": "https://www.typescriptlang.org/llms.txt"
-    },
     "Preact docs": {
       "type": "http",
       "url": "https://preact.dev/llms.txt"
-    },
-    "Playwright docs": {
-      "type": "http",
-      "url": "https://playwright.dev/llms.txt"
     },
     "Tailwind docs": {
       "type": "http",
