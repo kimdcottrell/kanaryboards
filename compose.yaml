@@ -8,6 +8,7 @@ services:
         - LOCAL_MACHINE_GID=${LOCAL_MACHINE_GID}
     tty: true
     command: tail -f /dev/null
+    privileged: true # allows for iptables to work inside the container, which is necessary for Claude Code in a devcontainer 
     env_file:
       - .env
     volumes:
@@ -19,20 +20,6 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-  mcp_typescript:
-    build:
-      image: denoland/deno:2.7.12
-    command: 
-    - /bin/sh
-    - -c
-    - |
-      deno add npm:@modelcontextprotocol/server
-    env_file:
-      - .env
-    volumes:
-      - .:/var/dev
-    ports:
-      - "4322:4321"
 
   # TODO: Hook this up to persist data in more than just the browser's localstorage
   redis:

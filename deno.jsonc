@@ -1,6 +1,11 @@
 {
   "allowScripts": {
-    "allow": ["npm:esbuild@0.27.3", "npm:sharp@0.34.5"],
+    "allow": [
+      "npm:esbuild",
+      "npm:sharp",
+      "npm:@anthropic-ai/claude-code",
+      "npm:protobufjs"
+    ],
     "deny": []
   },
   "lint": {

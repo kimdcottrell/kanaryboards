@@ -54,15 +54,15 @@ export function useBoard() {
   );
   const [newRowName, setNewRowName] = useState("");
   const [newRowPrompt, setNewRowPrompt] = useState("");
+  const [newRowFormKey, setNewRowFormKey] = useState(0);
   const [taskGenerationStatus, setTaskGenerationStatus] = useState("");
   const [isGeneratingTasks, setIsGeneratingTasks] = useState(false);
   const [defaultColumnInput, setDefaultColumnInput] = useState("");
-  const [taskFormCell, setTaskFormCell] = useState<any>(null);
+  const [taskCreateModalOpen, setTaskCreateModalOpen] = useState(false);
   const [taskDraft, setTaskDraft] = useState(emptyTaskDraft("row-1", "col-1"));
   const [editingTaskId, setEditingTaskId] = useState<any>(null);
   const [editTaskDraft, setEditTaskDraft] = useState<any>(null);
   const [taskEditModalOpen, setTaskEditModalOpen] = useState(false);
-  const [checklistModalOpen, setChecklistModalOpen] = useState(false);
   const [checklistModalTaskId, setChecklistModalTaskId] = useState<any>(null);
   const [checklistPrompt, setChecklistPrompt] = useState("");
   const [checklistPreview, setChecklistPreview] = useState<string[]>([]);
@@ -92,20 +92,24 @@ export function useBoard() {
     return todoColumn?.id || columns[0]?.id;
   };
 
-  const parseGeneratedTasks = (content: string) =>
-    content
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((line) =>
-        line
-          .replace(/^\s*[-*+\d\.\)]+\s*/, "")
-          .trim()
-          .replace(/,$/, "")
-          .trim()
-      )
-      .filter(Boolean)
-      .slice(0, 10);
+  const fetchGeneratedItems = async (prompt: string, maxItems = 10) => {
+    const response = await fetch("/api/generate-tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt, maxTasks: maxItems }),
+    });
+
+    if (!response.ok) {
+      throw new Error("AI generation failed");
+    }
+
+    const data = await response.json();
+    const titles = Array.isArray(data.response)
+      ? data.response.map((item) => String(item).trim())
+      : [];
+
+    return titles;
+  };
 
   // Column management handlers
   const updateColumnsFromDefaultNames = (nextNames: string[]) => {
@@ -193,8 +197,8 @@ export function useBoard() {
   const deleteColumn = (columnId: string) => {
     setColumns(columns.filter((column) => column.id !== columnId));
     setTasks(tasks.filter((task) => task.colId !== columnId));
-    if (taskFormCell?.colId === columnId) {
-      setTaskFormCell(null);
+    if (taskCreateModalOpen && taskDraft?.colId === columnId) {
+      setTaskCreateModalOpen(false);
     }
     if (editingTaskId) {
       const editingTask = tasks.find((task) => task.id === editingTaskId);
@@ -227,8 +231,8 @@ export function useBoard() {
     console.log("[DEBUG] Delete row:", rowId);
     setRows(rows.filter((row) => row.id !== rowId));
     setTasks(tasks.filter((task) => task.rowId !== rowId));
-    if (taskFormCell?.rowId === rowId) {
-      setTaskFormCell(null);
+    if (taskCreateModalOpen && taskDraft?.rowId === rowId) {
+      setTaskCreateModalOpen(false);
     }
     if (editingTaskId) {
       const editingTask = tasks.find((task) => task.id === editingTaskId);
@@ -276,23 +280,27 @@ export function useBoard() {
       color: rowColorOptions[0].value,
     };
     setRows([...rows, row]);
-    setNewRowName("");
 
     if (newRowPrompt.trim()) {
       await generateTasksForRow(row.id);
+    } else {
+      setNewRowName("");
+      setNewRowFormKey((k) => k + 1);
     }
   };
 
   // Task management handlers
   const openTaskForm = (rowId: string, colId: string) => {
-    console.log("[DEBUG] Open task form - rowId:", rowId, "colId:", colId);
-    setTaskFormCell({ rowId, colId });
+    console.log("[DEBUG] Open task form modal - rowId:", rowId, "colId:", colId);
     setTaskDraft(emptyTaskDraft(rowId, colId));
+    resetChecklistGenerationState();
+    setTaskCreateModalOpen(true);
   };
 
-  const closeTaskForm = () => {
-    console.log("[DEBUG] Close task form");
-    setTaskFormCell(null);
+  const closeTaskCreateModal = () => {
+    console.log("[DEBUG] Close task create modal");
+    setTaskCreateModalOpen(false);
+    resetChecklistGenerationState();
   };
 
   const createTask = (event: Event) => {
@@ -310,7 +318,7 @@ export function useBoard() {
       },
       ...tasks,
     ]);
-    closeTaskForm();
+    closeTaskCreateModal();
   };
 
   const startEditTask = (task: any) => {
@@ -428,7 +436,7 @@ export function useBoard() {
     const newItem = { id: createId(), text: "", checked: false };
     setTaskDraft((prev) => ({
       ...prev,
-      checklist: [...prev.checklist, newItem],
+      checklist: [newItem, ...prev.checklist],
     }));
     if (focusNew) {
       setTimeout(() => {
@@ -442,7 +450,7 @@ export function useBoard() {
     const newItem = { id: createId(), text: "", checked: false };
     setEditTaskDraft((prev) => ({
       ...prev,
-      checklist: [...prev.checklist, newItem],
+      checklist: [newItem, ...prev.checklist],
     }));
     if (focusNew) {
       setTimeout(() => {
@@ -471,6 +479,22 @@ export function useBoard() {
     }));
   };
 
+  const deleteChecklistItem = (id: string) => {
+    console.log("[DEBUG] Delete checklist item - itemId:", id);
+    setTaskDraft((prev) => ({
+      ...prev,
+      checklist: prev.checklist.filter((item: any) => item.id !== id),
+    }));
+  };
+
+  const deleteEditChecklistItem = (id: string) => {
+    console.log("[DEBUG] Delete edit checklist item - itemId:", id);
+    setEditTaskDraft((prev) => ({
+      ...prev,
+      checklist: prev.checklist.filter((item: any) => item.id !== id),
+    }));
+  };
+
   const handleChecklistKeyDown = (
     event: KeyboardEvent,
     index: number,
@@ -496,21 +520,7 @@ export function useBoard() {
     setTaskGenerationStatus("Generating tasks...");
 
     try {
-      const response = await fetch("/api/generate-tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, maxTasks: 10 }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Task generation failed");
-      }
-
-      const data = await response.json();
-      const titles = Array.isArray(data.response)
-        ? data.response.map((task) => String(task).trim())
-        : [];
-      const parsedTasks = parseGeneratedTasks(titles.join("\n"));
+      const parsedTasks = await fetchGeneratedItems(prompt, 10);
       const todoColId = findTodoColumnId();
       const generatedTasks = parsedTasks.map((title) => ({
         id: createId(),
@@ -527,7 +537,6 @@ export function useBoard() {
           `Added ${generatedTasks.length} task${generatedTasks.length > 1 ? "s" : ""
           } to Todo`,
         );
-        setNewRowPrompt("");
       } else {
         setTaskGenerationStatus("No tasks were generated.");
       }
@@ -538,27 +547,13 @@ export function useBoard() {
       );
     } finally {
       setIsGeneratingTasks(false);
+      setNewRowName("");
+      setNewRowPrompt("");
+      setNewRowFormKey((k) => k + 1);
     }
   };
 
-  const checklistModalTask = useMemo(() => {
-    return tasks.find((task) => task.id === checklistModalTaskId) || null;
-  }, [tasks, checklistModalTaskId]);
-
-  const checklistPlaceholder = checklistModalTask?.title || "";
-
-  const openChecklistModal = (task: any) => {
-    console.log("[DEBUG] Open checklist modal - taskId:", task.id);
-    setChecklistModalTaskId(task.id);
-    setChecklistPrompt("");
-    setChecklistPreview([]);
-    setChecklistModalError("");
-    setChecklistModalOpen(true);
-  };
-
-  const closeChecklistModal = () => {
-    console.log("[DEBUG] Close checklist modal");
-    setChecklistModalOpen(false);
+  const resetChecklistGenerationState = () => {
     setChecklistModalTaskId(null);
     setChecklistPrompt("");
     setChecklistPreview([]);
@@ -566,7 +561,7 @@ export function useBoard() {
   };
 
   const generateChecklistItems = async (task?: any) => {
-    const taskTitle = task?.title || checklistPlaceholder;
+    const taskTitle = task?.title || "Break down this task...";
     // If a task is passed, set it as the modal task (for applying items)
     if (task?.id) {
       setChecklistModalTaskId(task.id);
@@ -579,24 +574,7 @@ export function useBoard() {
     setChecklistModalError("");
 
     try {
-      const response = await fetch("/api/generate-tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: prompt,
-          maxTasks: 10,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Checklist generation failed");
-      }
-
-      const data = await response.json();
-      const titles = Array.isArray(data.response)
-        ? data.response.map((task) => String(task).trim())
-        : [];
-      const items = parseGeneratedTasks(titles.join("\n")).slice(0, 10);
+      const items = await fetchGeneratedItems(prompt, 10);
       setChecklistPreview(items);
 
       if (items.length === 0) {
@@ -616,37 +594,42 @@ export function useBoard() {
     console.log("[DEBUG] Apply checklist preview - taskId:", checklistModalTaskId, "items:", checklistPreview.length);
     if (!checklistModalTaskId || checklistPreview.length === 0) return;
 
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === checklistModalTaskId
-          ? {
-            ...task,
-            checklist: checklistPreview.map((text) => ({
-              id: createId(),
-              text,
-              checked: false,
-            })),
-          }
-          : task
-      )
-    );
-
     if (editingTaskId === checklistModalTaskId) {
       setEditTaskDraft((prevDraft) =>
         prevDraft && prevDraft.id === checklistModalTaskId
           ? {
             ...prevDraft,
-            checklist: checklistPreview.map((text) => ({
-              id: createId(),
-              text,
-              checked: false,
-            })),
+            checklist: [
+              ...prevDraft.checklist,
+              ...checklistPreview.map((text) => ({
+                id: createId(),
+                text,
+                checked: false,
+              })),
+            ],
           }
           : prevDraft
       );
     }
 
-    closeChecklistModal();
+    resetChecklistGenerationState();
+  };
+
+  const applyChecklistPreviewToDraft = () => {
+    console.log("[DEBUG] Apply checklist preview to draft - items:", checklistPreview.length);
+    if (checklistPreview.length === 0) return;
+
+    setTaskDraft((prevDraft) => ({
+      ...prevDraft,
+      checklist: [
+        ...prevDraft.checklist,
+        ...checklistPreview.map((text) => ({
+          id: createId(),
+          text,
+          checked: false,
+        })),
+      ],
+    }));
   };
 
   // Board reset handlers
@@ -657,7 +640,7 @@ export function useBoard() {
       defaultColumnNames.map((name) => ({ id: createId(), name })),
     );
     setTasks(defaultTasks);
-    setTaskFormCell(null);
+    setTaskCreateModalOpen(false);
     setEditingTaskId(null);
     setEditTaskDraft(null);
     setNewRowName("");
@@ -698,15 +681,15 @@ export function useBoard() {
     // State - UI
     newRowName,
     newRowPrompt,
+    newRowFormKey,
     taskGenerationStatus,
     isGeneratingTasks,
     defaultColumnInput,
-    taskFormCell,
+    taskCreateModalOpen,
     taskDraft,
     editingTaskId,
     editTaskDraft,
     taskEditModalOpen,
-    checklistModalOpen,
     checklistModalTaskId,
     checklistPrompt,
     checklistPreview,
@@ -716,8 +699,6 @@ export function useBoard() {
     editingRowName,
     draggedTask,
     draggedDefaultIndex,
-    checklistModalTask,
-    checklistPlaceholder,
     // State setters
     setRows,
     setColumns,
@@ -728,12 +709,11 @@ export function useBoard() {
     setTaskGenerationStatus,
     setIsGeneratingTasks,
     setDefaultColumnInput,
-    setTaskFormCell,
+    setTaskCreateModalOpen,
     setTaskDraft,
     setEditingTaskId,
     setEditTaskDraft,
     setTaskEditModalOpen,
-    setChecklistModalOpen,
     setChecklistModalTaskId,
     setChecklistPrompt,
     setChecklistPreview,
@@ -763,7 +743,7 @@ export function useBoard() {
     addRow,
     // Handlers - Tasks
     openTaskForm,
-    closeTaskForm,
+    closeTaskCreateModal,
     createTask,
     startEditTask,
     cancelEditTask,
@@ -779,11 +759,12 @@ export function useBoard() {
     addEditChecklistItem,
     updateChecklistItem,
     updateEditChecklistItem,
+    deleteChecklistItem,
+    deleteEditChecklistItem,
     handleChecklistKeyDown,
-    openChecklistModal,
-    closeChecklistModal,
     generateChecklistItems,
     applyChecklistPreview,
+    applyChecklistPreviewToDraft,
     // Handlers - AI
     generateTasksForRow,
     // Handlers - Board

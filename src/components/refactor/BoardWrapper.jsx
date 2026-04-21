@@ -1,7 +1,7 @@
 import { useBoard } from "./store";
 import BoardConfiguration from "./BoardConfiguration";
 import RowBoard from "./RowBoard";
-import ChecklistGenerationModal from "./ChecklistGenerationModal";
+import TaskCreateModal from "./TaskCreateModal";
 import TaskEditModal from "./TaskEditModal";
 
 export default function BoardWrapper() {
@@ -11,7 +11,7 @@ export default function BoardWrapper() {
     <>
       <BoardConfiguration board={board} />
       <RowBoard board={board} />
-      <ChecklistGenerationModal board={board} />
+      <TaskCreateModal board={board} />
       <TaskEditModal board={board} />
     </>
   );

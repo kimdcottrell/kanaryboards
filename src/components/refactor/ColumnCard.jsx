@@ -1,33 +1,25 @@
-import TaskForm from "./TaskForm";
 import TaskCard from "./TaskCard";
 
 export default function ColumnCard({ column, row, board }) {
-  console.log("[DEBUG] ColumnCard rendered - column:", column.name, "row:", row.name);
+  console.log(
+    "[DEBUG] ColumnCard rendered - column:",
+    column.name,
+    "row:",
+    row.name,
+  );
   const {
     tasksByCell,
-    taskFormCell,
-    taskDraft,
     editingTaskId,
     openTaskForm,
-    closeTaskForm,
-    createTask,
     startEditTask,
     handleDragStart,
     handleDragEnd,
     handleColumnDrop,
-    setTaskDraft,
     toggleTaskChecklist,
-    addChecklistItem,
-    updateChecklistItem,
-    handleChecklistKeyDown,
-    setChecklistInputRef,
   } = board;
 
   const cellKey = `${row.id}|${column.id}`;
   const cellTasks = tasksByCell[cellKey] || [];
-  const isActiveForm = taskFormCell &&
-    taskFormCell.rowId === row.id &&
-    taskFormCell.colId === column.id;
 
   return (
     <div
@@ -60,21 +52,7 @@ export default function ColumnCard({ column, row, board }) {
         </div>
       </div>
       <div class="space-y-4 rounded p-3">
-        {!isActiveForm && cellTasks.length === 0 && (
-          <p class="text-sm">No cards yet.</p>
-        )}
-        {isActiveForm && (
-          <TaskForm
-            taskDraft={taskDraft}
-            setTaskDraft={setTaskDraft}
-            createTask={createTask}
-            closeTaskForm={closeTaskForm}
-            addChecklistItem={addChecklistItem}
-            updateChecklistItem={updateChecklistItem}
-            handleChecklistKeyDown={handleChecklistKeyDown}
-            setChecklistInputRef={setChecklistInputRef}
-          />
-        )}
+        {cellTasks.length === 0 && <p class="text-sm">No cards yet.</p>}
         {cellTasks.map((task) => (
           <TaskCard
             key={task.id}

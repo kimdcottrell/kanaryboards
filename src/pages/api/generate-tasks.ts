@@ -75,6 +75,8 @@ export const POST: APIRoute = async ({ request }: APIContext) => {
     //   fullText += chunk.text;
     // }
 
+    await new Promise(r => setTimeout(r, 2000));
+    console.log("Responding with simulated task list...");
     const fullText = 'Clear mattress surface\nIdentify sheet orientation\nSecure first corner\nHook diagonal corner\nAttach remaining corners\nTuck sides under mattress\nSmooth surface wrinkles';
 
     // console.log("Full response text:", normalizeTaskLines(fullText));

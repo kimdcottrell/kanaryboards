@@ -7,6 +7,7 @@ export default function BoardConfiguration({ board }) {
     defaultColumnNames,
     newRowName,
     newRowPrompt,
+    newRowFormKey,
     isGeneratingTasks,
     taskGenerationStatus,
     defaultColumnInput,
@@ -110,43 +111,44 @@ export default function BoardConfiguration({ board }) {
 
       <div class="rounded bg-base-200 mt-6 p-5">
         <h3 class="text-lg font-semibold">Create a new row</h3>
-        <form class="space-y-4" onSubmit={addRow}>
-          <fieldset class="fieldset w-auto">
-            <label class="fieldset-legend">
-              What should the row be named?
-            </label>
-            <input
-              class="input input-secondary w-full validator"
-              type="text"
-              value={newRowName}
-              onInput={(e) => setNewRowName(e.currentTarget.value)}
-              placeholder="A project name, a category for large project tasks, etc."
-              required
-            />
-            <span class="validator-hint hidden">Required</span>
+        <form key={newRowFormKey} class="space-y-4 mt-4" onSubmit={addRow}>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">Row name</legend>
+              <input
+                class="input input-secondary w-full validator"
+                type="text"
+                value={newRowName}
+                onInput={(e) => setNewRowName(e.currentTarget.value)}
+                placeholder="A project name, a category for large project tasks, etc."
+                disabled={isGeneratingTasks}
+                required
+              />
+              <p class="validator-hint">Required</p>
+            </fieldset>
 
-            <label class="fieldset-legend" htmlFor="newRowPrompt">
-              Generate up to 10 tasks using AI
-            </label>
-            <input
-              id="newRowPrompt"
-              class="input w-full input-secondary"
-              type="text"
-              value={newRowPrompt}
-              onInput={(e) => setNewRowPrompt(e.currentTarget.value)}
-              onKeyDown={handleNewRowPromptKeyDown}
-              placeholder="Enter a brief description of tasks to generate"
-            />
-          </fieldset>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">Generate tasks with AI <span class="text-base-content/50 font-normal">(optional)</span></legend>
+              <input
+                id="newRowPrompt"
+                class="input input-secondary w-full"
+                type="text"
+                value={newRowPrompt}
+                onInput={(e) => setNewRowPrompt(e.currentTarget.value)}
+                onKeyDown={handleNewRowPromptKeyDown}
+                placeholder="Describe the tasks to generate"
+                disabled={isGeneratingTasks}
+              />
+              <p class="label">Up to 10 tasks will be added to the Todo column</p>
+            </fieldset>
+          </div>
+
           <div class="flex flex-col gap-3">
-            <button
-              class="btn btn-secondary mt-4"
-              type="submit"
-              disabled={isGeneratingTasks}
-            >
-              {isGeneratingTasks && <span class="loading loading-spinner loading-sm"></span>}
-              {isGeneratingTasks ? taskGenerationStatus : "Add Row"}
-            </button>
+            {!isGeneratingTasks && (
+              <button class="btn btn-secondary w-fit" type="submit">
+                Add Row
+              </button>
+            )}
             {isGeneratingTasks && (
               <div class="alert alert-info">
                 <svg

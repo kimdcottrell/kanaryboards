@@ -17,9 +17,11 @@
     "daisyui": "^5.5.19",
     "preact": "^10.29.0",
     "tailwindcss": "^4.2.1",
+    "theme-change": "^2.5.0",
     "typescript": "^5.9.3"
   },
   "devDependencies": {
+    "@anthropic-ai/claude-code": "^2.1.114",
     "@astrojs/check": "^0.9.7",
     "@tailwindcss/vite": "^4.2.1",
     "playwright": "^1.59.1",

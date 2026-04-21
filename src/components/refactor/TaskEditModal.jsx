@@ -1,5 +1,6 @@
 import { useState } from "preact/hooks";
 import Modal from "../Modal";
+import ChecklistSection from "./ChecklistSection";
 
 export default function TaskEditModal({ board }) {
   console.log(
@@ -20,6 +21,7 @@ export default function TaskEditModal({ board }) {
     setEditTaskDraft,
     addEditChecklistItem,
     updateEditChecklistItem,
+    deleteEditChecklistItem,
     handleChecklistKeyDown,
     setChecklistInputRef,
     checklistPrompt,
@@ -109,156 +111,100 @@ export default function TaskEditModal({ board }) {
                 ))}
               </select>
             </div>
-            <div class="space-y-3 rounded border border-base-300 p-4">
-              <div class="flex items-center justify-between gap-3">
-                <p class="text-sm font-semibold">
-                  Checklist items
-                </p>
-                <div class="flex items-center gap-2">
-                  <button
-                    type="button"
-                    class="rounded px-3 py-1 text-sm transition"
-                    onClick={() => addEditChecklistItem(true)}
-                  >
-                    Add item
-                  </button>
-                  <button
-                    type="button"
-                    class="rounded border border-base-300 px-3 py-1 text-sm transition"
-                    onClick={() =>
-                      setChecklistCollapseOpen(!checklistCollapseOpen)}
-                    aria-label="Generate checklist items"
-                  >
-                    🪄
-                  </button>
-                </div>
-              </div>
-              <div class="space-y-3">
-                {editTaskDraft.checklist.map((item, index) => (
-                  <div
-                    key={item.id}
-                    class="flex items-center gap-3 rounded border border-base-300 px-3 py-2"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={item.checked}
-                      onInput={() =>
-                        updateEditChecklistItem(
-                          item.id,
-                          "checked",
-                          !item.checked,
-                        )}
-                      class="h-4 w-4 rounded border-base-300 focus:ring-cyan-400"
-                    />
-                    <input
-                      class="w-full bg-transparent outline-none placeholder:"
-                      type="text"
-                      value={item.text}
-                      onInput={(e) =>
-                        updateEditChecklistItem(
-                          item.id,
-                          "text",
-                          e.currentTarget.value,
-                        )}
-                      onKeyDown={(e) =>
-                        handleChecklistKeyDown(
-                          e,
-                          index,
-                          editTaskDraft.checklist,
-                          addEditChecklistItem,
-                        )}
-                      ref={(el) => setChecklistInputRef(item.id, el)}
-                      placeholder="Checklist item"
-                    />
-                  </div>
-                ))}
-              </div>
+            <ChecklistSection
+              checklist={editTaskDraft.checklist}
+              addChecklistItem={addEditChecklistItem}
+              updateChecklistItem={updateEditChecklistItem}
+              deleteChecklistItem={deleteEditChecklistItem}
+              handleChecklistKeyDown={handleChecklistKeyDown}
+              setChecklistInputRef={setChecklistInputRef}
+            />
 
-              {/* Checklist Generation Collapse */}
-              <div class="collapse collapse-arrow border border-base-300">
-                <input
-                  type="checkbox"
-                  checked={checklistCollapseOpen}
-                  onChange={(e) =>
-                    setChecklistCollapseOpen(e.currentTarget.checked)}
-                />
-                <div class="collapse-title font-semibold text-sm py-3">
-                  Generate checklist items with AI
+            {/* Checklist Generation Collapse */}
+
+            {/* Checklist Generation Collapse */}
+            <div class="collapse collapse-arrow border border-base-300">
+              <input
+                type="checkbox"
+                checked={checklistCollapseOpen}
+                onChange={(e) =>
+                  setChecklistCollapseOpen(e.currentTarget.checked)}
+              />
+              <div class="collapse-title font-semibold text-sm py-3">
+                Generate checklist items with AI
+              </div>
+              <div class="collapse-content space-y-4">
+                <div class="space-y-2">
+                  <input
+                    class="w-full rounded border border-base-300 px-4 py-3 outline-none focus:border-cyan-500"
+                    type="text"
+                    value={checklistPrompt}
+                    placeholder={editTaskDraft?.title ||
+                      "Break down this task..."}
+                    onInput={(e) => setChecklistPrompt(e.currentTarget.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        generateChecklistItems(editTaskDraft);
+                      }
+                      if (event.key === "Tab" && !checklistPrompt.trim()) {
+                        event.preventDefault();
+                        setChecklistPrompt(editTaskDraft?.title || "");
+                      }
+                    }}
+                  />
+                  <p class="text-xs">
+                    Press Tab to fill with the task title, or Enter to generate.
+                  </p>
                 </div>
-                <div class="collapse-content space-y-4">
-                  <div class="space-y-2">
-                    <input
-                      class="w-full rounded border border-base-300 px-4 py-3 outline-none focus:border-cyan-500"
-                      type="text"
-                      value={checklistPrompt}
-                      placeholder={editTaskDraft?.title ||
-                        "Break down this task..."}
-                      onInput={(e) => setChecklistPrompt(e.currentTarget.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          event.preventDefault();
-                          generateChecklistItems(editTaskDraft);
-                        }
-                        if (event.key === "Tab" && !checklistPrompt.trim()) {
-                          event.preventDefault();
-                          setChecklistPrompt(editTaskDraft?.title || "");
-                        }
-                      }}
-                    />
-                    <p class="text-xs">
-                      Press Tab to fill with the task title, or Enter to
-                      generate.
-                    </p>
-                  </div>
-                  <div class="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      class="rounded px-4 py-2 text-sm font-semibold transition"
-                      onClick={() => generateChecklistItems(editTaskDraft)}
-                      disabled={isGeneratingChecklist}
-                    >
-                      {isGeneratingChecklist
-                        ? "Generating…"
-                        : "Generate Checklist Items"}
-                    </button>
-                    <button
-                      type="button"
-                      class="rounded px-4 py-2 text-sm font-semibold transition hover:"
-                      onClick={applyChecklistPreview}
-                      disabled={checklistPreview.length === 0}
-                    >
-                      Copy checklist items
-                    </button>
-                  </div>
-                  {checklistModalError && (
-                    <p class="text-sm text-error">{checklistModalError}</p>
-                  )}
-                  <div class="overflow-x-auto">
-                    {checklistPreview.length > 0
-                      ? (
-                        <table class="table w-full">
-                          <thead>
-                            <tr>
-                              <th class="text-left">#</th>
-                              <th class="text-left">Checklist item preview</th>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    class="rounded px-4 py-2 text-sm font-semibold transition"
+                    onClick={() => generateChecklistItems(editTaskDraft)}
+                    disabled={isGeneratingChecklist}
+                  >
+                    {isGeneratingChecklist
+                      ? "Generating…"
+                      : "Generate Checklist Items"}
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded px-4 py-2 text-sm font-semibold transition hover:"
+                    onClick={applyChecklistPreview}
+                    disabled={checklistPreview.length === 0}
+                  >
+                    Copy checklist items
+                  </button>
+                </div>
+                {checklistModalError && (
+                  <p class="text-sm text-error">{checklistModalError}</p>
+                )}
+                <div class="overflow-x-auto">
+                  {checklistPreview.length > 0
+                    ? (
+                      <table class="table w-full">
+                        <thead>
+                          <tr>
+                            <th class="text-left">#</th>
+                            <th class="text-left">Checklist item preview</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {checklistPreview.map((item, index) => (
+                            <tr key={`${item}-${index}`}>
+                              <td>{index + 1}</td>
+                              <td>{item}</td>
                             </tr>
-                          </thead>
-                          <tbody>
-                            {checklistPreview.map((item, index) => (
-                              <tr key={`${item}-${index}`}>
-                                <td>{index + 1}</td>
-                                <td>{item}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      )
-                      : (
-                        <p class="text-sm">
-                          Generate checklist items to preview them here.
-                        </p>
-                      )}
-                  </div>
+                          ))}
+                        </tbody>
+                      </table>
+                    )
+                    : (
+                      <p class="text-sm">
+                        Generate checklist items to preview them here.
+                      </p>
+                    )}
                 </div>
               </div>
             </div>

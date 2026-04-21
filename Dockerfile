@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM denoland/deno:2.7.12 as dev
+FROM denoland/deno:2.7.12 as dev 
 
 # Prefer not to run as root.
 ARG LOCAL_MACHINE_GID=${LOCAL_MACHINE_GID:-1000}
@@ -9,11 +9,29 @@ RUN groupmod -g ${LOCAL_MACHINE_GID} deno; \
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    echo "deb http://deb.debian.org/debian trixie main" > /etc/apt/sources.list && \
-    echo "deb http://deb.debian.org/debian trixie-updates main" >> /etc/apt/sources.list && \
-    echo "deb http://deb.debian.org/debian-security trixie-security main" >> /etc/apt/sources.list && \
-    apt-get update && apt-get --no-install-recommends install -y git tzdata && \
+    apt-get upgrade && apt-get update && apt-get --no-install-recommends install -y \
+        git \
+        tzdata \
+        curl \
+        sudo \
+        iptables \
+        ipset \
+        iproute2 \
+        dnsutils \
+        openssl \
+        ca-certificates \
+        jq \
+        aggregate \
+        && \
+        apt-get clean && rm -rf /var/lib/apt/lists/*; \
     git config --global --add safe.directory /var/dev
+
+# Copy and set up firewall script
+COPY .devcontainer/init-firewall.sh /usr/local/bin/
+USER root
+RUN chmod +x /usr/local/bin/init-firewall.sh && \
+  echo "deno ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/deno-firewall && \
+  chmod 0440 /etc/sudoers.d/deno-firewall
 
 # fix all the permissions issues for deno
 RUN mkdir -p /home/deno /var/dev /home/.deno/bin; \
@@ -42,8 +60,7 @@ WORKDIR /var/dev
 
 # Compile the main app so that it doesn't need to be compiled each startup/entry.
 # RUN deno cache main.ts
-
-ENV PATH="$PATH:/var/dev/node_modules/.bin/"
+ENV PATH="$PATH:/var/dev/node_modules/.bin/:$HOME/.local/bin"
 
 # The port that your application listens to.
 EXPOSE 4321

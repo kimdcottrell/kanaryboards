@@ -7,6 +7,9 @@
   "dockerComposeFile": [
     "../compose.yaml"
   ],
+  "containerEnv": {
+    "DEVCONTAINER": "true"
+  },
   // The 'service' property is the name of the service for the container that VS Code should
   // use. Update this value and .devcontainer/compose.yaml to the real service name.
   "service": "app",
@@ -21,14 +24,35 @@
         "denoland.vscode-deno",
         "ms-azuretools.vscode-docker",
         "ms-vscode-remote.remote-containers",
-        "Catppuccin.catppuccin-vsc"
+        "Anthropic.claude-code",
+        "streetsidesoftware.code-spell-checker"
       ],
       "settings": {
-        // begin optional settings
-        "workbench.colorTheme": "Catppuccin Frappé",
-        // end optional settings
+        "claudeCode.preferredLocation": "panel",
+        "claudeCode.disableLoginPrompt": true,
+        // force javascript and typescript to use settings in deno.jsonc for formatting and linting
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "denoland.vscode-deno",
+        "deno.enable": true,
+        "deno.lint": true,
+        "[typescriptreact]": {
+          "editor.defaultFormatter": "denoland.vscode-deno"
+        },
+        "[typescript]": {
+          "editor.defaultFormatter": "denoland.vscode-deno"
+        },
+        "[javascriptreact]": {
+          "editor.defaultFormatter": "denoland.vscode-deno"
+        },
+        "[javascript]": {
+          "editor.defaultFormatter": "denoland.vscode-deno"
+        },
+        "css.customData": [
+          ".vscode/tailwind.json"
+        ],
+        "[astro]": {
+          "editor.defaultFormatter": "astro-build.astro-vscode"
+        },
         "terminal.integrated.shell.linux": "bash",
         "terminal.integrated.profiles.linux": {
           "bash (container default)": {

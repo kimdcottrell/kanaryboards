@@ -23,14 +23,14 @@ export default function TaskCard({
       class="overflow-hidden rounded shadow-sm shadow-base-900/5"
     >
       <div class="block">
-        <div class="join-item bg-neutral-800/80 p-4">
+        <div class="join-item bg-base-200 p-4">
           <div class="flex items-center justify-between gap-3">
             <h5 class="text-base font-semibold">
               {task.title}
             </h5>
             <button
               type="button"
-              class="btn btn-sm btn-soft btn-accent text-md transition"
+              class="btn btn-sm btn-primary text-md transition"
               onClick={() => startEditTask(task)}
             >
               <span class="iconify hugeicons--pencil-edit-02 text-xl">
@@ -39,7 +39,7 @@ export default function TaskCard({
           </div>
         </div>
         {task.description && (
-          <div class="bg-neutral-800/40 p-4">
+          <div class="bg-base-100 p-4">
             <p class="text-xs uppercase tracking-[0.18em]">
               Description
             </p>
@@ -51,7 +51,7 @@ export default function TaskCard({
 
         {task.checklist &&
           task.checklist.length > 0 && (
-          <div class="space-y-2 bg-neutral-800/40 p-4">
+          <div class="space-y-2 bg-base-100 p-4">
             <p class="text-xs uppercase tracking-[0.18em]">
               Checklist
             </p>
@@ -69,7 +69,7 @@ export default function TaskCard({
                         task.id,
                         item.id,
                       )}
-                    class="h-4 w-4 rounded border-base-300 focus:ring-cyan-400"
+                    class="checkbox checkbox-sm"
                   />
                   <span
                     class={item.checked ? "line-through " : ""}

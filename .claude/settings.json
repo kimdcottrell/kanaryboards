@@ -1,4 +1,17 @@
 {
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "deno eval 'const s=JSON.parse(await Deno.readTextFile(Deno.env.get(\"PWD\")+\"/.claude/settings.json\").catch(()=>\"{}\")); const i=JSON.parse(await Deno.readTextFile(Deno.env.get(\"HOME\")+\"/.claude/plugins/installed_plugins.json\").catch(()=>\"{}\")); const m=Object.keys(s.enabledPlugins??{}).filter(p=>!(i.plugins??{})[p]); if(m.length)console.log(JSON.stringify({systemMessage:\"Plugin warning: enabled but not installed: \"+m.join(\", \")}));' 2>/dev/null || true",
+            "statusMessage": "Checking plugins..."
+          }
+        ]
+      }
+    ]
+  },
   "enabledMcpjsonServers": [
     "Astro docs",
     "Daisy UI docs",

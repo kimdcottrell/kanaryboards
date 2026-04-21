@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @plugin "daisyui" {
-  themes: dracula --default;
+  themes: dracula --default, cupcake;
 }
 
 @plugin "@iconify/tailwind4" {
