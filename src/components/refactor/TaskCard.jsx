@@ -1,14 +1,9 @@
-export default function TaskCard({
-  task,
-  row,
-  column,
-  isEditing,
-  startEditTask,
-  handleDragStart,
-  handleDragEnd,
-  toggleTaskChecklist,
-}) {
+import { useBoard } from "./context/useBoard.ts";
+
+export default function TaskCard({ task, row, column }) {
   console.log("[DEBUG] TaskCard rendered - task:", task.title);
+  const { editingTaskId, startEditTask, handleDragStart, handleDragEnd, toggleTaskChecklist } = useBoard();
+  const isEditing = task.id === editingTaskId;
   return (
     <article
       draggable={isEditing ? "false" : "true"}

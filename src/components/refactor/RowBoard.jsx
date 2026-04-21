@@ -1,12 +1,13 @@
-import RowSection from "./RowSection";
+import RowSection from "./RowSection.jsx";
+import { useBoard } from "./context/useBoard.ts";
 
-export default function RowBoard({ board }) {
-  console.log("[DEBUG] RowBoard rendered - rows:", board.rows.length);
-  const { rows } = board;
+export default function RowBoard() {
+  const { rows } = useBoard();
+  console.log("[DEBUG] RowBoard rendered - rows:", rows.length);
 
   return (
     <div class="space-y-10">
-      {rows.map((row) => <RowSection key={row.id} row={row} board={board} />)}
+      {rows.map((row) => <RowSection key={row.id} row={row} />)}
     </div>
   );
 }

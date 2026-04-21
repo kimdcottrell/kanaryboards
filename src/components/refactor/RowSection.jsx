@@ -1,6 +1,7 @@
-import ColumnCard from "./ColumnCard";
+import ColumnCard from "./ColumnCard.jsx";
+import { useBoard } from "./context/useBoard.ts";
 
-export default function RowSection({ row, board }) {
+export default function RowSection({ row }) {
   console.log("[DEBUG] RowSection rendered - row:", row.name);
   const {
     columns,
@@ -10,7 +11,7 @@ export default function RowSection({ row, board }) {
     editRowTitle,
     saveRowTitle,
     deleteRow,
-  } = board;
+  } = useBoard();
 
   return (
     <section
@@ -78,7 +79,6 @@ export default function RowSection({ row, board }) {
               key={column.id}
               column={column}
               row={row}
-              board={board}
             />
           ))}
         </div>

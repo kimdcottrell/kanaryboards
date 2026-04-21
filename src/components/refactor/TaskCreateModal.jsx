@@ -1,8 +1,9 @@
-import Modal from "../Modal";
-import TaskForm from "./TaskForm";
-import { ChecklistGenerationCollapse } from "./ChecklistSection";
+import Modal from "../Modal.jsx";
+import TaskForm from "./TaskForm.jsx";
+import { ChecklistGenerationCollapse } from "./ChecklistSection.jsx";
+import { useBoard } from "./context/useBoard.ts";
 
-export default function TaskCreateModal({ board }) {
+export default function TaskCreateModal() {
   const {
     taskCreateModalOpen,
     taskDraft,
@@ -21,7 +22,7 @@ export default function TaskCreateModal({ board }) {
     setChecklistPrompt,
     generateChecklistItems,
     applyChecklistPreviewToDraft,
-  } = board;
+  } = useBoard();
 
   return (
     <Modal open={taskCreateModalOpen} onClose={closeTaskCreateModal}>

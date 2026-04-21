@@ -1,6 +1,7 @@
-import { rowColorOptions } from "./store.ts";
+import { useBoard } from "./context/useBoard.ts";
+import { rowColorOptions } from "./context/constants.ts";
 
-export default function BoardConfiguration({ board }) {
+export default function BoardConfiguration() {
   console.log("[DEBUG] BoardConfiguration rendered");
   const {
     rows,
@@ -11,12 +12,10 @@ export default function BoardConfiguration({ board }) {
     isGeneratingTasks,
     taskGenerationStatus,
     defaultColumnInput,
-    // Setters
     setNewRowName,
     setNewRowPrompt,
     setDefaultColumnInput,
     setDraggedDefaultIndex,
-    // Handlers
     addRow,
     handleDefaultColumnInputKeyDown,
     handleDefaultColumnDragStart,
@@ -28,7 +27,7 @@ export default function BoardConfiguration({ board }) {
     moveRowDown,
     confirmResetBoard,
     handleNewRowPromptKeyDown,
-  } = board;
+  } = useBoard();
 
   return (
     <section class="rounded bg-base-300 p-4 shadow-xl shadow-base-300/20">

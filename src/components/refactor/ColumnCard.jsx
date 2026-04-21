@@ -1,6 +1,7 @@
-import TaskCard from "./TaskCard";
+import TaskCard from "./TaskCard.jsx";
+import { useBoard } from "./context/useBoard.ts";
 
-export default function ColumnCard({ column, row, board }) {
+export default function ColumnCard({ column, row }) {
   console.log(
     "[DEBUG] ColumnCard rendered - column:",
     column.name,
@@ -9,14 +10,9 @@ export default function ColumnCard({ column, row, board }) {
   );
   const {
     tasksByCell,
-    editingTaskId,
     openTaskForm,
-    startEditTask,
-    handleDragStart,
-    handleDragEnd,
     handleColumnDrop,
-    toggleTaskChecklist,
-  } = board;
+  } = useBoard();
 
   const cellKey = `${row.id}|${column.id}`;
   const cellTasks = tasksByCell[cellKey] || [];
@@ -59,11 +55,6 @@ export default function ColumnCard({ column, row, board }) {
             task={task}
             row={row}
             column={column}
-            isEditing={task.id === editingTaskId}
-            startEditTask={startEditTask}
-            handleDragStart={handleDragStart}
-            handleDragEnd={handleDragEnd}
-            toggleTaskChecklist={toggleTaskChecklist}
           />
         ))}
       </div>

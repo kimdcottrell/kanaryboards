@@ -1,15 +1,10 @@
-import Modal from "../Modal";
+import Modal from "../Modal.jsx";
 import ChecklistSection, {
   ChecklistGenerationCollapse,
-} from "./ChecklistSection";
+} from "./ChecklistSection.jsx";
+import { useBoard } from "./context/useBoard.ts";
 
-export default function TaskEditModal({ board }) {
-  console.log(
-    "[DEBUG] TaskEditModal rendered - open:",
-    board.taskEditModalOpen,
-    "taskId:",
-    board.editTaskDraft?.id,
-  );
+export default function TaskEditModal() {
   const {
     taskEditModalOpen,
     editTaskDraft,
@@ -31,7 +26,13 @@ export default function TaskEditModal({ board }) {
     setChecklistPrompt,
     generateChecklistItems,
     applyChecklistPreview,
-  } = board;
+  } = useBoard();
+  console.log(
+    "[DEBUG] TaskEditModal rendered - open:",
+    taskEditModalOpen,
+    "taskId:",
+    editTaskDraft?.id,
+  );
 
   return (
     <Modal open={taskEditModalOpen} onClose={cancelEditTask}>
