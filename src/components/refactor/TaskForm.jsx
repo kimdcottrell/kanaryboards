@@ -15,12 +15,12 @@ export default function TaskForm({
   return (
     <article class="overflow-hidden rounded border border-base-200 p-4 shadow-sm shadow-base-900/5">
       <form class="space-y-4" onSubmit={createTask}>
-        <div>
-          <label class="block text-sm font-medium">
-            Title
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text">Title</span>
           </label>
           <input
-            class="mt-2 w-full rounded border border-base-300 px-4 py-2 outline-none focus:border-cyan-500"
+            class="input input-bordered w-full"
             type="text"
             value={taskDraft.title}
             onInput={(e) =>
@@ -31,12 +31,12 @@ export default function TaskForm({
             required
           />
         </div>
-        <div>
-          <label class="block text-sm font-medium">
-            Description
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text">Description</span>
           </label>
           <textarea
-            class="mt-2 h-24 w-full rounded border border-base-300 px-4 py-2 outline-none focus:border-cyan-500"
+            class="textarea textarea-bordered w-full h-24"
             value={taskDraft.description}
             onInput={(e) =>
               setTaskDraft({
@@ -56,14 +56,14 @@ export default function TaskForm({
         <div class="flex justify-end gap-2">
           <button
             type="button"
-            class="rounded px-4 py-2 text-sm transition"
+            class="btn btn-ghost"
             onClick={closeTaskForm}
           >
             Cancel
           </button>
           <button
             type="submit"
-            class="rounded px-4 py-2 text-sm font-semibold transition"
+            class="btn btn-primary"
           >
             Create task
           </button>

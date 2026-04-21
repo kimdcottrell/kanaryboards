@@ -1,6 +1,46 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 const STORAGE_KEY = "claudekan-board-state";
+
+interface ChecklistItem {
+  id: string;
+  text: string;
+  checked: boolean;
+}
+
+interface Row {
+  id: string;
+  name: string;
+  color: string;
+}
+
+interface Column {
+  id: string;
+  name: string;
+}
+
+interface Task {
+  id: string;
+  rowId: string;
+  colId: string;
+  title: string;
+  description: string;
+  checklist: ChecklistItem[];
+}
+
+interface TaskDraft {
+  title: string;
+  description: string;
+  checklist: ChecklistItem[];
+  rowId: string;
+  colId: string;
+}
+
+interface DraggedTask {
+  taskId: string;
+  rowId: string;
+  colId: string;
+}
 const createId = () =>
   `${Math.random().toString(36).slice(2, 10)}-${Date.now()}`;
 
@@ -15,13 +55,13 @@ export const rowColorOptions = [
   { label: "base", value: "#64748b" },
 ];
 
-const defaultRows: any[] = [];
-const defaultTasks: any[] = [];
+const defaultRows: Row[] = [];
+const defaultTasks: Task[] = [];
 
 const loadPersistedState = () => {
-  if (typeof window === "undefined") return null;
+  if (typeof globalThis.localStorage === "undefined") return null;
   try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
+    const stored = globalThis.localStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored) : null;
   } catch {
     return null;
@@ -60,22 +100,22 @@ export function useBoard() {
   const [defaultColumnInput, setDefaultColumnInput] = useState("");
   const [taskCreateModalOpen, setTaskCreateModalOpen] = useState(false);
   const [taskDraft, setTaskDraft] = useState(emptyTaskDraft("row-1", "col-1"));
-  const [editingTaskId, setEditingTaskId] = useState<any>(null);
-  const [editTaskDraft, setEditTaskDraft] = useState<any>(null);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editTaskDraft, setEditTaskDraft] = useState<Task | null>(null);
   const [taskEditModalOpen, setTaskEditModalOpen] = useState(false);
-  const [checklistModalTaskId, setChecklistModalTaskId] = useState<any>(null);
+  const [checklistModalTaskId, setChecklistModalTaskId] = useState<string | null>(null);
   const [checklistPrompt, setChecklistPrompt] = useState("");
   const [checklistPreview, setChecklistPreview] = useState<string[]>([]);
   const [isGeneratingChecklist, setIsGeneratingChecklist] = useState(false);
   const [checklistModalError, setChecklistModalError] = useState("");
-  const [editingRowId, setEditingRowId] = useState<any>(null);
+  const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [editingRowName, setEditingRowName] = useState("");
-  const [draggedTask, setDraggedTask] = useState<any>(null);
-  const [draggedDefaultIndex, setDraggedDefaultIndex] = useState<any>(null);
-  const checklistInputRefs = useRef<any>({});
+  const [draggedTask, setDraggedTask] = useState<DraggedTask | null>(null);
+  const [draggedDefaultIndex, setDraggedDefaultIndex] = useState<number | null>(null);
+  const checklistInputRefs = useRef<Record<string, HTMLInputElement>>({});
 
   const tasksByCell = useMemo(() => {
-    const grouped: any = {};
+    const grouped: Record<string, Task[]> = {};
     tasks.forEach((task) => {
       const key = `${task.rowId}|${task.colId}`;
       if (!grouped[key]) grouped[key] = [];
@@ -152,7 +192,6 @@ export function useBoard() {
   ) => {
     if (event.key === "Enter") {
       event.preventDefault();
-      console.log("[DEBUG] Adding new column:", defaultColumnInput);
       addDefaultColumn(defaultColumnInput);
     }
   };
@@ -162,7 +201,6 @@ export function useBoard() {
   ) => {
     if (event.key === "Enter") {
       event.preventDefault();
-      console.log("[DEBUG] Generate tasks via prompt enter");
       const rowId = rows[0]?.id;
       if (rowId && newRowPrompt.trim()) {
         generateTasksForRow(rowId);
@@ -173,10 +211,9 @@ export function useBoard() {
   const handleDefaultColumnDragStart = (index: number) => (
     event: DragEvent,
   ) => {
-    console.log("[DEBUG] Column drag start - from index:", index);
     setDraggedDefaultIndex(index);
-    (event as any).dataTransfer.effectAllowed = "move";
-    (event as any).dataTransfer.setData("text/plain", index.toString());
+    event.dataTransfer!.effectAllowed = "move";
+    event.dataTransfer!.setData("text/plain", index.toString());
   };
 
   const handleDefaultColumnDragOver = (event: DragEvent) => {
@@ -187,8 +224,7 @@ export function useBoard() {
     event.preventDefault();
     const fromIndex = draggedDefaultIndex !== null
       ? draggedDefaultIndex
-      : Number((event as any).dataTransfer.getData("text/plain"));
-    console.log("[DEBUG] Column drop - from:", fromIndex, "to:", index);
+      : Number(event.dataTransfer?.getData("text/plain"));
     if (fromIndex === index || Number.isNaN(fromIndex)) return;
     moveDefaultColumn(fromIndex, index);
     setDraggedDefaultIndex(null);
@@ -211,7 +247,6 @@ export function useBoard() {
 
   // Row management handlers
   const moveRow = (fromIndex: number, toIndex: number) => {
-    console.log("[DEBUG] Move row - from:", fromIndex, "to:", toIndex);
     if (
       fromIndex === toIndex ||
       fromIndex < 0 ||
@@ -228,7 +263,6 @@ export function useBoard() {
   const moveRowDown = (index: number) => moveRow(index, index + 1);
 
   const deleteRow = (rowId: string) => {
-    console.log("[DEBUG] Delete row:", rowId);
     setRows(rows.filter((row) => row.id !== rowId));
     setTasks(tasks.filter((task) => task.rowId !== rowId));
     if (taskCreateModalOpen && taskDraft?.rowId === rowId) {
@@ -251,14 +285,12 @@ export function useBoard() {
     setRows(rows.map((row) => (row.id === rowId ? { ...row, color } : row)));
   };
 
-  const editRowTitle = (row: any) => {
-    console.log("[DEBUG] Edit row title - row:", row.name);
+  const editRowTitle = (row: Row) => {
     setEditingRowId(row.id);
     setEditingRowName(row.name);
   };
 
   const saveRowTitle = (rowId: string) => {
-    console.log("[DEBUG] Save row title - rowId:", rowId, "new name:", editingRowName);
     const trimmed = editingRowName.trim();
     if (!trimmed) {
       setEditingRowId(null);
@@ -272,7 +304,6 @@ export function useBoard() {
 
   const addRow = async (event: Event) => {
     event.preventDefault();
-    console.log("[DEBUG] Add row - name:", newRowName, "prompt:", newRowPrompt);
     if (!newRowName.trim()) return;
     const row = {
       id: createId(),
@@ -291,21 +322,18 @@ export function useBoard() {
 
   // Task management handlers
   const openTaskForm = (rowId: string, colId: string) => {
-    console.log("[DEBUG] Open task form modal - rowId:", rowId, "colId:", colId);
     setTaskDraft(emptyTaskDraft(rowId, colId));
     resetChecklistGenerationState();
     setTaskCreateModalOpen(true);
   };
 
   const closeTaskCreateModal = () => {
-    console.log("[DEBUG] Close task create modal");
     setTaskCreateModalOpen(false);
     resetChecklistGenerationState();
   };
 
   const createTask = (event: Event) => {
     event.preventDefault();
-    console.log("[DEBUG] Create task - title:", taskDraft.title);
     if (!taskDraft.title.trim()) return;
     setTasks([
       {
@@ -314,15 +342,14 @@ export function useBoard() {
         colId: taskDraft.colId,
         title: taskDraft.title.trim(),
         description: taskDraft.description.trim(),
-        checklist: taskDraft.checklist.filter((item: any) => item.text.trim()),
+        checklist: taskDraft.checklist.filter((item: ChecklistItem) => item.text.trim()),
       },
       ...tasks,
     ]);
     closeTaskCreateModal();
   };
 
-  const startEditTask = (task: any) => {
-    console.log("[DEBUG] Start edit task - taskId:", task.id, "title:", task.title);
+  const startEditTask = (task: Task) => {
     setEditingTaskId(task.id);
     setEditTaskDraft({
       ...task,
@@ -334,14 +361,12 @@ export function useBoard() {
   };
 
   const cancelEditTask = () => {
-    console.log("[DEBUG] Cancel edit task");
     setEditingTaskId(null);
     setEditTaskDraft(null);
     setTaskEditModalOpen(false);
   };
 
   const deleteTask = (taskId: string) => {
-    console.log("[DEBUG] Delete task - taskId:", taskId);
     setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
     if (editingTaskId === taskId) {
       cancelEditTask();
@@ -350,18 +375,17 @@ export function useBoard() {
 
   const saveTaskEdit = (event: Event) => {
     event.preventDefault();
-    console.log("[DEBUG] Save task edit - taskId:", editTaskDraft?.id);
-    if (!editTaskDraft.title.trim()) return;
+    if (!editTaskDraft?.title.trim()) return;
     setTasks(
       tasks.map((task) =>
         task.id === editingTaskId
           ? {
             ...task,
-            title: editTaskDraft.title.trim(),
-            description: editTaskDraft.description.trim(),
-            rowId: editTaskDraft.rowId,
-            colId: editTaskDraft.colId,
-            checklist: editTaskDraft.checklist.filter((item: any) =>
+            title: editTaskDraft!.title.trim(),
+            description: editTaskDraft!.description.trim(),
+            rowId: editTaskDraft!.rowId,
+            colId: editTaskDraft!.colId,
+            checklist: editTaskDraft!.checklist.filter((item: ChecklistItem) =>
               item.text.trim()
             ),
           }
@@ -372,13 +396,12 @@ export function useBoard() {
   };
 
   const toggleTaskChecklist = (taskId: string, itemId: string) => {
-    console.log("[DEBUG] Toggle checklist - taskId:", taskId, "itemId:", itemId);
     setTasks(
       tasks.map((task) => {
         if (task.id !== taskId) return task;
         return {
           ...task,
-          checklist: task.checklist.map((item: any) =>
+          checklist: task.checklist.map((item: ChecklistItem) =>
             item.id === itemId ? { ...item, checked: !item.checked } : item
           ),
         };
@@ -386,27 +409,24 @@ export function useBoard() {
     );
   };
 
-  const moveTaskToColumn = (taskId: string, rowId: string, colId: string) => {
-    console.log("[DEBUG] Move task to column - taskId:", taskId, "to colId:", colId);
+  const moveTaskToColumn = (taskId: string, colId: string) => {
     setTasks(
       tasks.map((task) => task.id === taskId ? { ...task, colId } : task),
     );
   };
 
   const handleDragStart = (
-    task: any,
+    task: Task,
     rowId: string,
     colId: string,
     event: DragEvent,
   ) => {
-    console.log("[DEBUG] Task drag start - taskId:", task.id, "from:", rowId, colId);
     setDraggedTask({ taskId: task.id, rowId, colId });
-    (event as any).dataTransfer.effectAllowed = "move";
-    (event as any).dataTransfer.setData("text/plain", task.id);
+    event.dataTransfer!.effectAllowed = "move";
+    event.dataTransfer!.setData("text/plain", task.id);
   };
 
   const handleDragEnd = () => {
-    console.log("[DEBUG] Task drag end");
     setDraggedTask(null);
   };
 
@@ -414,16 +434,15 @@ export function useBoard() {
     event: DragEvent,
   ) => {
     event.preventDefault();
-    console.log("[DEBUG] Column drop - to rowId:", rowId, "colId:", colId);
     if (!draggedTask) return;
     if (draggedTask.rowId !== rowId) return;
     if (draggedTask.colId === colId) return;
-    moveTaskToColumn(draggedTask.taskId, rowId, colId);
+    moveTaskToColumn(draggedTask.taskId, colId);
     setDraggedTask(null);
   };
 
   // Checklist management handlers
-  const setChecklistInputRef = (id: string, element: any) => {
+  const setChecklistInputRef = (id: string, element: HTMLInputElement | null) => {
     if (element) {
       checklistInputRefs.current[id] = element;
     } else {
@@ -431,13 +450,17 @@ export function useBoard() {
     }
   };
 
-  const addChecklistItem = (focusNew = false) => {
-    console.log("[DEBUG] Add checklist item - focusNew:", focusNew);
+  const addChecklistItem = (focusNew = false, insertBeforeIndex?: number) => {
     const newItem = { id: createId(), text: "", checked: false };
-    setTaskDraft((prev) => ({
-      ...prev,
-      checklist: [newItem, ...prev.checklist],
-    }));
+    setTaskDraft((prev) => {
+      const list = [...prev.checklist];
+      if (insertBeforeIndex !== undefined) {
+        list.splice(insertBeforeIndex, 0, newItem);
+      } else {
+        list.unshift(newItem);
+      }
+      return { ...prev, checklist: list };
+    });
     if (focusNew) {
       setTimeout(() => {
         checklistInputRefs.current[newItem.id]?.focus();
@@ -445,13 +468,18 @@ export function useBoard() {
     }
   };
 
-  const addEditChecklistItem = (focusNew = false) => {
-    console.log("[DEBUG] Add edit checklist item - focusNew:", focusNew);
+  const addEditChecklistItem = (focusNew = false, insertBeforeIndex?: number) => {
     const newItem = { id: createId(), text: "", checked: false };
-    setEditTaskDraft((prev) => ({
-      ...prev,
-      checklist: [newItem, ...prev.checklist],
-    }));
+    setEditTaskDraft((prev) => {
+      if (!prev) return prev;
+      const list = [...prev.checklist];
+      if (insertBeforeIndex !== undefined) {
+        list.splice(insertBeforeIndex, 0, newItem);
+      } else {
+        list.unshift(newItem);
+      }
+      return { ...prev, checklist: list };
+    });
     if (focusNew) {
       setTimeout(() => {
         checklistInputRefs.current[newItem.id]?.focus();
@@ -459,60 +487,56 @@ export function useBoard() {
     }
   };
 
-  const updateChecklistItem = (id: string, field: string, value: any) => {
-    console.log("[DEBUG] Update checklist item - itemId:", id, "field:", field, "value:", value);
+  const updateChecklistItem = (id: string, field: string, value: string | boolean) => {
     setTaskDraft((prev) => ({
       ...prev,
-      checklist: prev.checklist.map((item: any) =>
+      checklist: prev.checklist.map((item: ChecklistItem) =>
         item.id === id ? { ...item, [field]: value } : item
       ),
     }));
   };
 
-  const updateEditChecklistItem = (id: string, field: string, value: any) => {
-    console.log("[DEBUG] Update edit checklist item - itemId:", id, "field:", field, "value:", value);
-    setEditTaskDraft((prev) => ({
-      ...prev,
-      checklist: prev.checklist.map((item: any) =>
-        item.id === id ? { ...item, [field]: value } : item
-      ),
-    }));
+  const updateEditChecklistItem = (id: string, field: string, value: string | boolean) => {
+    setEditTaskDraft((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        checklist: prev.checklist.map((item: ChecklistItem) =>
+          item.id === id ? { ...item, [field]: value } : item
+        ),
+      };
+    });
   };
+
+  const removeChecklistItem = <T extends { checklist: ChecklistItem[] }>(prev: T, id: string): T => ({
+    ...prev,
+    checklist: prev.checklist.filter((item) => item.id !== id),
+  });
 
   const deleteChecklistItem = (id: string) => {
-    console.log("[DEBUG] Delete checklist item - itemId:", id);
-    setTaskDraft((prev) => ({
-      ...prev,
-      checklist: prev.checklist.filter((item: any) => item.id !== id),
-    }));
+    setTaskDraft((prev) => removeChecklistItem(prev, id));
   };
 
   const deleteEditChecklistItem = (id: string) => {
-    console.log("[DEBUG] Delete edit checklist item - itemId:", id);
-    setEditTaskDraft((prev) => ({
-      ...prev,
-      checklist: prev.checklist.filter((item: any) => item.id !== id),
-    }));
+    setEditTaskDraft((prev) => prev && removeChecklistItem(prev, id));
   };
 
   const handleChecklistKeyDown = (
     event: KeyboardEvent,
     index: number,
-    checklist: any[],
-    addItemFn: (focusNew: boolean) => void,
+    addItemFn: (focusNew: boolean, insertBeforeIndex?: number) => void,
   ) => {
-    if (
-      event.key === "Enter" && event.shiftKey && index === checklist.length - 1
-    ) {
-      console.log("[DEBUG] Checklist key down - shift+enter to add item");
+    if (event.key === "Enter" && event.shiftKey) {
       event.preventDefault();
-      addItemFn(true);
+      addItemFn(true, index);
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      (event.target as HTMLElement).blur();
     }
   };
 
   // AI generation handlers
   const generateTasksForRow = async (rowId: string) => {
-    console.log("[DEBUG] Generate tasks for row - rowId:", rowId);
     const prompt = newRowPrompt.trim();
     if (!prompt) return;
 
@@ -560,13 +584,12 @@ export function useBoard() {
     setChecklistModalError("");
   };
 
-  const generateChecklistItems = async (task?: any) => {
+  const generateChecklistItems = async (task?: Task) => {
     const taskTitle = task?.title || "Break down this task...";
     // If a task is passed, set it as the modal task (for applying items)
     if (task?.id) {
       setChecklistModalTaskId(task.id);
     }
-    console.log("[DEBUG] Generate checklist items - prompt:", checklistPrompt.trim() || taskTitle);
     const prompt = checklistPrompt.trim() || taskTitle;
     if (!prompt) return;
 
@@ -591,7 +614,6 @@ export function useBoard() {
   };
 
   const applyChecklistPreview = () => {
-    console.log("[DEBUG] Apply checklist preview - taskId:", checklistModalTaskId, "items:", checklistPreview.length);
     if (!checklistModalTaskId || checklistPreview.length === 0) return;
 
     if (editingTaskId === checklistModalTaskId) {
@@ -616,7 +638,6 @@ export function useBoard() {
   };
 
   const applyChecklistPreviewToDraft = () => {
-    console.log("[DEBUG] Apply checklist preview to draft - items:", checklistPreview.length);
     if (checklistPreview.length === 0) return;
 
     setTaskDraft((prevDraft) => ({
@@ -634,7 +655,6 @@ export function useBoard() {
 
   // Board reset handlers
   const resetBoard = () => {
-    console.log("[DEBUG] Reset board - clearing all data");
     setRows(defaultRows);
     setColumns(
       defaultColumnNames.map((name) => ({ id: createId(), name })),
@@ -644,15 +664,14 @@ export function useBoard() {
     setEditingTaskId(null);
     setEditTaskDraft(null);
     setNewRowName("");
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem(STORAGE_KEY);
+    if (typeof globalThis.localStorage !== "undefined") {
+      globalThis.localStorage.removeItem(STORAGE_KEY);
     }
   };
 
   const confirmResetBoard = () => {
-    console.log("[DEBUG] Confirm reset board");
-    if (typeof window === "undefined") return;
-    const confirmed = window.confirm(
+    if (typeof globalThis.confirm === "undefined") return;
+    const confirmed = globalThis.confirm(
       "Reset the board? This will clear all projects and cards.",
     );
     if (confirmed) {
@@ -662,9 +681,8 @@ export function useBoard() {
 
   // Persistence
   useEffect(() => {
-    console.log("[DEBUG] Persisting board state to localStorage");
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(
+    if (typeof globalThis.localStorage === "undefined") return;
+    globalThis.localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({ rows, columns, tasks, defaultColumnNames }),
     );

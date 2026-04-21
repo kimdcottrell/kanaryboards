@@ -1,6 +1,7 @@
-import { useState } from "preact/hooks";
 import Modal from "../Modal";
-import ChecklistSection from "./ChecklistSection";
+import ChecklistSection, {
+  ChecklistGenerationCollapse,
+} from "./ChecklistSection";
 
 export default function TaskEditModal({ board }) {
   console.log(
@@ -9,7 +10,6 @@ export default function TaskEditModal({ board }) {
     "taskId:",
     board.editTaskDraft?.id,
   );
-  const [checklistCollapseOpen, setChecklistCollapseOpen] = useState(false);
   const {
     taskEditModalOpen,
     editTaskDraft,
@@ -39,12 +39,12 @@ export default function TaskEditModal({ board }) {
       {editTaskDraft
         ? (
           <form class="mt-4 space-y-4" onSubmit={saveTaskEdit}>
-            <div>
-              <label class="block text-sm font-medium">
-                Title
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Title</span>
               </label>
               <input
-                class="mt-2 w-full rounded border border-base-300 px-4 py-2 outline-none focus:border-cyan-500"
+                class="input input-bordered w-full"
                 type="text"
                 value={editTaskDraft.title}
                 onInput={(e) =>
@@ -55,12 +55,12 @@ export default function TaskEditModal({ board }) {
                 required
               />
             </div>
-            <div>
-              <label class="block text-sm font-medium">
-                Description
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Description</span>
               </label>
               <textarea
-                class="mt-2 h-24 w-full rounded border border-base-300 px-4 py-2 outline-none focus:border-cyan-500"
+                class="textarea textarea-bordered w-full h-24"
                 value={editTaskDraft.description}
                 onInput={(e) =>
                   setEditTaskDraft({
@@ -69,13 +69,16 @@ export default function TaskEditModal({ board }) {
                   })}
               />
             </div>
-            <div>
-              <p class="text-xs uppercase tracking-[0.18em]">
-                Status
-              </p>
+            <div class="form-control">
+              <label
+                class="label"
+                for={`edit-column-select-${editTaskDraft.id}`}
+              >
+                <span class="label-text">Status</span>
+              </label>
               <select
                 id={`edit-column-select-${editTaskDraft.id}`}
-                class="mt-2 w-full rounded border border-base-300 px-3 py-2 text-sm outline-none focus:border-cyan-500"
+                class="select select-bordered w-full"
                 value={editTaskDraft.colId}
                 onChange={(e) =>
                   setEditTaskDraft({
@@ -90,13 +93,16 @@ export default function TaskEditModal({ board }) {
                 ))}
               </select>
             </div>
-            <div>
-              <p class="text-xs uppercase tracking-[0.18em]">
-                Row
-              </p>
+            <div class="form-control">
+              <label
+                class="label"
+                for={`edit-row-select-${editTaskDraft.id}`}
+              >
+                <span class="label-text">Row</span>
+              </label>
               <select
                 id={`edit-row-select-${editTaskDraft.id}`}
-                class="mt-2 w-full rounded border border-base-300 px-3 py-2 text-sm outline-none focus:border-cyan-500"
+                class="select select-bordered w-full"
                 value={editTaskDraft.rowId}
                 onChange={(e) =>
                   setEditTaskDraft({
@@ -119,106 +125,27 @@ export default function TaskEditModal({ board }) {
               handleChecklistKeyDown={handleChecklistKeyDown}
               setChecklistInputRef={setChecklistInputRef}
             />
-
-            {/* Checklist Generation Collapse */}
-
-            {/* Checklist Generation Collapse */}
-            <div class="collapse collapse-arrow border border-base-300">
-              <input
-                type="checkbox"
-                checked={checklistCollapseOpen}
-                onChange={(e) =>
-                  setChecklistCollapseOpen(e.currentTarget.checked)}
-              />
-              <div class="collapse-title font-semibold text-sm py-3">
-                Generate checklist items with AI
-              </div>
-              <div class="collapse-content space-y-4">
-                <div class="space-y-2">
-                  <input
-                    class="w-full rounded border border-base-300 px-4 py-3 outline-none focus:border-cyan-500"
-                    type="text"
-                    value={checklistPrompt}
-                    placeholder={editTaskDraft?.title ||
-                      "Break down this task..."}
-                    onInput={(e) => setChecklistPrompt(e.currentTarget.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        generateChecklistItems(editTaskDraft);
-                      }
-                      if (event.key === "Tab" && !checklistPrompt.trim()) {
-                        event.preventDefault();
-                        setChecklistPrompt(editTaskDraft?.title || "");
-                      }
-                    }}
-                  />
-                  <p class="text-xs">
-                    Press Tab to fill with the task title, or Enter to generate.
-                  </p>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    class="rounded px-4 py-2 text-sm font-semibold transition"
-                    onClick={() => generateChecklistItems(editTaskDraft)}
-                    disabled={isGeneratingChecklist}
-                  >
-                    {isGeneratingChecklist
-                      ? "Generating…"
-                      : "Generate Checklist Items"}
-                  </button>
-                  <button
-                    type="button"
-                    class="rounded px-4 py-2 text-sm font-semibold transition hover:"
-                    onClick={applyChecklistPreview}
-                    disabled={checklistPreview.length === 0}
-                  >
-                    Copy checklist items
-                  </button>
-                </div>
-                {checklistModalError && (
-                  <p class="text-sm text-error">{checklistModalError}</p>
-                )}
-                <div class="overflow-x-auto">
-                  {checklistPreview.length > 0
-                    ? (
-                      <table class="table w-full">
-                        <thead>
-                          <tr>
-                            <th class="text-left">#</th>
-                            <th class="text-left">Checklist item preview</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {checklistPreview.map((item, index) => (
-                            <tr key={`${item}-${index}`}>
-                              <td>{index + 1}</td>
-                              <td>{item}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )
-                    : (
-                      <p class="text-sm">
-                        Generate checklist items to preview them here.
-                      </p>
-                    )}
-                </div>
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
+            <ChecklistGenerationCollapse
+              taskDraft={editTaskDraft}
+              checklistPrompt={checklistPrompt}
+              checklistPreview={checklistPreview}
+              isGeneratingChecklist={isGeneratingChecklist}
+              checklistModalError={checklistModalError}
+              setChecklistPrompt={setChecklistPrompt}
+              generateChecklistItems={generateChecklistItems}
+              applyChecklist={applyChecklistPreview}
+            />
+            <div class="flex justify-between gap-2">
               <button
                 type="button"
-                class="justify-self-start rounded px-4 py-2 text-sm font-semibold transition"
+                class="btn btn-error btn-outline"
                 onClick={() => deleteTask(editTaskDraft.id)}
               >
                 Delete
               </button>
               <button
                 type="submit"
-                class="ml-auto rounded px-4 py-2 text-sm font-semibold transition justify-self-end"
+                class="btn btn-primary"
               >
                 Save
               </button>

@@ -2,6 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from "astro";
 import type { APIContext } from 'astro';
+
 import { GoogleGenAI } from "@google/genai";
 
 interface GenerateTasksBody {
@@ -64,22 +65,23 @@ export const POST: APIRoute = async ({ request }: APIContext) => {
   const cleanedPrompt = `Create ${maxTasks / 2} to ${maxTasks} task titles for the following project description: ${prompt}`;
 
   try {
-    // const response = await ai.models.generateContentStream({
-    //   model: 'gemini-3-flash-preview',
-    //   contents: cleanedPrompt,
-    //   config: { systemInstruction: systemPrompt },
-    // })
+    let fullText = '';
 
-    // let fullText = '';
-    // for await (const chunk of response) {
-    //   fullText += chunk.text;
-    // }
+    if (import.meta.env.MODE !== "development") {
+      const response = await ai.models.generateContentStream({
+        model: 'gemini-3-flash-preview',
+        contents: cleanedPrompt,
+        config: { systemInstruction: systemPrompt },
+      });
+      for await (const chunk of response) {
+        fullText += chunk.text;
+      }
+    } else {
+      await new Promise(r => setTimeout(r, 2000));
+      console.log("Responding with simulated task list...");
+      fullText = 'Clear mattress surface\nIdentify sheet orientation\nSecure first corner\nHook diagonal corner\nAttach remaining corners\nTuck sides under mattress\nSmooth surface wrinkles';
+    }
 
-    await new Promise(r => setTimeout(r, 2000));
-    console.log("Responding with simulated task list...");
-    const fullText = 'Clear mattress surface\nIdentify sheet orientation\nSecure first corner\nHook diagonal corner\nAttach remaining corners\nTuck sides under mattress\nSmooth surface wrinkles';
-
-    // console.log("Full response text:", normalizeTaskLines(fullText));
     return new Response(JSON.stringify({ response: normalizeTaskLines(fullText) }), {
       status: 200,
       headers: { "Content-Type": "application/json" },

@@ -3,7 +3,15 @@
     "allow": [
       "Skill(update-config)",
       "Skill(update-config:*)",
-      "WebFetch(domain:daisyui.com)"
+      "WebFetch(domain:daisyui.com)",
+      "WebFetch(domain:docs.astro.build)",
+      "Bash(deno lint *)",
+      "Bash(pkill -f \"astro dev\")",
+      "Bash(deno check *)",
+      "Bash(deno task *)",
+      "Bash(curl -s http://localhost:4322/)",
+      "Bash(jobs -l)",
+      "Bash(curl -s \"http://localhost:4321/src/components/refactor/BoardConfiguration.jsx\")"
     ]
   }
 }

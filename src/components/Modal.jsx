@@ -1,9 +1,7 @@
 export default function Modal({ open, onClose, children }) {
-  if (!open) return null;
-
   return (
-    <div class="modal modal-open">
-      <div class="modal-box relative">
+    <dialog class={`modal${open ? " modal-open" : ""}`}>
+      <div class="w-11/12 max-w-5xl modal-box relative">
         <button
           type="button"
           class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
@@ -14,6 +12,7 @@ export default function Modal({ open, onClose, children }) {
         </button>
         {children}
       </div>
-    </div>
+      <div class="modal-backdrop" onClick={onClose} />
+    </dialog>
   );
 }

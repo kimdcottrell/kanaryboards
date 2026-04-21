@@ -11,14 +11,10 @@ export default function BoardConfiguration({ board }) {
     isGeneratingTasks,
     taskGenerationStatus,
     defaultColumnInput,
-    editingRowId,
-    editingRowName,
-    draggedDefaultIndex,
     // Setters
     setNewRowName,
     setNewRowPrompt,
     setDefaultColumnInput,
-    setEditingRowName,
     setDraggedDefaultIndex,
     // Handlers
     addRow,
@@ -31,9 +27,6 @@ export default function BoardConfiguration({ board }) {
     moveRowUp,
     moveRowDown,
     confirmResetBoard,
-    editRowTitle,
-    saveRowTitle,
-    deleteRow,
     handleNewRowPromptKeyDown,
   } = board;
 
@@ -74,6 +67,7 @@ export default function BoardConfiguration({ board }) {
           {defaultColumnNames.map((name, index) => (
             <div class="join" key={name}>
               <button
+                type="button"
                 draggable="true"
                 onDragStart={handleDefaultColumnDragStart(index)}
                 onDragOver={handleDefaultColumnDragOver}
@@ -84,6 +78,7 @@ export default function BoardConfiguration({ board }) {
                 {name}
               </button>
               <button
+                type="button"
                 onClick={(event) => {
                   event.stopPropagation();
                   removeDefaultColumn(name);

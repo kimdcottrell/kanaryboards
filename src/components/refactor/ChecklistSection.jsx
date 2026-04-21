@@ -1,3 +1,5 @@
+import { useState } from "preact/hooks";
+
 export default function ChecklistSection({
   checklist,
   addChecklistItem,
@@ -15,7 +17,7 @@ export default function ChecklistSection({
         </p>
         <button
           type="button"
-          class="rounded px-3 py-1 text-sm transition"
+          class="btn btn-ghost btn-sm"
           onClick={() => addChecklistItem(true)}
         >
           Add item
@@ -36,10 +38,10 @@ export default function ChecklistSection({
                   "checked",
                   !item.checked,
                 )}
-              class="h-4 w-4 rounded border-base-300 focus:ring-cyan-400"
+              class="checkbox checkbox-sm"
             />
             <input
-              class="w-full bg-transparent outline-none placeholder:"
+              class="input input-ghost input-sm grow"
               type="text"
               value={item.text}
               onInput={(e) =>
@@ -52,15 +54,14 @@ export default function ChecklistSection({
                 handleChecklistKeyDown(
                   e,
                   index,
-                  checklist,
                   addChecklistItem,
                 )}
               ref={(el) => setChecklistInputRef(item.id, el)}
-              placeholder="Checklist item"
+              placeholder="Type checklist item and press Shift+Enter to add more"
             />
             <button
               type="button"
-              class="text-red-500 hover:text-red-700 transition-colors"
+              class="btn btn-ghost btn-sm text-error"
               onClick={() => deleteChecklistItem(item.id)}
               title="Delete checklist item"
             >
@@ -68,6 +69,101 @@ export default function ChecklistSection({
             </button>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+export function ChecklistGenerationCollapse({
+  taskDraft,
+  checklistPrompt,
+  checklistPreview,
+  isGeneratingChecklist,
+  checklistModalError,
+  setChecklistPrompt,
+  generateChecklistItems,
+  applyChecklist,
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div class="collapse collapse-arrow border border-base-300">
+      <input
+        type="checkbox"
+        checked={open}
+        onChange={(e) => setOpen(e.currentTarget.checked)}
+      />
+      <div class="collapse-title font-semibold text-sm py-3">
+        Generate checklist items with AI
+      </div>
+      <div class="collapse-content space-y-4">
+        <div class="form-control">
+          <input
+            class="input input-bordered w-full"
+            type="text"
+            value={checklistPrompt}
+            placeholder={taskDraft?.title || "Break down this task..."}
+            onInput={(e) => setChecklistPrompt(e.currentTarget.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                generateChecklistItems(taskDraft);
+              }
+              if (event.key === "Tab" && !checklistPrompt.trim()) {
+                event.preventDefault();
+                setChecklistPrompt(taskDraft?.title || "");
+              }
+            }}
+          />
+          <label class="label">
+            <span class="label-text-alt">
+              Press Tab to fill with the task title, or Enter to generate.
+            </span>
+          </label>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            onClick={() => generateChecklistItems(taskDraft)}
+            disabled={isGeneratingChecklist}
+          >
+            {isGeneratingChecklist ? "Generating…" : "Generate Checklist Items"}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline btn-sm"
+            onClick={applyChecklist}
+            disabled={checklistPreview.length === 0}
+          >
+            Copy checklist items
+          </button>
+        </div>
+        {checklistModalError && (
+          <p class="text-sm text-error">{checklistModalError}</p>
+        )}
+        <div class="overflow-x-auto">
+          {checklistPreview.length > 0
+            ? (
+              <table class="table w-full">
+                <thead>
+                  <tr>
+                    <th class="text-left">#</th>
+                    <th class="text-left">Checklist item preview</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {checklistPreview.map((item, index) => (
+                    <tr key={`${item}-${index}`}>
+                      <td>{index + 1}</td>
+                      <td>{item}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )
+            : <p class="text-sm">Generate checklist items to preview them here.</p>}
+        </div>
       </div>
     </div>
   );
