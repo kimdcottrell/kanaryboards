@@ -1,4 +1,4 @@
-import Modal from "../Modal.jsx";
+import Modal from "./Modal.jsx";
 import TaskForm from "./TaskForm.jsx";
 import { ChecklistGenerationCollapse } from "./ChecklistSection.jsx";
 import { useBoard } from "./context/useBoard.ts";

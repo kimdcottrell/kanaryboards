@@ -42,7 +42,7 @@ export default function BoardConfiguration() {
         <div class="">
           <button
             type="button"
-            class="btn btn-error btn"
+            class="btn btn-error rounded"
             onClick={confirmResetBoard}
           >
             Reset Board
@@ -72,7 +72,7 @@ export default function BoardConfiguration() {
                 onDragOver={handleDefaultColumnDragOver}
                 onDrop={handleDefaultColumnDrop(index)}
                 onDragEnd={() => setDraggedDefaultIndex(null)}
-                class="btn join-item btn-accent cursor-grab"
+                class="btn rounded-l join-item btn-accent cursor-grab"
               >
                 {name}
               </button>
@@ -81,8 +81,8 @@ export default function BoardConfiguration() {
                 onClick={(event) => {
                   event.stopPropagation();
                   removeDefaultColumn(name);
-                }}
-                class="btn join-item btn-accent btn-soft border-accent"
+                }}                                                                                                                      
+                class="btn rounded-r join-item btn-accent dark:border-accent dark:btn-border-accent light:text-accent-content light:bg-accent/50"
               >
                 <span class="iconify basil--cross-outline text-xl font-bold">
                 </span>
@@ -91,7 +91,7 @@ export default function BoardConfiguration() {
           ))}
           <fieldset class="fieldset">
             <input
-              class="input input-accent"
+              class="input rounded input-accent"
               type="text"
               value={defaultColumnInput}
               onInput={(e) => setDefaultColumnInput(e.currentTarget.value)}
@@ -110,7 +110,7 @@ export default function BoardConfiguration() {
             <fieldset class="fieldset">
               <legend class="fieldset-legend">Row name</legend>
               <input
-                class="input input-secondary w-full validator"
+                class="input rounded input-secondary w-full validator"
                 type="text"
                 value={newRowName}
                 onInput={(e) => setNewRowName(e.currentTarget.value)}
@@ -122,10 +122,13 @@ export default function BoardConfiguration() {
             </fieldset>
 
             <fieldset class="fieldset">
-              <legend class="fieldset-legend">Generate tasks with AI <span class="text-base-content/50 font-normal">(optional)</span></legend>
+              <legend class="fieldset-legend">
+                Generate tasks with AI{" "}
+                <span class="text-base-content/50 font-normal">(optional)</span>
+              </legend>
               <input
                 id="newRowPrompt"
-                class="input input-secondary w-full"
+                class="input rounded input-secondary w-full"
                 type="text"
                 value={newRowPrompt}
                 onInput={(e) => setNewRowPrompt(e.currentTarget.value)}
@@ -133,13 +136,15 @@ export default function BoardConfiguration() {
                 placeholder="Describe the tasks to generate"
                 disabled={isGeneratingTasks}
               />
-              <p class="label">Up to 10 tasks will be added to the Todo column</p>
+              <p class="label">
+                Up to 10 tasks will be added to the Todo column
+              </p>
             </fieldset>
           </div>
 
           <div class="flex flex-col gap-3">
             {!isGeneratingTasks && (
-              <button class="btn btn-secondary w-fit" type="submit">
+              <button class="btn rounded btn-secondary w-fit" type="submit">
                 Add Row
               </button>
             )}
@@ -156,7 +161,8 @@ export default function BoardConfiguration() {
                     stroke-linejoin="round"
                     stroke-width="2"
                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  ></path>
+                  >
+                  </path>
                 </svg>
                 <span>{taskGenerationStatus}</span>
               </div>

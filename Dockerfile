@@ -26,15 +26,18 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         apt-get clean && rm -rf /var/lib/apt/lists/*; \
     git config --global --add safe.directory /var/dev
 
-# Copy and set up firewall script
-COPY .devcontainer/init-firewall.sh /usr/local/bin/
-USER root
+SHELL ["/bin/bash", "-c"]
+
+# Setup VSCode specific things
+COPY .devcontainer/init-firewall.sh /usr/local/bin/init-firewall.sh
 RUN chmod +x /usr/local/bin/init-firewall.sh && \
   echo "deno ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/deno-firewall && \
-  chmod 0440 /etc/sudoers.d/deno-firewall
+  chmod 0440 /etc/sudoers.d/deno-firewall; \
+  # now fix a problem with the claude executable when in the terminal of vscode \
+  mkdir -p /home/deno && touch /home/deno/.claude.json;
 
 # fix all the permissions issues for deno
-RUN mkdir -p /home/deno /var/dev /home/.deno/bin; \
+RUN mkdir -p /var/dev /home/.deno/bin; \
     chown -R deno:deno /home; \
     chown -R deno:deno /var/dev; \
     chown -R deno:deno /deno-dir; \
@@ -64,5 +67,3 @@ ENV PATH="$PATH:/var/dev/node_modules/.bin/:$HOME/.local/bin"
 
 # The port that your application listens to.
 EXPOSE 4321
-
-CMD ["deno", "task", "dev"]

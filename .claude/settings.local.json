@@ -9,9 +9,15 @@
       "Bash(pkill -f \"astro dev\")",
       "Bash(deno check *)",
       "Bash(deno task *)",
-      "Bash(curl -s http://localhost:4322/)",
+      "Bash(curl -s http://localhost:4321/)",
       "Bash(jobs -l)",
-      "Bash(curl -s \"http://localhost:4321/src/components/refactor/BoardConfiguration.jsx\")"
+      "Read(//home/deno/**)",
+      "Bash(mv /tmp/.claude.json.tmp ~/.claude.json)",
+      "Bash(grep -v '^refactor$')",
+      "Bash(cp -r /var/dev/src/components/refactor/context /var/dev/src/components/context)",
+      "Bash(cp /var/dev/src/components/refactor/*.jsx /var/dev/src/components/)",
+      "Bash(cp /var/dev/src/components/refactor/resume.txt /var/dev/src/components/)",
+      "Bash(rm -rf /var/dev/src/components/refactor)"
     ]
   }
 }

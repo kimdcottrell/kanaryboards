@@ -6,9 +6,19 @@ services:
       target: dev
       args:
         - LOCAL_MACHINE_GID=${LOCAL_MACHINE_GID}
-    tty: true
     command: tail -f /dev/null
-    privileged: true # allows for iptables to work inside the container, which is necessary for Claude Code in a devcontainer 
+    tty: true
+    cap_drop:
+      - ALL
+    cap_add:
+      # required for init-firewall.sh
+      - NET_ADMIN
+      - NET_RAW 
+      # required for basic webserver capabilities
+      - NET_BIND_SERVICE
+      - CHOWN
+      - SETUID
+      - SETGID
     env_file:
       - .env
     volumes:

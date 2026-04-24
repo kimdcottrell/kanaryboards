@@ -11,7 +11,6 @@
   // this gets around a weird bug where running `claude` in the terminal of the container doesn't work
   // despite the OAuth token being set in the env vars
   // NOTE: https://github.com/anthropics/claude-code/issues/8938#issuecomment-3443723851
-  "updateContentCommand": "cat <<< $(jq 'if has(\"hasCompletedOnboarding\") then . else . + {\"hasCompletedOnboarding\": true} end' ~/.claude.json) > ~/.claude.json",
   "service": "app",
   "workspaceFolder": "/var/dev",
   "customizations": {
@@ -52,7 +51,7 @@
         },
         "terminal.integrated.shell.linux": "bash",
         "terminal.integrated.profiles.linux": {
-          "bash (container default)": {
+          "bash": {
             "path": "/usr/bin/bash",
             "overrideName": true
           }

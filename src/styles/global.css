@@ -1,11 +1,20 @@
 @import "tailwindcss";
 
 @plugin "daisyui" {
-  themes: dracula --default, cupcake;
+  themes: dracula --prefers-dark, cupcake --default;
 }
 
 @plugin "@iconify/tailwind4" {
   prefixes: basil, hugeicons;
+}
+
+@custom-variant light ([data-theme=cupcake] &);
+
+@custom-variant dark ([data-theme=dracula] &);
+
+
+[data-theme] {
+  --rounded-btn: 0.5rem;
 }
 
 @layer utilities {

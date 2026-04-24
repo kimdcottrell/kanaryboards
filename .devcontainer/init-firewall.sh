@@ -4,6 +4,11 @@ IFS=$'\n\t'       # Stricter word splitting
 
 ## Written by @anthropic -
 ## https://github.com/anthropics/claude-code/blob/main/.devcontainer/init-firewall.sh
+##
+## It ensures that the Claude Code agent and any subprocesses can only communicate with a strictly 
+## defined allowlist of domains required for development, dependency management, and AI orchestration.
+##
+## NOTE: We are using Deno. Add "jsr.io" and "npm.jsr.io" to the list of allowed domains
 
 # 1. Extract Docker DNS info BEFORE any flushing
 DOCKER_DNS_RULES=$(iptables-save -t nat | grep "127\.0\.0\.11" || true)
@@ -68,6 +73,8 @@ done < <(echo "$gh_ranges" | jq -r '(.web + .api + .git)[]' | aggregate -q)
 
 # Resolve and add other allowed domains
 for domain in \
+    "jsr.io" \
+    "npm.jsr.io" \
     "registry.npmjs.org" \
     "api.anthropic.com" \
     "sentry.io" \
