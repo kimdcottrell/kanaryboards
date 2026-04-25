@@ -30,7 +30,7 @@ export default function BoardConfiguration() {
   } = useBoard();
 
   return (
-    <section class="rounded bg-base-300 p-4 shadow-xl shadow-base-300/20">
+    <section class=" bg-base-300 p-4 shadow-xl shadow-base-300/20">
       <div class="navbar flex justify-between items-start gap-4">
         <div class="">
           <h2 class="text-3xl font-semibold">Board Configuration</h2>
@@ -42,7 +42,7 @@ export default function BoardConfiguration() {
         <div class="">
           <button
             type="button"
-            class="btn btn-error rounded"
+            class="btn btn-error "
             onClick={confirmResetBoard}
           >
             Reset Board
@@ -50,7 +50,7 @@ export default function BoardConfiguration() {
         </div>
       </div>
 
-      <div class="rounded mt-6 bg-base-200 p-5">
+      <div class=" mt-6 bg-base-200 p-5">
         <div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 class="text-lg font-semibold">
@@ -72,7 +72,7 @@ export default function BoardConfiguration() {
                 onDragOver={handleDefaultColumnDragOver}
                 onDrop={handleDefaultColumnDrop(index)}
                 onDragEnd={() => setDraggedDefaultIndex(null)}
-                class="btn rounded-l join-item btn-accent cursor-grab"
+                class="btn rounded-none rounded-l join-item btn-accent cursor-grab"
               >
                 {name}
               </button>
@@ -81,8 +81,8 @@ export default function BoardConfiguration() {
                 onClick={(event) => {
                   event.stopPropagation();
                   removeDefaultColumn(name);
-                }}                                                                                                                      
-                class="btn rounded-r join-item btn-accent dark:border-accent dark:btn-border-accent light:text-accent-content light:bg-accent/50"
+                }}
+                class="btn rounded-none rounded-r join-item btn-accent dark:border-accent dark:btn-border-accent light:text-accent-content light:bg-accent/50"
               >
                 <span class="iconify basil--cross-outline text-xl font-bold">
                 </span>
@@ -91,7 +91,7 @@ export default function BoardConfiguration() {
           ))}
           <fieldset class="fieldset">
             <input
-              class="input rounded input-accent"
+              class="input  input-accent"
               type="text"
               value={defaultColumnInput}
               onInput={(e) => setDefaultColumnInput(e.currentTarget.value)}
@@ -103,14 +103,14 @@ export default function BoardConfiguration() {
         </div>
       </div>
 
-      <div class="rounded bg-base-200 mt-6 p-5">
+      <div class=" bg-base-200 mt-6 p-5">
         <h3 class="text-lg font-semibold">Create a new row</h3>
         <form key={newRowFormKey} class="space-y-4 mt-4" onSubmit={addRow}>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <fieldset class="fieldset">
               <legend class="fieldset-legend">Row name</legend>
               <input
-                class="input rounded input-secondary w-full validator"
+                class="input  input-secondary w-full validator"
                 type="text"
                 value={newRowName}
                 onInput={(e) => setNewRowName(e.currentTarget.value)}
@@ -128,7 +128,7 @@ export default function BoardConfiguration() {
               </legend>
               <input
                 id="newRowPrompt"
-                class="input rounded input-secondary w-full"
+                class="input  input-secondary w-full"
                 type="text"
                 value={newRowPrompt}
                 onInput={(e) => setNewRowPrompt(e.currentTarget.value)}
@@ -144,7 +144,7 @@ export default function BoardConfiguration() {
 
           <div class="flex flex-col gap-3">
             {!isGeneratingTasks && (
-              <button class="btn rounded btn-secondary w-fit" type="submit">
+              <button class="btn  btn-secondary w-fit" type="submit">
                 Add Row
               </button>
             )}
@@ -171,7 +171,7 @@ export default function BoardConfiguration() {
         </form>
       </div>
 
-      <div class="mt-6 rounded bg-base-200 p-5">
+      <div class="mt-6  bg-base-200 p-5">
         <div class="mb-4 flex flex-col gap-4 flex-row items-baseline justify-between">
           <div>
             <h3 class="text-lg font-semibold">
@@ -184,7 +184,7 @@ export default function BoardConfiguration() {
           </div>
         </div>
         <div class="overflow-x-auto">
-          <ul class="list bg-base-100 rounded space-y-2 shadow-md">
+          <ul class="list bg-base-100  space-y-2 shadow-md">
             {rows.map((row, index) => (
               <li
                 key={row.id}
@@ -199,7 +199,7 @@ export default function BoardConfiguration() {
                 </div>
                 <div>
                   <select
-                    class="max-w-xs rounded border px-3 py-1 text-sm outline-none"
+                    class="max-w-xs  border px-3 py-1 text-sm outline-none"
                     style={{ borderColor: row.color }}
                     value={row.color}
                     onChange={(e) =>

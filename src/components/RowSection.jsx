@@ -15,7 +15,7 @@ export default function RowSection({ row }) {
 
   return (
     <section
-      class="space-y-4 rounded p-5 shadow-lg shadow-base-300/10"
+      class="space-y-4 p-5 shadow-lg shadow-base-300/10"
       style={{
         backgroundColor: `${row.color}1a`,
       }}
@@ -25,7 +25,7 @@ export default function RowSection({ row }) {
           {editingRowId === row.id
             ? (
               <input
-                class="w-full rounded border border-base-300 px-4 py-2 text-2xl font-semibold outline-none focus:border-cyan-500"
+                class="w-full  border border-base-300 px-4 py-2 text-2xl font-semibold outline-none focus:border-cyan-500"
                 type="text"
                 value={editingRowName}
                 onInput={(e) => setEditingRowName(e.currentTarget.value)}

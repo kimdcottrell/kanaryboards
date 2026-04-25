@@ -12,12 +12,14 @@
 
 @custom-variant dark ([data-theme=dracula] &);
 
-
 [data-theme] {
   --rounded-btn: 0.5rem;
 }
 
 @layer utilities {
+  .list li, input, .btn {
+    @apply rounded-sm;
+  }
   .bg-neutral-light-20 {
     background-color: color-mix(in oklab, var(--color-neutral) 90%, white 10%);
   }

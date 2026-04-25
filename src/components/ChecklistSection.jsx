@@ -10,7 +10,7 @@ export default function ChecklistSection({
 }) {
   console.log("[DEBUG] ChecklistSection rendered - items:", checklist.length);
   return (
-    <div class="space-y-3 rounded border border-base-300 p-4">
+    <div class="space-y-3 border border-base-300 p-4">
       <div class="flex items-center justify-between gap-3">
         <p class="text-sm font-semibold">
           Checklist items
@@ -27,7 +27,7 @@ export default function ChecklistSection({
         {checklist.map((item, index) => (
           <div
             key={item.id}
-            class="flex items-center gap-3 rounded border border-base-300 px-3 py-2"
+            class="flex items-center gap-3  border border-base-300 px-3 py-2"
           >
             <input
               type="checkbox"
@@ -162,7 +162,11 @@ export function ChecklistGenerationCollapse({
                 </tbody>
               </table>
             )
-            : <p class="text-sm">Generate checklist items to preview them here.</p>}
+            : (
+              <p class="text-sm">
+                Generate checklist items to preview them here.
+              </p>
+            )}
         </div>
       </div>
     </div>
