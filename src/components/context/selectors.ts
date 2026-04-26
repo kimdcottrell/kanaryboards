@@ -11,6 +11,8 @@ export const computeTasksByCell = (tasks: Task[]): Record<string, Task[]> => {
 };
 
 export const findTodoColumnId = (columns: Column[]): string => {
-  const todo = columns.find((c) => c.name.toLowerCase().trim() === "todo");
+  const todo = columns.find(
+    (c) => c.name.toLowerCase().replace(/\s+/g, "") === "todo",
+  );
   return todo?.id ?? columns[0]?.id ?? "";
 };

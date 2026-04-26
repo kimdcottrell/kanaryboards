@@ -1,7 +1,6 @@
 import { useBoard } from "./context/useBoard.ts";
 
 export default function TaskCard({ task, row, column }) {
-  console.log("[DEBUG] TaskCard rendered - task:", task.title);
   const {
     editingTaskId,
     startEditTask,
@@ -21,7 +20,7 @@ export default function TaskCard({ task, row, column }) {
           event,
         )}
       onDragEnd={handleDragEnd}
-      class="overflow-hidden  shadow-sm shadow-base-900/5"
+      class="overflow-hidden shadow-sm shadow-base-900/5"
     >
       <div class="block">
         <div class="join-item bg-base-200 p-4">
@@ -31,8 +30,12 @@ export default function TaskCard({ task, row, column }) {
             </h5>
             <button
               type="button"
-              class="btn btn-sm btn-primary text-md transition"
+              class="btn text-base-100 btn-sm btn-square text-md transition"
               onClick={() => startEditTask(task)}
+              style={{
+                backgroundColor:
+                  `color-mix(in srgb, ${row.color} 60%, transparent)`,
+              }}
             >
               <span class="iconify hugeicons--pencil-edit-02 text-xl">
               </span>

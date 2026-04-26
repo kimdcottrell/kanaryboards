@@ -55,8 +55,7 @@ export function useAsyncActions(
       dispatch({
         type: "TASK_AI/GENERATE_FAILURE",
         payload: {
-          error:
-            "Unable to generate tasks. Please check your Deepseek configuration.",
+          error: `Unable to generate tasks. ${error}`,
         },
       });
     }
@@ -78,8 +77,7 @@ export function useAsyncActions(
       dispatch({
         type: "CHECKLIST_AI/GENERATE_FAILURE",
         payload: {
-          error:
-            "Unable to generate checklist items. Please check your AI configuration.",
+          error: `Unable to generate checklist items. ${error}`,
         },
       });
     }
@@ -107,7 +105,7 @@ export function useAsyncActions(
   const confirmResetBoard = () => {
     if (typeof globalThis.confirm === "undefined") return;
     const confirmed = globalThis.confirm(
-      "Reset the board? This will clear all projects and cards.",
+      "Reset the board?\n\nThis will set ALL rows, columns, and tasks back to defaults.\n\nIt cannot be undone.",
     );
     if (confirmed) {
       dispatch({ type: "BOARD/RESET" });

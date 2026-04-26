@@ -4,19 +4,19 @@ import {
   emptyTaskDraft,
   initialDefaultColumnNames,
   loadPersistedState,
-  rowColorOptions,
 } from "./constants.ts";
 
 export const createInitialState = (): BoardState => {
   const persisted = loadPersistedState();
-  const defaultColumnNames: string[] =
-    persisted?.defaultColumnNames ?? initialDefaultColumnNames;
-  const columns =
-    persisted?.columns ??
+  const defaultColumnNames: string[] = persisted?.defaultColumnNames ??
+    initialDefaultColumnNames;
+  const columns = persisted?.columns ??
     defaultColumnNames.map((name: string) => ({ id: createId(), name }));
 
   return {
-    rows: persisted?.rows ?? [],
+    rows: persisted?.rows ?? [
+      { id: createId(), name: "Sample Project", color: "var(--color-row-blue)" },
+    ],
     columns,
     tasks: persisted?.tasks ?? [],
     defaultColumnNames,
@@ -82,7 +82,7 @@ const mutateChecklist = (
     return list.map((item) =>
       item.id === payload.itemId
         ? { ...item, [payload.field!]: payload.value }
-        : item,
+        : item
     );
   }
   // delete
@@ -188,8 +188,9 @@ export function boardReducer(
         fromIndex < 0 ||
         toIndex < 0 ||
         toIndex >= state.rows.length
-      )
+      ) {
         return state;
+      }
       const next = [...state.rows];
       const [moved] = next.splice(fromIndex, 1);
       next.splice(toIndex, 0, moved);
@@ -202,7 +203,7 @@ export function boardReducer(
         rows: state.rows.map((r) =>
           r.id === action.payload.rowId
             ? { ...r, color: action.payload.color }
-            : r,
+            : r
         ),
       };
 
@@ -222,7 +223,7 @@ export function boardReducer(
       return {
         ...state,
         rows: state.rows.map((r) =>
-          r.id === action.payload.rowId ? { ...r, name: trimmed } : r,
+          r.id === action.payload.rowId ? { ...r, name: trimmed } : r
         ),
         editingRowId: null,
       };
@@ -281,16 +282,16 @@ export function boardReducer(
         tasks: state.tasks.map((t) =>
           t.id === state.editingTaskId
             ? {
-                ...t,
-                title: state.editTaskDraft!.title.trim(),
-                description: state.editTaskDraft!.description.trim(),
-                rowId: state.editTaskDraft!.rowId,
-                colId: state.editTaskDraft!.colId,
-                checklist: state.editTaskDraft!.checklist.filter((i) =>
-                  i.text.trim(),
-                ),
-              }
-            : t,
+              ...t,
+              title: state.editTaskDraft!.title.trim(),
+              description: state.editTaskDraft!.description.trim(),
+              rowId: state.editTaskDraft!.rowId,
+              colId: state.editTaskDraft!.colId,
+              checklist: state.editTaskDraft!.checklist.filter((i) =>
+                i.text.trim()
+              ),
+            }
+            : t
         ),
         editingTaskId: null,
         editTaskDraft: null,
@@ -304,7 +305,7 @@ export function boardReducer(
         tasks: state.tasks.map((t) =>
           t.id === action.payload.taskId
             ? { ...t, colId: action.payload.colId }
-            : t,
+            : t
         ),
       };
 
@@ -318,7 +319,7 @@ export function boardReducer(
             checklist: t.checklist.map((item) =>
               item.id === action.payload.itemId
                 ? { ...item, checked: !item.checked }
-                : item,
+                : item
             ),
           };
         }),
@@ -475,10 +476,9 @@ export function boardReducer(
         ...state,
         isGeneratingChecklist: false,
         checklistPreview: action.payload.items,
-        checklistModalError:
-          action.payload.items.length === 0
-            ? "No checklist items were generated."
-            : "",
+        checklistModalError: action.payload.items.length === 0
+          ? "No checklist items were generated."
+          : "",
       };
 
     case "CHECKLIST_AI/GENERATE_FAILURE":
@@ -489,13 +489,15 @@ export function boardReducer(
       };
 
     case "CHECKLIST_AI/APPLY_TO_EDIT_DRAFT": {
-      if (!state.checklistModalTaskId || state.checklistPreview.length === 0)
+      if (!state.checklistModalTaskId || state.checklistPreview.length === 0) {
         return state;
+      }
       if (
         !state.editTaskDraft ||
         state.editTaskDraft.id !== state.checklistModalTaskId
-      )
+      ) {
         return state;
+      }
       return {
         ...state,
         editTaskDraft: {
@@ -559,7 +561,9 @@ export function boardReducer(
         ...state,
         isGeneratingTasks: false,
         tasks: [...action.payload.tasks, ...state.tasks],
-        taskGenerationStatus: `Added ${count} task${count !== 1 ? "s" : ""} to Todo`,
+        taskGenerationStatus: `Added ${count} task${
+          count !== 1 ? "s" : ""
+        } to Todo`,
         newRowName: "",
         newRowPrompt: "",
         newRowFormKey: state.newRowFormKey + 1,
@@ -587,14 +591,16 @@ export function boardReducer(
     case "DRAG/DROP_TASK": {
       const { toRowId, toColId } = action.payload;
       if (!state.draggedTask) return state;
-      if (state.draggedTask.rowId !== toRowId)
+      if (state.draggedTask.rowId !== toRowId) {
         return { ...state, draggedTask: null };
-      if (state.draggedTask.colId === toColId)
+      }
+      if (state.draggedTask.colId === toColId) {
         return { ...state, draggedTask: null };
+      }
       return {
         ...state,
         tasks: state.tasks.map((t) =>
-          t.id === state.draggedTask!.taskId ? { ...t, colId: toColId } : t,
+          t.id === state.draggedTask!.taskId ? { ...t, colId: toColId } : t
         ),
         draggedTask: null,
       };
@@ -611,7 +617,9 @@ export function boardReducer(
         ...createInitialState(),
         defaultColumnNames,
         columns: defaultColumnNames.map((name) => ({ id: createId(), name })),
-        rows: [],
+        rows: [
+          { id: createId(), name: "Sample Project", color: "var(--color-row-blue)" },
+        ],
         tasks: [],
       };
     }

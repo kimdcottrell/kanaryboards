@@ -1,26 +1,128 @@
 @import "tailwindcss";
+@import "@catppuccin/tailwindcss/mocha.css";
 
 @plugin "daisyui" {
-  themes: dracula --prefers-dark, cupcake --default;
+  themes: kanary-night --prefers-dark, kanary-day --default;
 }
 
 @plugin "@iconify/tailwind4" {
   prefixes: basil, hugeicons;
 }
 
-@custom-variant light ([data-theme=cupcake] &);
-
-@custom-variant dark ([data-theme=dracula] &);
+@custom-variant light (&:where([data-theme=kanary-day], [data-theme=kanary-day] *));
+@custom-variant dark (&:where([data-theme=kanary-night], [data-theme=kanary-night] *));
 
 [data-theme] {
-  --rounded-btn: 0.5rem;
+  --radius-selector: 1rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "kanary-day";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-base-100: var(--catppuccin-color-base);
+  --color-base-200: var(--catppuccin-color-mantle);
+  --color-base-300: var(--catppuccin-color-crust);
+  --color-base-content: var(--catppuccin-color-text);
+  --color-primary: var(--catppuccin-color-sapphire);
+  --color-primary-content: var(--catppuccin-color-base);
+  --color-secondary: var(--catppuccin-color-lavender);
+  --color-secondary-content: var(--catppuccin-color-base);
+  --color-accent: var(--catppuccin-color-pink);
+  --color-accent-content: var(--catppuccin-color-base);
+  --color-neutral: var(--catppuccin-color-surface1);
+  --color-neutral-content: var(--catppuccin-color-text);
+  --color-info: var(--catppuccin-color-sky);
+  --color-info-content: var(--catppuccin-color-base);
+  --color-success: var(--catppuccin-color-green);
+  --color-success-content: var(--catppuccin-color-base);
+  --color-warning: var(--catppuccin-color-peach);
+  --color-warning-content: var(--catppuccin-color-base);
+  --color-error: var(--catppuccin-color-red-600);
+  --color-error-content: var(--catppuccin-color-base);
+
+  --color-row-blue: var(--catppuccin-color-blue);
+  --color-row-red: var(--catppuccin-color-red);
+  --color-row-yellow: var(--catppuccin-color-yellow);
+  --color-row-green: var(--catppuccin-color-green);
+  --color-row-purple: var(--catppuccin-color-mauve);
+  --color-row-grey: var(--catppuccin-color-overlay2);
+}
+
+@plugin "daisyui/theme" {
+  name: "kanary-night";
+  default: false;
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-base-100: var(--catppuccin-color-base);
+  --color-base-200: var(--catppuccin-color-mantle);
+  --color-base-300: var(--catppuccin-color-crust);
+  --color-base-content: var(--catppuccin-color-text);
+  --color-primary: var(--catppuccin-color-sapphire);
+  --color-primary-content: var(--catppuccin-color-base);
+  --color-secondary: var(--catppuccin-color-lavender);
+  --color-secondary-content: var(--catppuccin-color-base);
+  --color-accent: var(--catppuccin-color-pink);
+  --color-accent-content: var(--catppuccin-color-base);
+  --color-neutral: var(--catppuccin-color-surface1);
+  --color-neutral-content: var(--catppuccin-color-text);
+  --color-info: var(--catppuccin-color-sky);
+  --color-info-content: var(--catppuccin-color-base);
+  --color-success: var(--catppuccin-color-green);
+  --color-success-content: var(--catppuccin-color-base);
+  --color-warning: var(--catppuccin-color-peach);
+  --color-warning-content: var(--catppuccin-color-base);
+  --color-error: var(--catppuccin-color-red-600);
+  --color-error-content: var(--catppuccin-color-base);
+
+  --color-row-blue: var(--catppuccin-color-blue);
+  --color-row-red: var(--catppuccin-color-red);
+  --color-row-yellow: var(--catppuccin-color-yellow);
+  --color-row-green: var(--catppuccin-color-green);
+  --color-row-purple: var(--catppuccin-color-mauve);
+  --color-row-grey: var(--catppuccin-color-overlay2);
 }
 
 @layer utilities {
   .list li, input, .btn {
     @apply rounded-sm;
   }
+  .list li {
+    border-width: 0;
+  }
+  p a {
+    color: var(--color-secondary);
+    font-weight: var(--font-weight-bold);
+    text-decoration: underline;
+  }
+  .btn.join-item {
+    @apply rounded-none;
+  }
   .bg-neutral-light-20 {
     background-color: color-mix(in oklab, var(--color-neutral) 90%, white 10%);
+  }
+  .row-color-tint {
+    background-color: color-mix(
+      in srgb,
+      var(--row-tint-color) 13%,
+      transparent
+    );
+  }
+  [data-theme="day"] .row-color-tint {
+    background-color: color-mix(
+      in srgb,
+      var(--row-tint-color) 35%,
+      transparent
+    );
   }
 }

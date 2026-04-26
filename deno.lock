@@ -16,6 +16,7 @@
     "npm:@anthropic-ai/claude-code@^2.1.114": "2.1.114",
     "npm:@astrojs/check@~0.9.7": "0.9.8_typescript@5.9.3",
     "npm:@astrojs/preact@5": "5.1.1_preact@10.29.1_sass-embedded@1.99.0",
+    "npm:@catppuccin/tailwindcss@1": "1.0.0",
     "npm:@deno/astro-adapter@~0.3.2": "0.3.2_astro@6.1.5__sass-embedded@1.99.0_sass-embedded@1.99.0",
     "npm:@google/genai@^1.50.1": "1.50.1",
     "npm:@headlessui/react@^2.2.9": "2.2.10_react@19.2.5_react-dom@19.2.5__react@19.2.5",
@@ -427,6 +428,9 @@
       "dependencies": [
         "fontkitten"
       ]
+    },
+    "@catppuccin/tailwindcss@1.0.0": {
+      "integrity": "sha512-l8pOlcYe2ncGd8a1gUmL5AHmKlxR2+CHuG5kt4Me6IZwzntW1DoLmj89BH+DcsPHBsdDGLrTSv35emlYyU3FeQ=="
     },
     "@changesets/apply-release-plan@7.1.0": {
       "integrity": "sha512-yq8ML3YS7koKQ/9bk1PqO0HMzApIFNwjlwCnwFEXMzNe8NpzeeYYKCmnhWJGkN8g7E51MnWaSbqRcTcdIxUgnQ==",
@@ -5393,6 +5397,7 @@
         "npm:@anthropic-ai/claude-code@^2.1.114",
         "npm:@astrojs/check@~0.9.7",
         "npm:@astrojs/preact@5",
+        "npm:@catppuccin/tailwindcss@1",
         "npm:@deno/astro-adapter@~0.3.2",
         "npm:@google/genai@^1.50.1",
         "npm:@headlessui/react@^2.2.9",

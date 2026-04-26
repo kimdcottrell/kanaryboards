@@ -2,7 +2,6 @@ import { useBoard } from "./context/useBoard.ts";
 import { rowColorOptions } from "./context/constants.ts";
 
 export default function BoardConfiguration() {
-  console.log("[DEBUG] BoardConfiguration rendered");
   const {
     rows,
     defaultColumnNames,
@@ -12,10 +11,13 @@ export default function BoardConfiguration() {
     isGeneratingTasks,
     taskGenerationStatus,
     defaultColumnInput,
+    editingRowId,
+    editingRowName,
     setNewRowName,
     setNewRowPrompt,
     setDefaultColumnInput,
     setDraggedDefaultIndex,
+    setEditingRowName,
     addRow,
     handleDefaultColumnInputKeyDown,
     handleDefaultColumnDragStart,
@@ -25,224 +27,255 @@ export default function BoardConfiguration() {
     updateRowColor,
     moveRowUp,
     moveRowDown,
+    editRowTitle,
+    saveRowTitle,
     confirmResetBoard,
-    handleNewRowPromptKeyDown,
   } = useBoard();
 
   return (
-    <section class=" bg-base-300 p-4 shadow-xl shadow-base-300/20">
-      <div class="navbar flex justify-between items-start gap-4">
-        <div class="">
-          <h2 class="text-3xl font-semibold">Board Configuration</h2>
-          <p class="mt-3 max-w-2xl">
+    <div class="grid">
+      <section class="max-w-11/12 place-self-center collapse collapse-arrow mb-16 bg-base-300 p-4 shadow-xl shadow-base-300/20">
+        <input type="checkbox" class="peer" />
+        <div class="collapse-title">
+          <h2 class="text-3xl font-semibold">
+            Board Configuration
+          </h2>
+        </div>
+        <div class="collapse-content">
+          <p class="mt-3">
             Add rows and columns, then place tasks into each column. Each task
             can include a title, description, and optional checklist.
           </p>
-        </div>
-        <div class="">
-          <button
-            type="button"
-            class="btn btn-error "
-            onClick={confirmResetBoard}
-          >
-            Reset Board
-          </button>
-        </div>
-      </div>
+          <div class=" bg-base-200 mt-6 p-5">
+            <h3 class="text-lg font-semibold">Create a new row</h3>
+            <form key={newRowFormKey} class="space-y-4 mt-4" onSubmit={addRow}>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend">Row name</legend>
+                  <input
+                    class="input  input-secondary w-full validator"
+                    type="text"
+                    value={newRowName}
+                    onInput={(e) => setNewRowName(e.currentTarget.value)}
+                    placeholder="A project name, a category for large project tasks, etc."
+                    disabled={isGeneratingTasks}
+                    required
+                  />
+                  <p class="validator-hint">Required</p>
+                </fieldset>
 
-      <div class=" mt-6 bg-base-200 p-5">
-        <div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 class="text-lg font-semibold">
-              Default column settings
-            </h3>
-            <p class="text-sm">
-              Manage the default column set used across projects. Drag badges to
-              reorder, click x to remove, or add a new default column.
-            </p>
-          </div>
-        </div>
-        <div class="flex flex-wrap items-baseline gap-2">
-          {defaultColumnNames.map((name, index) => (
-            <div class="join" key={name}>
-              <button
-                type="button"
-                draggable="true"
-                onDragStart={handleDefaultColumnDragStart(index)}
-                onDragOver={handleDefaultColumnDragOver}
-                onDrop={handleDefaultColumnDrop(index)}
-                onDragEnd={() => setDraggedDefaultIndex(null)}
-                class="btn rounded-none rounded-l join-item btn-accent cursor-grab"
-              >
-                {name}
-              </button>
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  removeDefaultColumn(name);
-                }}
-                class="btn rounded-none rounded-r join-item btn-accent dark:border-accent dark:btn-border-accent light:text-accent-content light:bg-accent/50"
-              >
-                <span class="iconify basil--cross-outline text-xl font-bold">
-                </span>
-              </button>
-            </div>
-          ))}
-          <fieldset class="fieldset">
-            <input
-              class="input  input-accent"
-              type="text"
-              value={defaultColumnInput}
-              onInput={(e) => setDefaultColumnInput(e.currentTarget.value)}
-              onKeyDown={handleDefaultColumnInputKeyDown}
-              placeholder="Add new column"
-            />
-            <p class="label">Hit enter to create</p>
-          </fieldset>
-        </div>
-      </div>
-
-      <div class=" bg-base-200 mt-6 p-5">
-        <h3 class="text-lg font-semibold">Create a new row</h3>
-        <form key={newRowFormKey} class="space-y-4 mt-4" onSubmit={addRow}>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend">Row name</legend>
-              <input
-                class="input  input-secondary w-full validator"
-                type="text"
-                value={newRowName}
-                onInput={(e) => setNewRowName(e.currentTarget.value)}
-                placeholder="A project name, a category for large project tasks, etc."
-                disabled={isGeneratingTasks}
-                required
-              />
-              <p class="validator-hint">Required</p>
-            </fieldset>
-
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend">
-                Generate tasks with AI{" "}
-                <span class="text-base-content/50 font-normal">(optional)</span>
-              </legend>
-              <input
-                id="newRowPrompt"
-                class="input  input-secondary w-full"
-                type="text"
-                value={newRowPrompt}
-                onInput={(e) => setNewRowPrompt(e.currentTarget.value)}
-                onKeyDown={handleNewRowPromptKeyDown}
-                placeholder="Describe the tasks to generate"
-                disabled={isGeneratingTasks}
-              />
-              <p class="label">
-                Up to 10 tasks will be added to the Todo column
-              </p>
-            </fieldset>
-          </div>
-
-          <div class="flex flex-col gap-3">
-            {!isGeneratingTasks && (
-              <button class="btn  btn-secondary w-fit" type="submit">
-                Add Row
-              </button>
-            )}
-            {isGeneratingTasks && (
-              <div class="alert alert-info">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  class="stroke-current shrink-0 w-6 h-6"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  >
-                  </path>
-                </svg>
-                <span>{taskGenerationStatus}</span>
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend">
+                    Generate tasks with AI{" "}
+                    <span class="text-base-content/50 font-normal">
+                      (optional)
+                    </span>
+                  </legend>
+                  <input
+                    id="newRowPrompt"
+                    class="input  input-secondary w-full"
+                    type="text"
+                    value={newRowPrompt}
+                    onInput={(e) => setNewRowPrompt(e.currentTarget.value)}
+                    placeholder="Describe the tasks to generate"
+                    disabled={isGeneratingTasks}
+                  />
+                  <p class="label">
+                    Up to 10 tasks will be added to the Todo column
+                  </p>
+                </fieldset>
               </div>
-            )}
-          </div>
-        </form>
-      </div>
 
-      <div class="mt-6  bg-base-200 p-5">
-        <div class="mb-4 flex flex-col gap-4 flex-row items-baseline justify-between">
-          <div>
-            <h3 class="text-lg font-semibold">
-              Row settings
-            </h3>
-            <p class="text-sm">
-              Use the arrow buttons to move rows up or down and pick a color for
-              each project row.
-            </p>
+              <div class="flex flex-col gap-3">
+                {!isGeneratingTasks && (
+                  <button class="btn  btn-secondary w-fit" type="submit">
+                    Add Row
+                  </button>
+                )}
+                {isGeneratingTasks && (
+                  <div class="alert alert-info">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      class="stroke-current shrink-0 w-6 h-6"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      >
+                      </path>
+                    </svg>
+                    <span>{taskGenerationStatus}</span>
+                  </div>
+                )}
+              </div>
+            </form>
+          </div>
+          <div class="mt-6 bg-base-200 p-5">
+            <div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 class="text-lg font-semibold">
+                  Default column settings
+                </h3>
+                <p class="text-sm">
+                  Manage the default column set used across projects. Drag
+                  badges to reorder, click x to remove, or add a new default
+                  column.
+                </p>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-baseline gap-2">
+              {defaultColumnNames.map((name, index) => (
+                <div class="join" key={name}>
+                  <button
+                    type="button"
+                    draggable="true"
+                    onDragStart={handleDefaultColumnDragStart(index)}
+                    onDragOver={handleDefaultColumnDragOver}
+                    onDrop={handleDefaultColumnDrop(index)}
+                    onDragEnd={() =>
+                      setDraggedDefaultIndex(null)}
+                    class="btn rounded-l! join-item btn-primary cursor-grab"
+                  >
+                    {name}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      removeDefaultColumn(name);
+                    }}
+                    class="btn rounded-r! join-item btn-primary p-2 dark:btn-border-primary light:text-primary-content bg-primary/40 hover:bg-primary/80 dark:text-base-100 text-primary! hover:text-primary-content!"
+                  >
+                    <span class="iconify basil--cross-outline text-2xl font-bold">
+                    </span>
+                  </button>
+                </div>
+              ))}
+              <fieldset class="fieldset">
+                <input
+                  class="input input-primary"
+                  type="text"
+                  value={defaultColumnInput}
+                  onInput={(e) => setDefaultColumnInput(e.currentTarget.value)}
+                  onKeyDown={handleDefaultColumnInputKeyDown}
+                  placeholder="Add new column"
+                />
+                <p class="label">Hit enter to create</p>
+              </fieldset>
+            </div>
+          </div>
+
+          <div class="mt-6 bg-base-200 p-5">
+            <div class="mb-4 items-baseline justify-between">
+              <div>
+                <h3 class="text-lg font-semibold">
+                  Row settings
+                </h3>
+                <p class="text-sm">
+                  Use the arrow buttons to move rows up or down and pick a color
+                  for each project row.
+                </p>
+              </div>
+            </div>
+            <ul class="list space-y-1 shadow-md">
+              {rows.map((row, index) => (
+                <li
+                  key={row.id}
+                  class="list-row grid grid-cols-3 items-center row-color-tint"
+                  style={{ "--row-tint-color": row.color }}
+                >
+                  <div>
+                    {editingRowId === row.id
+                      ? (
+                        <input
+                          class="input input-sm input-bordered w-full font-bold"
+                          type="text"
+                          value={editingRowName}
+                          onInput={(e) =>
+                            setEditingRowName(e.currentTarget.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              saveRowTitle(row.id);
+                            } else if (e.key === "Escape") {
+                              setEditingRowName(null);
+                            }
+                          }}
+                          onBlur={() => saveRowTitle(row.id)}
+                          autoFocus
+                        />
+                      )
+                      : (
+                        <h4
+                          class="font-bold cursor-pointer"
+                          onDblClick={() => editRowTitle(row)}
+                          title="Double-click to edit"
+                        >
+                          {row.name}
+                        </h4>
+                      )}
+                  </div>
+                  <div>
+                    <select
+                      class="select select-sm"
+                      value={row.color}
+                      onChange={(e) =>
+                        updateRowColor(row.id, e.currentTarget.value)}
+                    >
+                      {rowColorOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div class="flex items-center justify-end gap-1">
+                    <button
+                      type="button"
+                      class={`btn btn-sm btn-square btn-soft btn-accent ${
+                        index === 0 ? "invisible" : ""
+                      }`}
+                      onClick={() => moveRowUp(index)}
+                      aria-label={`Move ${row.name} up`}
+                    >
+                      <span class="iconify hugeicons--arrow-up-01 text-xl" />
+                    </button>
+                    <button
+                      type="button"
+                      class={`btn btn-sm btn-square btn-soft btn-accent ${
+                        index === rows.length - 1 ? "invisible" : ""
+                      }`}
+                      onClick={() => moveRowDown(index)}
+                      aria-label={`Move ${row.name} down`}
+                    >
+                      <span class="iconify hugeicons--arrow-down-01 text-xl" />
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div class="mt-6 bg-base-200 p-5">
+            <div class="mb-4">
+              <h3 class="text-lg font-semibold">D-D-D-Danger Zone</h3>
+              <p class="text-sm">
+                These are changes you cannot undo! Be careful.
+              </p>
+            </div>
+            <button
+              type="button"
+              class="btn btn-error"
+              onClick={confirmResetBoard}
+            >
+              Reset Board
+            </button>
           </div>
         </div>
-        <div class="overflow-x-auto">
-          <ul class="list bg-base-100  space-y-2 shadow-md">
-            {rows.map((row, index) => (
-              <li
-                key={row.id}
-                class="grid grid-cols-3 list-row gap-3 border"
-                style={{
-                  backgroundColor: `${row.color}22`,
-                  borderColor: row.color,
-                }}
-              >
-                <div>
-                  <h4 class="font-bold text-md">{row.name}</h4>
-                </div>
-                <div>
-                  <select
-                    class="max-w-xs  border px-3 py-1 text-sm outline-none"
-                    style={{ borderColor: row.color }}
-                    value={row.color}
-                    onChange={(e) =>
-                      updateRowColor(row.id, e.currentTarget.value)}
-                  >
-                    {rowColorOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div class="flex items-end gap-2">
-                  <button
-                    type="button"
-                    class={`btn btn-square btn-ghost ${
-                      index === 0 ? "hidden" : ""
-                    }`}
-                    style={{ color: row.color, borderColor: row.color }}
-                    disabled={index === 0}
-                    onClick={() => moveRowUp(index)}
-                    aria-label={`Move ${row.name} up`}
-                  >
-                    ⌃
-                  </button>
-                  <button
-                    type="button"
-                    class={`btn btn-square btn-ghost ${
-                      index === rows.length - 1 ? "hidden" : ""
-                    }`}
-                    style={{ color: row.color, borderColor: row.color }}
-                    disabled={index === rows.length - 1}
-                    onClick={() => moveRowDown(index)}
-                    aria-label={`Move ${row.name} down`}
-                  >
-                    ⌄
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }

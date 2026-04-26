@@ -1,19 +1,19 @@
 import type { TaskDraft } from "./types.ts";
 
-export const STORAGE_KEY = "claudekan-board-state";
+export const STORAGE_KEY = "kanary-boards";
 
 export const createId = () =>
   `${Math.random().toString(36).slice(2, 10)}-${Date.now()}`;
 
-export const initialDefaultColumnNames = ["todo", "working on it", "done"];
+export const initialDefaultColumnNames = ["To Do", "In Progress", "Done"];
 
 export const rowColorOptions = [
-  { label: "Blue", value: "#38bdf8" },
-  { label: "Green", value: "#34d399" },
-  { label: "Amber", value: "#f59e0b" },
-  { label: "Rose", value: "#fb7185" },
-  { label: "Violet", value: "#a855f7" },
-  { label: "base", value: "#64748b" },
+  { label: "Blue", value: "var(--color-row-blue)" },
+  { label: "Red", value: "var(--color-row-red)" },
+  { label: "Yellow", value: "var(--color-row-yellow)" },
+  { label: "Green", value: "var(--color-row-green)" },
+  { label: "Purple", value: "var(--color-row-purple)" },
+  { label: "Grey", value: "var(--color-row-grey)" },
 ];
 
 export const emptyTaskDraft = (rowId: string, colId: string): TaskDraft => ({

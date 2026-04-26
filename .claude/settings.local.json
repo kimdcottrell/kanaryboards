@@ -17,7 +17,8 @@
       "Bash(cp -r /var/dev/src/components/refactor/context /var/dev/src/components/context)",
       "Bash(cp /var/dev/src/components/refactor/*.jsx /var/dev/src/components/)",
       "Bash(cp /var/dev/src/components/refactor/resume.txt /var/dev/src/components/)",
-      "Bash(rm -rf /var/dev/src/components/refactor)"
+      "Bash(rm -rf /var/dev/src/components/refactor)",
+      "Bash(xargs cat *)"
     ]
   }
 }

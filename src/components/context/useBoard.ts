@@ -70,6 +70,7 @@ export function useBoard() {
           type: "COLUMN/ADD_DEFAULT",
           payload: { name: state.defaultColumnInput },
         });
+        dispatch({ type: "COLUMN/SET_INPUT", payload: { value: "" } });
       }
     },
     handleDefaultColumnDragStart:
@@ -98,16 +99,6 @@ export function useBoard() {
       },
     deleteColumn: (columnId: string) =>
       dispatch({ type: "COLUMN/DELETE", payload: { columnId } }),
-    handleNewRowPromptKeyDown: (event: KeyboardEvent) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        const rowId = state.rows[0]?.id;
-        if (rowId && state.newRowPrompt.trim()) {
-          async_.generateTasksForRow(rowId);
-        }
-      }
-    },
-
     // ── Row handlers ────────────────────────────────────────────────────
     moveRow: (fromIndex: number, toIndex: number) =>
       dispatch({ type: "ROW/MOVE", payload: { fromIndex, toIndex } }),
@@ -141,7 +132,7 @@ export function useBoard() {
       dispatch({ type: "TASK/CLOSE_CREATE_MODAL" }),
     createTask: (event: Event) => {
       event.preventDefault();
-      if (!state.taskDraft.title.trim()) return;
+      if (!(event.target as HTMLFormElement).checkValidity()) return;
       const task: Task = {
         id: createId(),
         rowId: state.taskDraft.rowId,
@@ -162,6 +153,7 @@ export function useBoard() {
       dispatch({ type: "TASK/DELETE", payload: { taskId } }),
     saveTaskEdit: (event: Event) => {
       event.preventDefault();
+      if (!(event.target as HTMLFormElement).checkValidity()) return;
       dispatch({ type: "TASK/SAVE_EDIT" });
     },
     toggleTaskChecklist: (taskId: string, itemId: string) =>
@@ -253,6 +245,8 @@ export function useBoard() {
       dispatch({ type: "CHECKLIST_AI/APPLY_TO_EDIT_DRAFT" }),
     applyChecklistPreviewToDraft: () =>
       dispatch({ type: "CHECKLIST_AI/APPLY_TO_CREATE_DRAFT" }),
+    clearChecklistPreview: () =>
+      dispatch({ type: "CHECKLIST_AI/RESET" }),
 
     // ── AI handlers ──────────────────────────────────────────────────────
     generateTasksForRow: async_.generateTasksForRow,

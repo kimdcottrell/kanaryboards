@@ -2,12 +2,6 @@ import TaskCard from "./TaskCard.jsx";
 import { useBoard } from "./context/useBoard.ts";
 
 export default function ColumnCard({ column, row }) {
-  console.log(
-    "[DEBUG] ColumnCard rendered - column:",
-    column.name,
-    "row:",
-    row.name,
-  );
   const {
     tasksByCell,
     openTaskForm,
@@ -19,10 +13,10 @@ export default function ColumnCard({ column, row }) {
 
   return (
     <div
-      class="flex min-w-1/4 flex-col rounded gap-4 p-4 shadow-lg shadow-base-300/10"
+      class="flex w-sm shrink-0 flex-col rounded gap-4 p-4 shadow-lg shadow-base-300/10"
       style={{
-        backgroundColor: `${row.color}15`,
-        border: `1px solid ${row.color}22`,
+        backgroundColor: `color-mix(in srgb, ${row.color} 8%, transparent)`,
+        border: `1px solid color-mix(in srgb, ${row.color} 13%, transparent)`,
       }}
       onDragOver={(event) => event.preventDefault()}
       onDrop={handleColumnDrop(row.id, column.id)}
@@ -35,7 +29,7 @@ export default function ColumnCard({ column, row }) {
         </div>
         <div class="flex items-center gap-2">
           <button
-            class="btn btn-sm"
+            class="btn btn-square btn-sm"
             type="button"
             style={{
               backgroundColor: `${row.color}`,

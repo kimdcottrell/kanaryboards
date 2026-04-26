@@ -1,0 +1,20 @@
+---
+import ThemeToggle from "./buttons/ThemeToggle.tsx";
+---
+
+<script is:inline>
+    (function () {
+        const saved = localStorage.getItem("theme");
+        const theme =
+            saved ??
+            (matchMedia("(prefers-color-scheme: dark)").matches
+                ? "kanary-night"
+                : "kanary-day");
+        const html = document.documentElement;
+        html.setAttribute("data-theme", theme);
+        html.classList.toggle("latte", theme === "kanary-day");
+        html.classList.toggle("mocha", theme === "kanary-night");
+    })();
+</script>
+
+<ThemeToggle client:only="preact" />

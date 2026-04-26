@@ -1,6 +1,5 @@
 import Modal from "./Modal.jsx";
 import TaskForm from "./TaskForm.jsx";
-import { ChecklistGenerationCollapse } from "./ChecklistSection.jsx";
 import { useBoard } from "./context/useBoard.ts";
 
 export default function TaskCreateModal() {
@@ -22,37 +21,34 @@ export default function TaskCreateModal() {
     setChecklistPrompt,
     generateChecklistItems,
     applyChecklistPreviewToDraft,
+    clearChecklistPreview,
   } = useBoard();
 
   return (
     <Modal open={taskCreateModalOpen} onClose={closeTaskCreateModal}>
       <h3 class="text-xl font-semibold">Add task</h3>
-      <p class="text-sm text-base-content/70 mt-2 mb-4">
+      <p class="text-sm text-base-content/70 mt-2">
         Create a new task in the selected column.
       </p>
-      <TaskForm
+      {taskCreateModalOpen && <TaskForm
         taskDraft={taskDraft}
         setTaskDraft={setTaskDraft}
-        createTask={createTask}
-        closeTaskForm={closeTaskCreateModal}
+        onSubmit={createTask}
+        onCancel={closeTaskCreateModal}
         addChecklistItem={addChecklistItem}
         updateChecklistItem={updateChecklistItem}
         deleteChecklistItem={deleteChecklistItem}
         handleChecklistKeyDown={handleChecklistKeyDown}
         setChecklistInputRef={setChecklistInputRef}
-      />
-      <div class="mt-4">
-        <ChecklistGenerationCollapse
-          taskDraft={taskDraft}
-          checklistPrompt={checklistPrompt}
-          checklistPreview={checklistPreview}
-          isGeneratingChecklist={isGeneratingChecklist}
-          checklistModalError={checklistModalError}
-          setChecklistPrompt={setChecklistPrompt}
-          generateChecklistItems={generateChecklistItems}
-          applyChecklist={applyChecklistPreviewToDraft}
-        />
-      </div>
+        checklistPrompt={checklistPrompt}
+        checklistPreview={checklistPreview}
+        isGeneratingChecklist={isGeneratingChecklist}
+        checklistModalError={checklistModalError}
+        setChecklistPrompt={setChecklistPrompt}
+        generateChecklistItems={generateChecklistItems}
+        applyChecklist={applyChecklistPreviewToDraft}
+        clearChecklistPreview={clearChecklistPreview}
+      />}
     </Modal>
   );
 }
