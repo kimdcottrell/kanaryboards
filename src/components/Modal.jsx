@@ -6,8 +6,6 @@ export default function Modal({ open, onClose, children }) {
       <div class="w-11/12 max-h-11/12 max-w-5xl modal-box modal-middle relative">
         <CloseButton
           onClick={onClose}
-          tooltip="Close modal"
-          tooltipPosition="left"
           class="absolute right-6 top-6"
         />
 
