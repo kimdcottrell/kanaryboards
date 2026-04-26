@@ -1,4 +1,4 @@
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useState } from "react";
 
 export default function ThemeController() {
   const [theme, setTheme] = useState(() =>
@@ -21,14 +21,14 @@ export default function ThemeController() {
   return (
     <label className="swap swap-rotate">
       <input onClick={toggleTheme} type="checkbox" />
-      <label class="swap swap-rotate cursor-pointer">
+      <label className="swap swap-rotate cursor-pointer">
         <input
           type="checkbox"
           id="theme-controller"
           onClick={toggleTheme}
         />
-        <span class="iconify swap-on hugeicons--sun-03 text-xl"></span>
-        <span class="iconify swap-off hugeicons--moon-02 text-xl"></span>
+        <span className="iconify swap-on hugeicons--sun-03 text-xl"></span>
+        <span className="iconify swap-off hugeicons--moon-02 text-xl"></span>
       </label>
     </label>
   );

@@ -29,7 +29,7 @@ export default function TaskEditModal() {
 
   return (
     <Modal open={taskEditModalOpen} onClose={cancelEditTask}>
-      <h3 class="text-xl font-semibold">Edit task</h3>
+      <h3 className="text-xl font-semibold">Edit task</h3>
       {editTaskDraft
         ? (
           <TaskForm
@@ -52,17 +52,17 @@ export default function TaskEditModal() {
             applyChecklist={applyChecklistPreview}
             clearChecklistPreview={clearChecklistPreview}
           >
-            <div class="grid grid-cols-2 gap-4 items-start">
-              <fieldset class="fieldset">
+            <div className="grid grid-cols-2 gap-4 items-start">
+              <fieldset className="fieldset">
                 <legend
-                  class="fieldset-legend"
-                  for={`edit-column-select-${editTaskDraft.id}`}
+                  className="fieldset-legend"
+                  htmlFor={`edit-column-select-${editTaskDraft.id}`}
                 >
                   Status
                 </legend>
                 <select
                   id={`edit-column-select-${editTaskDraft.id}`}
-                  class="select select-bordered w-full"
+                  className="select select-bordered w-full"
                   value={editTaskDraft.colId}
                   onChange={(e) =>
                     setEditTaskDraft({
@@ -77,16 +77,16 @@ export default function TaskEditModal() {
                   ))}
                 </select>
               </fieldset>
-              <fieldset class="fieldset">
+              <fieldset className="fieldset">
                 <legend
-                  class="fieldset-legend"
-                  for={`edit-row-select-${editTaskDraft.id}`}
+                  className="fieldset-legend"
+                  htmlFor={`edit-row-select-${editTaskDraft.id}`}
                 >
                   Row
                 </legend>
                 <select
                   id={`edit-row-select-${editTaskDraft.id}`}
-                  class="select select-bordered w-full"
+                  className="select select-bordered w-full"
                   value={editTaskDraft.rowId}
                   onChange={(e) =>
                     setEditTaskDraft({
@@ -104,7 +104,7 @@ export default function TaskEditModal() {
             </div>
           </TaskForm>
         )
-        : <p class="mt-4 text-sm">Loading task…</p>}
+        : <p className="mt-4 text-sm">Loading task…</p>}
     </Modal>
   );
 }

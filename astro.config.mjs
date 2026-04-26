@@ -1,17 +1,17 @@
 // @ts-check
-import { defineConfig } from 'astro/config';
+import { defineConfig } from "astro/config";
 import deno from "@deno/astro-adapter";
-import preact from '@astrojs/preact';
-import tailwindcss from '@tailwindcss/vite';
+import react from "@astrojs/react";
+import tailwindcss from "@tailwindcss/vite";
 
 // https://astro.build/config
 export default defineConfig({
   adapter: deno(),
 
-  integrations: [preact({ devtools: true, compat: true })],
+  integrations: [react()],
 
   security: {
-    checkOrigin: false
+    checkOrigin: false,
   },
 
   server: {
@@ -22,5 +22,4 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
   },
-
 });

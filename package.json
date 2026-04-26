@@ -4,18 +4,21 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@astrojs/preact": "^5.0.0",
+    "@astrojs/react": "^5.0.4",
     "@deno/astro-adapter": "^0.3.2",
     "@google/genai": "^1.50.1",
     "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.2.0",
     "@iconify/json": "^2.2.461",
     "@iconify/tailwind4": "^1.2.3",
-    "@preact/signals": "^2.8.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
     "astro": "^6.0.2",
     "astro-icon": "^1.1.5",
     "daisyui": "^5.5.19",
-    "preact": "^10.29.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
     "tailwindcss": "^4.2.1",
     "theme-change": "^2.5.0",
     "typescript": "^5.9.3"
@@ -25,12 +28,9 @@
     "@astrojs/check": "^0.9.7",
     "@catppuccin/tailwindcss": "^1.0.0",
     "@tailwindcss/vite": "^4.2.1",
-    "playwright": "^1.59.1",
-    "preact-mcp": "^0.1.1"
+    "playwright": "^1.59.1"
   },
   "overrides": {
-    "react": "npm:@preact/compat@latest",
-    "react-dom": "npm:@preact/compat@latest",
     "vite": "^7"
   }
 }

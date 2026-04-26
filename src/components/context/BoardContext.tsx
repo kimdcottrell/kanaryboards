@@ -1,7 +1,7 @@
-import { createContext } from "preact";
-import { useCallback, useContext, useEffect, useReducer, useRef } from "preact/hooks";
-import type { ComponentChildren } from "preact";
-import type { Dispatch } from "preact/hooks";
+import { createContext } from "react";
+import { useCallback, useContext, useEffect, useReducer, useRef } from "react";
+import type { ReactNode } from "react";
+import type { Dispatch } from "react";
 import type { BoardAction, BoardState } from "./types.ts";
 import { boardReducer, createInitialState } from "./reducer.ts";
 import { STORAGE_KEY } from "./constants.ts";
@@ -10,25 +10,35 @@ export const BoardStateContext = createContext<BoardState | null>(null);
 export const BoardDispatchContext = createContext<Dispatch<BoardAction> | null>(
   null,
 );
-export const BoardRefsContext = createContext<{
-  setChecklistInputRef: (id: string, el: HTMLInputElement | null) => void;
-  focusChecklistInput: (id: string) => void;
-} | null>(null);
+export const BoardRefsContext = createContext<
+  {
+    setChecklistInputRef: (id: string, el: HTMLInputElement | null) => void;
+    focusChecklistInput: (id: string) => void;
+  } | null
+>(null);
 
 export function useBoardState(): BoardState {
   const state = useContext(BoardStateContext);
-  if (!state) throw new Error("useBoardState must be used within a BoardProvider");
+  if (!state) {
+    throw new Error("useBoardState must be used within a BoardProvider");
+  }
   return state;
 }
 
 export function useBoardDispatch(): Dispatch<BoardAction> {
   const dispatch = useContext(BoardDispatchContext);
-  if (!dispatch) throw new Error("useBoardDispatch must be used within a BoardProvider");
+  if (!dispatch) {
+    throw new Error("useBoardDispatch must be used within a BoardProvider");
+  }
   return dispatch;
 }
 
 export function BoardProvider({ children }: { children: ComponentChildren }) {
-  const [state, dispatch] = useReducer(boardReducer, undefined, createInitialState);
+  const [state, dispatch] = useReducer(
+    boardReducer,
+    undefined,
+    createInitialState,
+  );
 
   useEffect(() => {
     if (typeof globalThis.localStorage === "undefined") return;

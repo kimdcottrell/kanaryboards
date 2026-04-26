@@ -33,77 +33,77 @@ export default function BoardConfiguration() {
   } = useBoard();
 
   return (
-    <div class="grid">
-      <section class="max-w-11/12 place-self-center collapse collapse-arrow mb-16 bg-base-300 p-4 shadow-xl shadow-base-300/20">
-        <input type="checkbox" class="peer" />
-        <div class="collapse-title">
-          <h2 class="text-3xl font-semibold">
+    <div className="grid">
+      <section className="max-w-11/12 place-self-center collapse collapse-arrow mb-16 bg-base-300 p-4 shadow-xl shadow-base-300/20">
+        <input type="checkbox" className="peer" />
+        <div className="collapse-title">
+          <h2 className="text-3xl font-semibold">
             Board Configuration
           </h2>
         </div>
-        <div class="collapse-content">
-          <p class="mt-3">
+        <div className="collapse-content">
+          <p className="mt-3">
             Add rows and columns, then place tasks into each column. Each task
             can include a title, description, and optional checklist.
           </p>
-          <div class=" bg-base-200 mt-6 p-5">
-            <h3 class="text-lg font-semibold">Create a new row</h3>
-            <form key={newRowFormKey} class="space-y-4 mt-4" onSubmit={addRow}>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <fieldset class="fieldset">
-                  <legend class="fieldset-legend">Row name</legend>
+          <div className=" bg-base-200 mt-6 p-5">
+            <h3 className="text-lg font-semibold">Create a new row</h3>
+            <form key={newRowFormKey} className="space-y-4 mt-4" onSubmit={addRow}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <fieldset className="fieldset">
+                  <legend className="fieldset-legend">Row name</legend>
                   <input
-                    class="input  input-secondary w-full validator"
+                    className="input  input-secondary w-full validator"
                     type="text"
                     value={newRowName}
-                    onInput={(e) => setNewRowName(e.currentTarget.value)}
+                    onChange={(e) => setNewRowName(e.currentTarget.value)}
                     placeholder="A project name, a category for large project tasks, etc."
                     disabled={isGeneratingTasks}
                     required
                   />
-                  <p class="validator-hint">Required</p>
+                  <p className="validator-hint">Required</p>
                 </fieldset>
 
-                <fieldset class="fieldset">
-                  <legend class="fieldset-legend">
+                <fieldset className="fieldset">
+                  <legend className="fieldset-legend">
                     Generate tasks with AI{" "}
-                    <span class="text-base-content/50 font-normal">
+                    <span className="text-base-content/50 font-normal">
                       (optional)
                     </span>
                   </legend>
                   <input
                     id="newRowPrompt"
-                    class="input  input-secondary w-full"
+                    className="input  input-secondary w-full"
                     type="text"
                     value={newRowPrompt}
-                    onInput={(e) => setNewRowPrompt(e.currentTarget.value)}
+                    onChange={(e) => setNewRowPrompt(e.currentTarget.value)}
                     placeholder="Describe the tasks to generate"
                     disabled={isGeneratingTasks}
                   />
-                  <p class="label">
+                  <p className="label">
                     Up to 10 tasks will be added to the Todo column
                   </p>
                 </fieldset>
               </div>
 
-              <div class="flex flex-col gap-3">
+              <div className="flex flex-col gap-3">
                 {!isGeneratingTasks && (
-                  <button class="btn  btn-secondary w-fit" type="submit">
+                  <button className="btn  btn-secondary w-fit" type="submit">
                     Add Row
                   </button>
                 )}
                 {isGeneratingTasks && (
-                  <div class="alert alert-info">
+                  <div className="alert alert-info">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
-                      class="stroke-current shrink-0 w-6 h-6"
+                      className="stroke-current shrink-0 w-6 h-6"
                     >
                       <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
                         d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                       >
                       </path>
@@ -114,22 +114,22 @@ export default function BoardConfiguration() {
               </div>
             </form>
           </div>
-          <div class="mt-6 bg-base-200 p-5">
-            <div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-6 bg-base-200 p-5">
+            <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 class="text-lg font-semibold">
+                <h3 className="text-lg font-semibold">
                   Default column settings
                 </h3>
-                <p class="text-sm">
+                <p className="text-sm">
                   Manage the default column set used across projects. Drag
                   badges to reorder, click x to remove, or add a new default
                   column.
                 </p>
               </div>
             </div>
-            <div class="flex flex-wrap items-baseline gap-2">
+            <div className="flex flex-wrap items-baseline gap-2">
               {defaultColumnNames.map((name, index) => (
-                <div class="join" key={name}>
+                <div className="join" key={name}>
                   <button
                     type="button"
                     draggable="true"
@@ -138,7 +138,7 @@ export default function BoardConfiguration() {
                     onDrop={handleDefaultColumnDrop(index)}
                     onDragEnd={() =>
                       setDraggedDefaultIndex(null)}
-                    class="btn rounded-l! join-item btn-primary cursor-grab"
+                    className="btn rounded-l! join-item btn-primary cursor-grab"
                   >
                     {name}
                   </button>
@@ -148,54 +148,54 @@ export default function BoardConfiguration() {
                       event.stopPropagation();
                       removeDefaultColumn(name);
                     }}
-                    class="btn rounded-r! join-item btn-primary p-2 dark:btn-border-primary light:text-primary-content bg-primary/40 hover:bg-primary/80 dark:text-base-100 text-primary! hover:text-primary-content!"
+                    className="btn rounded-r! join-item btn-primary p-2 dark:btn-border-primary light:text-primary-content bg-primary/40 hover:bg-primary/80 dark:text-base-100 text-primary! hover:text-primary-content!"
                   >
-                    <span class="iconify basil--cross-outline text-2xl font-bold">
+                    <span className="iconify basil--cross-outline text-2xl font-bold">
                     </span>
                   </button>
                 </div>
               ))}
-              <fieldset class="fieldset">
+              <fieldset className="fieldset">
                 <input
-                  class="input input-primary"
+                  className="input input-primary"
                   type="text"
                   value={defaultColumnInput}
-                  onInput={(e) => setDefaultColumnInput(e.currentTarget.value)}
+                  onChange={(e) => setDefaultColumnInput(e.currentTarget.value)}
                   onKeyDown={handleDefaultColumnInputKeyDown}
                   placeholder="Add new column"
                 />
-                <p class="label">Hit enter to create</p>
+                <p className="label">Hit enter to create</p>
               </fieldset>
             </div>
           </div>
 
-          <div class="mt-6 bg-base-200 p-5">
-            <div class="mb-4 items-baseline justify-between">
+          <div className="mt-6 bg-base-200 p-5">
+            <div className="mb-4 items-baseline justify-between">
               <div>
-                <h3 class="text-lg font-semibold">
+                <h3 className="text-lg font-semibold">
                   Row settings
                 </h3>
-                <p class="text-sm">
+                <p className="text-sm">
                   Use the arrow buttons to move rows up or down and pick a color
                   for each project row.
                 </p>
               </div>
             </div>
-            <ul class="list space-y-1 shadow-md">
+            <ul className="list space-y-1 shadow-md">
               {rows.map((row, index) => (
                 <li
                   key={row.id}
-                  class="list-row grid grid-cols-3 items-center row-color-tint"
+                  className="list-row grid grid-cols-3 items-center row-color-tint"
                   style={{ "--row-tint-color": row.color }}
                 >
                   <div>
                     {editingRowId === row.id
                       ? (
                         <input
-                          class="input input-sm input-bordered w-full font-bold"
+                          className="input input-sm input-bordered w-full font-bold"
                           type="text"
                           value={editingRowName}
-                          onInput={(e) =>
+                          onChange={(e) =>
                             setEditingRowName(e.currentTarget.value)}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
@@ -211,8 +211,8 @@ export default function BoardConfiguration() {
                       )
                       : (
                         <h4
-                          class="font-bold cursor-pointer"
-                          onDblClick={() => editRowTitle(row)}
+                          className="font-bold cursor-pointer"
+                          onDoubleClick={() => editRowTitle(row)}
                           title="Double-click to edit"
                         >
                           {row.name}
@@ -221,7 +221,7 @@ export default function BoardConfiguration() {
                   </div>
                   <div>
                     <select
-                      class="select select-sm"
+                      className="select select-sm"
                       value={row.color}
                       onChange={(e) =>
                         updateRowColor(row.id, e.currentTarget.value)}
@@ -233,42 +233,42 @@ export default function BoardConfiguration() {
                       ))}
                     </select>
                   </div>
-                  <div class="flex items-center justify-end gap-1">
+                  <div className="flex items-center justify-end gap-1">
                     <button
                       type="button"
-                      class={`btn btn-sm btn-square btn-soft btn-accent ${
+                      className={`btn btn-sm btn-square btn-soft btn-accent ${
                         index === 0 ? "invisible" : ""
                       }`}
                       onClick={() => moveRowUp(index)}
                       aria-label={`Move ${row.name} up`}
                     >
-                      <span class="iconify hugeicons--arrow-up-01 text-xl" />
+                      <span className="iconify hugeicons--arrow-up-01 text-xl" />
                     </button>
                     <button
                       type="button"
-                      class={`btn btn-sm btn-square btn-soft btn-accent ${
+                      className={`btn btn-sm btn-square btn-soft btn-accent ${
                         index === rows.length - 1 ? "invisible" : ""
                       }`}
                       onClick={() => moveRowDown(index)}
                       aria-label={`Move ${row.name} down`}
                     >
-                      <span class="iconify hugeicons--arrow-down-01 text-xl" />
+                      <span className="iconify hugeicons--arrow-down-01 text-xl" />
                     </button>
                   </div>
                 </li>
               ))}
             </ul>
           </div>
-          <div class="mt-6 bg-base-200 p-5">
-            <div class="mb-4">
-              <h3 class="text-lg font-semibold">D-D-D-Danger Zone</h3>
-              <p class="text-sm">
+          <div className="mt-6 bg-base-200 p-5">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold">D-D-D-Danger Zone</h3>
+              <p className="text-sm">
                 These are changes you cannot undo! Be careful.
               </p>
             </div>
             <button
               type="button"
-              class="btn btn-error"
+              className="btn btn-error"
               onClick={confirmResetBoard}
             >
               Reset Board

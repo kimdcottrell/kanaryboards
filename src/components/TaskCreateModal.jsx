@@ -26,8 +26,8 @@ export default function TaskCreateModal() {
 
   return (
     <Modal open={taskCreateModalOpen} onClose={closeTaskCreateModal}>
-      <h3 class="text-xl font-semibold">Add task</h3>
-      <p class="text-sm text-base-content/70 mt-2">
+      <h3 className="text-xl font-semibold">Add task</h3>
+      <p className="text-sm text-base-content/70 mt-2">
         Create a new task in the selected column.
       </p>
       {taskCreateModalOpen && <TaskForm

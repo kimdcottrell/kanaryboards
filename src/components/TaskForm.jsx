@@ -25,38 +25,38 @@ export default function TaskForm({
   children,
 }) {
   return (
-    <form class="mt-4 space-y-4" onSubmit={onSubmit} noValidate>
-      <fieldset class="fieldset">
-        <legend class="fieldset-legend">Title</legend>
+    <form className="mt-4 space-y-4" onSubmit={onSubmit} noValidate>
+      <fieldset className="fieldset">
+        <legend className="fieldset-legend">Title</legend>
         <input
-          class="input validator input-bordered w-full"
+          className="input validator input-bordered w-full"
           type="text"
           value={taskDraft.title}
-          onInput={(e) =>
+          onChange={(e) =>
             setTaskDraft({
               ...taskDraft,
               title: e.currentTarget.value,
             })}
           required
         />
-        <span class="validator-hint hidden">Required</span>
+        <span className="validator-hint hidden">Required</span>
       </fieldset>
 
-      <fieldset class="fieldset">
-        <legend class="fieldset-legend">Description</legend>
+      <fieldset className="fieldset">
+        <legend className="fieldset-legend">Description</legend>
         <textarea
-          class="textarea textarea-bordered w-full h-24"
+          className="textarea textarea-bordered w-full h-24"
           value={taskDraft.description}
-          onInput={(e) =>
+          onChange={(e) =>
             setTaskDraft({
               ...taskDraft,
               description: e.currentTarget.value,
             })}
         />
-        <p class="label">Optional</p>
+        <p className="label">Optional</p>
       </fieldset>
       {children}
-      <div class="grid grid-cols-2 gap-4 items-start">
+      <div className="grid grid-cols-2 gap-4 items-start">
         <ChecklistSection
           checklist={taskDraft.checklist}
           addChecklistItem={addChecklistItem}
@@ -77,23 +77,23 @@ export default function TaskForm({
           clearChecklistPreview={clearChecklistPreview}
         />
       </div>
-      <div class={`flex gap-2 ${onDelete ? "justify-between" : "justify-end"}`}>
+      <div className={`flex gap-2 ${onDelete ? "justify-between" : "justify-end"}`}>
         {onDelete && (
           <button
             type="button"
-            class="btn btn-error btn-outline"
+            className="btn btn-error btn-outline"
             onClick={onDelete}
           >
             Delete
           </button>
         )}
-        <div class="flex gap-2">
+        <div className="flex gap-2">
           {onCancel && (
-            <button type="button" class="btn btn-ghost" onClick={onCancel}>
+            <button type="button" className="btn btn-ghost" onClick={onCancel}>
               Cancel
             </button>
           )}
-          <button type="submit" class="btn btn-success">
+          <button type="submit" className="btn btn-success">
             {submitLabel}
           </button>
         </div>

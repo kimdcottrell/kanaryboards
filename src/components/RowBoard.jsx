@@ -5,7 +5,7 @@ export default function RowBoard() {
   const { rows } = useBoard();
 
   return (
-    <div class="space-y-10">
+    <div className="space-y-10">
       {rows.map((row) => <RowSection key={row.id} row={row} />)}
     </div>
   );

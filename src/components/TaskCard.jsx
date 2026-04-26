@@ -11,7 +11,7 @@ export default function TaskCard({ task, row, column }) {
   const isEditing = task.id === editingTaskId;
   return (
     <article
-      draggable={isEditing ? "false" : "true"}
+      draggable={!isEditing}
       onDragStart={isEditing ? undefined : (event) =>
         handleDragStart(
           task,
@@ -20,34 +20,34 @@ export default function TaskCard({ task, row, column }) {
           event,
         )}
       onDragEnd={handleDragEnd}
-      class="overflow-hidden shadow-sm shadow-base-900/5"
+      className="overflow-hidden shadow-sm shadow-base-900/5"
     >
-      <div class="block">
-        <div class="join-item bg-base-200 p-4">
-          <div class="flex items-center justify-between gap-3">
-            <h5 class="text-base font-semibold">
+      <div className="block">
+        <div className="join-item bg-base-200 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <h5 className="text-base font-semibold">
               {task.title}
             </h5>
             <button
               type="button"
-              class="btn text-base-100 btn-sm btn-square text-md transition"
+              className="btn text-base-100 btn-sm btn-square text-md transition"
               onClick={() => startEditTask(task)}
               style={{
                 backgroundColor:
                   `color-mix(in srgb, ${row.color} 60%, transparent)`,
               }}
             >
-              <span class="iconify hugeicons--pencil-edit-02 text-xl">
+              <span className="iconify hugeicons--pencil-edit-02 text-xl">
               </span>
             </button>
           </div>
         </div>
         {task.description && (
-          <div class="bg-base-100 p-4">
-            <p class="text-xs uppercase tracking-[0.18em]">
+          <div className="bg-base-100 p-4">
+            <p className="text-xs uppercase tracking-[0.18em]">
               Description
             </p>
-            <p class="mt-1 text-sm">
+            <p className="mt-1 text-sm">
               {task.description}
             </p>
           </div>
@@ -55,28 +55,28 @@ export default function TaskCard({ task, row, column }) {
 
         {task.checklist &&
           task.checklist.length > 0 && (
-          <div class="space-y-2 bg-base-100 p-4">
-            <p class="text-xs uppercase tracking-[0.18em]">
+          <div className="space-y-2 bg-base-100 p-4">
+            <p className="text-xs uppercase tracking-[0.18em]">
               Checklist
             </p>
-            <div class="space-y-2">
+            <div className="space-y-2">
               {task.checklist.map((item) => (
                 <label
                   key={item.id}
-                  class="flex items-center gap-2 text-sm"
+                  className="flex items-center gap-2 text-sm"
                 >
                   <input
                     type="checkbox"
                     checked={item.checked}
-                    onInput={() =>
+                    onChange={() =>
                       toggleTaskChecklist(
                         task.id,
                         item.id,
                       )}
-                    class="checkbox checkbox-sm"
+                    className="checkbox checkbox-sm"
                   />
                   <span
-                    class={item.checked ? "line-through " : ""}
+                    className={item.checked ? "line-through " : ""}
                   >
                     {item.text}
                   </span>

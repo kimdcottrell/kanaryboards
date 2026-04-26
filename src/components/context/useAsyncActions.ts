@@ -1,4 +1,4 @@
-import type { Dispatch } from "preact/hooks";
+import type { Dispatch } from "react";
 import type { BoardAction, BoardState, Task } from "./types.ts";
 import { createId, rowColorOptions, STORAGE_KEY } from "./constants.ts";
 import { findTodoColumnId } from "./selectors.ts";

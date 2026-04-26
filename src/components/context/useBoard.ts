@@ -1,4 +1,4 @@
-import { useContext, useMemo } from "preact/hooks";
+import { useContext, useMemo } from "react";
 import {
   BoardDispatchContext,
   BoardRefsContext,

@@ -3,7 +3,7 @@
   "include": [
     ".astro/types.d.ts",
     "src/content.config.js",
-    "**/*",
+    "**/*"
   ],
   "exclude": [
     "dist"
@@ -13,16 +13,10 @@
     "allowJs": true,
     "skipLibCheck": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "preact",
+    "jsxImportSource": "react",
     "paths": {
       "@src/*": [
         "./src/*"
-      ],
-      "react": [
-        "./node_modules/preact/compat/"
-      ],
-      "react-dom": [
-        "./node_modules/preact/compat/"
       ]
     }
   }

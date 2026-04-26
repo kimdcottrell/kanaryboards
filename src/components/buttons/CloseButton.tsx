@@ -1,10 +1,10 @@
-import type { JSX } from "preact";
+import type { MouseEventHandler } from "react";
 
 interface CloseButtonProps {
-  onClick: JSX.MouseEventHandler<HTMLButtonElement>;
+  onClick: MouseEventHandler<HTMLButtonElement>;
   tooltip?: string;
   tooltipPosition?: "top" | "bottom" | "left" | "right";
-  class?: string;
+  className?: string;
   "aria-label"?: string;
 }
 
@@ -12,7 +12,7 @@ export default function CloseButton({
   onClick,
   tooltip,
   tooltipPosition,
-  class: extraClass,
+  className: extraClass,
   "aria-label": ariaLabel,
 }: CloseButtonProps) {
   const tooltipClasses = tooltip
@@ -25,12 +25,12 @@ export default function CloseButton({
   return (
     <button
       type="button"
-      class={cls}
+      className={cls}
       onClick={onClick}
       data-tip={tooltip}
       aria-label={ariaLabel ?? tooltip}
     >
-      <span class="iconify hugeicons--cancel-01 text-xl"></span>
+      <span className="iconify hugeicons--cancel-01 text-xl"></span>
     </button>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useState } from "react";
 import CloseButton from "./buttons/CloseButton.tsx";
 
 export default function ChecklistSection({
@@ -10,44 +10,44 @@ export default function ChecklistSection({
   setChecklistInputRef,
 }) {
   return (
-    <div class="space-y-3 rounded bg-base-content/10 p-4">
-      <div class="flex items-center justify-between gap-3">
-        <p class="text-sm font-semibold">
+    <div className="space-y-3 rounded bg-base-content/10 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-semibold">
           Checklist items
         </p>
 
         <button
           type="button"
           data-tip="Add checklist item"
-          class="tooltip btn text-base-100 btn-info btn-sm btn-square text-md transition"
+          className="tooltip btn text-base-100 btn-info btn-sm btn-square text-md transition"
           onClick={() => addChecklistItem(true)}
         >
-          <span class="iconify hugeicons--layer-add text-xl">
+          <span className="iconify hugeicons--layer-add text-xl">
           </span>
         </button>
       </div>
-      <div class="space-y-3">
+      <div className="space-y-3">
         {checklist.map((item, index) => (
           <div
             key={item.id}
-            class="rounded flex items-center gap-3 bg-base-content/10 px-3 py-2"
+            className="rounded flex items-center gap-3 bg-base-content/10 px-3 py-2"
           >
             <input
               type="checkbox"
               checked={item.checked}
-              onInput={() =>
+              onChange={() =>
                 updateChecklistItem(
                   item.id,
                   "checked",
                   !item.checked,
                 )}
-              class="checkbox bg-secondary checked:bg-secondary checked:text-base-100 checkbox-sm shrink-0"
+              className="checkbox bg-secondary checked:bg-secondary checked:text-base-100 checkbox-sm shrink-0"
             />
             <input
-              class="input w-10/12 mx-auto"
+              className="input w-10/12 mx-auto"
               type="text"
               value={item.text}
-              onInput={(e) =>
+              onChange={(e) =>
                 updateChecklistItem(
                   item.id,
                   "text",
@@ -65,7 +65,7 @@ export default function ChecklistSection({
             <CloseButton
               onClick={() => deleteChecklistItem(item.id)}
               aria-label="Delete checklist item"
-              class="shrink-0 ml-auto"
+              className="shrink-0 ml-auto"
             />
           </div>
         ))}
@@ -100,13 +100,13 @@ export function ChecklistGenerationCollapse({
 
   return (
     <div
-      class={`collapse collapse-arrow bg-base-content/10 ${
+      className={`collapse collapse-arrow bg-base-content/10 ${
         collapseOpen ? "collapse-open" : ""
       }`}
     >
       <button
         type="button"
-        class="collapse-title font-semibold text-sm py-3 w-full text-left"
+        className="collapse-title font-semibold text-sm py-3 w-full text-left"
         onClick={() => {
           const opening = !collapseOpen;
           setCollapseOpen(opening);
@@ -117,18 +117,18 @@ export function ChecklistGenerationCollapse({
       >
         Generate checklist items with AI
       </button>
-      <div class="collapse-content space-y-4">
-        <div class="form-control">
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend">
+      <div className="collapse-content space-y-4">
+        <div className="form-control">
+          <fieldset className="fieldset">
+            <legend className="fieldset-legend">
               What task do you need broken down into subtasks?
             </legend>
             <input
-              class="input input-bordered w-full"
+              className="input input-bordered w-full"
               type="text"
               value={checklistPrompt}
               placeholder={taskDraft?.title || "Break down this task..."}
-              onInput={(e) => {
+              onChange={(e) => {
                 setChecklistPrompt(e.currentTarget.value);
                 if (e.currentTarget.value.trim()) setShowError(false);
               }}
@@ -139,17 +139,17 @@ export function ChecklistGenerationCollapse({
                 }
               }}
             />
-            {showError && <p class="text-error text-sm mt-1">Required</p>}
+            {showError && <p className="text-error text-sm mt-1">Required</p>}
           </fieldset>
         </div>
-        <div class="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            class="btn btn-success btn-sm"
+            className="btn btn-success btn-sm"
             onClick={applyChecklist}
             disabled={checklistPreview.length === 0}
           >
-            <span class="iconify hugeicons--arrow-left-big text-lg">
+            <span className="iconify hugeicons--arrow-left-big text-lg">
             </span>
             Copy checklist items to task
           </button>
@@ -158,21 +158,21 @@ export function ChecklistGenerationCollapse({
             ? (
               <button
                 type="button"
-                class="btn btn-warning btn-sm"
+                className="btn btn-warning btn-sm"
                 onClick={clearChecklistPreview}
               >
-                <span class="iconify basil--trash-outline text-lg"></span>
+                <span className="iconify basil--trash-outline text-lg"></span>
                 Empty generated items
               </button>
             )
             : (
               <button
                 type="button"
-                class="btn btn-info btn-sm"
+                className="btn btn-info btn-sm"
                 onClick={tryGenerate}
                 disabled={isGeneratingChecklist}
               >
-                <span class="iconify hugeicons--magic-wand-03 text-lg"></span>
+                <span className="iconify hugeicons--magic-wand-03 text-lg"></span>
                 {isGeneratingChecklist
                   ? "Generating…"
                   : "Generate Checklist Items"}
@@ -180,39 +180,39 @@ export function ChecklistGenerationCollapse({
             )}
         </div>
         {checklistModalError && (
-          <p class="text-sm text-error">{checklistModalError}</p>
+          <p className="text-sm text-error">{checklistModalError}</p>
         )}
-        <div class="overflow-x-auto">
+        <div className="overflow-x-auto">
           {checklistPreview.length > 0
             ? (
-              <table class="bg-base-content/10 table w-full">
+              <table className="bg-base-content/10 table w-full">
                 <thead>
                   <tr>
-                    <th class="pe-0"></th>
-                    <th class="text-left ps-0">Checklist item preview</th>
+                    <th className="pe-0"></th>
+                    <th className="text-left ps-0">Checklist item preview</th>
                   </tr>
                 </thead>
                 <tbody>
                   {checklistPreview.map((item, index) => (
                     <tr
-                      class="border border-base-100!"
+                      className="border border-base-100!"
                       key={`${item}-${index}`}
                     >
-                      <td class="pe-0">
+                      <td className="pe-0">
                         <input
                           type="checkbox"
-                          class="checkbox bg-base-300"
+                          className="checkbox bg-base-300"
                           disabled
                         />
                       </td>
-                      <td class="ps-0">{item}</td>
+                      <td className="ps-0">{item}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             )
             : (
-              <p class="text-sm">
+              <p className="text-sm">
                 Generate checklist items to preview them here.
               </p>
             )}
