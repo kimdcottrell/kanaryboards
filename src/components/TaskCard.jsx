@@ -9,6 +9,7 @@ export default function TaskCard({ task, row, column }) {
     toggleTaskChecklist,
   } = useBoard();
   const isEditing = task.id === editingTaskId;
+
   return (
     <article
       draggable={!isEditing}
@@ -24,14 +25,21 @@ export default function TaskCard({ task, row, column }) {
     >
       <div className="block">
         <div className="join-item bg-base-200 p-4">
-          <div className="flex items-center justify-between gap-3">
+          <div
+            onClick={() => startEditTask(task)}
+            className="flex items-center justify-between gap-3 cursor-grab"
+          >
             <h5 className="text-base font-semibold">
               {task.title}
             </h5>
             <button
               type="button"
-              className="btn text-base-100 btn-sm btn-square text-md transition"
-              onClick={() => startEditTask(task)}
+              onMouseEnter={(e) =>
+                e.currentTarget.style.backgroundColor = row.color}
+              onMouseLeave={(e) =>
+                e.currentTarget.style.backgroundColor =
+                  `color-mix(in srgb, ${row.color} 60%, transparent)`}
+              className="btn text-base-100 btn-sm btn-square text-md"
               style={{
                 backgroundColor:
                   `color-mix(in srgb, ${row.color} 60%, transparent)`,
@@ -42,17 +50,6 @@ export default function TaskCard({ task, row, column }) {
             </button>
           </div>
         </div>
-        {task.description && (
-          <div className="bg-base-100 p-4">
-            <p className="text-xs uppercase tracking-[0.18em]">
-              Description
-            </p>
-            <p className="mt-1 text-sm">
-              {task.description}
-            </p>
-          </div>
-        )}
-
         {task.checklist &&
           task.checklist.length > 0 && (
           <div className="space-y-2 bg-base-100 p-4">

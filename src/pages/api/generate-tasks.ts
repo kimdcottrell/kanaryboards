@@ -93,9 +93,9 @@ export const POST: APIRoute = async ({ request }: APIContext) => {
       },
     );
   } catch (e) {
-    const parsedError = JSON.parse(JSON.parse(e.message).error.message);
-    console.log(JSON.parse(parsedError));
-    return new Response(JSON.stringify(parsedError), {
+    // const parsedError = JSON.parse(JSON.parse(e.message).error.message);
+    console.log(JSON.parse(e.message));
+    return new Response(JSON.stringify(JSON.parse(e.message)), {
       status: e.status || 429,
       headers: { "Content-Type": "application/json" },
     });

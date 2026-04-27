@@ -1,6 +1,5 @@
 import { createContext } from "react";
 import { useCallback, useContext, useEffect, useReducer, useRef } from "react";
-import type { ReactNode } from "react";
 import type { Dispatch } from "react";
 import type { BoardAction, BoardState } from "./types.ts";
 import { boardReducer, createInitialState } from "./reducer.ts";

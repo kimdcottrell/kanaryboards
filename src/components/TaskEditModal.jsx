@@ -37,6 +37,7 @@ export default function TaskEditModal() {
             setTaskDraft={setEditTaskDraft}
             onSubmit={saveTaskEdit}
             submitLabel="Save"
+            initialMode="visual-only"
             onDelete={() => deleteTask(editTaskDraft.id)}
             addChecklistItem={addEditChecklistItem}
             updateChecklistItem={updateEditChecklistItem}

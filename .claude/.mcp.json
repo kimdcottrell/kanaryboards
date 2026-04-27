@@ -16,6 +16,10 @@
       "type": "http",
       "url": "https://docs.docker.com/llms.txt"
     },
+    "Luthor docs":{
+      "type": "http",
+      "url": "https://luthor.fyi/llms-full.txt"
+    },
     "Google GenAI docs": {
       "type": "http",
       "url": "https://raw.githubusercontent.com/googleapis/js-genai/refs/heads/main/codegen_instructions.md"

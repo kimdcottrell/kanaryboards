@@ -42,8 +42,9 @@ export function useBoard() {
     setTaskDraft: (draft: TaskDraft) =>
       dispatch({ type: "TASK/UPDATE_DRAFT", payload: { draft } }),
     setEditTaskDraft: (draft: Task | null) => {
-      if (draft) dispatch({ type: "TASK/UPDATE_EDIT_DRAFT", payload: { draft } });
-      else dispatch({ type: "TASK/CLOSE_EDIT_MODAL" });
+      if (draft) {
+        dispatch({ type: "TASK/UPDATE_EDIT_DRAFT", payload: { draft } });
+      } else dispatch({ type: "TASK/CLOSE_EDIT_MODAL" });
     },
     // Handles null from RowSection Escape keydown (cancels edit entirely)
     setEditingRowName: (name: string | null) => {
@@ -62,7 +63,10 @@ export function useBoard() {
     removeDefaultColumn: (name: string) =>
       dispatch({ type: "COLUMN/REMOVE_DEFAULT", payload: { name } }),
     moveDefaultColumn: (fromIndex: number, toIndex: number) =>
-      dispatch({ type: "COLUMN/MOVE_DEFAULT", payload: { fromIndex, toIndex } }),
+      dispatch({
+        type: "COLUMN/MOVE_DEFAULT",
+        payload: { fromIndex, toIndex },
+      }),
     handleDefaultColumnInputKeyDown: (event: KeyboardEvent) => {
       if (event.key === "Enter") {
         event.preventDefault();
@@ -73,30 +77,27 @@ export function useBoard() {
         dispatch({ type: "COLUMN/SET_INPUT", payload: { value: "" } });
       }
     },
-    handleDefaultColumnDragStart:
-      (index: number) => (event: DragEvent) => {
-        dispatch({ type: "DRAG/SET_DEFAULT_INDEX", payload: { index } });
-        event.dataTransfer!.effectAllowed = "move";
-        event.dataTransfer!.setData("text/plain", String(index));
-      },
+    handleDefaultColumnDragStart: (index: number) => (event: DragEvent) => {
+      dispatch({ type: "DRAG/SET_DEFAULT_INDEX", payload: { index } });
+      event.dataTransfer!.effectAllowed = "move";
+      event.dataTransfer!.setData("text/plain", String(index));
+    },
     handleDefaultColumnDragOver: (event: DragEvent) => {
       event.preventDefault();
     },
-    handleDefaultColumnDrop:
-      (index: number) => (event: DragEvent) => {
-        event.preventDefault();
-        const from =
-          state.draggedDefaultIndex !== null
-            ? state.draggedDefaultIndex
-            : Number(event.dataTransfer?.getData("text/plain"));
-        if (from !== index && !Number.isNaN(from)) {
-          dispatch({
-            type: "COLUMN/MOVE_DEFAULT",
-            payload: { fromIndex: from, toIndex: index },
-          });
-        }
-        dispatch({ type: "DRAG/SET_DEFAULT_INDEX", payload: { index: null } });
-      },
+    handleDefaultColumnDrop: (index: number) => (event: DragEvent) => {
+      event.preventDefault();
+      const from = state.draggedDefaultIndex !== null
+        ? state.draggedDefaultIndex
+        : Number(event.dataTransfer?.getData("text/plain"));
+      if (from !== index && !Number.isNaN(from)) {
+        dispatch({
+          type: "COLUMN/MOVE_DEFAULT",
+          payload: { fromIndex: from, toIndex: index },
+        });
+      }
+      dispatch({ type: "DRAG/SET_DEFAULT_INDEX", payload: { index: null } });
+    },
     deleteColumn: (columnId: string) =>
       dispatch({ type: "COLUMN/DELETE", payload: { columnId } }),
     // ── Row handlers ────────────────────────────────────────────────────
@@ -128,9 +129,11 @@ export function useBoard() {
     // ── Task handlers ────────────────────────────────────────────────────
     openTaskForm: (rowId: string, colId: string) =>
       dispatch({ type: "TASK/OPEN_CREATE_MODAL", payload: { rowId, colId } }),
-    closeTaskCreateModal: () =>
-      dispatch({ type: "TASK/CLOSE_CREATE_MODAL" }),
-    createTask: (event: Event) => {
+    closeTaskCreateModal: () => dispatch({ type: "TASK/CLOSE_CREATE_MODAL" }),
+    createTask: (
+      event: Event,
+      content?: { json: string; markdown: string; html: string },
+    ) => {
       event.preventDefault();
       if (!(event.target as HTMLFormElement).checkValidity()) return;
       const task: Task = {
@@ -138,7 +141,7 @@ export function useBoard() {
         rowId: state.taskDraft.rowId,
         colId: state.taskDraft.colId,
         title: state.taskDraft.title.trim(),
-        description: state.taskDraft.description.trim(),
+        description: content?.json ?? state.taskDraft.description,
         checklist: state.taskDraft.checklist.filter(
           (item: ChecklistItem) => item.text.trim(),
         ),
@@ -147,13 +150,23 @@ export function useBoard() {
     },
     startEditTask: (task: Task) =>
       dispatch({ type: "TASK/OPEN_EDIT_MODAL", payload: { task } }),
-    cancelEditTask: () =>
-      dispatch({ type: "TASK/CLOSE_EDIT_MODAL" }),
+    cancelEditTask: () => dispatch({ type: "TASK/CLOSE_EDIT_MODAL" }),
     deleteTask: (taskId: string) =>
       dispatch({ type: "TASK/DELETE", payload: { taskId } }),
-    saveTaskEdit: (event: Event) => {
+    saveTaskEdit: (
+      event: Event,
+      content?: { json: string; markdown: string; html: string },
+    ) => {
       event.preventDefault();
       if (!(event.target as HTMLFormElement).checkValidity()) return;
+      if (content !== undefined && state.editTaskDraft) {
+        dispatch({
+          type: "TASK/UPDATE_EDIT_DRAFT",
+          payload: {
+            draft: { ...state.editTaskDraft, description: content.json },
+          },
+        });
+      }
       dispatch({ type: "TASK/SAVE_EDIT" });
     },
     toggleTaskChecklist: (taskId: string, itemId: string) =>
@@ -177,14 +190,13 @@ export function useBoard() {
       event.dataTransfer!.setData("text/plain", task.id);
     },
     handleDragEnd: () => dispatch({ type: "DRAG/END_TASK" }),
-    handleColumnDrop:
-      (rowId: string, colId: string) => (event: DragEvent) => {
-        event.preventDefault();
-        dispatch({
-          type: "DRAG/DROP_TASK",
-          payload: { toRowId: rowId, toColId: colId },
-        });
-      },
+    handleColumnDrop: (rowId: string, colId: string) => (event: DragEvent) => {
+      event.preventDefault();
+      dispatch({
+        type: "DRAG/DROP_TASK",
+        payload: { toRowId: rowId, toColId: colId },
+      });
+    },
 
     // ── Checklist item handlers ──────────────────────────────────────────
     addChecklistItem: async_.addChecklistItem,
@@ -245,8 +257,7 @@ export function useBoard() {
       dispatch({ type: "CHECKLIST_AI/APPLY_TO_EDIT_DRAFT" }),
     applyChecklistPreviewToDraft: () =>
       dispatch({ type: "CHECKLIST_AI/APPLY_TO_CREATE_DRAFT" }),
-    clearChecklistPreview: () =>
-      dispatch({ type: "CHECKLIST_AI/RESET" }),
+    clearChecklistPreview: () => dispatch({ type: "CHECKLIST_AI/RESET" }),
 
     // ── AI handlers ──────────────────────────────────────────────────────
     generateTasksForRow: async_.generateTasksForRow,

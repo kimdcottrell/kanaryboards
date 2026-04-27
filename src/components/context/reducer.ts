@@ -15,7 +15,11 @@ export const createInitialState = (): BoardState => {
 
   return {
     rows: persisted?.rows ?? [
-      { id: createId(), name: "Sample Project", color: "var(--color-row-blue)" },
+      {
+        id: createId(),
+        name: "Sample Project",
+        color: "var(--color-row-blue)",
+      },
     ],
     columns,
     tasks: persisted?.tasks ?? [],
@@ -284,7 +288,7 @@ export function boardReducer(
             ? {
               ...t,
               title: state.editTaskDraft!.title.trim(),
-              description: state.editTaskDraft!.description.trim(),
+              description: state.editTaskDraft!.description,
               rowId: state.editTaskDraft!.rowId,
               colId: state.editTaskDraft!.colId,
               checklist: state.editTaskDraft!.checklist.filter((i) =>
@@ -618,7 +622,11 @@ export function boardReducer(
         defaultColumnNames,
         columns: defaultColumnNames.map((name) => ({ id: createId(), name })),
         rows: [
-          { id: createId(), name: "Sample Project", color: "var(--color-row-blue)" },
+          {
+            id: createId(),
+            name: "Sample Project",
+            color: "var(--color-row-blue)",
+          },
         ],
         tasks: [],
       };
