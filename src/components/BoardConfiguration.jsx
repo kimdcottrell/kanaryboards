@@ -48,7 +48,11 @@ export default function BoardConfiguration() {
           </p>
           <div className=" bg-base-200 mt-6 p-5">
             <h3 className="text-lg font-semibold">Create a new row</h3>
-            <form key={newRowFormKey} className="space-y-4 mt-4" onSubmit={addRow}>
+            <form
+              key={newRowFormKey}
+              className="space-y-4 mt-4"
+              onSubmit={addRow}
+            >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <fieldset className="fieldset">
                   <legend className="fieldset-legend">Row name</legend>
@@ -236,23 +240,23 @@ export default function BoardConfiguration() {
                   <div className="flex items-center justify-end gap-1">
                     <button
                       type="button"
-                      className={`btn btn-sm btn-square btn-soft btn-accent ${
+                      className={`btn btn-sm btn-square btn-warning ${
                         index === 0 ? "invisible" : ""
                       }`}
                       onClick={() => moveRowUp(index)}
                       aria-label={`Move ${row.name} up`}
                     >
-                      <span className="iconify hugeicons--arrow-up-01 text-xl" />
+                      <span className="iconify hugeicons--arrow-up-big text-xl" />
                     </button>
                     <button
                       type="button"
-                      className={`btn btn-sm btn-square btn-soft btn-accent ${
+                      className={`btn btn-sm btn-square btn-warning ${
                         index === rows.length - 1 ? "invisible" : ""
                       }`}
                       onClick={() => moveRowDown(index)}
                       aria-label={`Move ${row.name} down`}
                     >
-                      <span className="iconify hugeicons--arrow-down-01 text-xl" />
+                      <span className="iconify hugeicons--arrow-down-big text-xl" />
                     </button>
                   </div>
                 </li>

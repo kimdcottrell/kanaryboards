@@ -9,7 +9,7 @@ Kanary Boards is a kanban board app. Key stack facts:
 
 **Framework:** Astro 6.x with the Deno adapter (`@deno/astro-adapter`). The single interactive island is `<BoardWrapper client:only="react" />` in `src/pages/index.astro`.
 
-**UI:** React 19 (migrated from Preact). Components live in `src/components/`. State is managed with Context API + useReducer (no Redux/Zustand). Three contexts: `BoardStateContext`, `BoardDispatchContext`, `BoardRefsContext`.
+**UI:** React 19 (migrated from Preact). Components live in `src/components/`. State is managed with Context API + useReducer (no Redux/Zustand). Three contexts: `BoardStateContext`, `BoardDispatchContext`, `BoardRefsContext`. Icons via `astro-icon` + `@iconify/json` + `@iconify/tailwind4`. Validation via `@lyfie/luthor`.
 
 **Styling:** Tailwind CSS 4.x + DaisyUI 5.x. Uses `className=` (React convention). Two themes: `kanary-day` (light) and `kanary-night` (dark), toggled via ThemeToggle.tsx.
 
