@@ -5,6 +5,7 @@
     "Deno docs",
     "Docker docs",
     "Google GenAI docs",
+    "Luthor docs",
     "Zod docs",
     "React docs",
     "Preact docs",
@@ -16,12 +17,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "deno eval 'const s=JSON.parse(await Deno.readTextFile(Deno.env.get(\"PWD\")+\"/.claude/settings.json\").catch(()=>\"{}\")); const i=JSON.parse(await Deno.readTextFile(Deno.env.get(\"HOME\")+\"/.claude/plugins/installed_plugins.json\").catch(()=>\"{}\")); const m=Object.keys(s.enabledPlugins??{}).filter(p=>!(i.plugins??{})[p]); if(m.length)console.log(JSON.stringify({systemMessage:\"Plugin warning: enabled but not installed: \"+m.join(\", \")}));' 2>/dev/null || true",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session_start/installRequiredPlugins.sh",
             "statusMessage": "Checking plugins..."
           },
           {
             "type": "command",
-            "command": "jq 'if has(\"hasCompletedOnboarding\") then . else . + {\"hasCompletedOnboarding\": true} end' ~/.claude.json > /tmp/.claude.json.tmp && mv /tmp/.claude.json.tmp ~/.claude.json"
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session_start/fixDevcontainerClaudeExecutable.sh"
           }
         ]
       }
@@ -29,6 +30,9 @@
   },
   "enabledPlugins": {
     "typescript-lsp@claude-plugins-official": true,
-    "context7@claude-plugins-official": true
-  }
+    "context7@claude-plugins-official": false,
+    "playwright@claude-plugins-official": true
+  },
+  "autoMemoryDirectory": "$CLAUDE_PROJECT_DIR/.claude/memory",
+  "autoMemoryEnabled": true
 }

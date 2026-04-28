@@ -46,6 +46,10 @@
         "css.customData": [
           ".vscode/tailwind.json"
         ],
+        "[markdown]": {
+          "editor.defaultFormatter": "vscode.markdown-language-features"
+        },
+
         "[astro]": {
           "editor.defaultFormatter": "astro-build.astro-vscode"
         },

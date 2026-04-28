@@ -11,6 +11,9 @@
   "lint": {
     "exclude": ["./dist/"]
   },
+  "fmt": {
+    "exclude": ["**/*.md", "**/*.mdx"]
+  },
   "nodeModulesDir": "auto",
   "tasks": {
     "dev": "deno run --allow-all astro dev",
