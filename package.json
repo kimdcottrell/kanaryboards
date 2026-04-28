@@ -34,17 +34,13 @@
     "react-markdown": "^10.1.0",
     "tailwindcss": "^4.2.1",
     "theme-change": "^2.5.0",
-    "typescript": "^5.9.3",
-    "vite-tsconfig-paths": "^6.1.1"
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "^2.1.114",
     "@astrojs/check": "^0.9.7",
     "@catppuccin/tailwindcss": "^1.0.0",
-    "@tailwindcss/vite": "4.2.3",
+    "@tailwindcss/vite": "4.2.1",
     "playwright": "^1.59.1"
-  },
-  "overrides": {
-    "vite": "^7"
   }
 }
