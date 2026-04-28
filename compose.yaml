@@ -11,7 +11,8 @@ services:
     cap_drop:
       - ALL
     cap_add:
-      # required for init-firewall.sh
+      # required for init-firewall.sh. 
+      # this stops Claude from being able to access the entire web
       - NET_ADMIN
       - NET_RAW 
       # required for basic webserver capabilities
@@ -25,21 +26,3 @@ services:
       - .:/var/dev
     ports:
       - "4321:4321"
-    depends_on:
-      - redis
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-
-  # TODO: Hook this up to persist data in more than just the browser's localstorage
-  redis:
-    image: redis:latest
-    container_name: redis-cache
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-
-volumes:
-  redis-data:
-    driver: local

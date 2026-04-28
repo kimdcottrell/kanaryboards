@@ -5,11 +5,17 @@
   "dockerComposeFile": [
     "../compose.yaml"
   ],
-  "containerEnv": {
-    "DEVCONTAINER": "true"
+  // this should allow you to push to git AS LONG AS your local machine can
+  "mounts": [
+    "source=${localEnv:HOME}/.ssh/agent.sock,target=/ssh-agent.sock,type=bind"
+  ],
+  "initializeCommand": "ssh-agent -a ~/.ssh/agent.sock || true",
+  "remoteEnv": {
+    "DEVCONTAINER": "true",
+    "SSH_AUTH_SOCK": "/ssh-agent.sock"
   },
-  // this gets around a weird bug where running `claude` in the terminal of the container doesn't work
-  // despite the OAuth token being set in the env vars
+  // this gets around a weird bug where running `claude` in the terminal of the
+  // container doesn't work despite the OAuth token being set in the env vars
   // NOTE: https://github.com/anthropics/claude-code/issues/8938#issuecomment-3443723851
   "service": "app",
   "workspaceFolder": "/var/dev",
