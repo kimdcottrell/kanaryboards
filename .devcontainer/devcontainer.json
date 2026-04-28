@@ -12,7 +12,7 @@
   // slam all private keys into container.
   // tbh, you only need the one that is connected to github.com
   // but since you can name those to be anything... we do this.
-  "initializeCommand": "eval $(ssh-agent -s -a ~/.ssh/agent.sock 2>/dev/null) 2>/dev/null; for key in ~/.ssh/id_*; do [[ \"$key\" == *.pub ]] || ssh-add -S ~/.ssh/agent.sock \"$key\" 2>/dev/null; done",
+  "initializeCommand": "eval $(ssh-agent -s -a ~/.ssh/agent.sock); for key in ~/.ssh/id_*; do [[ \"$key\" == *.pub ]] || ssh-add -S ~/.ssh/agent.sock \"$key\"; done",
   "remoteEnv": {
     "SSH_AUTH_SOCK": "/home/deno/ssh-agent",
     "DEVCONTAINER": "true"
