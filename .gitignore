@@ -3,6 +3,5 @@
 **/.astro/*
 worker-configuration.d.ts
 deno.lock
-.denoflare
 **/dist/*
 HELP.md
