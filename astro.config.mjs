@@ -21,6 +21,6 @@ export default defineConfig({
   },
 
   vite: {
-    plugins: [tsconfigPaths(), tailwindcss()],
+    plugins: [tsconfigPaths({ loose: true }), tailwindcss()],
   },
 });
