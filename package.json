@@ -5,7 +5,7 @@
   "type": "module",
   "dependencies": {
     "@astrojs/react": "^5.0.4",
-    "@deno/astro-adapter": "^0.3.2",
+    "@deno/astro-adapter": "^0.4.0",
     "@google/genai": "^1.50.1",
     "@iconify/json": "^2.2.467",
     "@iconify/tailwind4": "^1.2.3",
