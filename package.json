@@ -17,18 +17,18 @@
     "daisyui": "^5.5.19",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "tailwindcss": "4.2.2",
+    "tailwindcss": "4.2.4",
     "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "^2.1.114",
     "@astrojs/check": "^0.9.7",
     "@catppuccin/tailwindcss": "^1.0.0",
-    "@tailwindcss/vite": "4.2.2"
+    "@tailwindcss/vite": "4.2.4"
   },
   "overrides": {
     "vite": "7.3.2",
-    "@tailwindcss/vite": "4.2.2",
-    "tailwindcss": "4.2.2"
+    "@tailwindcss/vite": "4.2.4",
+    "tailwindcss": "4.2.4"
   }
 }
