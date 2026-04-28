@@ -4,6 +4,9 @@ import "@lyfie/luthor/styles.css";
 
 import BoardWrapper from "../components/BoardWrapper";
 import ThemeController from "../components/ThemeController.astro";
+import GoogleAnalytics from "../components/seo/GoogleAnalytics.astro";
+
+const googleTag = import.meta.env.GOOGLE_TAG;
 ---
 
 <html lang="en">
@@ -11,6 +14,7 @@ import ThemeController from "../components/ThemeController.astro";
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Kanary Boards</title>
+        {googleTag && <GoogleAnalytics tag={googleTag} />}
     </head>
     <body>
         <nav class="navbar grid bg-base-300 shadow-sm">
@@ -41,8 +45,8 @@ import ThemeController from "../components/ThemeController.astro";
                     </h1>
                 </div>
                 <p class="max-w-2xl">
-                    A really basic kanban board project built with Deno, Astro,
-                    and Tailwind CSS. <br /><br />
+                    An AI-native kanban-style project management app built with
+                    Astro, React, Deno, and TailwindCSS / DaisyUI. <br /><br />
                     Create rows and tasks, drag and drop them around as needed.<br
                     /><br />
                     Generate tasks using AI by entering a prompt describing the type
@@ -71,7 +75,8 @@ import ThemeController from "../components/ThemeController.astro";
             <p>
                 <em
                     >AI-powered content generation rate limiting may occur when
-                    demand is high.</em>
+                    demand is high.</em
+                >
             </p>
         </footer>
     </body>
