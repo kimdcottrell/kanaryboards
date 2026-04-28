@@ -13,11 +13,6 @@
     "allowJs": true,
     "skipLibCheck": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "react",
-    "paths": {
-      "@src/*": [
-        "./src/*"
-      ]
-    }
+    "jsxImportSource": "react"
   }
 }
