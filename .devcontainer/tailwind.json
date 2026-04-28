@@ -1,0 +1,151 @@
+{
+  "version": 1.1,
+  "atDirectives": [
+    {
+      "name": "@import",
+      "description": "Import Tailwind CSS v4 into your stylesheet. In v4 you use a single CSS import instead of separate `@tailwind` directives:\n```css\n@import \"tailwindcss\";\n```\nYou can also import specific layers:\n```css\n@import \"tailwindcss/theme\";\n@import \"tailwindcss/utilities\";\n```\n",
+      "references": [
+        {
+          "name": "Tailwind v4 — Installation",
+          "url": "https://tailwindcss.com/docs/installation/using-vite"
+        }
+      ]
+    },
+    {
+      "name": "@theme",
+      "description": "Define your design tokens as CSS variables. The `@theme` directive is the primary way to customize Tailwind v4, replacing the `theme` key in `tailwind.config.js`:\n```css\n@theme {\n  --color-primary: oklch(0.7 0.15 200);\n  --font-display: \"Inter\", sans-serif;\n  --spacing-lg: 2rem;\n}\n```\nAll tokens become CSS custom properties available throughout your stylesheet.\n",
+      "references": [
+        {
+          "name": "Tailwind Documentation — Theme Variables",
+          "url": "https://tailwindcss.com/docs/theme"
+        },
+        {
+          "name": "Tailwind Documentation — Functions and Directives",
+          "url": "https://tailwindcss.com/docs/functions-and-directives#theme-directive"
+        }
+      ]
+    },
+    {
+      "name": "@custom-variant",
+      "description": "Register a reusable custom variant that can be used as a modifier prefix with any utility class. Supports a shorthand form for single selectors:\n```css\n@custom-variant theme-midnight (&:where([data-theme=\"midnight\"] *));\n```\nOr a block form with `@slot` for complex variants involving multiple rules or media queries:\n```css\n@custom-variant any-hover {\n  @media (any-hover: hover) {\n    &:hover {\n      @slot;\n    }\n  }\n}\n```\nOnce defined, the variant works like any built-in modifier:\n```html\n<button class=\"theme-midnight:bg-black any-hover:opacity-75\"></button>\n```\n",
+      "references": [
+        {
+          "name": "Tailwind Documentation — Custom Variant Directive",
+          "url": "https://tailwindcss.com/docs/functions-and-directives#custom-variant-directive"
+        },
+        {
+          "name": "Tailwind Documentation — Adding Custom Variants",
+          "url": "https://tailwindcss.com/docs/adding-custom-styles#adding-custom-variants"
+        }
+      ]
+    },
+    {
+      "name": "@apply",
+      "description": "Inline any existing utility classes into your own custom CSS. Useful when you find a common utility pattern you'd like to extract:\n```css\n.btn {\n  @apply px-4 py-2 rounded font-semibold;\n}\n```\n",
+      "references": [
+        {
+          "name": "Tailwind Documentation — Functions and Directives",
+          "url": "https://tailwindcss.com/docs/functions-and-directives#apply-directive"
+        }
+      ]
+    },
+    {
+      "name": "@variant",
+      "description": "Apply Tailwind variants to styles in custom CSS, or define reusable custom variants. Use it to apply an existing variant to a block of CSS:\n```css\n.card {\n  background: white;\n  @variant dark {\n    background: black;\n  }\n}\n```\nOr define a new custom variant:\n```css\n@variant hocus {\n  &:hover, &:focus {\n    @slot;\n  }\n}\n```\n",
+      "references": [
+        {
+          "name": "Tailwind Documentation — Functions and Directives",
+          "url": "https://tailwindcss.com/docs/functions-and-directives#variant-directive"
+        },
+        {
+          "name": "Tailwind Documentation — Custom Variants",
+          "url": "https://tailwindcss.com/docs/adding-custom-styles#adding-custom-variants"
+        }
+      ]
+    },
+    {
+      "name": "@utility",
+      "description": "Register a custom utility class that integrates with Tailwind's variant system and `@apply`. Replaces the `@layer utilities` pattern from v3:\n```css\n@utility tab-4 {\n  tab-size: 4;\n}\n```\nFunctional utilities (with values) use a `--value()` function:\n```css\n@utility tab-* {\n  tab-size: --value(integer);\n}\n```\n",
+      "references": [
+        {
+          "name": "Tailwind Documentation — Functions and Directives",
+          "url": "https://tailwindcss.com/docs/functions-and-directives#utility-directive"
+        },
+        {
+          "name": "Tailwind Documentation — Adding Custom Utilities",
+          "url": "https://tailwindcss.com/docs/adding-custom-styles#adding-custom-utilities"
+        }
+      ]
+    },
+    {
+      "name": "@source",
+      "description": "Explicitly specify source files or directories for Tailwind to scan for utility class names. Useful when auto-detection misses files outside standard project directories:\n```css\n@source \"../node_modules/@my-company/ui/**/*.js\";\n```\nOr disable auto-detection entirely:\n```css\n@source none;\n```\n",
+      "references": [
+        {
+          "name": "Tailwind Documentation — Functions and Directives",
+          "url": "https://tailwindcss.com/docs/functions-and-directives#source-directive"
+        },
+        {
+          "name": "Tailwind Documentation — Detecting Classes in Source Files",
+          "url": "https://tailwindcss.com/docs/detecting-classes-in-source-files"
+        }
+      ]
+    },
+    {
+      "name": "@plugin",
+      "description": "Load a Tailwind CSS plugin directly from your CSS file. Accepts a package name or relative path:\n```css\n@plugin \"@tailwindcss/typography\";\n@plugin \"./my-local-plugin\";\n```\nPass configuration options using `with`:\n```css\n@plugin \"@tailwindcss/typography\" {\n  --tw-prose-body: var(--color-gray-700);\n}\n```\n",
+      "references": [
+        {
+          "name": "Tailwind Documentation — Functions and Directives",
+          "url": "https://tailwindcss.com/docs/functions-and-directives#plugin-directive"
+        },
+        {
+          "name": "Tailwind Documentation — Plugins",
+          "url": "https://tailwindcss.com/docs/plugins"
+        }
+      ]
+    },
+    {
+      "name": "@config",
+      "description": "Load a JavaScript-based `tailwind.config.js` for backwards compatibility with v3 projects. Should be placed after `@import`:\n```css\n@import \"tailwindcss\";\n@config \"./tailwind.config.js\";\n```\nNot needed for new v4 projects — prefer CSS-based configuration with `@theme`.\n",
+      "references": [
+        {
+          "name": "Tailwind Documentation — Functions and Directives",
+          "url": "https://tailwindcss.com/docs/functions-and-directives#config-directive"
+        },
+        {
+          "name": "Tailwind Documentation — Upgrading from v3",
+          "url": "https://tailwindcss.com/docs/upgrade-guide"
+        }
+      ]
+    },
+    {
+      "name": "@layer",
+      "description": "Add styles to a named CSS cascade layer. Tailwind v4 exposes `theme`, `base`, `components`, and `utilities` layers:\n```css\n@layer base {\n  h1 { font-size: 2rem; }\n}\n@layer components {\n  .card { border-radius: 0.5rem; }\n}\n```\nFor custom utilities that need variant support, prefer `@utility` over `@layer utilities`.\n",
+      "references": [
+        {
+          "name": "Tailwind Documentation — Adding Custom Styles",
+          "url": "https://tailwindcss.com/docs/adding-custom-styles#using-css-and-layer"
+        },
+        {
+          "name": "MDN — @layer",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/@layer"
+        }
+      ]
+    },
+    {
+      "name": "@screen",
+      "description": "**Deprecated in Tailwind v4.** Use `@variant` with a breakpoint name instead:\n```css\n/* v4 preferred */\n@variant sm {\n  .foo { color: red; }\n}\n\n/* v3 syntax (still works via compat) */\n@screen sm {\n  .foo { color: red; }\n}\n```\n",
+      "references": [
+        {
+          "name": "Tailwind Documentation — Upgrade Guide",
+          "url": "https://tailwindcss.com/docs/upgrade-guide"
+        },
+        {
+          "name": "Tailwind Documentation — Responsive Design",
+          "url": "https://tailwindcss.com/docs/responsive-design"
+        }
+      ]
+    }
+  ]
+}

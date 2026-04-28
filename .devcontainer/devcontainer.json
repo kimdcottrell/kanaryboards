@@ -21,11 +21,15 @@
         "denoland.vscode-deno",
         "ms-azuretools.vscode-docker",
         "Anthropic.claude-code",
-        "streetsidesoftware.code-spell-checker"
+        "streetsidesoftware.code-spell-checker",
+        "ms-vscode-remote.remote-containers"
       ],
       "settings": {
         "claudeCode.preferredLocation": "panel",
         "claudeCode.disableLoginPrompt": true,
+        "cSpell.configPaths": [
+          "${containerWorkspaceFolder}/.devcontainer/cspell.json"
+        ],
         // force javascript and typescript to use settings in deno.jsonc for formatting and linting
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "denoland.vscode-deno",
@@ -44,12 +48,11 @@
           "editor.defaultFormatter": "denoland.vscode-deno"
         },
         "css.customData": [
-          ".vscode/tailwind.json"
+          "${containerWorkspaceFolder}/.devcontainer/tailwind.json"
         ],
         "[markdown]": {
           "editor.defaultFormatter": "vscode.markdown-language-features"
         },
-
         "[astro]": {
           "editor.defaultFormatter": "astro-build.astro-vscode"
         },
