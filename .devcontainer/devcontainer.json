@@ -7,12 +7,15 @@
   ],
   // this should allow you to push to git AS LONG AS your local machine can
   "mounts": [
-    "source=${localEnv:HOME}/.ssh/agent.sock,target=/ssh-agent.sock,type=bind"
+    "source=~/.ssh/agent.sock,target=/home/deno/ssh-agent,type=bind"
   ],
-  "initializeCommand": "ssh-agent -a ~/.ssh/agent.sock || true",
+  // slam all private keys into container.
+  // tbh, you only need the one that is connected to github.com
+  // but since you can name those to be anything... we do this.
+  "initializeCommand": "eval $(ssh-agent -s -a ~/.ssh/agent.sock 2>/dev/null) 2>/dev/null; for key in ~/.ssh/id_*; do [[ \"$key\" == *.pub ]] || ssh-add -S ~/.ssh/agent.sock \"$key\" 2>/dev/null; done",
   "remoteEnv": {
-    "DEVCONTAINER": "true",
-    "SSH_AUTH_SOCK": "/ssh-agent.sock"
+    "SSH_AUTH_SOCK": "/home/deno/ssh-agent",
+    "DEVCONTAINER": "true"
   },
   // this gets around a weird bug where running `claude` in the terminal of the
   // container doesn't work despite the OAuth token being set in the env vars
@@ -72,6 +75,5 @@
       }
     }
   },
-  // Uncomment the next line if you want to keep your containers running after VS Code shuts down.
   "shutdownAction": "none"
 }

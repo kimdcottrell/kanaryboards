@@ -19,6 +19,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         iproute2 \
         dnsutils \
         openssl \
+        openssh-client \
         ca-certificates \
         jq \
         aggregate \
