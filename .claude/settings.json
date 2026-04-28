@@ -1,16 +1,5 @@
 {
-  "enabledMcpjsonServers": [
-    "Astro docs",
-    "Daisy UI docs",
-    "Deno docs",
-    "Docker docs",
-    "Google GenAI docs",
-    "Luthor docs",
-    "Zod docs",
-    "React docs",
-    "Preact docs",
-    "Tailwind docs"
-  ],
+  "enableAllProjectMcpServers": true,
   "hooks": {
     "SessionStart": [
       {
@@ -29,10 +18,8 @@
     ]
   },
   "enabledPlugins": {
-    "typescript-lsp@claude-plugins-official": true,
-    "context7@claude-plugins-official": false,
-    "playwright@claude-plugins-official": true
+    "typescript-lsp@claude-plugins-official": true
   },
-  "autoMemoryDirectory": "$CLAUDE_PROJECT_DIR/.claude/memory",
-  "autoMemoryEnabled": true
+  "autoMemoryEnabled": true,
+  "autoMemoryDirectory": "$CLAUDE_PROJECT_DIR/.claude/memory"
 }

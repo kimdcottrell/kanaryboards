@@ -8,6 +8,10 @@ IFS=$'\n\t'       # Stricter word splitting
 ## It ensures that the Claude Code agent and any subprocesses can only communicate with a strictly 
 ## defined allowlist of domains required for development, dependency management, and AI orchestration.
 ##
+## More bluntly: Claude is in a tiny room with minimal doors to stop him from causing chaos, like the 
+##               time I got rate limited from the Luthor docs because Claude slammed a bunch of 
+##               requests against it.
+##
 ## NOTE: We are using Deno. Add "jsr.io" and "npm.jsr.io" to the list of allowed domains
 
 # 1. Extract Docker DNS info BEFORE any flushing
@@ -72,9 +76,11 @@ while read -r cidr; do
 done < <(echo "$gh_ranges" | jq -r '(.web + .api + .git)[]' | aggregate -q)
 
 # Resolve and add other allowed domains
+# NOTE: YOU DO HAVE TO EDIT THIS TO ADD IN YOUR REMOTE MCP SERVERS AND DOCS
 for domain in \
     "jsr.io" \
     "npm.jsr.io" \
+    "mcp.docs.astro.build" \
     "registry.npmjs.org" \
     "api.anthropic.com" \
     "sentry.io" \

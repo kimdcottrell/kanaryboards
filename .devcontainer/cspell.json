@@ -9,6 +9,13 @@
     "kanaryboards",
     "prefersdark",
     "denoland",
-    "bradlc"
+    "bradlc",
+    "mcpdoc",
+    "llms",
+    "langchain",
+    "langgraph",
+    "luthor",
+    "genai",
+    "rgfx"
   ]
 }

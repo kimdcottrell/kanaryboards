@@ -52,6 +52,9 @@ Copy the token that is printed and set it as `CLAUDE_CODE_OAUTH_TOKEN` in this p
 
 ### 4. Set up SSH agent forwarding for Git
 
+
+> **TODO:** Something causes this to break after the first iteration of you opening VSCode. YMMV. 
+
 Git operations inside the container (push, pull, fetch) are authenticated via your **local machine's** SSH agent — no keys are copied into the container.
 
 When VS Code starts the dev container, `devcontainer.json` runs this on your local machine:
@@ -117,3 +120,38 @@ The app will be available at [http://localhost:4321](http://localhost:4321).
 | Service | Port | Description |
 |---|---|---|
 | App | `4321` | Astro dev server |
+| Playwright | `8931` | Playwright MCP server for browser automation |
+| MCPDoc | `8082` | Documentation MCP server |
+
+## MCP Servers
+
+Claude Code inside the dev container connects to three MCP servers, configured in [.mcp.json](.mcp.json).
+
+### Playwright
+
+**Type:** HTTP — `http://playwright:8931/mcp`
+
+Runs the [official Microsoft Playwright MCP server](https://github.com/microsoft/playwright-mcp) as a Docker service. It gives Claude Code a headless browser it can navigate, click, fill forms, take screenshots, and inspect network traffic — useful for end-to-end testing and verifying UI changes without leaving the editor.
+
+### Astro Docs
+
+**Type:** HTTP — `https://mcp.docs.astro.build/mcp`
+
+A remote MCP server hosted by the Astro team. It exposes the full Astro documentation as a searchable tool so Claude Code can look up framework APIs, component syntax, and configuration options in context.
+
+### MCPDoc
+
+**Type:** SSE — `http://mcpdoc:8082/sse`
+
+Runs [mcpdoc](https://github.com/lancedb/mcpdoc) as a Docker service, configured via [.mcpdoc.yaml](.mcpdoc.yaml). It fetches and serves `llms.txt`-formatted documentation for the libraries used in this project:
+
+| Library | Source |
+|---|---|
+| Daisy UI | `daisyui.com/llms.txt` |
+| Deno | `docs.deno.com/llms.txt` |
+| Docker | `docs.docker.com/llms.txt` |
+| Luthor | `luthor.fyi/llms.txt` |
+| Google GenAI | GitHub — `googleapis/js-genai` |
+| Zod | `zod.dev/llms.txt` |
+| React | `react.dev/llms.txt` |
+| Tailwind | GitHub — `rgfx/tailwind-llms` |

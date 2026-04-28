@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "Playwright": {
+      "type": "http",
+      "url": "http://playwright:8931/mcp"
+    },
+    "Astro Docs": {
+      "type": "http",
+      "url": "https://mcp.docs.astro.build/mcp"
+    },
+    "MCPDoc": {
+      "type": "sse",
+      "url": "http://mcpdoc:8082/sse"
+    }
+  }
+}

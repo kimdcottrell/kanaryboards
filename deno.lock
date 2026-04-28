@@ -10,6 +10,8 @@
     "npm:@iconify/json@^2.2.467": "2.2.467",
     "npm:@iconify/tailwind4@^1.2.3": "1.2.3_tailwindcss@4.2.2",
     "npm:@lyfie/luthor@^2.7.11": "2.7.11_react@19.2.5_react-dom@19.2.5__react@19.2.5_yjs@13.6.30",
+    "npm:@playwright/mcp@*": "0.0.71",
+    "npm:@playwright/mcp@latest": "0.0.71",
     "npm:@tailwindcss/vite@4.2.2": "4.2.2_vite@7.3.2",
     "npm:@types/react-dom@^19.2.3": "19.2.3_@types+react@19.2.14",
     "npm:@types/react@^19.2.14": "19.2.14",
@@ -1085,6 +1087,14 @@
     "@oslojs/encoding@1.1.0": {
       "integrity": "sha512-70wQhgYmndg4GCPxPPxPGevRKqTIJ2Nh4OkiMWmDAVYsTQ+Ta7Sq+rPevXyXGdzr30/qZBnyOalCszoMxlyldQ=="
     },
+    "@playwright/mcp@0.0.71": {
+      "integrity": "sha512-HA9P47dhLVNCnXD76fNaEF/Mr77eOjB74hvapExZZOrjXADS8sK2RIySK27bXuQzFAmk9UNFlSch9kbtAzfpVA==",
+      "dependencies": [
+        "playwright",
+        "playwright-core"
+      ],
+      "bin": true
+    },
     "@preact/signals-core@1.14.1": {
       "integrity": "sha512-vxPpfXqrwUe9lpjqfYNjAF/0RF/eFGeLgdJzdmIIZjpOnTmGmAB4BjWone562mJGMRP4frU6iZ6ei3PDsu52Ng=="
     },
@@ -2145,6 +2155,11 @@
         "fetch-blob"
       ]
     },
+    "fsevents@2.3.2": {
+      "integrity": "sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==",
+      "os": ["darwin"],
+      "scripts": true
+    },
     "fsevents@2.3.3": {
       "integrity": "sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==",
       "os": ["darwin"],
@@ -3149,6 +3164,20 @@
         "pathe"
       ]
     },
+    "playwright-core@1.60.0-alpha-2026-04-27": {
+      "integrity": "sha512-9qAlRpGkWsYia99qdlp5KiBz+f+XrAaBAW8hGJ+qOmTXZuLSF+t9tX4dFSUqG+yOVAsWIIQFRVm1ZKLAP6w0kg==",
+      "bin": true
+    },
+    "playwright@1.60.0-alpha-2026-04-27": {
+      "integrity": "sha512-a3gvTeo6AgERUQ8fMSPdbIl5TQqA79CUg3KtEuta7sX4UTEIT0Lkea8IDX2R5tUrl1JJFFoIA7dJTR+tPemtxQ==",
+      "dependencies": [
+        "playwright-core"
+      ],
+      "optionalDependencies": [
+        "fsevents@2.3.2"
+      ],
+      "bin": true
+    },
     "postcss@8.5.12": {
       "integrity": "sha512-W62t/Se6rA0Az3DfCL0AqJwXuKwBeYg6nOaIgzP+xZ7N5BFCI7DYi1qs6ygUYT6rvfi6t9k65UMLJC+PHZpDAA==",
       "dependencies": [
@@ -3397,7 +3426,7 @@
         "@rollup/rollup-win32-ia32-msvc",
         "@rollup/rollup-win32-x64-gnu",
         "@rollup/rollup-win32-x64-msvc",
-        "fsevents"
+        "fsevents@2.3.3"
       ],
       "bin": true
     },
@@ -3744,7 +3773,7 @@
         "tinyglobby"
       ],
       "optionalDependencies": [
-        "fsevents"
+        "fsevents@2.3.3"
       ],
       "bin": true
     },

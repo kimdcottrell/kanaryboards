@@ -2,7 +2,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: images/app.Dockerfile
       target: dev
       args:
         - LOCAL_MACHINE_GID=${LOCAL_MACHINE_GID}
@@ -26,3 +26,30 @@ services:
       - .:/var/dev
     ports:
       - "4321:4321"
+    networks:
+      - mcp 
+
+  playwright:
+    image: mcr.microsoft.com/playwright/mcp
+    stdin_open: true
+    init: true
+    ports:
+      - "8931:8931"
+    command: --port 8931 --host 0.0.0.0 --allowed-origins '*' --allowed-hosts '*'
+    networks:
+      - mcp
+
+  mcpdoc:
+    build:
+      context: .
+      dockerfile: images/mcpdoc.Dockerfile
+    ports:
+      - "8082:8082"
+    volumes:
+      - .mcpdoc.yaml:/root/.local/mcpdoc.yaml
+    command: uvx --from mcpdoc mcpdoc --yaml /root/.local/mcpdoc.yaml --transport sse --port 8082 --host 0.0.0.0 --allowed-domains '*'
+    networks:
+      - mcp
+
+networks:
+  mcp:

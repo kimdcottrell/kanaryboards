@@ -1,0 +1,16 @@
+- name: Daisy UI
+  llms_txt: https://daisyui.com/llms.txt
+- name: Deno
+  llms_txt: https://docs.deno.com/llms.txt
+- name: Docker
+  llms_txt: https://docs.docker.com/llms.txt
+- name: Luthor
+  llms_txt: https://luthor.fyi/llms.txt
+- name: Google GenAI
+  llms_txt: https://raw.githubusercontent.com/googleapis/js-genai/refs/heads/main/codegen_instructions.md
+- name: Zod
+  llms_txt: https://zod.dev/llms.txt
+- name: React
+  llms_txt: https://react.dev/llms.txt
+- name: Tailwind
+  llms_txt: https://raw.githubusercontent.com/rgfx/tailwind-llms/refs/heads/main/tailwind-llms.txt
