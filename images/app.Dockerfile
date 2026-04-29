@@ -4,6 +4,7 @@ FROM denoland/deno:2.7.12 as dev
 # Prefer not to run as root.
 ARG LOCAL_MACHINE_GID=${LOCAL_MACHINE_GID:-1000}
 ARG LOCAL_MACHINE_UID=${LOCAL_MACHINE_UID:-1000}
+
 RUN groupmod -g ${LOCAL_MACHINE_GID} deno; \
     usermod -u ${LOCAL_MACHINE_UID} -g ${LOCAL_MACHINE_GID} deno;
 

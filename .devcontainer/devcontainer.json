@@ -7,14 +7,14 @@
   ],
   // this should allow you to push to git AS LONG AS your local machine can
   "mounts": [
-    "source=~/.ssh/agent.sock,target=/home/deno/ssh-agent,type=bind"
+    "source=${localEnv:HOME}/.ssh/agent.sock,target=/ssh-agent,type=bind"
   ],
   // slam all private keys into container.
   // tbh, you only need the one that is connected to github.com
   // but since you can name those to be anything... we do this.
-  "initializeCommand": "eval $(ssh-agent -s -a ~/.ssh/agent.sock); for key in ~/.ssh/id_*; do [[ \"$key\" == *.pub ]] || ssh-add -S ~/.ssh/agent.sock \"$key\"; done",
+  "initializeCommand": "eval $(ssh-agent -s -a ${localEnv:HOME}/.ssh/agent.sock); for key in ${localEnv:HOME}/.ssh/id_*; do [[ \"$key\" == *.pub ]] || ssh-add -S ${localEnv:HOME}/.ssh/agent.sock \"$key\"; done",
   "remoteEnv": {
-    "SSH_AUTH_SOCK": "/home/deno/ssh-agent",
+    "SSH_AUTH_SOCK": "/ssh-agent",
     "DEVCONTAINER": "true"
   },
   // this gets around a weird bug where running `claude` in the terminal of the
