@@ -2,12 +2,13 @@
 FROM node:25-trixie
 
 # NOTES:
-    # - you need to setup the ssh stuff, playwright malfunctions without it
-    # - import the package.json so playwright stuff installs at the right version
-    # - we only need some packages: npm install @playwright/test typescript --no-save
-    # - install the damn browsers: npx playwright install
-    # - certain flags should be emphasized: ENV CI=true
-    # - things should now be runnable: npx playwright test 
+# - you need to setup the ssh stuff, playwright malfunctions without it
+# - import the package.json so playwright stuff installs at the right version
+# - we only need some packages: npm install @playwright/test typescript --no-save
+# - install the damn browsers: npx playwright install
+# - certain flags should be emphasized: ENV CI=true
+# - things should now be runnable: npx playwright test 
+# - you may need: PW_DISABLE_TS_ESM=true
 
 # Set the working directory 
 WORKDIR /usr/src/app 
