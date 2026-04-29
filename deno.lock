@@ -4102,7 +4102,8 @@
       "overrides": {
         "vite": "7.3.2",
         "@tailwindcss/vite": "4.2.2",
-        "tailwindcss": "4.2.2"
+        "tailwindcss": "4.2.2",
+        "@deno/astro-adapter": "0.3.2"
       }
     }
   }
