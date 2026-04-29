@@ -114,6 +114,7 @@ The app will be available at [http://localhost:4321](http://localhost:4321).
 | `deno task dev` | Start the Astro dev server with hot reload |
 | `deno task build` | Build for production |
 | `deno task preview` | Preview the production build |
+| `deno task astro` | Wrapper for the astro bin |
 
 ## Services
 
