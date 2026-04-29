@@ -24,6 +24,7 @@ services:
       - .env
     volumes:
       - .:/var/dev
+      - ${HOME}/.ssh/agent.sock:/ssh-agent # TODO: this should be a mount in devcontainer.json, but the devcontainer setup process ignores mounts except on vscode window reload
     ports:
       - "4321:4321"
     networks:

@@ -5,10 +5,6 @@
   "dockerComposeFile": [
     "../compose.yaml"
   ],
-  // this should allow you to push to git AS LONG AS your local machine can
-  "mounts": [
-    "source=${localEnv:HOME}/.ssh/agent.sock,target=/ssh-agent,type=bind"
-  ],
   // slam all private keys into container.
   // tbh, you only need the one that is connected to github.com
   // but since you can name those to be anything... we do this.
