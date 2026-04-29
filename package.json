@@ -5,14 +5,14 @@
   "type": "module",
   "dependencies": {
     "@astrojs/react": "^5.0.4",
-    "@deno/astro-adapter": "^0.4.0",
+    "@deno/astro-adapter": "0.3.2",
     "@google/genai": "^1.50.1",
     "@iconify/json": "^2.2.467",
     "@iconify/tailwind4": "^1.2.3",
     "@lyfie/luthor": "^2.7.11",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "astro": "^6.0.2",
+    "astro": "^6.1.10",
     "astro-icon": "^1.1.5",
     "daisyui": "^5.5.19",
     "react": "^19.2.5",
@@ -29,6 +29,7 @@
   "overrides": {
     "vite": "7.3.2",
     "@tailwindcss/vite": "4.2.2",
-    "tailwindcss": "4.2.2"
+    "tailwindcss": "4.2.2",
+    "@deno/astro-adapter": "0.3.2"
   }
 }
