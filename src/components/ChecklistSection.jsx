@@ -100,11 +100,13 @@ export function ChecklistGenerationCollapse({
 
   return (
     <div
+      id="checklist-gen-collapse"
       className={`collapse collapse-arrow bg-base-content/10 ${
         collapseOpen ? "collapse-open" : ""
       }`}
     >
       <button
+        id="checklist-gen-collapse-toggle"
         type="button"
         className="collapse-title font-semibold text-sm py-3 w-full text-left"
         onClick={() => {
@@ -117,7 +119,7 @@ export function ChecklistGenerationCollapse({
       >
         Generate checklist items with AI
       </button>
-      <div className="collapse-content space-y-4">
+      <div id="checklist-gen-collapse-content" className="collapse-content space-y-4">
         <div className="form-control">
           <fieldset className="fieldset">
             <legend className="fieldset-legend">

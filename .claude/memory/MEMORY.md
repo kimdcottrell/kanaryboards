@@ -8,3 +8,5 @@
 - [Project tech stack](project_stack.md) — Deno 2.x, Astro 6.x, React 19, Tailwind 4.x + DaisyUI 5.x, Google GenAI, localStorage only
 - [Preact to React migration](project_preact_to_react_migration.md) — Full migration history: what was removed, added, and changed across all source files
 - [Shell environment & available tooling](reference_environment.md) — Debian 13, bash 5.2, deno 2.7 only (no npm/yarn/pnpm/bun/python/node/ruby/go)
+- [Playwright test setup](project_playwright_setup.md) — config location, dev server network IP, MCP browser click quirk, localStorage reset pattern, modal open pattern
+- [Playwright collapse test patterns](feedback_playwright_collapse_patterns.md) — per-mechanism selectors/assertions for DaisyUI checkbox collapse, DaisyUI React-state collapse, and custom conditional-render collapse; ID naming convention

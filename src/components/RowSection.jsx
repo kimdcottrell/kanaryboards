@@ -17,6 +17,7 @@ export default function RowSection({ row }) {
 
   return (
     <section
+      id={`row-section-${row.id}`}
       className="space-y-4 p-5 shadow-lg shadow-base-300/10"
       style={{
         backgroundColor: `color-mix(in srgb, ${row.color} 10%, transparent)`,
@@ -65,6 +66,7 @@ export default function RowSection({ row }) {
         <div className="flex flex-col gap-3 sm:items-end">
           <div className="flex gap-2">
             <button
+              id={`row-collapse-btn-${row.id}`}
               type="button"
               className="btn btn-primary btn-sm btn-square opacity-80 hover:opacity-100"
               onClick={() => setCollapsed((c) => !c)}
@@ -94,7 +96,7 @@ export default function RowSection({ row }) {
       </div>
 
       {!collapsed && (
-        <div className="overflow-x-auto pb-4">
+        <div id={`row-columns-${row.id}`} className="overflow-x-auto pb-4">
           <div className="flex gap-5">
             {columns.map((column) => (
               <ColumnCard
