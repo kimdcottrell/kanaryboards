@@ -30,7 +30,7 @@ services:
     networks:
       - mcp 
 
-  playwright:
+  mcp-playwright:
     image: mcr.microsoft.com/playwright/mcp
     stdin_open: true
     init: true
@@ -40,7 +40,7 @@ services:
     networks:
       - mcp
 
-  mcpdoc:
+  mcp-mcpdoc:
     build:
       context: .
       dockerfile: images/mcpdoc.Dockerfile

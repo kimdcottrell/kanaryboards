@@ -9,7 +9,10 @@ test.describe("Collapse functionality", () => {
   /**
    * BoardConfiguration.jsx — DaisyUI checkbox-based collapse.
    * IDs: #board-config (section wrapper)
-   *      #board-config-collapse-toggle (checkbox)
+   *      #board-confi // use: {
+  //   baseURL: "http://app:4321",
+  //   trace: "on-first-retry",
+  // },g-collapse-toggle (checkbox)
    *      #board-config-collapse-title, #board-config-collapse-content
    *      #board-config-create-new-row, #board-config-column-settings
    *      #board-config-row-display-settings, #board-config-danger-zone
@@ -20,12 +23,14 @@ test.describe("Collapse functionality", () => {
       const content = page.locator("#board-config-collapse-content");
 
       await expect(toggle).not.toBeChecked();
-      await expect(content.getByText("Add rows and columns, then place tasks")).not.toBeVisible();
+      await expect(content.getByText("Add rows and columns, then place tasks"))
+        .not.toBeVisible();
 
       await toggle.click();
 
       await expect(toggle).toBeChecked();
-      await expect(content.getByText("Add rows and columns, then place tasks")).toBeVisible();
+      await expect(content.getByText("Add rows and columns, then place tasks"))
+        .toBeVisible();
     });
 
     test("closes when toggled again after opening", async ({ page }) => {
@@ -38,7 +43,8 @@ test.describe("Collapse functionality", () => {
       await toggle.click();
 
       await expect(toggle).not.toBeChecked();
-      await expect(content.getByText("Add rows and columns, then place tasks")).not.toBeVisible();
+      await expect(content.getByText("Add rows and columns, then place tasks"))
+        .not.toBeVisible();
     });
   });
 
@@ -51,7 +57,9 @@ test.describe("Collapse functionality", () => {
   test.describe("Row section", () => {
     test("is expanded by default and collapses when toggled", async ({ page }) => {
       const rowSection = page.locator("[id^='row-section-']").first();
-      const rowId = await rowSection.getAttribute("id").then((id: string | null) => id!.replace("row-section-", ""));
+      const rowId = await rowSection.getAttribute("id").then((
+        id: string | null,
+      ) => id!.replace("row-section-", ""));
       const collapseBtn = page.locator(`#row-collapse-btn-${rowId}`);
       const columns = page.locator(`#row-columns-${rowId}`);
 
@@ -66,7 +74,9 @@ test.describe("Collapse functionality", () => {
 
     test("re-expands when toggled again", async ({ page }) => {
       const rowSection = page.locator("[id^='row-section-']").first();
-      const rowId = await rowSection.getAttribute("id").then((id: string | null) => id!.replace("row-section-", ""));
+      const rowId = await rowSection.getAttribute("id").then((
+        id: string | null,
+      ) => id!.replace("row-section-", ""));
       const collapseBtn = page.locator(`#row-collapse-btn-${rowId}`);
       const columns = page.locator(`#row-columns-${rowId}`);
 
@@ -89,9 +99,12 @@ test.describe("Collapse functionality", () => {
   test.describe("Checklist AI generation section (task create modal)", () => {
     test.beforeEach(async ({ page }) => {
       await page.evaluate(() => {
-        (document.querySelector("button:has(.hugeicons--credit-card-add)") as HTMLButtonElement)?.click();
+        (document.querySelector(
+          "button:has(.hugeicons--credit-card-add)",
+        ) as HTMLButtonElement)?.click();
       });
-      await expect(page.getByRole("heading", { name: "Add task" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Add task" }))
+        .toBeVisible();
     });
 
     test("is closed by default and opens when toggled", async ({ page }) => {
@@ -100,12 +113,16 @@ test.describe("Collapse functionality", () => {
       const content = page.locator("#checklist-gen-collapse-content");
 
       await expect(collapse).not.toHaveClass(/collapse-open/);
-      await expect(content.getByText("What task do you need broken down into subtasks?")).not.toBeVisible();
+      await expect(
+        content.getByText("What task do you need broken down into subtasks?"),
+      ).not.toBeVisible();
 
       await toggle.click();
 
       await expect(collapse).toHaveClass(/collapse-open/);
-      await expect(content.getByText("What task do you need broken down into subtasks?")).toBeVisible();
+      await expect(
+        content.getByText("What task do you need broken down into subtasks?"),
+      ).toBeVisible();
     });
 
     test("closes when toggled again after opening", async ({ page }) => {
@@ -119,7 +136,9 @@ test.describe("Collapse functionality", () => {
       await toggle.click();
 
       await expect(collapse).not.toHaveClass(/collapse-open/);
-      await expect(content.getByText("What task do you need broken down into subtasks?")).not.toBeVisible();
+      await expect(
+        content.getByText("What task do you need broken down into subtasks?"),
+      ).not.toBeVisible();
     });
   });
 });

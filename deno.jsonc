@@ -19,6 +19,7 @@
     "dev": "deno run --allow-all astro dev",
     "build": "rm -rf ./.astro ./dist; deno run --allow-all astro build",
     "preview": "deno run --allow-all ./dist/server/entry.mjs",
-    "astro": "deno run --allow-all astro"
+    "astro": "deno run --allow-all astro",
+    "pw": "PW_DISABLE_TS_ESM=true deno run --allow-all npm:@playwright/test/cli"
   }
 }

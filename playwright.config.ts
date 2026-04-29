@@ -2,24 +2,30 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests",
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
   reporter: "html",
   use: {
-    baseURL: "http://localhost:4321",
+    baseURL: "https://kanaryboards.kimdcottrell.deno.net",
     trace: "on-first-retry",
+    ignoreHTTPSErrors: true,
   },
+  // webServer: {
+  //   // command: "npm run start",
+  //   reuseExistingServer: true,
+  //   url: "http://app:4321",
+  //   ignoreHTTPSErrors: true,
+  //   stdout: "ignore",
+  //   stderr: "pipe",
+  // },
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        browserName: "chromium",
+        launchOptions: {
+          args: ["--ignore-certificate-errors"],
+        },
+      },
     },
   ],
-  webServer: {
-    command: "deno task dev",
-    url: "http://localhost:4321",
-    reuseExistingServer: !process.env.CI,
-  },
 });
