@@ -127,6 +127,12 @@ The app will be available at [http://localhost:4321](http://localhost:4321).
 
 Claude Code inside the dev container connects to three MCP servers, configured in [.mcp.json](.mcp.json).
 
+**Extra details you may be wondering about**
+
+- **the placement of `.mcp.json`**: Placing this in `.claude/.mcp.json` makes it ignored by both Claude Code's VSCode chat and the VSCode terminal window. **IT MUST STAY WHERE IT IS** All other `.mcp.json` files may be ignored.
+
+- **how to add to `.mcp.json`**: It is IMPERATIVE that you add `--scope project` to `claude mcp add` commands. e.g. `claude mcp add --scope project --transport http tickettailor https://mcp.tickettailor.ai/mcp`. 
+
 ### Playwright
 
 **Type:** HTTP — `http://playwright:8931/mcp`
