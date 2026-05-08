@@ -20,7 +20,7 @@
     "build": "rm -rf ./.astro ./dist; deno run --allow-all astro build",
     "dev": "deno run --allow-all astro dev",
     "preview": "deno run --allow-net --allow-read --allow-env ./dist/server/entry.mjs",
-    "e2e-test": "sh -c 'if ! curl -s http://localhost:4321 >/dev/null 2>&1; then deno task dev & fi; until curl -s http://localhost:4321 >/dev/null 2>&1; do sleep 1; done; curl http://playwright:3000/run'"
+    "e2e-test": "sh -c 'STARTED=0; if ! curl -s http://localhost:4321 >/dev/null 2>&1; then deno task dev & DEV_PID=$!; STARTED=1; fi; until curl -s http://localhost:4321 >/dev/null 2>&1; do sleep 1; done; curl http://playwright:3000/run; STATUS=$?; if [ \"$STARTED\" = \"1\" ]; then kill \"$DEV_PID\" 2>/dev/null; fi; exit $STATUS'"
   },
   "imports": {
     // these are needed to get around Deno Deploy problems thanks to @deno/astro-adapter

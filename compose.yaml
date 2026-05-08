@@ -57,6 +57,8 @@ services:
       - "3000:3000"
     networks:
       - proxy
+    depends_on:
+      - app
 
   mcp_playwright:
     image: mcr.microsoft.com/playwright/mcp

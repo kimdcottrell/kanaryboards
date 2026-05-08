@@ -51,17 +51,14 @@ RUN ln -s /usr/bin/deno /usr/bin/node
 
 USER deno
 
-# Cache the dependencies as a layer (the following two steps are re-run only when deps.ts is modified).
-# Ideally cache deno.json will download and compile _all_ external files used in main.ts.
-COPY ./deno.jsonc .
-
-RUN --mount=type=cache,target=${DENO_DIR},uid=${LOCAL_MACHINE_UID},gid=${LOCAL_MACHINE_GID} \
-    deno install
-
-# These steps will be re-run upon each file change in your working directory:
 COPY . /var/dev
 
 WORKDIR /var/dev
+
+# Cache the dependencies as a layer (the following two steps are re-run only when deps.ts is modified).
+# Ideally cache deno.json will download and compile _all_ external files used in main.ts.
+RUN --mount=type=cache,target=${DENO_DIR},uid=${LOCAL_MACHINE_UID},gid=${LOCAL_MACHINE_GID} \
+    deno install
 
 # Compile the main app so that it doesn't need to be compiled each startup/entry.
 # RUN deno cache main.ts
