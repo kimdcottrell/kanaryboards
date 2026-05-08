@@ -23,13 +23,15 @@ jobs:
       - name: Create Pull Request
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_BODY: |
+            Automated pull request created from push to ${{ github.ref_name }}
+
+            Branch: ${{ github.ref_name }}
+            Triggered by: ${{ github.actor }}
         run: |
           gh pr create \
             --title "Auto PR: ${{ github.ref_name }}" \
-            --body "Automated pull request created from push to ${{ github.ref_name }}
-
-Branch: ${{ github.ref_name }}
-Triggered by: ${{ github.actor }}" \
+            --body "$PR_BODY" \
             --base main \
             --label "automated-pr" \
             --label "needs-review"
