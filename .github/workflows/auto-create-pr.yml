@@ -30,7 +30,7 @@ jobs:
             Triggered by: ${{ github.actor }}
         run: |
           gh pr create \
-            --title "Auto PR: ${{ github.ref_name }}" \
+            --title "WIP: ${{ github.ref_name }}" \
             --body "$PR_BODY" \
             --base main \
             --label "enhancement"
