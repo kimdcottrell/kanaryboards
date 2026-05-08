@@ -24,8 +24,8 @@ jobs:
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: ""Auto-created PR from ${{ github.ref_name }}""
-          title: ""Auto PR: ${{ github.ref_name }}""
+          commit-message: "Auto-created PR from ${{ github.ref_name }}"
+          title: "Auto PR: ${{ github.ref_name }}"
           body: |
             Automated pull request created from push to ${{ github.ref_name }}
             
