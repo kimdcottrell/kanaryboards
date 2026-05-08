@@ -64,5 +64,7 @@ RUN --mount=type=cache,target=${DENO_DIR},uid=${LOCAL_MACHINE_UID},gid=${LOCAL_M
 # RUN deno cache main.ts
 ENV PATH="$PATH:/var/dev/node_modules/.bin/:$HOME/.local/bin"
 
+RUN deno run --allow-all husky init
+
 # The port that your application listens to.
 EXPOSE 4321
