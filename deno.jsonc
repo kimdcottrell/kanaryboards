@@ -21,5 +21,7 @@
     "preview": "deno run --allow-all ./dist/server/entry.mjs",
     "astro": "deno run --allow-all astro"
   },
-  "vendor": true
+  "imports": {
+    "@std/http": "jsr:@std/http@^1.1.0" // this is needed to get around Deno Deploy problems thanks to @deno/astro-adapter
+  }
 }

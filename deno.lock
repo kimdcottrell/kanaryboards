@@ -10,6 +10,7 @@
     "jsr:@std/html@^1.0.5": "1.0.6",
     "jsr:@std/html@^1.0.6": "1.0.6",
     "jsr:@std/http@1.0": "1.0.25",
+    "jsr:@std/http@1.1.0": "1.1.0",
     "jsr:@std/http@^1.1.0": "1.1.0",
     "jsr:@std/internal@^1.0.12": "1.0.13",
     "jsr:@std/media-types@^1.1.0": "1.1.0",
@@ -4097,6 +4098,9 @@
     }
   },
   "workspace": {
+    "dependencies": [
+      "jsr:@std/http@^1.1.0"
+    ],
     "packageJson": {
       "dependencies": [
         "npm:@anthropic-ai/claude-code@^2.1.114",
