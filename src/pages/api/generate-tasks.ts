@@ -92,7 +92,8 @@ export const POST: APIRoute = async ({ request }: APIContext) => {
       const innerRaw = outer?.error?.message ?? outer?.message;
       const inner = typeof innerRaw === "string" ? JSON.parse(innerRaw) : null;
       status = inner?.error?.code ?? outer?.error?.code ?? outer?.code ?? 500;
-      message = inner?.error?.message ?? outer?.error?.message ?? outer?.message ?? message;
+      message = inner?.error?.message ?? outer?.error?.message ??
+        outer?.message ?? message;
     } catch {
       message = (e as Error).message || message;
     }
