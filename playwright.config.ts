@@ -4,14 +4,14 @@ export default defineConfig({
   testDir: "./tests",
   reporter: "html",
   use: {
-    baseURL: "https://kanaryboards.kimdcottrell.deno.net",
+    baseURL: "https://kanary.local.dev",
     trace: "on-first-retry",
     ignoreHTTPSErrors: true,
   },
   // webServer: {
-  //   // command: "npm run start",
+  //   command: "deno task dev",
   //   reuseExistingServer: true,
-  //   url: "http://app:4321",
+  //   url: "https://kanary.local.dev",
   //   ignoreHTTPSErrors: true,
   //   stdout: "ignore",
   //   stderr: "pipe",

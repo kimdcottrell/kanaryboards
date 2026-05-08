@@ -21,6 +21,7 @@ services:
       - SETUID
       - SETGID
     labels:
+      # THIS REPO REQUIRES THIS TO ALSO BE RUNNING: https://github.com/kimdcottrell/localdev-proxy
       - traefik.enable=true
       - traefik.http.middlewares.kanary-redirect-web-secure.redirectscheme.scheme=https
       - traefik.http.routers.kanary.middlewares=kanary-redirect-web-secure
@@ -30,6 +31,8 @@ services:
       - traefik.http.routers.kanary-web-secure.tls=true
       - traefik.http.routers.kanary-web-secure.entrypoints=web-secure
       - traefik.http.services.kanary-web-secure.loadbalancer.server.port=4321
+    extra_hosts:
+      - host.docker.internal:host-gateway # used in deno task webhook
     env_file:
       - .env
     volumes:
@@ -39,11 +42,7 @@ services:
       - mcp 
       - proxy
 
-<<<<<<< HEAD
-  mcp-playwright:
-=======
   mcp_playwright:
->>>>>>> main
     image: mcr.microsoft.com/playwright/mcp
     stdin_open: true
     init: true
@@ -53,11 +52,7 @@ services:
     networks:
       - mcp
 
-<<<<<<< HEAD
-  mcp-mcpdoc:
-=======
   mcp_mcpdoc:
->>>>>>> main
     build:
       context: .
       dockerfile: images/mcpdoc.Dockerfile
