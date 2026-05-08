@@ -97,7 +97,7 @@ export default function ColumnCard({ column, row }) {
             )
             : (
               <h4
-                className="text-xl font-semibold cursor-pointer"
+                className="text-xl font-semibold cursor-text"
                 onDoubleClick={() => editColumnTitle(column, row)}
                 title="Double-click to edit"
               >

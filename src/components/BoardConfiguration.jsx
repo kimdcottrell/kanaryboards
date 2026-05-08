@@ -266,7 +266,7 @@ export default function BoardConfiguration() {
                       )
                       : (
                         <h4
-                          className="font-bold cursor-pointer"
+                          className="font-bold cursor-text"
                           onDoubleClick={() => startRowEdit(row)}
                           title="Double-click to edit"
                         >
