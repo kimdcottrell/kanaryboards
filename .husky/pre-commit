@@ -1,1 +1,2 @@
+deno lint
 deno task e2e-test

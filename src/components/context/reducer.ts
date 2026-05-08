@@ -170,7 +170,9 @@ export function boardReducer(
     case "COLUMN/RENAME_SAVE": {
       const trimmed = state.editingColumnName.trim();
       if (!trimmed) return { ...state, editingColumnId: null };
-      const column = state.columns.find((c) => c.id === action.payload.columnId);
+      const column = state.columns.find((c) =>
+        c.id === action.payload.columnId
+      );
       if (!column) return { ...state, editingColumnId: null };
       const oldName = column.name;
       return {
@@ -187,7 +189,12 @@ export function boardReducer(
     }
 
     case "COLUMN/RENAME_CANCEL":
-      return { ...state, editingColumnId: null, editingColumnRowId: null, editingColumnName: "" };
+      return {
+        ...state,
+        editingColumnId: null,
+        editingColumnRowId: null,
+        editingColumnName: "",
+      };
 
     // ── ROWS ──────────────────────────────────────────────────────────────────
 
@@ -663,7 +670,9 @@ export function boardReducer(
     case "TASK/REORDER_IN_CELL": {
       const { taskId, beforeTaskId } = action.payload;
       const task = state.tasks.find((t) => t.id === taskId);
-      if (!task || taskId === beforeTaskId) return { ...state, draggedTask: null };
+      if (!task || taskId === beforeTaskId) {
+        return { ...state, draggedTask: null };
+      }
       const without = state.tasks.filter((t) => t.id !== taskId);
       if (beforeTaskId === null) {
         return { ...state, tasks: [...without, task], draggedTask: null };
@@ -698,9 +707,3 @@ export function boardReducer(
       return state;
   }
 }
-
-// Unused — satisfies TypeScript exhaustiveness; kept as a compile-time guard.
-// deno-lint-ignore no-unused-vars
-const _exhaustive = (_: never): never => {
-  throw new Error("Unhandled action");
-};
