@@ -119,7 +119,7 @@ export default function ColumnCard({ column, row }) {
           </button>
         </div>
       </div>
-      <div className="space-y-4 rounded p-3">
+      <div className="space-y-4 rounded">
         {cellTasks.length === 0 && <p className="text-sm">No cards yet.</p>}
         {cellTasks.map((task) => (
           <TaskCard

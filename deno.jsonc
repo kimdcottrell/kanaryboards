@@ -17,13 +17,34 @@
   "nodeModulesDir": "auto",
   "tasks": {
     "dev": "deno run --allow-all astro dev",
-    "build": "rm -rf ./.astro ./dist ./vendor; deno run --allow-all astro build",
+    "build": "rm -rf ./.astro ./dist; deno run --allow-all astro build",
     "preview": "deno run --allow-all ./dist/server/entry.mjs",
     "astro": "deno run --allow-all astro"
   },
   "imports": {
-    // these are needed to get around Deno Deploy problems thanks to @deno/astro-adapter
-    "@std/http": "jsr:@std/http@^1.1.0",
-    "@std/path": "jsr:@std/path@^1.1.4"
+    // jsr — needed to work around Deno Deploy problems via @deno/astro-adapter
+    // "@std/http": "jsr:@std/http@^1.1.0",
+    // "@std/path": "jsr:@std/path@^1.1.4",
+    // npm dependencies
+    "@astrojs/react": "npm:@astrojs/react@^5.0.4",
+    "@deno/astro-adapter": "npm:@deno/astro-adapter@0.5.1",
+    "@google/genai": "npm:@google/genai@^1.50.1",
+    "@iconify/json": "npm:@iconify/json@^2.2.467",
+    "@iconify/tailwind4": "npm:@iconify/tailwind4@^1.2.3",
+    "@lyfie/luthor": "npm:@lyfie/luthor@^2.7.11",
+    "@types/react": "npm:@types/react@^19.2.14",
+    "@types/react-dom": "npm:@types/react-dom@^19.2.3",
+    "astro": "npm:astro@^6.1.10",
+    "astro-icon": "npm:astro-icon@^1.1.5",
+    "daisyui": "npm:daisyui@^5.5.19",
+    "react": "npm:react@^19.2.5",
+    "react-dom": "npm:react-dom@^19.2.5",
+    "tailwindcss": "npm:tailwindcss@4.2.2",
+    "typescript": "npm:typescript@^6.0.3",
+    // dev dependencies
+    "@anthropic-ai/claude-code": "npm:@anthropic-ai/claude-code@^2.1.114",
+    "@astrojs/check": "npm:@astrojs/check@^0.9.7",
+    "@catppuccin/tailwindcss": "npm:@catppuccin/tailwindcss@^1.0.0",
+    "@tailwindcss/vite": "npm:@tailwindcss/vite@4.2.2"
   }
 }
