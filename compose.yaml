@@ -42,6 +42,22 @@ services:
       - mcp 
       - proxy
 
+  playwright:
+    build:
+      context: .
+      dockerfile: images/playwright.Dockerfile
+    stdin_open: true
+    tty: true
+    init: true
+    volumes:
+      - .:/var/dev
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - "3000:3000"
+    networks:
+      - proxy
+
   mcp_playwright:
     image: mcr.microsoft.com/playwright/mcp
     stdin_open: true

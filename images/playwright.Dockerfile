@@ -19,15 +19,22 @@ COPY package*.json ./
 # Install dependencies 
 RUN npm install @playwright/test typescript --no-save
 
-# Copy the rest of the application 
+# Copy the rest of the application
 COPY tests /usr/src/app/tests
 COPY playwright.config.ts /usr/src/app/playwright.config.ts
+COPY images/playwright-trigger.js /usr/src/app/trigger-server.js
 
 # Install Playwright browsers 
-RUN npx playwright install
+RUN npx playwright install chromium firefox webkit --with-deps
 
 # Set the environment to use the right display drivers 
 ENV CI=true 
  
-# Run the tests 
-CMD ["npx", "playwright", "test"] 
+# Traefik IP must be added to the /etc/hosts file in order for all 
+#   playwright browsers to be able to hit kanary.local.dev
+CMD ["sh", "-c", "echo \"$(getent hosts traefik | awk '{print $1}') kanary.local.dev\" >> /etc/hosts && node /usr/src/app/trigger-server.js"]
+
+# docker build -f images/playwright.Dockerfile -t pw .
+# docker run -i --rm --init pw bash
+# curl -k --resolve kanary.local.dev:443:$(getent hosts traefik | awk '{print $1}') 
+
