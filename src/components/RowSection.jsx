@@ -46,19 +46,10 @@ export default function RowSection({ row }) {
             : (
               <h3
                 className="text-2xl font-semibold"
+                title="Double-click to edit"
                 onDoubleClick={() => editRowTitle(row)}
               >
                 {row.name}
-                <span
-                  data-tip="double click to edit"
-                  className="tooltip text-xs align-super pl-2"
-                  style={{
-                    color: `${row.color}`,
-                  }}
-                >
-                  <span className="iconify hugeicons--pencil-edit-02 text-xl">
-                  </span>
-                </span>
               </h3>
             )}
         </div>

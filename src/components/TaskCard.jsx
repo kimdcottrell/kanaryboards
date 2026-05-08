@@ -1,27 +1,33 @@
 import { useBoard } from "./context/useBoard.ts";
 
-export default function TaskCard({ task, row, column }) {
+export default function TaskCard({
+  task,
+  row,
+  onDragOver,
+  isDropBefore,
+  isDropAfter,
+  isDragging,
+}) {
   const {
-    editingTaskId,
     startEditTask,
-    handleDragStart,
     handleDragEnd,
+    handleTaskDragStart,
     toggleTaskChecklist,
   } = useBoard();
-  const isEditing = task.id === editingTaskId;
 
   return (
     <article
-      draggable={!isEditing}
-      onDragStart={isEditing ? undefined : (event) =>
-        handleDragStart(
-          task,
-          row.id,
-          column.id,
-          event,
-        )}
+      id={task.id}
+      draggable="true"
+      onDragStart={handleTaskDragStart(task)}
       onDragEnd={handleDragEnd}
+      onDragOver={onDragOver}
       className="overflow-hidden shadow-sm shadow-base-900/5"
+      style={{
+        opacity: isDragging ? 0.4 : 1,
+        borderTop: `2px solid ${isDropBefore ? row.color : "transparent"}`,
+        borderBottom: `2px solid ${isDropAfter ? row.color : "transparent"}`,
+      }}
     >
       <div className="block">
         <div className="join-item bg-base-200 p-4">

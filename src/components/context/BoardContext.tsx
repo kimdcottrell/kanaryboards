@@ -1,6 +1,6 @@
 import { createContext } from "react";
 import { useCallback, useContext, useEffect, useReducer, useRef } from "react";
-import type { Dispatch } from "react";
+import type { Dispatch, ReactNode } from "react";
 import type { BoardAction, BoardState } from "./types.ts";
 import { boardReducer, createInitialState } from "./reducer.ts";
 import { STORAGE_KEY } from "./constants.ts";
@@ -32,7 +32,7 @@ export function useBoardDispatch(): Dispatch<BoardAction> {
   return dispatch;
 }
 
-export function BoardProvider({ children }: { children: ComponentChildren }) {
+export function BoardProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(
     boardReducer,
     undefined,

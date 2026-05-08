@@ -22,47 +22,44 @@ const normalizeTaskLines = (content: string) =>
     )
     .filter(Boolean);
 
-let ERRORS: Array<{ devMessage?: Error; message: Error }> = [];
-
-const getLastErrorMessage = (
-  e: Array<{ devMessage?: Error; message: Error }>,
-) => {
-  if (import.meta.env.MODE == "development") {
-    return e[e.length - 1]?.devMessage || e[e.length - 1]?.message;
-  }
-  return e[e.length - 1]?.message;
-};
-
 const apiKey = import.meta.env.GOOGLE_AI_STUDIO_KEY;
 
-if (apiKey === undefined) {
-  ERRORS = [{
-    devMessage: new Error(
-      "GOOGLE_AI_STUDIO_KEY is not set in environment variables.",
-    ),
-    message: new Error(
-      "Problem connecting to AI model. Please contact support.",
-    ),
-  }];
-  console.error(getLastErrorMessage(ERRORS));
+if (!apiKey) {
+  console.error(
+    import.meta.env.MODE === "development"
+      ? "GOOGLE_AI_STUDIO_KEY is not set in environment variables."
+      : "Problem connecting to AI model. Please contact support.",
+  );
 }
 
-const ai = new GoogleGenAI({
-  vertexai: false,
-  apiVersion: "v1beta",
-  apiKey: apiKey,
-});
+const ai = apiKey
+  ? new GoogleGenAI({ vertexai: false, apiVersion: "v1beta", apiKey })
+  : null;
+
+function jsonResponse(body: object, status: number): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
 
 export const POST: APIRoute = async ({ request }: APIContext) => {
-  const body: GenerateTasksBody = await request.json();
+  if (!ai) {
+    return jsonResponse({ error: "AI service is not configured." }, 503);
+  }
+
+  let body: GenerateTasksBody;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ error: "Invalid request body." }, 400);
+  }
+
   const prompt = String(body.prompt || "").trim();
   const maxTasks = Number(body.maxTasks ?? 10) || 10;
 
   if (!prompt) {
-    return new Response(JSON.stringify({ error: "Missing prompt." }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Missing prompt." }, 400);
   }
 
   const systemPrompt =
@@ -75,7 +72,6 @@ export const POST: APIRoute = async ({ request }: APIContext) => {
 
   try {
     let fullText = "";
-
     const response = await ai.models.generateContentStream({
       model: "gemini-3.1-flash-lite-preview",
       contents: cleanedPrompt,
@@ -84,20 +80,23 @@ export const POST: APIRoute = async ({ request }: APIContext) => {
     for await (const chunk of response) {
       fullText += chunk.text;
     }
-
-    return new Response(
-      JSON.stringify({ response: normalizeTaskLines(fullText) }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
+    return jsonResponse({ response: normalizeTaskLines(fullText) }, 200);
   } catch (e) {
-    // const parsedError = JSON.parse(JSON.parse(e.message).error.message);
-    console.log(JSON.parse(e.message));
-    return new Response(JSON.stringify(JSON.parse(e.message)), {
-      status: e.status || 429,
-      headers: { "Content-Type": "application/json" },
-    });
+    console.error("generate-tasks error:", e);
+
+    let status = 500;
+    let message = "AI generation failed.";
+    try {
+      const outer = JSON.parse((e as Error).message);
+      // Google SDK double-encodes the API error: outer.error.message is itself a JSON string
+      const innerRaw = outer?.error?.message ?? outer?.message;
+      const inner = typeof innerRaw === "string" ? JSON.parse(innerRaw) : null;
+      status = inner?.error?.code ?? outer?.error?.code ?? outer?.code ?? 500;
+      message = inner?.error?.message ?? outer?.error?.message ?? outer?.message ?? message;
+    } catch {
+      message = (e as Error).message || message;
+    }
+
+    return jsonResponse({ error: message }, status);
   }
 };
