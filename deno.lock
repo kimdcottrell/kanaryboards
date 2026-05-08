@@ -1,23 +1,17 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@std/cli@^1.0.28": "1.0.29",
     "jsr:@std/cli@^1.0.29": "1.0.29",
     "jsr:@std/encoding@^1.0.10": "1.0.10",
     "jsr:@std/fmt@^1.0.10": "1.0.10",
-    "jsr:@std/fmt@^1.0.9": "1.0.10",
     "jsr:@std/fs@^1.0.23": "1.0.23",
-    "jsr:@std/html@^1.0.5": "1.0.6",
     "jsr:@std/html@^1.0.6": "1.0.6",
-    "jsr:@std/http@1.0": "1.0.25",
-    "jsr:@std/http@1.1.0": "1.1.0",
     "jsr:@std/http@^1.1.0": "1.1.0",
     "jsr:@std/internal@^1.0.12": "1.0.13",
     "jsr:@std/media-types@^1.1.0": "1.1.0",
     "jsr:@std/net@^1.0.6": "1.0.6",
     "jsr:@std/path@1.0": "1.0.9",
     "jsr:@std/path@^1.1.4": "1.1.4",
-    "jsr:@std/streams@^1.0.17": "1.1.0",
     "jsr:@std/streams@^1.1.0": "1.1.0",
     "npm:@anthropic-ai/claude-code@^2.1.114": "2.1.122",
     "npm:@astrojs/check@~0.9.7": "0.9.9_typescript@6.0.3",
@@ -55,32 +49,18 @@
     "@std/html@1.0.6": {
       "integrity": "eaf759c8141e0733ca30eb49e4c08d8e6ca442b85c4d51f9894a56f502993e08"
     },
-    "@std/http@1.0.25": {
-      "integrity": "577b4252290af1097132812b339fffdd55fb0f4aeb98ff11bdbf67998aa17193",
-      "dependencies": [
-        "jsr:@std/cli@^1.0.28",
-        "jsr:@std/encoding",
-        "jsr:@std/fmt@^1.0.9",
-        "jsr:@std/fs",
-        "jsr:@std/html@^1.0.5",
-        "jsr:@std/media-types",
-        "jsr:@std/net",
-        "jsr:@std/path@^1.1.4",
-        "jsr:@std/streams@^1.0.17"
-      ]
-    },
     "@std/http@1.1.0": {
       "integrity": "265cd9a589fea924c5bb0bbed8bebb4bb2fa19129f760bd014e78dbd7a365a51",
       "dependencies": [
-        "jsr:@std/cli@^1.0.29",
+        "jsr:@std/cli",
         "jsr:@std/encoding",
-        "jsr:@std/fmt@^1.0.10",
+        "jsr:@std/fmt",
         "jsr:@std/fs",
-        "jsr:@std/html@^1.0.6",
+        "jsr:@std/html",
         "jsr:@std/media-types",
         "jsr:@std/net",
         "jsr:@std/path@^1.1.4",
-        "jsr:@std/streams@^1.1.0"
+        "jsr:@std/streams"
       ]
     },
     "@std/internal@1.0.13": {
@@ -4099,7 +4079,8 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@std/http@^1.1.0"
+      "jsr:@std/http@^1.1.0",
+      "jsr:@std/path@^1.1.4"
     ],
     "packageJson": {
       "dependencies": [
