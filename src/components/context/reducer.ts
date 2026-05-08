@@ -29,6 +29,9 @@ export const createInitialState = (): BoardState => {
     newRowFormKey: 0,
     editingRowId: null,
     editingRowName: "",
+    editingColumnId: null,
+    editingColumnRowId: null,
+    editingColumnName: "",
     taskCreateModalOpen: false,
     taskDraft: emptyTaskDraft("", ""),
     taskEditModalOpen: false,
@@ -153,6 +156,39 @@ export function boardReducer(
     case "COLUMN/SET_DRAGGED_INDEX":
       return { ...state, draggedDefaultIndex: action.payload.index };
 
+    case "COLUMN/RENAME_START":
+      return {
+        ...state,
+        editingColumnId: action.payload.columnId,
+        editingColumnRowId: action.payload.rowId,
+        editingColumnName: action.payload.currentName,
+      };
+
+    case "COLUMN/RENAME_CHANGE":
+      return { ...state, editingColumnName: action.payload.name };
+
+    case "COLUMN/RENAME_SAVE": {
+      const trimmed = state.editingColumnName.trim();
+      if (!trimmed) return { ...state, editingColumnId: null };
+      const column = state.columns.find((c) => c.id === action.payload.columnId);
+      if (!column) return { ...state, editingColumnId: null };
+      const oldName = column.name;
+      return {
+        ...state,
+        columns: state.columns.map((c) =>
+          c.id === action.payload.columnId ? { ...c, name: trimmed } : c
+        ),
+        defaultColumnNames: state.defaultColumnNames.map((n) =>
+          n === oldName ? trimmed : n
+        ),
+        editingColumnId: null,
+        editingColumnRowId: null,
+      };
+    }
+
+    case "COLUMN/RENAME_CANCEL":
+      return { ...state, editingColumnId: null, editingColumnRowId: null, editingColumnName: "" };
+
     // ── ROWS ──────────────────────────────────────────────────────────────────
 
     case "ROW/ADD":
@@ -235,6 +271,17 @@ export function boardReducer(
 
     case "ROW/EDIT_CANCEL":
       return { ...state, editingRowId: null, editingRowName: "" };
+
+    case "ROW/RENAME": {
+      const trimmed = action.payload.name.trim();
+      if (!trimmed) return state;
+      return {
+        ...state,
+        rows: state.rows.map((r) =>
+          r.id === action.payload.rowId ? { ...r, name: trimmed } : r
+        ),
+      };
+    }
 
     case "ROW/SET_NEW_NAME":
       return { ...state, newRowName: action.payload.name };
@@ -612,6 +659,21 @@ export function boardReducer(
 
     case "DRAG/SET_DEFAULT_INDEX":
       return { ...state, draggedDefaultIndex: action.payload.index };
+
+    case "TASK/REORDER_IN_CELL": {
+      const { taskId, beforeTaskId } = action.payload;
+      const task = state.tasks.find((t) => t.id === taskId);
+      if (!task || taskId === beforeTaskId) return { ...state, draggedTask: null };
+      const without = state.tasks.filter((t) => t.id !== taskId);
+      if (beforeTaskId === null) {
+        return { ...state, tasks: [...without, task], draggedTask: null };
+      }
+      const idx = without.findIndex((t) => t.id === beforeTaskId);
+      if (idx === -1) return { ...state, draggedTask: null };
+      const next = [...without];
+      next.splice(idx, 0, task);
+      return { ...state, tasks: next, draggedTask: null };
+    }
 
     // ── BOARD ─────────────────────────────────────────────────────────────────
 

@@ -7,7 +7,7 @@ import {
 import { useAsyncActions } from "./useAsyncActions.ts";
 import { computeTasksByCell } from "./selectors.ts";
 import { createId, STORAGE_KEY } from "./constants.ts";
-import type { ChecklistItem, Row, Task, TaskDraft } from "./types.ts";
+import type { ChecklistItem, Column, Row, Task, TaskDraft } from "./types.ts";
 
 export function useBoard() {
   const state = useContext(BoardStateContext);
@@ -46,10 +46,14 @@ export function useBoard() {
         dispatch({ type: "TASK/UPDATE_EDIT_DRAFT", payload: { draft } });
       } else dispatch({ type: "TASK/CLOSE_EDIT_MODAL" });
     },
-    // Handles null from RowSection Escape keydown (cancels edit entirely)
+    // null cancels the edit; a string value updates the in-progress name
     setEditingRowName: (name: string | null) => {
       if (name === null) dispatch({ type: "ROW/EDIT_CANCEL" });
       else dispatch({ type: "ROW/EDIT_CHANGE", payload: { name } });
+    },
+    setEditingColumnName: (name: string | null) => {
+      if (name === null) dispatch({ type: "COLUMN/RENAME_CANCEL" });
+      else dispatch({ type: "COLUMN/RENAME_CHANGE", payload: { name } });
     },
     setChecklistPrompt: (prompt: string) =>
       dispatch({ type: "CHECKLIST_AI/SET_PROMPT", payload: { prompt } }),
@@ -124,6 +128,15 @@ export function useBoard() {
       }),
     saveRowTitle: (rowId: string) =>
       dispatch({ type: "ROW/EDIT_SAVE", payload: { rowId } }),
+    renameRow: (rowId: string, name: string) =>
+      dispatch({ type: "ROW/RENAME", payload: { rowId, name } }),
+    editColumnTitle: (column: Column, row: Row) =>
+      dispatch({
+        type: "COLUMN/RENAME_START",
+        payload: { columnId: column.id, rowId: row.id, currentName: column.name },
+      }),
+    saveColumnTitle: (columnId: string) =>
+      dispatch({ type: "COLUMN/RENAME_SAVE", payload: { columnId } }),
     addRow: async_.addRow,
 
     // ── Task handlers ────────────────────────────────────────────────────
@@ -176,20 +189,16 @@ export function useBoard() {
       }),
     moveTaskToColumn: (taskId: string, colId: string) =>
       dispatch({ type: "TASK/MOVE_TO_COLUMN", payload: { taskId, colId } }),
-    handleDragStart: (
-      task: Task,
-      rowId: string,
-      colId: string,
-      event: DragEvent,
-    ) => {
+    handleDragEnd: () => dispatch({ type: "DRAG/END_TASK" }),
+    handleTaskDragStart: (task: Task) => (event: DragEvent) => {
       dispatch({
         type: "DRAG/START_TASK",
-        payload: { taskId: task.id, rowId, colId },
+        payload: { taskId: task.id, rowId: task.rowId, colId: task.colId },
       });
       event.dataTransfer!.effectAllowed = "move";
-      event.dataTransfer!.setData("text/plain", task.id);
     },
-    handleDragEnd: () => dispatch({ type: "DRAG/END_TASK" }),
+    reorderTaskInCell: (taskId: string, beforeTaskId: string | null) =>
+      dispatch({ type: "TASK/REORDER_IN_CELL", payload: { taskId, beforeTaskId } }),
     handleColumnDrop: (rowId: string, colId: string) => (event: DragEvent) => {
       event.preventDefault();
       dispatch({

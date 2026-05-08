@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useBoard } from "./context/useBoard.ts";
 import { rowColorOptions } from "./context/constants.ts";
 
@@ -11,13 +12,11 @@ export default function BoardConfiguration() {
     isGeneratingTasks,
     taskGenerationStatus,
     defaultColumnInput,
-    editingRowId,
-    editingRowName,
+    draggedDefaultIndex,
     setNewRowName,
     setNewRowPrompt,
     setDefaultColumnInput,
     setDraggedDefaultIndex,
-    setEditingRowName,
     addRow,
     handleDefaultColumnInputKeyDown,
     handleDefaultColumnDragStart,
@@ -27,10 +26,29 @@ export default function BoardConfiguration() {
     updateRowColor,
     moveRowUp,
     moveRowDown,
-    editRowTitle,
-    saveRowTitle,
+    renameRow,
     confirmResetBoard,
   } = useBoard();
+
+  const [editId, setEditId] = useState(null);
+  const [editName, setEditName] = useState("");
+  const [dragHoverIndex, setDragHoverIndex] = useState(null);
+
+  const startRowEdit = (row) => {
+    setEditId(row.id);
+    setEditName(row.name);
+  };
+
+  const saveRowEdit = () => {
+    if (editId) renameRow(editId, editName);
+    setEditId(null);
+    setEditName("");
+  };
+
+  const cancelRowEdit = () => {
+    setEditId(null);
+    setEditName("");
+  };
 
   return (
     <div className="grid">
@@ -144,33 +162,67 @@ export default function BoardConfiguration() {
               </div>
             </div>
             <div className="flex flex-wrap items-baseline gap-2">
-              {defaultColumnNames.map((name, index) => (
-                <div className="join" key={name}>
-                  <button
-                    type="button"
+              {defaultColumnNames.map((name, index) => {
+                const isDraggingThis = draggedDefaultIndex === index;
+                const isHovered = dragHoverIndex === index &&
+                  draggedDefaultIndex !== null &&
+                  draggedDefaultIndex !== index;
+                const dropFromLeft = draggedDefaultIndex !== null &&
+                  draggedDefaultIndex < index;
+                return (
+                  <div
+                    key={name}
+                    className="relative"
                     draggable="true"
                     onDragStart={handleDefaultColumnDragStart(index)}
-                    onDragOver={handleDefaultColumnDragOver}
-                    onDrop={handleDefaultColumnDrop(index)}
-                    onDragEnd={() =>
-                      setDraggedDefaultIndex(null)}
-                    className="btn rounded-l! join-item btn-primary cursor-grab"
-                  >
-                    {name}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      removeDefaultColumn(name);
+                    onDragOver={(e) => {
+                      handleDefaultColumnDragOver(e);
+                      setDragHoverIndex(index);
                     }}
-                    className="btn rounded-r! join-item btn-primary p-2 dark:btn-border-primary light:text-primary-content bg-primary/40 hover:bg-primary/80 dark:text-base-100 text-primary! hover:text-primary-content!"
+                    onDrop={(e) => {
+                      handleDefaultColumnDrop(index)(e);
+                      setDragHoverIndex(null);
+                    }}
+                    onDragEnd={() => {
+                      setDraggedDefaultIndex(null);
+                      setDragHoverIndex(null);
+                    }}
+                    style={{ opacity: isDraggingThis ? 0.4 : 1 }}
                   >
-                    <span className="iconify basil--cross-outline text-2xl font-bold">
-                    </span>
-                  </button>
-                </div>
-              ))}
+                    {isHovered && !dropFromLeft && (
+                      <span
+                        className="absolute inset-y-0 w-0.5 bg-secondary"
+                        style={{ left: "-0.30rem" }}
+                      />
+                    )}
+                    {isHovered && dropFromLeft && (
+                      <span
+                        className="absolute inset-y-0 w-0.5 bg-secondary"
+                        style={{ right: "-0.30rem" }}
+                      />
+                    )}
+                    <div className="join">
+                      <button
+                        type="button"
+                        className="btn rounded-l! join-item btn-primary cursor-grab"
+                      >
+                        {name}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          removeDefaultColumn(name);
+                        }}
+                        className="btn rounded-r! join-item btn-primary p-2 dark:btn-border-primary light:text-primary-content bg-primary/40 hover:bg-primary/80 dark:text-base-100 text-primary! hover:text-primary-content!"
+                      >
+                        <span className="iconify basil--cross-outline text-2xl font-bold">
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
               <fieldset className="fieldset">
                 <input
                   className="input input-primary"
@@ -208,30 +260,29 @@ export default function BoardConfiguration() {
                   style={{ "--row-tint-color": row.color }}
                 >
                   <div>
-                    {editingRowId === row.id
+                    {editId === row.id
                       ? (
                         <input
                           className="input input-sm input-bordered w-full font-bold"
                           type="text"
-                          value={editingRowName}
-                          onChange={(e) =>
-                            setEditingRowName(e.currentTarget.value)}
+                          value={editName}
+                          onChange={(e) => setEditName(e.currentTarget.value)}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               e.preventDefault();
-                              saveRowTitle(row.id);
+                              saveRowEdit();
                             } else if (e.key === "Escape") {
-                              setEditingRowName(null);
+                              cancelRowEdit();
                             }
                           }}
-                          onBlur={() => saveRowTitle(row.id)}
+                          onBlur={saveRowEdit}
                           autoFocus
                         />
                       )
                       : (
                         <h4
-                          className="font-bold cursor-pointer"
-                          onDoubleClick={() => editRowTitle(row)}
+                          className="font-bold cursor-text"
+                          onDoubleClick={() => startRowEdit(row)}
                           title="Double-click to edit"
                         >
                           {row.name}

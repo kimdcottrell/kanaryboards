@@ -7,8 +7,9 @@ import tailwindcss from "@tailwindcss/vite";
 // https://astro.build/config
 export default defineConfig({
   adapter: deno(),
-
   integrations: [react()],
+
+  output: "server",
 
   security: {
     checkOrigin: false,
@@ -17,7 +18,11 @@ export default defineConfig({
   server: {
     port: 4321,
     host: "0.0.0.0",
-    allowedHosts: ["app", "localhost"],
+    allowedHosts: [
+      "0.0.0.0",
+      "localhost",
+      "kanary.local.dev",
+    ],
   },
 
   vite: {

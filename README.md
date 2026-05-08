@@ -9,6 +9,54 @@ An AI-native kanban-style project management app built with Astro, React, Deno, 
 - [Claude Code](https://claude.ai/code) CLI installed on your **local machine** _(recommended)_
 - An SSH key on your **local machine** authorized for GitHub (`~/.ssh/id_*`)
 
+### Local Proxy Setup
+
+This is a requirement of this project.
+
+This localdev is available via `https://kanary.local.dev`, which means you need to setup a reverse proxy. 
+
+#### 1. Clone the repository
+
+```bash
+git clone git@github.com:kimdcottrell/localdev-proxy.git
+cd localdev-proxy
+```
+
+#### 2. Edit hostsfile
+
+```bash
+# the below line needs to be added to /etc/hosts
+127.0.0.1    kanary.local.dev
+```
+
+#### 3. Add self-signed certs
+
+Install this: https://github.com/FiloSottile/mkcert 
+
+Run this:
+
+```
+cd certs
+mkcert -install
+mkcert -key-file wildcard-local-dev-key.pem -cert-file wildcard-local-dev-cert.pem *.local.dev
+```
+
+#### 4. Start the reverse proxy
+
+```
+docker compose up -d
+```
+
+#### 5. (optional) blow the Firefox DNS cache
+
+In Firefox, search for `about:networking#dns` in the url bar.
+
+Hit the `Clear DNS Cache` button.
+
+Restart Firefox.
+
+Some company bought the domain name of `local.dev`, so we need to go out of our way to tell Firefox where to look.
+
 ## Setup
 
 ### 1. Clone the repository

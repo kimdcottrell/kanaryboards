@@ -12,7 +12,14 @@ const fetchGeneratedItems = async (
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt, maxTasks: maxItems }),
   });
-  if (!response.ok) throw new Error("AI generation failed");
+  if (!response.ok) {
+    let message = "AI generation failed";
+    try {
+      const data = await response.json();
+      message = data?.error ?? message;
+    } catch { /* ignore parse failure */ }
+    throw new Error(message);
+  }
   const data = await response.json();
   return Array.isArray(data.response)
     ? data.response.map((item: unknown) => String(item).trim())

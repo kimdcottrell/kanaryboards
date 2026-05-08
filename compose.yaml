@@ -20,17 +20,30 @@ services:
       - CHOWN
       - SETUID
       - SETGID
+    labels:
+      - traefik.enable=true
+      - traefik.http.middlewares.kanary-redirect-web-secure.redirectscheme.scheme=https
+      - traefik.http.routers.kanary.middlewares=kanary-redirect-web-secure
+      - traefik.http.routers.kanary-web.rule=Host(`kanary.local.dev`)
+      - traefik.http.routers.kanary-web.entrypoints=web
+      - traefik.http.routers.kanary-web-secure.rule=Host(`kanary.local.dev`)
+      - traefik.http.routers.kanary-web-secure.tls=true
+      - traefik.http.routers.kanary-web-secure.entrypoints=web-secure
+      - traefik.http.services.kanary-web-secure.loadbalancer.server.port=4321
     env_file:
       - .env
     volumes:
       - .:/var/dev
       - ${HOME}/.ssh/agent.sock:/ssh-agent # TODO: this should be a mount in devcontainer.json, but the devcontainer setup process ignores mounts except on vscode window reload
-    ports:
-      - "4321:4321"
     networks:
       - mcp 
+      - proxy
 
+<<<<<<< HEAD
   mcp-playwright:
+=======
+  mcp_playwright:
+>>>>>>> main
     image: mcr.microsoft.com/playwright/mcp
     stdin_open: true
     init: true
@@ -40,7 +53,11 @@ services:
     networks:
       - mcp
 
+<<<<<<< HEAD
   mcp-mcpdoc:
+=======
+  mcp_mcpdoc:
+>>>>>>> main
     build:
       context: .
       dockerfile: images/mcpdoc.Dockerfile
@@ -54,3 +71,5 @@ services:
 
 networks:
   mcp:
+  proxy:
+    external: true

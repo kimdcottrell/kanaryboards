@@ -50,6 +50,9 @@ export interface BoardState {
   newRowFormKey: number;
   editingRowId: string | null;
   editingRowName: string;
+  editingColumnId: string | null;
+  editingColumnRowId: string | null;
+  editingColumnName: string;
   taskCreateModalOpen: boolean;
   taskDraft: TaskDraft;
   taskEditModalOpen: boolean;
@@ -76,6 +79,10 @@ export type BoardAction =
   | { type: "COLUMN/DELETE"; payload: { columnId: string } }
   | { type: "COLUMN/SET_INPUT"; payload: { value: string } }
   | { type: "COLUMN/SET_DRAGGED_INDEX"; payload: { index: number | null } }
+  | { type: "COLUMN/RENAME_START"; payload: { columnId: string; rowId: string; currentName: string } }
+  | { type: "COLUMN/RENAME_CHANGE"; payload: { name: string } }
+  | { type: "COLUMN/RENAME_SAVE"; payload: { columnId: string } }
+  | { type: "COLUMN/RENAME_CANCEL" }
   // Rows
   | { type: "ROW/ADD"; payload: { id: string; name: string; color: string } }
   | { type: "ROW/DELETE"; payload: { rowId: string } }
@@ -85,6 +92,7 @@ export type BoardAction =
   | { type: "ROW/EDIT_CHANGE"; payload: { name: string } }
   | { type: "ROW/EDIT_SAVE"; payload: { rowId: string } }
   | { type: "ROW/EDIT_CANCEL" }
+  | { type: "ROW/RENAME"; payload: { rowId: string; name: string } }
   | { type: "ROW/SET_NEW_NAME"; payload: { name: string } }
   | { type: "ROW/SET_NEW_PROMPT"; payload: { prompt: string } }
   | { type: "ROW/RESET_FORM" }
@@ -121,5 +129,7 @@ export type BoardAction =
   | { type: "DRAG/END_TASK" }
   | { type: "DRAG/DROP_TASK"; payload: { toRowId: string; toColId: string } }
   | { type: "DRAG/SET_DEFAULT_INDEX"; payload: { index: number | null } }
+  // Task reorder
+  | { type: "TASK/REORDER_IN_CELL"; payload: { taskId: string; beforeTaskId: string | null } }
   // Board
   | { type: "BOARD/RESET" };

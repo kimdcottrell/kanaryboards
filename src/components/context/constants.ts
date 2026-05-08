@@ -2,8 +2,7 @@ import type { TaskDraft } from "./types.ts";
 
 export const STORAGE_KEY = "kanary-boards";
 
-export const createId = () =>
-  `${Math.random().toString(36).slice(2, 10)}-${Date.now()}`;
+export const createId = () => crypto.randomUUID();
 
 export const initialDefaultColumnNames = ["To Do", "In Progress", "Done"];
 
