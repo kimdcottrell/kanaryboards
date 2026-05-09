@@ -30,25 +30,27 @@ export default function TaskCreateModal() {
       <p className="text-sm text-base-content/70 mt-2">
         Create a new task in the selected column.
       </p>
-      {taskCreateModalOpen && <TaskForm
-        taskDraft={taskDraft}
-        setTaskDraft={setTaskDraft}
-        onSubmit={createTask}
-        onCancel={closeTaskCreateModal}
-        addChecklistItem={addChecklistItem}
-        updateChecklistItem={updateChecklistItem}
-        deleteChecklistItem={deleteChecklistItem}
-        handleChecklistKeyDown={handleChecklistKeyDown}
-        setChecklistInputRef={setChecklistInputRef}
-        checklistPrompt={checklistPrompt}
-        checklistPreview={checklistPreview}
-        isGeneratingChecklist={isGeneratingChecklist}
-        checklistModalError={checklistModalError}
-        setChecklistPrompt={setChecklistPrompt}
-        generateChecklistItems={generateChecklistItems}
-        applyChecklist={applyChecklistPreviewToDraft}
-        clearChecklistPreview={clearChecklistPreview}
-      />}
+      {taskCreateModalOpen && (
+        <TaskForm
+          taskDraft={taskDraft}
+          setTaskDraft={setTaskDraft}
+          onSubmit={createTask}
+          onCancel={closeTaskCreateModal}
+          addChecklistItem={addChecklistItem}
+          updateChecklistItem={updateChecklistItem}
+          deleteChecklistItem={deleteChecklistItem}
+          handleChecklistKeyDown={handleChecklistKeyDown}
+          setChecklistInputRef={setChecklistInputRef}
+          checklistPrompt={checklistPrompt}
+          checklistPreview={checklistPreview}
+          isGeneratingChecklist={isGeneratingChecklist}
+          checklistModalError={checklistModalError}
+          setChecklistPrompt={setChecklistPrompt}
+          generateChecklistItems={generateChecklistItems}
+          applyChecklist={applyChecklistPreviewToDraft}
+          clearChecklistPreview={clearChecklistPreview}
+        />
+      )}
     </Modal>
   );
 }

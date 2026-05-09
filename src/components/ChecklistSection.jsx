@@ -119,7 +119,10 @@ export function ChecklistGenerationCollapse({
       >
         Generate checklist items with AI
       </button>
-      <div id="checklist-gen-collapse-content" className="collapse-content space-y-4">
+      <div
+        id="checklist-gen-collapse-content"
+        className="collapse-content space-y-4"
+      >
         <div className="form-control">
           <fieldset className="fieldset">
             <legend className="fieldset-legend">
@@ -174,7 +177,8 @@ export function ChecklistGenerationCollapse({
                 onClick={tryGenerate}
                 disabled={isGeneratingChecklist}
               >
-                <span className="iconify hugeicons--magic-wand-03 text-lg"></span>
+                <span className="iconify hugeicons--magic-wand-03 text-lg">
+                </span>
                 {isGeneratingChecklist
                   ? "Generating…"
                   : "Generate Checklist Items"}

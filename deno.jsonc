@@ -9,7 +9,13 @@
     "deny": []
   },
   "fmt": {
-    "exclude": ["**/*.md", "**/*.mdx"]
+    "exclude": [
+      "**/*.md",
+      "**/*.mdx"
+    ],
+    "include": [
+      "./src/"
+    ]
   },
   "lint": {
     "exclude": ["./dist/"]
