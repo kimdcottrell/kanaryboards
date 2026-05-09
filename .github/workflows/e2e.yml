@@ -1,13 +1,13 @@
 name: E2E Tests
 
 on:
-  deployment_status:
+  status:
 
 jobs:
   e2e:
     if: |
-      github.event.deployment_status.state == 'success' &&
-      github.event.deployment.environment == 'Preview'
+      github.event.state == 'success' &&
+      github.event.context == 'deploy/kimdcottrell/kanaryboards'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -20,13 +20,33 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Get preview URL
+        id: preview-url
+        env:
+          DENO_DEPLOY_TOKEN: ${{ secrets.DENO_DEPLOY_TOKEN }}
+        run: |
+          REVISION_ID="${{ github.event.target_url }}"
+          REVISION_ID="${REVISION_ID##*/}"
+          for i in $(seq 1 12); do
+            RESPONSE=$(curl -s -H "Authorization: Bearer $DENO_DEPLOY_TOKEN" \
+              "https://api.deno.com/v2/revisions/$REVISION_ID/timelines")
+            DOMAIN=$(echo "$RESPONSE" | jq -r '.[] | select(.slug == "preview") | .domains[0].domain // empty')
+            if [ -n "$DOMAIN" ]; then
+              echo "base_url=https://$DOMAIN" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Timed out waiting for preview URL"
+          exit 1
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
       - name: Run e2e tests
         run: npx playwright test
         env:
-          BASE_URL: ${{ github.event.deployment_status.environment_url }}
+          BASE_URL: ${{ steps.preview-url.outputs.base_url }}
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
