@@ -15,7 +15,7 @@ jobs:
           node-version: lts/*
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Wait for Deno Deploy and get preview URL
         id: preview-url
