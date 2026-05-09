@@ -1,0 +1,66 @@
+name: E2E Tests
+
+on:
+  pull_request:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Wait for Deno Deploy and get preview URL
+        id: preview-url
+        env:
+          DENO_DEPLOY_TOKEN: ${{ secrets.DENO_DEPLOY_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA="${{ github.event.pull_request.head.sha }}"
+          for i in $(seq 1 24); do
+            STATUSES=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+              "https://api.github.com/repos/${{ github.repository }}/statuses/$SHA")
+            TARGET_URL=$(echo "$STATUSES" | jq -r \
+              '.[] | select(.context == "deploy/kimdcottrell/kanaryboards" and .state == "success") | .target_url // empty' \
+              | head -1)
+            if [ -n "$TARGET_URL" ]; then
+              REVISION_ID="${TARGET_URL##*/}"
+              for j in $(seq 1 12); do
+                RESPONSE=$(curl -s -H "Authorization: Bearer $DENO_DEPLOY_TOKEN" \
+                  "https://api.deno.com/v2/revisions/$REVISION_ID/timelines")
+                DOMAIN=$(echo "$RESPONSE" | jq -r '.[] | select(.slug == "preview") | .domains[0].domain // empty')
+                if [ -n "$DOMAIN" ]; then
+                  echo "base_url=https://$DOMAIN" >> $GITHUB_OUTPUT
+                  exit 0
+                fi
+                sleep 5
+              done
+              echo "Timed out waiting for Deno preview domain"
+              exit 1
+            fi
+            sleep 10
+          done
+          echo "Timed out waiting for Deno Deploy status"
+          exit 1
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run e2e tests
+        run: npx playwright test
+        env:
+          BASE_URL: ${{ steps.preview-url.outputs.base_url }}
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30

@@ -133,7 +133,11 @@ export function useBoard() {
     editColumnTitle: (column: Column, row: Row) =>
       dispatch({
         type: "COLUMN/RENAME_START",
-        payload: { columnId: column.id, rowId: row.id, currentName: column.name },
+        payload: {
+          columnId: column.id,
+          rowId: row.id,
+          currentName: column.name,
+        },
       }),
     saveColumnTitle: (columnId: string) =>
       dispatch({ type: "COLUMN/RENAME_SAVE", payload: { columnId } }),
@@ -198,7 +202,10 @@ export function useBoard() {
       event.dataTransfer!.effectAllowed = "move";
     },
     reorderTaskInCell: (taskId: string, beforeTaskId: string | null) =>
-      dispatch({ type: "TASK/REORDER_IN_CELL", payload: { taskId, beforeTaskId } }),
+      dispatch({
+        type: "TASK/REORDER_IN_CELL",
+        payload: { taskId, beforeTaskId },
+      }),
     handleColumnDrop: (rowId: string, colId: string) => (event: DragEvent) => {
       event.preventDefault();
       dispatch({

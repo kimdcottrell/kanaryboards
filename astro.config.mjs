@@ -15,6 +15,8 @@ export default defineConfig({
     checkOrigin: false,
   },
 
+  site: "https://kanary.local.dev",
+
   server: {
     port: 4321,
     host: "0.0.0.0",

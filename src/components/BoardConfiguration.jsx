@@ -52,19 +52,29 @@ export default function BoardConfiguration() {
 
   return (
     <div className="grid">
-      <section className="max-w-11/12 place-self-center collapse collapse-arrow mb-16 bg-base-300 p-4 shadow-xl shadow-base-300/20">
-        <input type="checkbox" className="peer" />
-        <div className="collapse-title">
+      <section
+        id="board-config"
+        className="max-w-11/12 place-self-center collapse collapse-arrow mb-16 bg-base-300 p-4 shadow-xl shadow-base-300/20"
+      >
+        <input
+          id="board-config-collapse-toggle"
+          type="checkbox"
+          className="peer"
+        />
+        <div id="board-config-collapse-title" className="collapse-title">
           <h2 className="text-3xl font-semibold">
             Board Configuration
           </h2>
         </div>
-        <div className="collapse-content">
+        <div id="board-config-collapse-content" className="collapse-content">
           <p className="mt-3">
             Add rows and columns, then place tasks into each column. Each task
             can include a title, description, and optional checklist.
           </p>
-          <div className=" bg-base-200 mt-6 p-5">
+          <div
+            id="board-config-create-new-row"
+            className=" bg-base-200 mt-6 p-5"
+          >
             <h3 className="text-lg font-semibold">Create a new row</h3>
             <form
               key={newRowFormKey}
@@ -136,16 +146,18 @@ export default function BoardConfiguration() {
               </div>
             </form>
           </div>
-          <div className="mt-6 bg-base-200 p-5">
+          <div
+            id="board-config-column-settings"
+            className="mt-6 bg-base-200 p-5"
+          >
             <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-lg font-semibold">
-                  Default column settings
+                  Column settings
                 </h3>
                 <p className="text-sm">
-                  Manage the default column set used across projects. Drag
-                  badges to reorder, click x to remove, or add a new default
-                  column.
+                  Manage the columns set used across projects. Drag badges to
+                  reorder, click x to remove, or add a new default column.
                 </p>
               </div>
             </div>
@@ -225,7 +237,10 @@ export default function BoardConfiguration() {
             </div>
           </div>
 
-          <div className="mt-6 bg-base-200 p-5">
+          <div
+            id="board-config-row-display-settings"
+            className="mt-6 bg-base-200 p-5"
+          >
             <div className="mb-4 items-baseline justify-between">
               <div>
                 <h3 className="text-lg font-semibold">
@@ -314,7 +329,7 @@ export default function BoardConfiguration() {
               ))}
             </ul>
           </div>
-          <div className="mt-6 bg-base-200 p-5">
+          <div id="board-config-danger-zone" className="mt-6 bg-base-200 p-5">
             <div className="mb-4">
               <h3 className="text-lg font-semibold">D-D-D-Danger Zone</h3>
               <p className="text-sm">

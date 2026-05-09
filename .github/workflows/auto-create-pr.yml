@@ -1,0 +1,40 @@
+name: Auto Create PR
+
+on:
+  push:
+    branches:
+      - "feature/**" # Matches feature/* branches
+      - "bugfix/**" # Matches bugfix/* branches
+# Add more branch patterns as needed
+
+jobs:
+  create-pull-request:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # Required for proper branch comparison
+
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_BODY: |
+            Automated pull request created from push to ${{ github.ref_name }}
+
+            Branch: ${{ github.ref_name }}
+            Triggered by: ${{ github.actor }}
+        run: |
+          if gh pr list --head "${{ github.ref_name }}" --base main --json number --jq '.[0].number' | grep -q .; then
+            echo "PR already exists for ${{ github.ref_name }}, skipping."
+          else
+            gh pr create \
+              --title "WIP: ${{ github.ref_name }}" \
+              --body "$PR_BODY" \
+              --base main \
+              --label "enhancement"
+          fi
