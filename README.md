@@ -159,18 +159,67 @@ The app will be available at [http://localhost:4321](http://localhost:4321).
 
 | Command | Description |
 |---|---|
-| `deno task dev` | Start the Astro dev server with hot reload |
-| `deno task build` | Build for production |
-| `deno task preview` | Preview the production build |
 | `deno task astro` | Wrapper for the astro bin |
+| `deno task build` | Build for production |
+| `deno task dev` | Start the Astro dev server with hot reload |
+| `deno task e2e-test` | Trigger the Playwright E2E suite via the `playwright` container |
+| `deno task preview` | Preview the production build |
 
 ## Services
 
 | Service | Port | Description |
 |---|---|---|
 | App | `4321` | Astro dev server |
-| Playwright | `8931` | Playwright MCP server for browser automation |
+| Playwright (test runner) | `3000` | HTTP trigger server — `GET /run` fires the full Playwright suite |
+| Playwright (MCP) | `8931` | Playwright MCP server for Claude Code browser automation |
 | MCPDoc | `8082` | Documentation MCP server |
+
+## E2E Testing
+
+Playwright tests run inside a dedicated `playwright` Docker container (`images/playwright.Dockerfile`). The container uses `node:25-trixie` (not the official Playwright image, which can act unpredictably at times, partly thanks to a possible version difference between the image and the package in package.json) and exposes a lightweight HTTP trigger server on port 3000.
+
+### Architecture
+
+```
+app container
+  └─ deno task e2e-test
+       └─ curl http://playwright:3000/run   ← triggers tests
+             └─ npx playwright test         ← runs in playwright container
+                    └─ https://kanary.local.dev  ← via Traefik reverse proxy
+```
+
+The entrypoint (`images/playwright-entrypoint.sh`) resolves the Traefik container IP at runtime and writes it to `/etc/hosts` so `kanary.local.dev` resolves inside the container. `gosu` is used to drop back from root to the `node` user after that write.
+
+`deno task e2e-test` auto-starts the Astro dev server if it is not already running, triggers the test suite, then shuts the server back down if it started it.
+
+### Running locally
+
+```bash
+deno task e2e-test
+```
+
+Tests run in Chromium, Firefox, and WebKit. The base URL is `https://kanary.local.dev` with HTTPS errors ignored (self-signed cert from the local proxy).
+
+### Pre-commit enforcement
+
+Every commit runs three checks in sequence:
+
+```
+deno fmt → deno lint → deno task e2e-test
+```
+
+The hook lives in `.husky/pre-commit` and is installed via `npm run prepare` (husky). The E2E suite must pass before a commit is accepted.
+
+### CI (GitHub Actions)
+
+Two workflows run automatically:
+
+| Workflow | Trigger | What it does |
+|---|---|---|
+| `auto-create-pr.yml` | Push to `feature/**` or `bugfix/**` | Creates a draft PR automatically (idempotent — skips if one already exists) |
+| `e2e.yml` | Pull request | Waits for the Deno Deploy preview URL, then runs the full Playwright suite against it; uploads the HTML report as an artifact |
+
+The `e2e.yml` workflow polls the GitHub Statuses API until the Deno Deploy build URL appears, then polls the Deno Deploy API until the preview domain is live before handing it to `npx playwright test`.
 
 ## MCP Servers
 
