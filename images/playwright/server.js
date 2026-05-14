@@ -8,7 +8,7 @@ const server = http.createServer((req, res) => {
     res.write("Starting playwright tests...\n\n");
 
     const proc = spawn("npx", ["playwright", "test"], {
-      cwd: "/var/dev",
+      cwd: "/usr/src/app",
       env: { ...process.env, CI: "true" },
     });
 

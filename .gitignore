@@ -4,6 +4,6 @@
 worker-configuration.d.ts
 deno.lock
 **/dist/*
-**/test-results/*
 HELP.md
 ./husky/_
+**/gitsshkey

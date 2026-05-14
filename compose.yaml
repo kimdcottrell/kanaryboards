@@ -37,7 +37,7 @@ services:
       - .env
     volumes:
       - .:/var/dev
-      - ${HOME}/.ssh/agent.sock:/ssh-agent # TODO: this should be a mount in devcontainer.json, but the devcontainer setup process ignores mounts except on vscode window reload
+      - ${HOME}/.ssh:/var/host_ssh:ro
     networks:
       - mcp 
       - proxy
@@ -45,12 +45,16 @@ services:
   playwright:
     build:
       context: .
-      dockerfile: images/playwright.Dockerfile
+      dockerfile: images/playwright/Dockerfile
     stdin_open: true
     tty: true
     init: true
     volumes:
-      - .:/var/dev
+      - ./package.json:/usr/src/app/package.json
+      - ./playwright.config.ts:/usr/src/app/playwright.config.ts
+      - ./tests:/usr/src/app/tests
+      - ./images/playwright/server.js:/usr/src/app/server.js
+      - ./test-results:/usr/src/app/test-results
     extra_hosts:
       - host.docker.internal:host-gateway
     ports:

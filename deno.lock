@@ -21,8 +21,7 @@
     "npm:@iconify/json@^2.2.467": "2.2.470",
     "npm:@iconify/tailwind4@^1.2.3": "1.2.3_tailwindcss@4.2.2",
     "npm:@lyfie/luthor@^2.7.11": "2.7.11_react@19.2.6_react-dom@19.2.6__react@19.2.6_yjs@13.6.30",
-    "npm:@playwright/test@*": "1.59.1",
-    "npm:@playwright/test@^1.59.0": "1.59.1",
+    "npm:@playwright/test@1.60.0": "1.60.0",
     "npm:@tailwindcss/vite@4.2.2": "4.2.2_vite@7.3.2",
     "npm:@types/react-dom@^19.2.3": "19.2.3_@types+react@19.2.14",
     "npm:@types/react@^19.2.14": "19.2.14",
@@ -30,7 +29,7 @@
     "npm:astro@^6.1.10": "6.3.1",
     "npm:daisyui@^5.5.19": "5.5.19",
     "npm:husky@^9.1.7": "9.1.7",
-    "npm:playwright@*": "1.59.1",
+    "npm:playwright@*": "1.60.0",
     "npm:react-dom@^19.2.5": "19.2.6_react@19.2.6",
     "npm:react@^19.2.5": "19.2.6",
     "npm:tailwindcss@4.2.2": "4.2.2",
@@ -1149,8 +1148,8 @@
     "@oslojs/encoding@1.1.0": {
       "integrity": "sha512-70wQhgYmndg4GCPxPPxPGevRKqTIJ2Nh4OkiMWmDAVYsTQ+Ta7Sq+rPevXyXGdzr30/qZBnyOalCszoMxlyldQ=="
     },
-    "@playwright/test@1.59.1": {
-      "integrity": "sha512-PG6q63nQg5c9rIi4/Z5lR5IVF7yU5MqmKaPOe0HSc0O2cX1fPi96sUQu5j7eo4gKCkB2AnNGoWt7y4/Xx3Kcqg==",
+    "@playwright/test@1.60.0": {
+      "integrity": "sha512-O71yZIbAh/PxDMNGns37GHBIfrVkEVyn+AXyIa5dOTfb4/xNvRWV+Vv/NMbNCtODB/pO7vLlF2OTmMVLhmr7Ag==",
       "dependencies": [
         "playwright"
       ],
@@ -3236,12 +3235,12 @@
         "pathe"
       ]
     },
-    "playwright-core@1.59.1": {
-      "integrity": "sha512-HBV/RJg81z5BiiZ9yPzIiClYV/QMsDCKUyogwH9p3MCP6IYjUFu/MActgYAvK0oWyV9NlwM3GLBjADyWgydVyg==",
+    "playwright-core@1.60.0": {
+      "integrity": "sha512-9bW6zvX/m0lEbgTKJ6YppOKx8H3VOPBMOCFh2irXFOT4BbHgrx5hPjwJYLT40Lu+4qtD36qKc/Hn56StUW57IA==",
       "bin": true
     },
-    "playwright@1.59.1": {
-      "integrity": "sha512-C8oWjPR3F81yljW9o5OxcWzfh6avkVwDD2VYdwIGqTkl+OGFISgypqzfu7dOe4QNLL2aqcWBmI3PMtLIK233lw==",
+    "playwright@1.60.0": {
+      "integrity": "sha512-hheHdokM8cdqCb0lcE3s+zT4t4W+vvjpGxsZlDnikarzx8tSzMebh3UiFtgqwFwnTnjYQcsyMF8ei2mCO/tpeA==",
       "dependencies": [
         "playwright-core"
       ],
@@ -4118,7 +4117,7 @@
         "npm:@iconify/json@^2.2.467",
         "npm:@iconify/tailwind4@^1.2.3",
         "npm:@lyfie/luthor@^2.7.11",
-        "npm:@playwright/test@^1.59.0",
+        "npm:@playwright/test@1.60.0",
         "npm:@tailwindcss/vite@4.2.2",
         "npm:@types/react-dom@^19.2.3",
         "npm:@types/react@^19.2.14",

@@ -5,12 +5,16 @@
   "dockerComposeFile": [
     "../compose.yaml"
   ],
-  // slam all private keys into container.
-  // tbh, you only need the one that is connected to github.com
-  // but since you can name those to be anything... we do this.
-  "initializeCommand": "eval $(ssh-agent -s -a ${localEnv:HOME}/.ssh/agent.sock); for key in ${localEnv:HOME}/.ssh/id_*; do [[ \"$key\" == *.pub ]] || ssh-add -S ${localEnv:HOME}/.ssh/agent.sock \"$key\"; done",
+  // NOTE ABOUT WHAT THESE COMMANDS DO:
+  // - `initializeCommand`
+  // - runs on local machine to fetch the ssh key you're using for github
+  // - saves that key to a file in the .devcontainer folder
+  // - `postAttachCommand`
+  // - reads the ssh key filename from the file created by `initializeCommand`
+  // - copies the ssh key from the mounted folder where your host ssh keys are stored into
+  "initializeCommand": ["/usr/bin/bash", "-c", "ssh -v git@github.com 2>&1 /dev/null | grep 'Server accepts key' | awk '{print $5}' > .devcontainer/gitsshkey"],
+  "postAttachCommand": "HOST_GITSSHKEY=$(cat ${containerWorkspaceFolder}/.devcontainer/gitsshkey); cp /var/host_ssh/${HOST_GITSSHKEY##*/} /home/deno/.ssh/${HOST_GITSSHKEY##*/}; cp /var/host_ssh/${HOST_GITSSHKEY##*/}.pub /home/deno/.ssh/${HOST_GITSSHKEY##*/}.pub",
   "remoteEnv": {
-    "SSH_AUTH_SOCK": "/ssh-agent",
     "DEVCONTAINER": "true"
   },
   // this gets around a weird bug where running `claude` in the terminal of the
