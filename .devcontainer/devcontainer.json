@@ -5,14 +5,16 @@
   "dockerComposeFile": [
     "../compose.yaml"
   ],
+
   // NOTE ABOUT WHAT THESE COMMANDS DO:
   // - `initializeCommand`
+  // - creates empty .bashrc and .zshrc files in the .devcontainer folder to be mounted into the container
   // - runs on local machine to fetch the ssh key you're using for github
   // - saves that key to a file in the .devcontainer folder
   // - `postAttachCommand`
   // - reads the ssh key filename from the file created by `initializeCommand`
   // - copies the ssh key from the mounted folder where your host ssh keys are stored into
-  "initializeCommand": ["/usr/bin/bash", "-c", "ssh -v git@github.com 2>&1 /dev/null | grep 'Server accepts key' | awk '{print $5}' > .devcontainer/gitsshkey"],
+  "initializeCommand": ["/usr/bin/bash", "-c", "touch ${localWorkspaceFolder}/.devcontainer/home/.bashrc; touch ${localWorkspaceFolder}/.devcontainer/home/.zshrc; ssh -v git@github.com 2>&1 /dev/null | grep 'Server accepts key' | awk '{print $5}' > .devcontainer/gitsshkey"],
   "postAttachCommand": "HOST_GITSSHKEY=$(cat ${containerWorkspaceFolder}/.devcontainer/gitsshkey); cp /var/host_ssh/${HOST_GITSSHKEY##*/} /home/deno/.ssh/${HOST_GITSSHKEY##*/}; cp /var/host_ssh/${HOST_GITSSHKEY##*/}.pub /home/deno/.ssh/${HOST_GITSSHKEY##*/}.pub",
   "remoteEnv": {
     "DEVCONTAINER": "true"
@@ -75,5 +77,10 @@
       }
     }
   },
-  "shutdownAction": "none"
+  "shutdownAction": "none",
+  "mounts": [
+    "source=${localWorkspaceFolder}/.devcontainer/home/.bashrc,target=/home/deno/.bashrc,type=bind",
+    "source=${localWorkspaceFolder}/.devcontainer/home/.zshrc,target=/home/deno/.zshrc,type=bind",
+    "source=${localEnv:HOME}/.ssh,target=/var/host_ssh/,type=bind:ro"
+  ]
 }

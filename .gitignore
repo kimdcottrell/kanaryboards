@@ -8,3 +8,7 @@ HELP.md
 ./husky/_
 **/gitsshkey
 **/test-results/*
+.devcontainer/home/*
+!.devcontainer/home/.gitkeep
+!.devcontainer/home/.sample_bashrc
+!.devcontainer/home/.sample_zshrc

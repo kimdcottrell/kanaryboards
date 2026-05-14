@@ -98,42 +98,59 @@ Copy the token that is printed and set it as `CLAUDE_CODE_OAUTH_TOKEN` in this p
 > rm -rf ~/.claude ~/.claude.json && claude setup-token
 > ```
 
-### 4. Set up SSH agent forwarding for Git
+### 4. Set up SSH for Git
 
+`git push`, `git pull`, and `git fetch` inside the container authenticate using a copy of your local SSH key. Here is what happens automatically when VS Code opens the dev container:
 
-> **TODO:** Something causes this to break after the first iteration of you opening VSCode. YMMV. 
-
-Git operations inside the container (push, pull, fetch) are authenticated via your **local machine's** SSH agent — no keys are copied into the container.
-
-When VS Code starts the dev container, `devcontainer.json` runs this on your local machine:
-
-```bash
-eval $(ssh-agent -s -a ~/.ssh/agent.sock 2>/dev/null)
-for key in ~/.ssh/id_*; do
-  [[ "$key" == *.pub ]] || ssh-add -S ~/.ssh/agent.sock "$key"
-done
-```
-
-This starts an SSH agent bound to the socket `~/.ssh/agent.sock` and loads all your private keys into it. The socket is then bind-mounted into the container at `/home/deno/ssh-agent`, and `SSH_AUTH_SOCK` is set to that path so git and other SSH tools use it automatically.
+1. **`initializeCommand`** runs on your local machine. It connects to `git@github.com` in verbose mode to discover which key GitHub accepts, then saves that key's filename to `.devcontainer/gitsshkey`.
+2. Your local `~/.ssh/` directory is bind-mounted **read-only** into the container at `/var/host_ssh/`.
+3. **`postAttachCommand`** runs inside the container after attach. It reads the filename from `gitsshkey` and copies that private key and its `.pub` counterpart from `/var/host_ssh/` into `/home/deno/.ssh/`.
 
 **Requirements on your local machine:**
 
 - At least one SSH key in `~/.ssh/` that is authorized on GitHub
-- The `~/.ssh/` directory must be writable (so the socket file can be created)
+- That key must authenticate to GitHub non-interactively (no passphrase, or the passphrase is already cached in your local SSH agent) — `initializeCommand` runs without a terminal so it cannot prompt
 
-You can verify the forwarding works inside the container with:
+Verify it is working inside the container with:
 
 ```bash
 ssh -T git@github.com
 ```
 
+You should see: `Hi <username>! You've successfully authenticated…`
+
+If it fails, the most common cause is that no key in your local `~/.ssh/` is registered with GitHub, or the key requires a passphrase that was not cached before the container started.
+
 **Extra details you may be wondering about**
 
-- **Git identity (name & email):** The VS Code Git extension automatically forwards your local machine's `user.name` and `user.email` from `~/.gitconfig` into the container. You don't need to configure git identity inside the container — it comes from your local git config via the extension.
+- **Git identity (name & email):** The VS Code Git extension automatically forwards your local machine's `user.name` and `user.email` from `~/.gitconfig` into the container. You do not need to configure git identity inside the container.
 
-- **Why `openssh-client` is in the `Dockerfile` and not a devcontainer feature:** Dev container features run their install scripts as `root` after the image is built, but because the `Dockerfile` sets `USER deno`, the feature scripts can land files with the wrong ownership and break the SSH socket. Installing `openssh-client` directly in the `Dockerfile` (before the `USER` switch) sidesteps this. This is a known rough edge that will be addressed in a future cleanup.
+- **Why `openssh-client` is in the `Dockerfile` and not a devcontainer feature:** Dev container features run their install scripts as `root` after the image is built, but because the `Dockerfile` sets `USER deno`, the feature scripts can land files with the wrong ownership. Installing `openssh-client` directly in the `Dockerfile` (before the `USER` switch) sidesteps this.
 
-### 5. Start the dev container
+### 5. Customize your shell (optional)
+
+The dev container mounts `.devcontainer/home/.bashrc` and `.devcontainer/home/.zshrc` directly into the container as `~/.bashrc` and `~/.zshrc`. Both files are gitignored — they're personal to your machine and won't affect other contributors.
+
+The `initializeCommand` in `devcontainer.json` creates them as empty files the first time if they don't exist yet, so there's nothing to do if you're happy with a plain prompt.
+
+Sample configs are provided as a starting point:
+
+| Sample file | What it includes |
+|---|---|
+| `.devcontainer/home/.sample_bashrc` | Colored prompt with git branch, `vivid` LS colors, GitHub SSH check |
+| `.devcontainer/home/.sample_zshrc` | oh-my-zsh with the `robbyrussell` theme |
+
+To use a sample, copy it to the real file before opening the container:
+
+```bash
+cp .devcontainer/home/.sample_bashrc .devcontainer/home/.bashrc
+# and/or
+cp .devcontainer/home/.sample_zshrc .devcontainer/home/.zshrc
+```
+
+Edit either file freely — your changes stay local and are picked up the next time the container starts.
+
+### 6. Start the dev container
 
 Open the project in VS Code and when prompted, click **"Reopen in Container"**. VS Code will build the Docker image and start the services defined in `compose.yaml` (the app and a Redis instance).
 
@@ -145,7 +162,7 @@ docker compose up --build
 
 Then attach to the running container in VS Code via the **Remote Explorer** sidebar.
 
-### 6. Start the development server
+### 7. Start the development server
 
 Inside the container terminal:
 
@@ -159,11 +176,12 @@ The app will be available at [http://localhost:4321](http://localhost:4321).
 
 | Command | Description |
 |---|---|
-| `deno task astro` | Wrapper for the astro bin |
-| `deno task build` | Build for production |
+| `deno task astro` | Wrapper for the Astro CLI |
+| `deno task build` | Clear `.astro`/`dist` and build for production |
 | `deno task dev` | Start the Astro dev server with hot reload |
-| `deno task e2e-test` | Trigger the Playwright E2E suite via the `playwright` container |
-| `deno task preview` | Preview the production build |
+| `deno task e2e-test` | Auto-start dev server if needed, trigger the Playwright E2E suite, then shut it down |
+| `deno task husky` | Wrapper for the Husky git hooks CLI |
+| `deno task preview` | Serve the production build from `dist/server/entry.mjs` |
 
 ## Services
 

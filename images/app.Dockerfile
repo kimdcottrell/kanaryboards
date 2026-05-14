@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM denoland/deno:2.7.12 as dev 
+FROM denoland/deno:2.7.14 as dev 
 
 # Prefer not to run as root.
 ARG LOCAL_MACHINE_GID=${LOCAL_MACHINE_GID:-1000}
@@ -10,10 +10,11 @@ RUN groupmod -g ${LOCAL_MACHINE_GID} deno; \
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get upgrade && apt-get update && apt-get --no-install-recommends install -y \
+    apt-get update && apt-get upgrade -y && apt-get --no-install-recommends install -y \
         git \
         tzdata \
         curl \
+        wget \ 
         sudo \
         iptables \
         ipset \
@@ -25,22 +26,26 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         jq \
         aggregate \
         vim \
+        zsh \
         && \
         apt-get clean && rm -rf /var/lib/apt/lists/*; \
     git config --global --add safe.directory /var/dev
 
 SHELL ["/bin/bash", "-c"]
 
-# Setup VSCode specific things
+# Jail Claude to only be able to access the network and filesystem in the ways we allow with iptables and ipset.
 COPY .devcontainer/init-firewall.sh /usr/local/bin/init-firewall.sh
 RUN chmod +x /usr/local/bin/init-firewall.sh && \
   echo "deno ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/deno-firewall && \
-  chmod 0440 /etc/sudoers.d/deno-firewall; \
-  # now fix a problem with the claude executable when in the terminal of vscode \
-  mkdir -p /home/deno && touch /home/deno/.claude.json;
+  chmod 0440 /etc/sudoers.d/deno-firewall; 
+
+# Add in some lines to sudoers so the deno user can run a handful of commands as root
+RUN echo "deno ALL=(ALL) NOPASSWD: /usr/bin/vim, /usr/bin/rm, /usr/bin/dpkg, /usr/bin/chown, /usr/bin/chmod, /usr/bin/apt, /usr/bin/apt-get" \
+    > /etc/sudoers.d/deno && chmod 440 /etc/sudoers.d/deno
 
 # fix all the permissions issues for deno
-RUN mkdir -p /var/dev /home/.deno/bin; \
+RUN mkdir -p /var/dev /home/deno /home/.deno/bin; \
+    touch /home/deno/.claude.json; \
     chown -R deno:deno /home; \
     chown -R deno:deno /var/dev; \
     chown -R deno:deno /deno-dir; \

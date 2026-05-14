@@ -1,0 +1,63 @@
+# Setup packages needed for theme if they don't exist
+if ! command -v vivid &>/dev/null; then
+    echo "INFO: vivid not found, installing..."
+    curl -Ls "https://github.com/sharkdp/vivid/releases/download/v0.10.1/vivid_0.10.1_amd64.deb" -o /tmp/vivid.deb && sudo dpkg -i /tmp/vivid.deb &> /dev/null && rm /tmp/vivid.deb
+    echo "SUCCESS: vivid installed. Carry on..."
+fi
+
+if ! ssh -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
+    echo "ERROR: GitHub SSH authentication failed. Please set up your SSH keys on your host machine and add them to GitHub."
+    echo "INFO: Keys held within the container and used for authentication attempts:"
+    ls -la ~/.ssh/id_*
+fi
+
+# If not running interactively, don't do anything
+[[ $- != *i* ]] && return
+
+alias ls='ls --color=auto'
+alias grep='grep --color=auto'
+
+# https://askubuntu.com/questions/1042234/modifying-the-color-of-grep
+export TERM=xterm-color
+export GREP_OPTIONS='--color=auto' 
+export GREP_COLORS='ms=01;35;48;5;235:mc=01;31:sl=:cx=:fn=35:ln=32:bn=32:se=36'
+export CLICOLOR=1
+export LS_COLORS="$(vivid generate catppuccin-frappe)"
+
+export COLOR_NC='\e[0m' # No Color
+export COLOR_BLACK='\e[0;30m'
+export COLOR_GRAY='\e[1;30m'
+export COLOR_RED='\e[0;31m'
+export COLOR_LIGHT_RED='\e[1;31m'
+export COLOR_GREEN='\e[0;32m'
+export COLOR_LIGHT_GREEN='\e[1;32m'
+export COLOR_BROWN='\e[0;33m'
+export COLOR_YELLOW='\e[1;33m'
+export COLOR_BLUE='\e[0;34m'
+export COLOR_LIGHT_BLUE='\e[1;34m'
+export COLOR_PURPLE='\e[0;35m'
+export COLOR_LIGHT_PURPLE='\e[1;35m'
+export COLOR_CYAN='\e[0;36m'
+export COLOR_LIGHT_CYAN='\e[1;36m'
+export COLOR_LIGHT_GRAY='\e[0;37m'
+export COLOR_WHITE='\e[1;37m'
+
+# setup certain colors and symbols in PS1 based off UID
+USER_COLOR=$COLOR_CYAN              
+USER_SYMBOL="$"
+if [ $UID -eq "0" ]; then
+    USER_COLOR=$COLOR_RED              
+    USER_SYMBOL="#"
+fi
+
+# from https://github.com/git/git/blob/master/contrib/completion/git-completion.bash
+source /usr/share/bash-completion/completions/git 
+
+# from https://github.com/git/git/blob/master/contrib/completion/git-prompt.sh
+source /usr/lib/git-core/git-sh-prompt
+
+export GIT_PS1_SHOWDIRTYSTATE=1
+export GIT_PS1_SHOWCOLORHINTS=1
+ 
+# Update PS1 to use the colored branch output
+PS1="\[${USER_COLOR}\]\u@🐳\[${COLOR_NC}\] \[${COLOR_LIGHT_PURPLE}\]\w${COLOR_NC}$(__git_ps1 " (%s)") ${USER_SYMBOL} "

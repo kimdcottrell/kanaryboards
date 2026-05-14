@@ -19,11 +19,12 @@
     "react": "19.2.5",
     "react-dom": "19.2.5",
     "tailwindcss": "4.3.0",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "vitest": "^4.1.6"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "2.1.114",
-    "@astrojs/check": "0.9.7",
+    "@astrojs/check": "0.9.9",
     "@catppuccin/tailwindcss": "1.0.0",
     "@playwright/test": "1.60.0",
     "@tailwindcss/vite": "4.3.0"

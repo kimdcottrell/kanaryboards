@@ -16,6 +16,7 @@
     "langgraph",
     "luthor",
     "genai",
-    "rgfx"
+    "rgfx",
+    "gitsshkey"
   ]
 }
