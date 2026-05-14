@@ -1,13 +1,5 @@
 {
-  "allowScripts": {
-    "allow": [
-      "npm:esbuild",
-      "npm:sharp",
-      "npm:@anthropic-ai/claude-code",
-      "npm:protobufjs"
-    ],
-    "deny": []
-  },
+  "allowScripts": ["npm:@anthropic-ai/claude-code", "npm:@google/genai@2.0.1", "npm:esbuild", "npm:protobufjs", "npm:sharp"],
   "fmt": {
     "exclude": [
       "**/*.md",
@@ -26,6 +18,7 @@
     "build": "rm -rf ./.astro ./dist; deno run --allow-all astro build",
     "dev": "deno run --allow-all astro dev",
     "e2e-test": "sh -c 'STARTED=0; if ! curl -s http://localhost:4321 >/dev/null 2>&1; then deno task dev & DEV_PID=$!; STARTED=1; fi; until curl -s http://localhost:4321 >/dev/null 2>&1; do sleep 1; done; curl http://playwright:3000/run; STATUS=$?; if [ \"$STARTED\" = \"1\" ]; then kill \"$DEV_PID\" 2>/dev/null; fi; exit $STATUS'",
+    "husky": "deno run --allow-all husky",
     "preview": "deno run --allow-net --allow-read --allow-env ./dist/server/entry.mjs"
   },
   "imports": {
