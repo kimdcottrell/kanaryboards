@@ -13,7 +13,7 @@
     "jsr:@std/path@^1.1.4": "1.1.4",
     "jsr:@std/streams@^1.1.0": "1.1.0",
     "npm:@anthropic-ai/claude-code@2.1.114": "2.1.114",
-    "npm:@astrojs/check@0.9.7": "0.9.7_typescript@6.0.3",
+    "npm:@astrojs/check@0.9.9": "0.9.9_typescript@6.0.3",
     "npm:@astrojs/react@5.0.4": "5.0.4_@types+react@19.2.14_@types+react-dom@19.2.3__@types+react@19.2.14_react@19.2.5_react-dom@19.2.5__react@19.2.5",
     "npm:@catppuccin/tailwindcss@1.0.0": "1.0.0",
     "npm:@deno/astro-adapter@0.5.1": "0.5.1_astro@6.1.10__typescript@6.0.3_typescript@6.0.3",
@@ -151,8 +151,8 @@
       "scripts": true,
       "bin": true
     },
-    "@astrojs/check@0.9.7_typescript@6.0.3": {
-      "integrity": "sha512-dA7U5/OFg8/xaMUb2vUOOJuuJXnMpHy6F0BM8ZhL7WT5OkTBwJ0GoW38n4fC4CXt+lT9mLWL0y8Pa74tFByBpQ==",
+    "@astrojs/check@0.9.9_typescript@6.0.3": {
+      "integrity": "sha512-A5UW8uIuErLWEoRQvzgXpO1gTjUFtK8r7nU2Z7GewAMxUb7bPvpk11qaKKgxqXlHJWlAvaaxy+Xg28A6bmQ1Tg==",
       "dependencies": [
         "@astrojs/language-server",
         "chokidar@4.0.3",
@@ -4247,7 +4247,7 @@
     "packageJson": {
       "dependencies": [
         "npm:@anthropic-ai/claude-code@2.1.114",
-        "npm:@astrojs/check@0.9.7",
+        "npm:@astrojs/check@0.9.9",
         "npm:@astrojs/react@5.0.4",
         "npm:@catppuccin/tailwindcss@1.0.0",
         "npm:@deno/astro-adapter@0.5.1",
