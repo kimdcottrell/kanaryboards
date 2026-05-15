@@ -40,7 +40,6 @@ RUN npx playwright install chromium firefox webkit --with-deps
 # Copy the rest of the application
 COPY tests /usr/src/app/tests
 COPY playwright.config.ts /usr/src/app/playwright.config.ts
-COPY images/playwright/server.js /usr/src/app/server.js
 
 # Set the environment to use the right display drivers
 ENV CI=true
@@ -51,5 +50,3 @@ ENV CI=true
 #   gosu is used to drop back down into node before CMD
 USER root
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-
-CMD ["node", "/usr/src/app/server.js"]

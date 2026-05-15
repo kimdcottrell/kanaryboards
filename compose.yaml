@@ -51,11 +51,13 @@ services:
       dockerfile: images/playwright/Dockerfile
       args:
         - LOCAL_MACHINE_GID=${LOCAL_MACHINE_GID}
+    ipc: host # needed to prevent Chromium from crashing
+    init: true # recommended to avoid special treatment for processes with PID=1
+    command: npx playwright run-server --port 3000 --host 0.0.0.0;
     volumes:
       - ./package.json:/usr/src/app/package.json
       - ./playwright.config.ts:/usr/src/app/playwright.config.ts
       - ./tests:/usr/src/app/tests
-      - ./images/playwright/server.js:/usr/src/app/server.js
       - ./test-results:/usr/src/app/test-results
     extra_hosts:
       - host.docker.internal:host-gateway
@@ -63,6 +65,7 @@ services:
       - .env
     ports:
       - "3000:3000"
+      - "8080:8080"
     networks:
       - proxy
     depends_on:

@@ -6,6 +6,16 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: 'tests/playwright',
+  ...(process.env.START_DEV_SERVER ? {
+    webServer: {
+      command: 'deno task dev',
+      reuseExistingServer: true,
+      wait: {
+        stdout: /watching for file changes.../,
+      },
+    },
+  } : {}),
+  retries: 1, // sometimes the first test run fails due to what I can only imagine are the ghosts in the machine, so we retry once
   use: {
     baseURL: process.env.BASE_URL ?? "https://kanary.local.dev",
     ignoreHTTPSErrors: true,
