@@ -19,17 +19,10 @@ export default function ThemeController() {
     localStorage.setItem("theme", theme);
   }, [theme]);
   return (
-    <label className="swap swap-rotate">
-      <input onClick={toggleTheme} type="checkbox" />
-      <label className="swap swap-rotate cursor-pointer">
-        <input
-          type="checkbox"
-          id="theme-controller"
-          onClick={toggleTheme}
-        />
-        <span className="iconify swap-on hugeicons--sun-03 text-xl"></span>
-        <span className="iconify swap-off hugeicons--moon-02 text-xl"></span>
-      </label>
+    <label id="theme-controller" className="swap swap-rotate cursor-pointer">
+      <input type="checkbox" onClick={toggleTheme} />
+      <span className="iconify swap-on hugeicons--sun-03 text-xl"></span>
+      <span className="iconify swap-off hugeicons--moon-02 text-xl"></span>
     </label>
   );
 }

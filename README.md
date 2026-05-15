@@ -182,6 +182,7 @@ The app will be available at [http://localhost:4321](http://localhost:4321).
 | `deno task e2e-test` | Auto-start dev server if needed, trigger the Playwright E2E suite, then shut it down |
 | `deno task husky` | Wrapper for the Husky git hooks CLI |
 | `deno task preview` | Serve the production build from `dist/server/entry.mjs` |
+| `deno task vitest` | Run the Vitest unit test suite |
 
 ## Services
 

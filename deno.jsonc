@@ -10,7 +10,10 @@
     ]
   },
   "lint": {
-    "exclude": ["./dist/"]
+    "exclude": [
+      "./dist/", 
+      "./tests"
+    ]
   },
   "nodeModulesDir": "auto",
   "tasks": {
@@ -19,12 +22,15 @@
     "dev": "deno run --allow-all astro dev",
     "e2e-test": "sh -c 'STARTED=0; if ! curl -s http://localhost:4321 >/dev/null 2>&1; then deno task dev & DEV_PID=$!; STARTED=1; fi; until curl -s http://localhost:4321 >/dev/null 2>&1; do sleep 1; done; curl http://playwright:3000/run; STATUS=$?; if [ \"$STARTED\" = \"1\" ]; then kill \"$DEV_PID\" 2>/dev/null; fi; exit $STATUS'",
     "husky": "deno run --allow-all husky",
-    "preview": "deno run --allow-net --allow-read --allow-env ./dist/server/entry.mjs"
+    "preview": "deno run --allow-net --allow-read --allow-env ./dist/server/entry.mjs",
+    "vitest": "deno run --allow-all vitest"
   },
   "imports": {
     // these are needed to get around Deno Deploy problems thanks to @deno/astro-adapter
     "@std/http": "jsr:@std/http@^1.1.0",
-    "@std/path": "jsr:@std/path@^1.1.4"
+    "@std/path": "jsr:@std/path@^1.1.4",
+    "@pages/": "./src/pages/",
+    "@components/": "./src/components/"
     // NOTE: package.json MUST exist for:
     // - resolving preview error of `error: [ERR_UNSUPPORTED_ESM_URL_SCHEME] Only file and data URLs are supported by the default ESM loader. Received protocol 'astro'`
     // - dependabot does not support deno.jsonc

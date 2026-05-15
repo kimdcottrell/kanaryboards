@@ -5,6 +5,7 @@ import process from "node:process";
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
+  testDir: 'tests/playwright',
   use: {
     baseURL: process.env.BASE_URL ?? "https://kanary.local.dev",
     ignoreHTTPSErrors: true,
