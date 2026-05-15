@@ -2,7 +2,7 @@
   "mcpServers": {
     "Playwright": {
       "type": "http",
-      "url": "http://playwright:8931/mcp"
+      "url": "http://mcp_playwright:8931/mcp"
     },
     "Astro Docs": {
       "type": "http",
@@ -10,7 +10,7 @@
     },
     "MCPDoc": {
       "type": "sse",
-      "url": "http://mcpdoc:8082/sse"
+      "url": "http://mcp_mcpdoc:8082/sse"
     }
   }
 }
