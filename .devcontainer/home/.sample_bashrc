@@ -58,6 +58,9 @@ source /usr/lib/git-core/git-sh-prompt
 
 export GIT_PS1_SHOWDIRTYSTATE=1
 export GIT_PS1_SHOWCOLORHINTS=1
+export GIT_PS1_SHOWSTASHSTATE=1
+export GIT_PS1_SHOWUNTRACKEDFILES=1
+export GIT_PS1_SHOWUPSTREAM="auto"
  
 # Update PS1 to use the colored branch output
-PS1="\[${USER_COLOR}\]\u@🐳\[${COLOR_NC}\] \[${COLOR_LIGHT_PURPLE}\]\w${COLOR_NC}$(__git_ps1 " (%s)") ${USER_SYMBOL} "
+PS1="\[${USER_COLOR}\]\u@🐳\[${COLOR_NC}\] \[${COLOR_LIGHT_PURPLE}\]\w${COLOR_NC}\$(__git_ps1) ${USER_SYMBOL} "
