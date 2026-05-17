@@ -38,7 +38,8 @@
         "Anthropic.claude-code",
         "streetsidesoftware.code-spell-checker",
         "ms-vscode-remote.remote-containers",
-        "vitest.explorer"
+        "vitest.explorer",
+        "GitHub.vscode-github-actions"
       ],
       "settings": {
         "claudeCode.preferredLocation": "panel",

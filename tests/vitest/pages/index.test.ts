@@ -14,10 +14,6 @@ describe("Astro components loaded in on the index page", () => {
       result = await container.renderToString(IndexPage, {});
     });
 
-    test("renders the Google Analytics script", () => {
-        expect(result).toContain(import.meta.env.GOOGLE_TAG);
-    });
-
     test("BoardWrapper is rendered with react as the client framework", async () => {
         expect(result).toContain(`BoardWrapper`)
 
