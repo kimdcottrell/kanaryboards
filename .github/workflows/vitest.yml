@@ -14,8 +14,6 @@ jobs:
         with:
           deno-version: v2.x
 
-      - run: echo "Deno version is ${{ steps.deno.outputs.deno-version }}"
-
       - name: Run unit tests
         run: deno task vitest
 
