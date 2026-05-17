@@ -19,7 +19,8 @@ export default function ThemeToggle() {
       <input
         type="checkbox"
         checked={theme === NIGHT_THEME}
-        onChange={() => setTheme(toggleTheme(theme))}
+        onChange={() =>
+          setTheme(toggleTheme(theme))}
       />
 
       <span className="iconify swap-on hugeicons--moon-02 text-xl" />
