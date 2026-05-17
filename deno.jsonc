@@ -20,7 +20,6 @@
     "astro": "deno run --allow-all astro",
     "build": "rm -rf ./.astro ./dist; deno run --allow-all astro build",
     "dev": "deno run --allow-all astro dev",
-    // "e2e-test": "sh -c 'STARTED=0; if ! curl -s http://localhost:4321 >/dev/null 2>&1; then deno task dev & DEV_PID=$!; STARTED=1; fi; until curl -s http://localhost:4321 >/dev/null 2>&1; do sleep 1; done; curl http://playwright:3000/run; STATUS=$?; if [ \"$STARTED\" = \"1\" ]; then kill \"$DEV_PID\" 2>/dev/null; fi; exit $STATUS'",
     "e2e-test": "deno task playwright test",
     "e2e-test:ui": "deno task playwright test --ui-port=8080 --ui-host=0.0.0.0",
     "husky": "deno run --allow-all husky",
@@ -31,7 +30,7 @@
   "test": {
     // exclude these or `deno test` will try to run tests in these folders and fail.
     // tests in those dirs are handled by specific `deno task` calls above
-    "exclude": ["tests/vitest/*", "tests/playwright/*"]
+    "exclude": ["./tests/vitest/*", "./tests/playwright/*"]
   },
   "imports": {
     // these are needed to get> around Deno Deploy problems thanks to @deno/astro-adapter

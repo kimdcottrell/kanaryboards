@@ -52,11 +52,13 @@
         "editor.defaultFormatter": "denoland.vscode-deno",
         "deno.enable": true,
         "deno.lint": true,
-        "deno.testing.args": [
-          "--allow-all",
-          "--no-check",
-          "--ignore=\"tests/vitest/*,tests/playwright/*\""
-        ],
+        "deno.codeLens.test": false,
+        "debug.javascript.autoAttachFilter": "disabled",
+        "debug.javascript.terminalOptions": {},
+        "debug.javascript.defaultRuntimeExecutable": {
+          "pwa-node": "deno",
+          "node": "deno"
+        },
         // tell vitest extension where to look for tests
         "vitest.runtime": "deno",
         "vitest.workspaceConfig": "/var/dev",

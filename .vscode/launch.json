@@ -5,9 +5,22 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Debug Dev Server in Chrome",
+            "type": "chrome",
+            "request": "launch",
+            "url": "https://kanary.local.dev",
+            "webRoot": "${workspaceFolder}/src",
+            "sourceMapPathOverrides": {
+                "vite:///src/*": "${webRoot}/*",
+            },
+            "skipFiles": [
+                "**/node_modules/**"
+            ]
+        },
+        {
             "request": "attach",
             "name": "Attach to Deno",
-            "type": "deno",
+            "type": "node",
             "port": 9229,
             "preLaunchTask": "Deno: run with inspector"
         }

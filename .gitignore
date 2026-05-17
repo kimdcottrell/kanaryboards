@@ -13,3 +13,4 @@ HELP.md
 !.devcontainer/home/.sample_bashrc
 !.devcontainer/home/.sample_zshrc
 ./tests/playwright/generated.spec.ts
+.vscode/settings.json
