@@ -28,8 +28,13 @@
     "preview": "deno run --allow-net --allow-read --allow-env ./dist/server/entry.mjs",
     "vitest": "deno run --allow-all vitest"
   },
+  "test": {
+    // exclude these or `deno test` will try to run tests in these folders and fail.
+    // tests in those dirs are handled by specific `deno task` calls above
+    "exclude": ["tests/vitest/*", "tests/playwright/*"]
+  },
   "imports": {
-    // these are needed to get around Deno Deploy problems thanks to @deno/astro-adapter
+    // these are needed to get> around Deno Deploy problems thanks to @deno/astro-adapter
     "@std/http": "jsr:@std/http@^1.1.0",
     "@std/path": "jsr:@std/path@^1.1.4",
     "@pages/": "./src/pages/",

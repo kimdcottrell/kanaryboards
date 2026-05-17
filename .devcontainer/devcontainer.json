@@ -37,7 +37,8 @@
         "ms-azuretools.vscode-docker",
         "Anthropic.claude-code",
         "streetsidesoftware.code-spell-checker",
-        "ms-vscode-remote.remote-containers"
+        "ms-vscode-remote.remote-containers",
+        "vitest.explorer"
       ],
       "settings": {
         "claudeCode.preferredLocation": "panel",
@@ -50,6 +51,14 @@
         "editor.defaultFormatter": "denoland.vscode-deno",
         "deno.enable": true,
         "deno.lint": true,
+        "deno.testing.args": [
+          "--allow-all",
+          "--no-check",
+          "--ignore=\"tests/vitest/*,tests/playwright/*\""
+        ],
+        // tell vitest extension where to look for tests
+        "vitest.runtime": "deno",
+        "vitest.workspaceConfig": "/var/dev",
         "[typescriptreact]": {
           "editor.defaultFormatter": "denoland.vscode-deno"
         },

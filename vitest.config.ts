@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { getViteConfig } from 'astro/config';
 
 export default getViteConfig({
@@ -6,8 +7,8 @@ export default getViteConfig({
     environment: 'jsdom',
     globals: true,
     coverage: {
-        provider: "v8",
-        reporter: ["text", "html"]
+      provider: "v8",
+      reporter: ["text", "html"]
     },
   },
 });

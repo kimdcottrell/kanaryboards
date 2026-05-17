@@ -1,0 +1,28 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Deno: run with inspector",
+            "type": "shell",
+            "command": "/usr/bin/deno",
+            "args": [
+                "run",
+                "--config",
+                "deno.jsonc",
+                "--inspect-wait",
+                "--allow-all",
+            ],
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^$"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "^Deno",
+                    "endsPattern": "Debugger listening on"
+                }
+            }
+        }
+    ]
+}

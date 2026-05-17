@@ -54,11 +54,14 @@ services:
     ipc: host # needed to prevent Chromium from crashing
     init: true # recommended to avoid special treatment for processes with PID=1
     command: npx playwright run-server --port 3000 --host 0.0.0.0;
+    environment:
+      - DISPLAY=${DISPLAY}
     volumes:
       - ./package.json:/usr/src/app/package.json
       - ./playwright.config.ts:/usr/src/app/playwright.config.ts
       - ./tests:/usr/src/app/tests
       - ./test-results:/usr/src/app/test-results
+      - /tmp/.X11-unix:/tmp/.X11-unix
     extra_hosts:
       - host.docker.internal:host-gateway
     env_file:

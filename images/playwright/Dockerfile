@@ -11,6 +11,8 @@ RUN groupmod -g ${LOCAL_MACHINE_GID} node; \
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gosu \
     sudo \
+    xvfb \
+    x11-apps \
     && rm -rf /var/lib/apt/lists/*;
 
 RUN echo "node ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
