@@ -6,10 +6,10 @@ import TaskEditModal from "./TaskEditModal.jsx";
 export default function BoardInner() {
   return (
     <>
-      <BoardConfiguration />
-      <RowBoard />
-      <TaskCreateModal />
-      <TaskEditModal />
+      <BoardConfiguration data-testid="board-configuration" />
+      <RowBoard data-testid="row-board" />
+      <TaskCreateModal data-testid="task-create-modal" />
+      <TaskEditModal data-testid="task-edit-modal" />
     </>
   );
 }

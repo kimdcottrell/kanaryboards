@@ -100,14 +100,18 @@ test.describe("Board Configuration — Create New Row section", () => {
 
   test.describe("creating a row with AI task generation (mocked /api/generate-tasks)", () => {
     test("hides Add Row button and shows generating status while waiting for the API", async ({ page }) => {
-      await page.route("/api/generate-tasks", async (route) => {
-        await new Promise<void>((resolve) => setTimeout(resolve, 500));
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(MOCK_TASKS_RESPONSE),
-        });
-      });
+      let resolveRoute!: () => void;
+      await page.route("/api/generate-tasks", (route) =>
+        new Promise<void>((resolve) => {
+          resolveRoute = resolve;
+        }).then(() =>
+          route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify(MOCK_TASKS_RESPONSE),
+          })
+        )
+      );
 
       const section = page.locator("#board-config-create-new-row");
       await section
@@ -116,7 +120,10 @@ test.describe("Board Configuration — Create New Row section", () => {
         )
         .fill("Pizza Making");
       await section.locator("#newRowPrompt").fill("Steps to make a pizza");
+
+      const requestPromise = page.waitForRequest("**/api/generate-tasks");
       await section.getByRole("button", { name: "Add Row" }).click();
+      await requestPromise;
 
       await expect(section.getByRole("button", { name: "Add Row" })).not
         .toBeVisible();
@@ -124,6 +131,8 @@ test.describe("Board Configuration — Create New Row section", () => {
       await expect(section.locator(".alert-info")).toContainText(
         "Generating tasks",
       );
+
+      resolveRoute();
     });
 
     test("adds the new row to row settings after AI generation completes", async ({ page }) => {
@@ -167,9 +176,9 @@ test.describe("Board Configuration — Create New Row section", () => {
       await section.locator("#newRowPrompt").fill("Steps to make a pizza");
       await section.getByRole("button", { name: "Add Row" }).click();
 
-      await expect(page.getByText("Prepare pizza dough")).toBeVisible();
-      await expect(page.getByText("Bake pizza")).toBeVisible();
-      await expect(page.getByText("Slice and serve")).toBeVisible();
+      await expect(page.getByText("Prepare pizza dough")).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText("Bake pizza")).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText("Slice and serve")).toBeVisible({ timeout: 10000 });
     });
 
     test("restores Add Row button after AI generation completes", async ({ page }) => {

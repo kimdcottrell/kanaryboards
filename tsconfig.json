@@ -3,20 +3,25 @@
   "include": [
     ".astro/types.d.ts",
     "src/content.config.js",
-    "**/*"
+    "**/*",
   ],
   "exclude": [
     "dist",
-    "tests",
+    "tests/playwright",
     "playwright.config.ts",
     "playwright-report",
     "test-results"
   ],
+  "types": ["vitest/globals"],
   "compilerOptions": {
     "strictNullChecks": true,
     "allowJs": true,
     "skipLibCheck": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "react"
+    "jsxImportSource": "react",
+    "paths": {
+      "@pages/*": ["./src/pages/*"],
+      "@components/*": ["./src/components/*"]
+    }
   }
 }

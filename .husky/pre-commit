@@ -1,3 +1,4 @@
 deno fmt
 deno lint
+deno task vitest
 deno task e2e-test

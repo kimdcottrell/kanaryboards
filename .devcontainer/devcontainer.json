@@ -17,8 +17,8 @@
   "initializeCommand": ["/usr/bin/bash", "-c", "ssh -v git@github.com 2>&1 /dev/null | grep 'Server accepts key' | awk '{print $5}' > .devcontainer/gitsshkey"],
   "postAttachCommand": {
     "gitsshkey": "HOST_GITSSHKEY=$(cat ${containerWorkspaceFolder}/.devcontainer/gitsshkey); cp /var/host_ssh/${HOST_GITSSHKEY##*/} /home/deno/.ssh/${HOST_GITSSHKEY##*/}; cp /var/host_ssh/${HOST_GITSSHKEY##*/}.pub /home/deno/.ssh/${HOST_GITSSHKEY##*/}.pub",
-    "bashrc": "[ ! -f ${containerWorkspaceFolder}/.devcontainer/home/.bashrc ] || [ ! -s ${containerWorkspaceFolder}/.devcontainer/home/.bashrc ] && ( cp ${containerWorkspaceFolder}/.devcontainer/home/.sample_bashrc ${containerWorkspaceFolder}/.devcontainer/home/.bashrc; echo 'source ${containerWorkspaceFolder}/.devcontainer/home/.bashrc' > /home/deno/.bashrc; )",
-    "zshrc": "[ ! -f ${containerWorkspaceFolder}/.devcontainer/home/.zshrc ] || [ ! -s ${containerWorkspaceFolder}/.devcontainer/home/.zshrc ] && ( cp ${containerWorkspaceFolder}/.devcontainer/home/.sample_zshrc ${containerWorkspaceFolder}/.devcontainer/home/.zshrc; echo 'source ${containerWorkspaceFolder}/.devcontainer/home/.zshrc' > /home/deno/.zshrc; )"
+    "bashrc": "[ ! -f ${containerWorkspaceFolder}/.devcontainer/home/.bashrc ] || [ ! -s ${containerWorkspaceFolder}/.devcontainer/home/.bashrc ] && ( cp ${containerWorkspaceFolder}/.devcontainer/home/.sample_bashrc ${containerWorkspaceFolder}/.devcontainer/home/.bashrc ); echo 'source ${containerWorkspaceFolder}/.devcontainer/home/.bashrc' > /home/deno/.bashrc;",
+    "zshrc": "[ ! -f ${containerWorkspaceFolder}/.devcontainer/home/.zshrc ] || [ ! -s ${containerWorkspaceFolder}/.devcontainer/home/.zshrc ] && ( cp ${containerWorkspaceFolder}/.devcontainer/home/.sample_zshrc ${containerWorkspaceFolder}/.devcontainer/home/.zshrc ); echo 'source ${containerWorkspaceFolder}/.devcontainer/home/.zshrc' > /home/deno/.zshrc;"
   },
   "remoteEnv": {
     "DEVCONTAINER": "true"
@@ -37,7 +37,9 @@
         "ms-azuretools.vscode-docker",
         "Anthropic.claude-code",
         "streetsidesoftware.code-spell-checker",
-        "ms-vscode-remote.remote-containers"
+        "ms-vscode-remote.remote-containers",
+        "vitest.explorer",
+        "GitHub.vscode-github-actions"
       ],
       "settings": {
         "claudeCode.preferredLocation": "panel",
@@ -50,6 +52,16 @@
         "editor.defaultFormatter": "denoland.vscode-deno",
         "deno.enable": true,
         "deno.lint": true,
+        "deno.codeLens.test": false,
+        "debug.javascript.autoAttachFilter": "disabled",
+        "debug.javascript.terminalOptions": {},
+        "debug.javascript.defaultRuntimeExecutable": {
+          "pwa-node": "deno",
+          "node": "deno"
+        },
+        // tell vitest extension where to look for tests
+        "vitest.runtime": "deno",
+        "vitest.workspaceConfig": "/var/dev",
         "[typescriptreact]": {
           "editor.defaultFormatter": "denoland.vscode-deno"
         },
