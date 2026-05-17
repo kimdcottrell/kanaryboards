@@ -12,3 +12,4 @@ HELP.md
 !.devcontainer/home/.gitkeep
 !.devcontainer/home/.sample_bashrc
 !.devcontainer/home/.sample_zshrc
+./tests/playwright/generated.spec.ts
