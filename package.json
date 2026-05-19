@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@astrojs/react": "5.0.4",
+    "@astrojs/react": "5.0.5",
     "@deno/astro-adapter": "0.5.1",
     "@google/genai": "2.0.1",
     "@iconify/json": "2.2.467",
@@ -12,7 +12,7 @@
     "@lyfie/luthor": "2.7.11",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "astro": "6.1.10",
+    "astro": "6.3.5",
     "astro-icon": "1.1.5",
     "daisyui": "5.5.19",
     "husky": "9.1.7",
