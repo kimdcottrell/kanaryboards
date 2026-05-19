@@ -6,7 +6,7 @@
   "dependencies": {
     "@astrojs/react": "5.0.5",
     "@deno/astro-adapter": "0.5.1",
-    "@google/genai": "2.0.1",
+    "@google/genai": "2.4.0",
     "@iconify/json": "2.2.474",
     "@iconify/tailwind4": "1.2.3",
     "@lyfie/luthor": "2.7.11",
@@ -23,7 +23,7 @@
     "vitest": "^4.1.6"
   },
   "devDependencies": {
-    "@anthropic-ai/claude-code": "2.1.114",
+    "@anthropic-ai/claude-code": "2.1.144",
     "@astrojs/check": "0.9.9",
     "@catppuccin/tailwindcss": "1.0.0",
     "@playwright/test": "1.60.0",
