@@ -16,8 +16,7 @@
       "Bash(grep -v '^refactor$')",
       "Bash(xargs cat *)",
       "Bash(deno install *)",
-      "Bash(deno run *)",
-      "Bash(echo \"Exit: $?\")"
+      "Bash(deno run *)"
     ]
   }
 }

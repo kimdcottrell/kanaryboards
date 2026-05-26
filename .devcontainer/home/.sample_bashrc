@@ -6,9 +6,8 @@ if ! command -v vivid &>/dev/null; then
 fi
 
 if ! ssh -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
-    echo "ERROR: GitHub SSH authentication failed. Please set up your SSH keys on your host machine and add them to GitHub."
-    echo "INFO: Keys held within the container and used for authentication attempts:"
-    ls -la ~/.ssh/id_*
+    echo "ERROR: GitHub SSH authentication failed. Please set up your ssh-agent on your host machine and add them to GitHub."
+    echo "SUGGESTION: Try running \`make setup-ssh-agent\` on the host machine and then rebuilding the devcontainer."
 fi
 
 # If not running interactively, don't do anything

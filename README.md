@@ -8,6 +8,7 @@ An AI-native kanban-style project management app built with Astro, React, Deno, 
 - [VS Code](https://code.visualstudio.com/) with the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) _(recommended)_
 - [Claude Code](https://claude.ai/code) CLI installed on your **local machine** _(recommended)_
 - An SSH key on your **local machine** authorized for GitHub (`~/.ssh/id_*`)
+- `make` available on your **local machine**
 
 ### Local Proxy Setup
 
@@ -66,22 +67,29 @@ git clone git@github.com:kimdcottrell/kanaryboards.git
 cd kanaryboards
 ```
 
-### 2. Configure environment variables
+### 2. Set up SSH agent
+
+Run this on your **host machine** (not inside the container):
+
+```bash
+make setup-ssh-agent
+```
+
+This is a one-time setup. It adds an `ssh_agent_reload` function to your `~/.bash_profile` that starts a persistent `ssh-agent` bound to `~/.ssh/agent.sock`, and adds `export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"` to your `~/.bashrc`. All `~/.ssh/id_*` keys are loaded automatically on login.
+
+The dev container bind-mounts that socket instead of copying your keys, so your private keys never leave your machine.
+
+> If the socket is ever stale or missing, run `ssh_agent_reload` in your host terminal to restart the agent.
+
+### 3. Configure environment variables
 
 ```bash
 cp .env.sample .env
 ```
 
-Open `.env` and fill in the values:
+Open `.env` and fill in the values indicated as REQUIRED in the comments.
 
-| Variable | Description |
-|---|---|
-| `LOCAL_MACHINE_UID` | Your local user ID — run `id -u` |
-| `LOCAL_MACHINE_GID` | Your local group ID — run `id -g` |
-| `GOOGLE_AI_STUDIO_KEY` | Google AI Studio API key (used for board autocomplete) |
-| `CLAUDE_CODE_OAUTH_TOKEN` | OAuth token for Claude Code inside the container (see below) |
-
-### 3. Generate a Claude OAuth token
+### 4. Generate a Claude OAuth token
 
 The dev container disables the Claude Code login prompt, so you must generate an OAuth token on your **local machine** and paste it into `.env`.
 
@@ -98,18 +106,10 @@ Copy the token that is printed and set it as `CLAUDE_CODE_OAUTH_TOKEN` in this p
 > rm -rf ~/.claude ~/.claude.json && claude setup-token
 > ```
 
-### 4. Set up SSH for Git
-
-`git push`, `git pull`, and `git fetch` inside the container authenticate using a copy of your local SSH key. Here is what happens automatically when VS Code opens the dev container:
-
-1. **`initializeCommand`** runs on your local machine. It connects to `git@github.com` in verbose mode to discover which key GitHub accepts, then saves that key's filename to `.devcontainer/gitsshkey`.
-2. Your local `~/.ssh/` directory is bind-mounted **read-only** into the container at `/var/host_ssh/`.
-3. **`postAttachCommand`** runs inside the container after attach. It reads the filename from `gitsshkey` and copies that private key and its `.pub` counterpart from `/var/host_ssh/` into `/home/deno/.ssh/`.
-
 **Requirements on your local machine:**
 
-- At least one SSH key in `~/.ssh/` that is authorized on GitHub
-- That key must authenticate to GitHub non-interactively (no passphrase, or the passphrase is already cached in your local SSH agent) — `initializeCommand` runs without a terminal so it cannot prompt
+- `make setup-ssh-agent` must have been run at least once
+- The ssh-agent must be running — it starts automatically on login via `~/.bash_profile`, but if the socket is missing, run `ssh_agent_reload` in your host terminal before opening the container
 
 Verify it is working inside the container with:
 
@@ -118,8 +118,6 @@ ssh -T git@github.com
 ```
 
 You should see: `Hi <username>! You've successfully authenticated…`
-
-If it fails, the most common cause is that no key in your local `~/.ssh/` is registered with GitHub, or the key requires a passphrase that was not cached before the container started.
 
 **Extra details you may be wondering about**
 
@@ -131,7 +129,7 @@ If it fails, the most common cause is that no key in your local `~/.ssh/` is reg
 
 The dev container mounts `.devcontainer/home/.bashrc` and `.devcontainer/home/.zshrc` directly into the container as `~/.bashrc` and `~/.zshrc`. Both files are gitignored — they're personal to your machine and won't affect other contributors.
 
-The `initializeCommand` in `devcontainer.json` creates them as empty files the first time if they don't exist yet, so there's nothing to do if you're happy with a plain prompt.
+The `postAttachCommand` in `devcontainer.json` copies the sample files into place the first time if they don't exist or are empty, so you'll get a sensible default prompt without any extra steps.
 
 Sample configs are provided as a starting point:
 
@@ -152,15 +150,7 @@ Edit either file freely — your changes stay local and are picked up the next t
 
 ### 6. Start the dev container
 
-Open the project in VS Code and when prompted, click **"Reopen in Container"**. VS Code will build the Docker image and start the services defined in `compose.yaml` (the app and a Redis instance).
-
-Alternatively, bring the containers up manually:
-
-```bash
-docker compose up --build
-```
-
-Then attach to the running container in VS Code via the **Remote Explorer** sidebar.
+Open the project in VS Code and when prompted, click **"Rebuild Container"**. VS Code will build the Docker image and start the services defined in `compose.yaml` (the app and a Redis instance).
 
 ### 7. Start the development server
 
@@ -183,6 +173,17 @@ The app will be available at [http://localhost:4321](http://localhost:4321).
 | `deno task husky` | Wrapper for the Husky git hooks CLI |
 | `deno task preview` | Serve the production build from `dist/server/entry.mjs` |
 | `deno task vitest` | Run the Vitest unit test suite |
+
+## Make commands
+
+These run on your **host machine** (not inside the container).
+
+| Command | Description |
+|---|---|
+| `make setup-ssh-agent` | One-time host setup — adds `ssh_agent_reload` to `~/.bash_profile` and `SSH_AUTH_SOCK` export to `~/.bashrc`, then starts the agent immediately, assigning your ssh-keys to it |
+| `make codegen` | Open a browser to record a Playwright test; saves the generated script to `tests/playwright/generated.spec.ts` |
+| `make nuke` | Kill all running Docker containers and prune all containers, images, and volumes |
+| `make help` | List all available make targets with descriptions |
 
 ## Services
 
