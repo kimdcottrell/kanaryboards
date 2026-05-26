@@ -144,7 +144,11 @@ export function ChecklistGenerationCollapse({
                 }
               }}
             />
-            {showError && <p className="text-error text-sm mt-1">Required</p>}
+            {showError && (
+              <div role="alert" className="alert alert-error mt-1 py-2">
+                <span className="text-sm">Required</span>
+              </div>
+            )}
           </fieldset>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -186,7 +190,10 @@ export function ChecklistGenerationCollapse({
             )}
         </div>
         {checklistModalError && (
-          <p className="text-sm text-error">{checklistModalError}</p>
+          <div role="alert" className="alert alert-error">
+            <span className="iconify hugeicons--wifi-error-01 text-xl shrink-0" />
+            <span>{checklistModalError}</span>
+          </div>
         )}
         <div className="overflow-x-auto">
           {checklistPreview.length > 0

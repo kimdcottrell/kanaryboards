@@ -131,8 +131,58 @@ test.describe("Board Configuration — Create New Row section", () => {
       await expect(section.locator(".alert-info")).toContainText(
         "Generating tasks",
       );
+      await expect(section.locator(".alert-error")).not.toBeVisible();
+      await expect(section.locator(".alert-success")).not.toBeVisible();
 
       resolveRoute();
+    });
+
+    test("shows alert-success with add-to-list icon after AI generation completes", async ({ page }) => {
+      await page.route("/api/generate-tasks", (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(MOCK_TASKS_RESPONSE),
+        }));
+
+      const section = page.locator("#board-config-create-new-row");
+      await section
+        .getByPlaceholder(
+          "A project name, a category for large project tasks, etc.",
+        )
+        .fill("Pizza Making");
+      await section.locator("#newRowPrompt").fill("Steps to make a pizza");
+      await section.getByRole("button", { name: "Add Row" }).click();
+
+      await expect(section.locator(".alert-success")).toBeVisible({ timeout: 5000 });
+      await expect(section.locator(".alert-success")).toContainText("Added 10 tasks to Todo");
+      await expect(section.locator(".alert-success .hugeicons--add-to-list")).toBeVisible();
+      await expect(section.locator(".alert-error")).not.toBeVisible();
+    });
+
+    test("shows alert-error with wifi-error icon when the API returns an error", async ({ page }) => {
+      await page.route("/api/generate-tasks", (route) =>
+        route.fulfill({
+          status: 503,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "AI service is not configured." }),
+        }));
+
+      const section = page.locator("#board-config-create-new-row");
+      await section
+        .getByPlaceholder(
+          "A project name, a category for large project tasks, etc.",
+        )
+        .fill("Pizza Making");
+      await section.locator("#newRowPrompt").fill("Steps to make a pizza");
+      await section.getByRole("button", { name: "Add Row" }).click();
+
+      await expect(section.locator(".alert-error")).toBeVisible({ timeout: 5000 });
+      await expect(section.locator(".alert-error")).toContainText(
+        "Unable to generate tasks. Error: AI service is not configured.",
+      );
+      await expect(section.locator(".alert-error .hugeicons--wifi-error-01")).toBeVisible();
+      await expect(section.locator(".alert-success")).not.toBeVisible();
     });
 
     test("adds the new row to row settings after AI generation completes", async ({ page }) => {

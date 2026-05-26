@@ -11,6 +11,7 @@ export default function BoardConfiguration() {
     newRowFormKey,
     isGeneratingTasks,
     taskGenerationStatus,
+    taskGenerationIsError,
     defaultColumnInput,
     draggedDefaultIndex,
     setNewRowName,
@@ -140,6 +141,20 @@ export default function BoardConfiguration() {
                       >
                       </path>
                     </svg>
+                    <span>{taskGenerationStatus}</span>
+                  </div>
+                )}
+                {!isGeneratingTasks && taskGenerationStatus &&
+                  taskGenerationIsError && (
+                  <div role="alert" className="alert alert-error">
+                    <span className="iconify hugeicons--wifi-error-01 text-xl shrink-0" />
+                    <span>{taskGenerationStatus}</span>
+                  </div>
+                )}
+                {!isGeneratingTasks && taskGenerationStatus &&
+                  !taskGenerationIsError && (
+                  <div role="alert" className="alert alert-success">
+                    <span className="iconify hugeicons--add-to-list text-xl shrink-0" />
                     <span>{taskGenerationStatus}</span>
                   </div>
                 )}

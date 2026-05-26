@@ -16,3 +16,7 @@
   llms_txt: https://raw.githubusercontent.com/rgfx/tailwind-llms/refs/heads/main/tailwind-llms.txt
 - name: Vitest
   llms_txt: https://vitest.dev/llms.txt
+- name: LangChain JS
+  llms_txt: https://js.langchain.com/llms.txt
+- name: LangGraph JS
+  llms_txt: https://langchain-ai.github.io/langgraphjs/llms.txt

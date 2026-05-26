@@ -1,10 +1,11 @@
 import { useState } from "react";
 import ColumnCard from "./ColumnCard.jsx";
-import CloseButton from "./buttons/CloseButton.tsx";
+import RowSettingsModal from "./RowSettingsModal.jsx";
 import { useBoard } from "./context/useBoard.ts";
 
 export default function RowSection({ row }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const {
     columns,
     editingRowId,
@@ -12,7 +13,6 @@ export default function RowSection({ row }) {
     setEditingRowName,
     editRowTitle,
     saveRowTitle,
-    deleteRow,
   } = useBoard();
 
   return (
@@ -57,6 +57,14 @@ export default function RowSection({ row }) {
         <div className="flex flex-col gap-3 sm:items-end">
           <div className="flex gap-2">
             <button
+              type="button"
+              className="btn btn-warning btn-sm btn-square opacity-80 hover:opacity-100"
+              aria-label={`Settings for row ${row.name}`}
+              onClick={() => setSettingsOpen(true)}
+            >
+              <span className="iconify basil--settings-alt-outline text-xl" />
+            </button>
+            <button
               id={`row-collapse-btn-${row.id}`}
               type="button"
               className="btn btn-primary btn-sm btn-square opacity-80 hover:opacity-100"
@@ -71,17 +79,6 @@ export default function RowSection({ row }) {
                 } text-xl`}
               />
             </button>
-            <CloseButton
-              onClick={() => {
-                if (
-                  confirm(
-                    `Delete row "${row.name}"? \n\nThis will remove the "${row.name}" row. All columns and tasks will be removed.\n\nIt cannot be undone.`,
-                  )
-                ) deleteRow(row.id);
-              }}
-              className="opacity-80 hover:opacity-100"
-              aria-label={`Delete project ${row.name}`}
-            />
           </div>
         </div>
       </div>
@@ -98,6 +95,13 @@ export default function RowSection({ row }) {
             ))}
           </div>
         </div>
+      )}
+      {settingsOpen && (
+        <RowSettingsModal
+          row={row}
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+        />
       )}
     </section>
   );
