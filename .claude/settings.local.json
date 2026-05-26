@@ -6,17 +6,16 @@
       "WebFetch(domain:daisyui.com)",
       "WebFetch(domain:docs.astro.build)",
       "Bash(deno lint *)",
-      "Bash(pkill -f \"astro dev\")",
       "Bash(deno check *)",
       "Bash(deno task *)",
       "Bash(curl -s http://localhost:4321/)",
-      "Bash(jobs -l)",
       "Read(//home/deno/**)",
-      "Bash(mv /tmp/.claude.json.tmp ~/.claude.json)",
-      "Bash(grep -v '^refactor$')",
       "Bash(xargs cat *)",
       "Bash(deno install *)",
       "Bash(deno run *)"
+    ],
+    "additionalDirectories": [
+      "/var/dev/.claude/skills"
     ]
   }
 }
