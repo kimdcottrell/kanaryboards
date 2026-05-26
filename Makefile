@@ -30,7 +30,13 @@ setup-ssh-agent: ## Add ssh_agent_reload function and SSH_AUTH_SOCK export to yo
 			  echo '  if ps aux | grep -q "[s]sh/agent\.sock"; then kill -9 $$(pgrep -f "[s]sh/agent\.sock"); fi'; \
 			  echo '  rm -f "$$HOME/.ssh/agent.sock"'; \
 			  echo '  eval $$(ssh-agent -s -a "$$HOME/.ssh/agent.sock") > /dev/null'; \
-			  echo '  for key in "$$HOME"/.ssh/id_*; do [[ "$$key" == *.pub ]] || ssh-add -S "$$HOME/.ssh/agent.sock" "$$key"; done'; \
+			  echo '  local git_key'; \
+			  echo '  git_key=$$(ssh -Tvvv git@github.com 2>&1 | awk '"'"'/Server accepts key:/ {print $$5; exit}'"'"')'; \
+			  echo '  if [[ -n "$$git_key" ]]; then'; \
+			  echo '    ssh-add -S "$$HOME/.ssh/agent.sock" "$$git_key"'; \
+			  echo '  else'; \
+			  echo '    echo "Warning: could not detect git SSH key; no keys added"'; \
+			  echo '  fi'; \
 			  echo '}'; \
 			  echo ''; \
 			  echo 'ssh_agent_reload'; \
