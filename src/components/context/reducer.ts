@@ -44,6 +44,7 @@ export const createInitialState = (): BoardState => {
     checklistModalError: "",
     isGeneratingTasks: false,
     taskGenerationStatus: "",
+    taskGenerationIsError: false,
     defaultColumnInput: "",
     draggedDefaultIndex: null,
     draggedTask: null,
@@ -611,6 +612,7 @@ export function boardReducer(
         ...state,
         isGeneratingTasks: true,
         taskGenerationStatus: "Generating tasks...",
+        taskGenerationIsError: false,
       };
 
     case "TASK_AI/GENERATE_SUCCESS": {
@@ -622,6 +624,7 @@ export function boardReducer(
         taskGenerationStatus: `Added ${count} task${
           count !== 1 ? "s" : ""
         } to Todo`,
+        taskGenerationIsError: false,
         newRowName: "",
         newRowPrompt: "",
         newRowFormKey: state.newRowFormKey + 1,
@@ -633,6 +636,7 @@ export function boardReducer(
         ...state,
         isGeneratingTasks: false,
         taskGenerationStatus: action.payload.error,
+        taskGenerationIsError: true,
         newRowName: "",
         newRowPrompt: "",
         newRowFormKey: state.newRowFormKey + 1,

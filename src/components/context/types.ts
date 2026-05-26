@@ -65,6 +65,7 @@ export interface BoardState {
   checklistModalError: string;
   isGeneratingTasks: boolean;
   taskGenerationStatus: string;
+  taskGenerationIsError: boolean;
   defaultColumnInput: string;
   draggedDefaultIndex: number | null;
   draggedTask: DraggedTask | null;
