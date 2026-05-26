@@ -23,7 +23,7 @@ const normalizeTaskLines = (content: string) =>
     .filter(Boolean);
 
 const apiKey = import.meta.env.GOOGLE_AI_STUDIO_KEY;
-const apiModel = import.meta.env.GOOGLE_AI_STUDIO_MODEL ||
+export const apiModel = import.meta.env.GOOGLE_AI_STUDIO_MODEL ||
   "gemini-3.1-flash-lite";
 
 if (!apiKey) {
