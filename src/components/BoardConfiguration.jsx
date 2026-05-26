@@ -144,13 +144,15 @@ export default function BoardConfiguration() {
                     <span>{taskGenerationStatus}</span>
                   </div>
                 )}
-                {!isGeneratingTasks && taskGenerationStatus && taskGenerationIsError && (
+                {!isGeneratingTasks && taskGenerationStatus &&
+                  taskGenerationIsError && (
                   <div role="alert" className="alert alert-error">
                     <span className="iconify hugeicons--wifi-error-01 text-xl shrink-0" />
                     <span>{taskGenerationStatus}</span>
                   </div>
                 )}
-                {!isGeneratingTasks && taskGenerationStatus && !taskGenerationIsError && (
+                {!isGeneratingTasks && taskGenerationStatus &&
+                  !taskGenerationIsError && (
                   <div role="alert" className="alert alert-success">
                     <span className="iconify hugeicons--add-to-list text-xl shrink-0" />
                     <span>{taskGenerationStatus}</span>

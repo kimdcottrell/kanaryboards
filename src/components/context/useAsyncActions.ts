@@ -31,7 +31,10 @@ export function useAsyncActions(
   dispatch: Dispatch<BoardAction>,
   focusChecklistInput: (id: string) => void,
 ) {
-  const generateTasksForRow = async (rowId: string, promptOverride?: string) => {
+  const generateTasksForRow = async (
+    rowId: string,
+    promptOverride?: string,
+  ) => {
     const prompt = (promptOverride ?? state.newRowPrompt).trim();
     if (!prompt) return;
 
