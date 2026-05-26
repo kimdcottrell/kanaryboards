@@ -123,7 +123,9 @@ export default function TaskEditModal() {
                     You
                     <time className="text-xs opacity-50 ml-1">{c.time}</time>
                   </div>
-                  <div className="chat-bubble whitespace-pre-wrap">{c.text}</div>
+                  <div className="chat-bubble whitespace-pre-wrap">
+                    {c.text}
+                  </div>
                   <div className="chat-footer opacity-50">Delivered</div>
                 </div>
               ))}
@@ -134,8 +136,13 @@ export default function TaskEditModal() {
               e.preventDefault();
               const text = commentText.trim();
               if (!text) return;
-              const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-              setComments((prev) => [...prev, { id: crypto.randomUUID(), text, time }]);
+              const time = new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+              setComments((
+                prev,
+              ) => [...prev, { id: crypto.randomUUID(), text, time }]);
               setCommentText("");
             }}
           >
@@ -153,7 +160,9 @@ export default function TaskEditModal() {
               }}
             />
             <div className="flex justify-end mt-2">
-              <button type="submit" className="btn btn-sm btn-primary">Comment</button>
+              <button type="submit" className="btn btn-sm btn-primary">
+                Comment
+              </button>
             </div>
           </form>
         </div>
