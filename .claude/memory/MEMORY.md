@@ -14,3 +14,4 @@
 - [CI/CD workflows](project_cicd_workflows.md) — auto-create-pr (feature/bugfix branches) and e2e (Deno Deploy preview polling) workflows; required secrets
 - [Playwright collapse test patterns](feedback_playwright_collapse_patterns.md) — per-mechanism selectors/assertions for DaisyUI checkbox collapse, DaisyUI React-state collapse, and custom conditional-render collapse; ID naming convention
 - [Docker Compose filename](feedback_compose_filename.md) — this project uses compose.yaml (V2 preferred name), not docker-compose.yml; always check compose.yaml first
+- [Per-task AI agent system plan](project_agent_system.md) — LangGraph supervisor+subagents per task card; phases: scaffold → core graph → tools (job search, resume, PDF) → persistence; HITL via interrupt(); open questions on board state backend, job search provider, PDF storage
