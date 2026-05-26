@@ -27,6 +27,11 @@ setup-ssh-agent: ## Add ssh_agent_reload function and SSH_AUTH_SOCK export to yo
 		if ! grep -q 'ssh_agent_reload' "$$profile"; then \
 			{ echo ''; \
 			  echo 'ssh_agent_reload() {'; \
+			  echo '  if [ -n "$$(docker ps -q --filter '"'"'label=traefik.http.routers.kanary-web.rule'"'"' 2>/dev/null)" ]; then'; \
+			  echo '    echo "Error: app container is running. From the project dir, run \`docker compose down --volumes\`, then run this function. After it completes, rebuild the devcontainer in VSCode."'; \
+			  echo '    return 1'; \
+			  echo '  fi'; \
+			  echo ''; \
 			  echo '  if ps aux | grep -q "[s]sh/agent\.sock"; then kill -9 $$(pgrep -f "[s]sh/agent\.sock"); fi'; \
 			  echo '  rm -f "$$HOME/.ssh/agent.sock"'; \
 			  echo '  eval $$(ssh-agent -s -a "$$HOME/.ssh/agent.sock") > /dev/null'; \
@@ -38,8 +43,6 @@ setup-ssh-agent: ## Add ssh_agent_reload function and SSH_AUTH_SOCK export to yo
 			  echo '    echo "Warning: could not detect git SSH key; no keys added"'; \
 			  echo '  fi'; \
 			  echo '}'; \
-			  echo ''; \
-			  echo 'ssh_agent_reload'; \
 			} >> "$$profile"; \
 			echo "  -> Added ssh_agent_reload to $$profile"; \
 		else \
