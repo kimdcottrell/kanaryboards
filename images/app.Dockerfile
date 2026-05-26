@@ -36,8 +36,8 @@ SHELL ["/bin/bash", "-c"]
 # Jail Claude to only be able to access the network and filesystem in the ways we allow with iptables and ipset.
 COPY .devcontainer/init-firewall.sh /usr/local/bin/init-firewall.sh
 RUN chmod +x /usr/local/bin/init-firewall.sh && \
-  echo "deno ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/deno-firewall && \
-  chmod 0440 /etc/sudoers.d/deno-firewall; 
+    echo "deno ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/deno-firewall && \
+    chmod 0440 /etc/sudoers.d/deno-firewall; 
 
 # Add in some lines to sudoers so the deno user can run a handful of commands as root
 RUN echo "deno ALL=(ALL) NOPASSWD: /usr/bin/vim, /usr/bin/rm, /usr/bin/dpkg, /usr/bin/chown, /usr/bin/chmod, /usr/bin/apt, /usr/bin/apt-get" \

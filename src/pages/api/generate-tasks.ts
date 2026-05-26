@@ -23,6 +23,8 @@ const normalizeTaskLines = (content: string) =>
     .filter(Boolean);
 
 const apiKey = import.meta.env.GOOGLE_AI_STUDIO_KEY;
+const apiModel = import.meta.env.GOOGLE_AI_STUDIO_MODEL ||
+  "gemini-3.1-flash-lite";
 
 if (!apiKey) {
   console.error(
@@ -73,7 +75,7 @@ export const POST: APIRoute = async ({ request }: APIContext) => {
   try {
     let fullText = "";
     const response = await ai.models.generateContentStream({
-      model: "gemini-3.1-flash-lite-preview",
+      model: apiModel,
       contents: cleanedPrompt,
       config: { systemInstruction: systemPrompt },
     });

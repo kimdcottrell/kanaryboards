@@ -143,7 +143,7 @@ describe("POST /api/generate-tasks", () => {
         mockGenerateContentStream.mockReturnValue(streamChunks(["Task one"]));
         await POST({ request: makeRequest({ prompt: "build an app" }) });
         expect(mockGenerateContentStream).toHaveBeenCalledWith(
-          expect.objectContaining({ model: "gemini-3.1-flash-lite-preview" }),
+          expect.objectContaining({ model: "gemini-3.1-flash-lite" }),
         );
       });
 

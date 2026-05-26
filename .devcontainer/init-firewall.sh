@@ -79,10 +79,11 @@ done < <(echo "$gh_ranges" | jq -r '(.web + .api + .git)[]' | aggregate -q)
 # NOTE: YOU DO HAVE TO EDIT THIS TO ADD IN YOUR REMOTE MCP SERVERS AND DOCS
 for domain in \
     "jsr.io" \
-    "npm.jsr.io" \
     "mcp.docs.astro.build" \
     "registry.npmjs.org" \
     "api.anthropic.com" \
+    "generativelanguage.googleapis.com" \
+    "googleapis.com" \
     "sentry.io" \
     "statsig.anthropic.com" \
     "statsig.com" \
@@ -106,19 +107,13 @@ for domain in \
     done < <(echo "$ips")
 done
 
-# Get host IP from default route
-HOST_IP=$(ip route | grep default | cut -d" " -f3)
-if [ -z "$HOST_IP" ]; then
-    echo "ERROR: Failed to detect host IP"
-    exit 1
-fi
-
-HOST_NETWORK=$(echo "$HOST_IP" | sed "s/\.[0-9]*$/.0\/24/")
-echo "Host network detected as: $HOST_NETWORK"
-
-# Set up remaining iptables rules
-iptables -A INPUT -s "$HOST_NETWORK" -j ACCEPT
-iptables -A OUTPUT -d "$HOST_NETWORK" -j ACCEPT
+# Allow all Docker network interfaces (not just the default route)
+echo "Detecting all Docker network subnets..."
+while read -r cidr; do
+    echo "Allowing Docker network subnet: $cidr"
+    iptables -A INPUT  -s "$cidr" -j ACCEPT
+    iptables -A OUTPUT -d "$cidr" -j ACCEPT
+done < <(ip -o -f inet addr show | awk '$2 != "lo" {print $4}')
 
 # Set default policies to DROP first
 iptables -P INPUT DROP
