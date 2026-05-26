@@ -8,20 +8,19 @@
 
   // NOTE ABOUT WHAT THESE COMMANDS DO:
   // - `initializeCommand`
-  // - creates empty .bashrc and .zshrc files in the .devcontainer folder to be mounted into the container
-  // - runs on local machine to fetch the ssh key you're using for github
-  // - saves that key to a file in the .devcontainer folder
+  // - runs on local machine before the container starts
+  // - (re)starts the ssh-agent at a fixed socket path (~/.ssh/agent.sock) and loads all ssh keys
   // - `postAttachCommand`
-  // - reads the ssh key filename from the file created by `initializeCommand`
-  // - copies the ssh key from the mounted folder where your host ssh keys are stored into
-  "initializeCommand": ["/usr/bin/bash", "-c", "ssh -v git@github.com 2>&1 /dev/null | grep 'Server accepts key' | awk '{print $5}' > .devcontainer/gitsshkey"],
+  // - fixes ownership of the mounted ssh-agent socket so the container user can access it
   "postAttachCommand": {
-    "gitsshkey": "HOST_GITSSHKEY=$(cat ${containerWorkspaceFolder}/.devcontainer/gitsshkey); cp /var/host_ssh/${HOST_GITSSHKEY##*/} /home/deno/.ssh/${HOST_GITSSHKEY##*/}; cp /var/host_ssh/${HOST_GITSSHKEY##*/}.pub /home/deno/.ssh/${HOST_GITSSHKEY##*/}.pub",
-    "bashrc": "[ ! -f ${containerWorkspaceFolder}/.devcontainer/home/.bashrc ] || [ ! -s ${containerWorkspaceFolder}/.devcontainer/home/.bashrc ] && ( cp ${containerWorkspaceFolder}/.devcontainer/home/.sample_bashrc ${containerWorkspaceFolder}/.devcontainer/home/.bashrc; echo 'source ${containerWorkspaceFolder}/.devcontainer/home/.bashrc' > /home/deno/.bashrc; )",
-    "zshrc": "[ ! -f ${containerWorkspaceFolder}/.devcontainer/home/.zshrc ] || [ ! -s ${containerWorkspaceFolder}/.devcontainer/home/.zshrc ] && ( cp ${containerWorkspaceFolder}/.devcontainer/home/.sample_zshrc ${containerWorkspaceFolder}/.devcontainer/home/.zshrc; echo 'source ${containerWorkspaceFolder}/.devcontainer/home/.zshrc' > /home/deno/.zshrc; )"
+    // "gitsshkey": "HOST_GITSSHKEY=$(cat ${containerWorkspaceFolder}/.devcontainer/gitsshkey); cp /var/host_ssh/${HOST_GITSSHKEY##*/} /home/deno/.ssh/${HOST_GITSSHKEY##*/}; cp /var/host_ssh/${HOST_GITSSHKEY##*/}.pub /home/deno/.ssh/${HOST_GITSSHKEY##*/}.pub",
+    "bashrc": "[ ! -f ${containerWorkspaceFolder}/.devcontainer/home/.bashrc ] || [ ! -s ${containerWorkspaceFolder}/.devcontainer/home/.bashrc ] && ( cp ${containerWorkspaceFolder}/.devcontainer/home/.sample_bashrc ${containerWorkspaceFolder}/.devcontainer/home/.bashrc ); echo 'source ${containerWorkspaceFolder}/.devcontainer/home/.bashrc' > /home/deno/.bashrc;",
+    "zshrc": "[ ! -f ${containerWorkspaceFolder}/.devcontainer/home/.zshrc ] || [ ! -s ${containerWorkspaceFolder}/.devcontainer/home/.zshrc ] && ( cp ${containerWorkspaceFolder}/.devcontainer/home/.sample_zshrc ${containerWorkspaceFolder}/.devcontainer/home/.zshrc ); echo 'source ${containerWorkspaceFolder}/.devcontainer/home/.zshrc' > /home/deno/.zshrc;",
+    "fix-ssh-sock": "sudo chown deno:deno /ssh-agent"
   },
   "remoteEnv": {
-    "DEVCONTAINER": "true"
+    "DEVCONTAINER": "true",
+    "SSH_AUTH_SOCK": "/ssh-agent"
   },
   // this gets around a weird bug where running `claude` in the terminal of the
   // container doesn't work despite the OAuth token being set in the env vars
@@ -83,6 +82,7 @@
   },
   "shutdownAction": "none",
   "mounts": [
-    "source=${localEnv:HOME}/.ssh,target=/var/host_ssh/,type=bind:ro"
+    "source=${localEnv:HOME}/.ssh/agent.sock,target=/ssh-agent,type=bind"
   ]
+
 }
