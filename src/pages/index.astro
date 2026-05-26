@@ -3,7 +3,8 @@ import "../styles/global.css";
 import "@lyfie/luthor/styles.css";
 
 import BoardWrapper from "../components/BoardWrapper";
-import ThemeController from "../components/ThemeController.astro";
+import ThemeProvider from "../components/theme/ThemeProvider";
+import ThemeToggle from "../components/theme/ThemeToggle";
 import GoogleAnalytics from "../components/seo/GoogleAnalytics.astro";
 
 const googleTag = import.meta.env.GOOGLE_TAG;
@@ -23,7 +24,9 @@ const googleTag = import.meta.env.GOOGLE_TAG;
                     <span class="iconify hugeicons--calendar-love-01 text-5xl"
                     ></span>
                 </a>
-                <ThemeController />
+                <ThemeProvider>
+                    <ThemeToggle client:only="react" />
+                </ThemeProvider>
             </div>
         </nav>
         <main class="min-h-screen">

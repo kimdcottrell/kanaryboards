@@ -14,3 +14,5 @@
   llms_txt: https://react.dev/llms.txt
 - name: Tailwind
   llms_txt: https://raw.githubusercontent.com/rgfx/tailwind-llms/refs/heads/main/tailwind-llms.txt
+- name: Vitest
+  llms_txt: https://vitest.dev/llms.txt

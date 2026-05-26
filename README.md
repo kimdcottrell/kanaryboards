@@ -172,6 +172,7 @@ The app will be available at [http://localhost:4321](http://localhost:4321).
 | `deno task e2e-test` | Auto-start dev server if needed, trigger the Playwright E2E suite, then shut it down |
 | `deno task husky` | Wrapper for the Husky git hooks CLI |
 | `deno task preview` | Serve the production build from `dist/server/entry.mjs` |
+| `deno task vitest` | Run the Vitest unit test suite |
 
 ## Make commands
 
@@ -218,6 +219,18 @@ deno task e2e-test
 ```
 
 Tests run in Chromium, Firefox, and WebKit. The base URL is `https://kanary.local.dev` with HTTPS errors ignored (self-signed cert from the local proxy).
+
+### Generating tests (codegen)
+
+Playwright's codegen mode opens a real browser on your screen and records your interactions as a test script. Because it requires a visible display, **it must be run from your host machine** — not inside the dev container.
+
+A `Makefile` at the project root simplifies this. From your host machine (with the containers running), just run:
+
+```bash
+make codegen
+```
+
+This executes `playwright codegen` inside the `playwright` container against `https://kanary.local.dev` using Firefox, and saves the recorded script to `tests/playwright/generated.spec.ts`.
 
 ### Pre-commit enforcement
 

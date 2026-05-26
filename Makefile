@@ -66,6 +66,7 @@ setup-ssh-agent: ## Add ssh_agent_reload function and SSH_AUTH_SOCK export to yo
 	echo "  -> Running ssh_agent_reload on host..."; \
 	bash -lc 'ssh_agent_reload'
 
+
 coffee: ## Get your terminal caffeinated
 	@echo -e '(ﾉ ^ヮ^)ﾉ *:･ﾟ✧ \342\230\225\012'
 
@@ -73,3 +74,4 @@ coffee: ## Get your terminal caffeinated
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help: ## Magic terminal on my screen, what is the fairest help menu of them all?
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+

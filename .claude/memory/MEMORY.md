@@ -13,3 +13,4 @@
 - [Playwright test setup](project_playwright_setup.md) — Docker trigger architecture, deno task e2e-test, pre-commit enforcement, CI workflow, test file index, and MCP quirks
 - [CI/CD workflows](project_cicd_workflows.md) — auto-create-pr (feature/bugfix branches) and e2e (Deno Deploy preview polling) workflows; required secrets
 - [Playwright collapse test patterns](feedback_playwright_collapse_patterns.md) — per-mechanism selectors/assertions for DaisyUI checkbox collapse, DaisyUI React-state collapse, and custom conditional-render collapse; ID naming convention
+- [Docker Compose filename](feedback_compose_filename.md) — this project uses compose.yaml (V2 preferred name), not docker-compose.yml; always check compose.yaml first
