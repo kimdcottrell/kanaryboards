@@ -8,6 +8,10 @@
       "type": "http",
       "url": "https://mcp.docs.astro.build/mcp"
     },
+    "Clerk Docs": {
+      "type": "http",
+      "url": "https://mcp.clerk.com/mcp"
+    },
     "MCPDoc": {
       "type": "sse",
       "url": "http://mcp_mcpdoc:8082/sse"

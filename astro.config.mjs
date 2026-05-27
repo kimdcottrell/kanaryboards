@@ -3,12 +3,14 @@ import { defineConfig } from "astro/config";
 import deno from "@deno/astro-adapter";
 import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
+import clerk from '@clerk/astro'
 
 // https://astro.build/config
 export default defineConfig({
   adapter: deno(),
-  integrations: [react()],
+  integrations: [react(), clerk()],
 
+  
   output: "server",
 
   security: {

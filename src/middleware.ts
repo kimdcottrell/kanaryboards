@@ -1,6 +1,7 @@
-import { defineMiddleware } from "astro:middleware";
+import { defineMiddleware, sequence } from "astro:middleware";
+import { clerkMiddleware } from "@clerk/astro/server";
 
-export const onRequest = defineMiddleware((context, next) => {
+const boardMiddleware = defineMiddleware((context, next) => {
   let boardId = context.cookies.get("boardId")?.value;
   if (!boardId) {
     boardId = crypto.randomUUID();
@@ -14,3 +15,5 @@ export const onRequest = defineMiddleware((context, next) => {
   context.locals.boardId = boardId;
   return next();
 });
+
+export const onRequest = sequence(clerkMiddleware(), boardMiddleware);

@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import BoardWrapper from "../components/BoardWrapper";
+import BoardWrapper from "../components/BoardWrapper.jsx";
+import { Show } from "@clerk/astro/components";
 
 const boardId = Astro.locals.boardId;
 ---
@@ -22,7 +23,14 @@ const boardId = Astro.locals.boardId;
       Deno, and TailwindCSS / DaisyUI. <br /><br />
       Create rows and tasks, drag and drop them around as needed.<br /><br />
       Generate tasks using AI by entering a prompt describing the type of tasks you
-      want to create, and the AI will return a list of tasks matching your description.
+      want to create, and the AI will return a list of tasks matching your description.<br
+      /><br />
+      <Show when="signed-out">
+        <p>Sign in to try Clerk out!</p>
+      </Show>
+      <Show when="signed-in">
+        <p>You are signed in!</p>
+      </Show>
     </p>
   </header>
   <section class="mx-auto w-full relative z-1">
