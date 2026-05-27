@@ -8,6 +8,13 @@ import ThemeProvider from "@components/theme/ThemeProvider";
 import ThemeToggle from "@components/theme/ThemeToggle";
 import GoogleAnalytics from "@components/seo/GoogleAnalytics.astro";
 
+import {
+  Show,
+  UserButton,
+  SignInButton,
+  SignUpButton,
+} from "@clerk/astro/components";
+
 interface Props {
   title?: string;
   description?: string;
@@ -28,6 +35,13 @@ const googleTag = import.meta.env.GOOGLE_TAG;
   </head>
   <body>
     <nav class="navbar grid bg-base-300 shadow-sm">
+      <Show when="signed-out">
+        <SignInButton mode="modal" />
+        <SignUpButton mode="modal" />
+      </Show>
+      <Show when="signed-in">
+        <UserButton />
+      </Show>
       <div class="w-11/12 mx-auto flex items-center justify-between">
         <a href="/" class="flex items-center text-xl font-bold">
           <span
