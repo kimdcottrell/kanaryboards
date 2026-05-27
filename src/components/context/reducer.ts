@@ -3,27 +3,15 @@ import {
   createId,
   emptyTaskDraft,
   initialDefaultColumnNames,
-  loadPersistedState,
 } from "./constants.ts";
 
 export const createInitialState = (): BoardState => {
-  const persisted = loadPersistedState();
-  const defaultColumnNames: string[] = persisted?.defaultColumnNames ??
-    initialDefaultColumnNames;
-  const columns = persisted?.columns ??
-    defaultColumnNames.map((name: string) => ({ id: createId(), name }));
-
   return {
-    rows: persisted?.rows ?? [
-      {
-        id: createId(),
-        name: "Sample Project",
-        color: "var(--color-row-blue)",
-      },
-    ],
-    columns,
-    tasks: persisted?.tasks ?? [],
-    defaultColumnNames,
+    rows: [],
+    columns: [],
+    tasks: [],
+    defaultColumnNames: initialDefaultColumnNames,
+    boardLoaded: false,
     newRowName: "",
     newRowPrompt: "",
     newRowFormKey: 0,
@@ -686,6 +674,18 @@ export function boardReducer(
 
     // ── BOARD ─────────────────────────────────────────────────────────────────
 
+    case "BOARD/LOAD": {
+      const { rows, columns, tasks, defaultColumnNames } = action.payload;
+      return {
+        ...state,
+        rows,
+        columns,
+        tasks,
+        defaultColumnNames,
+        boardLoaded: true,
+      };
+    }
+
     case "BOARD/RESET": {
       const { defaultColumnNames } = state;
       return {
@@ -700,6 +700,7 @@ export function boardReducer(
           },
         ],
         tasks: [],
+        boardLoaded: true,
       };
     }
 

@@ -1,5 +1,9 @@
 {
-  "allowScripts": ["npm:@anthropic-ai/claude-code", "npm:@google/genai@2.0.1", "npm:esbuild", "npm:protobufjs", "npm:sharp"],
+  "allowScripts": {
+    "allow": ["npm:@anthropic-ai/claude-code", "npm:@google/genai@2.0.1", "npm:esbuild", "npm:protobufjs", "npm:sharp"],
+    "deny": ["npm:@google/genai@2.6.0"]
+  },
+  "unstable": ["kv"],
   "fmt": {
     "exclude": [
       "**/*.md",
@@ -37,7 +41,8 @@
     "@std/http": "jsr:@std/http@^1.1.0",
     "@std/path": "jsr:@std/path@^1.1.4",
     "@pages/": "./src/pages/",
-    "@components/": "./src/components/"
+    "@components/": "./src/components/",
+    "@lib/": "./src/lib/"
     // NOTE: package.json MUST exist for:
     // - resolving preview error of `error: [ERR_UNSUPPORTED_ESM_URL_SCHEME] Only file and data URLs are supported by the default ESM loader. Received protocol 'astro'`
     // - dependabot does not support deno.jsonc

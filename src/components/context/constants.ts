@@ -2,7 +2,13 @@ import type { TaskDraft } from "./types.ts";
 
 export const STORAGE_KEY = "kanary-boards";
 
-export const createId = () => crypto.randomUUID();
+export const createId = (): string =>
+  typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r = Math.random() * 16 | 0;
+      return (c === "x" ? r : (r & 0x3 | 0x8)).toString(16);
+    });
 
 export const initialDefaultColumnNames = ["To Do", "In Progress", "Done"];
 

@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { useBoard } from "./context/useBoard.ts";
 
 export default function TaskCard({
@@ -8,6 +9,7 @@ export default function TaskCard({
   isDropAfter,
   isDragging,
 }) {
+  const navigate = useNavigate();
   const {
     startEditTask,
     handleDragEnd,
@@ -32,7 +34,10 @@ export default function TaskCard({
       <div className="block">
         <div className="join-item bg-base-200 p-4">
           <div
-            onClick={() => startEditTask(task)}
+            onClick={() => {
+              startEditTask(task);
+              navigate(`/task/${task.id}`);
+            }}
             className="flex items-center justify-between gap-3 cursor-grab"
           >
             <h5 className="text-base font-semibold">

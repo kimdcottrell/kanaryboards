@@ -282,6 +282,7 @@ export function useBoard() {
     resetBoard: () => {
       dispatch({ type: "BOARD/RESET" });
       globalThis.localStorage?.removeItem(STORAGE_KEY);
+      fetch("/api/board", { method: "DELETE" });
     },
     confirmResetBoard: async_.confirmResetBoard,
   };

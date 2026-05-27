@@ -1,0 +1,20 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import BoardWrapper from "../../components/BoardWrapper";
+import { getTaskMeta } from "../../lib/kv.ts";
+
+const { taskId } = Astro.params;
+const boardId = Astro.locals.boardId;
+
+const meta = taskId ? await getTaskMeta(taskId) : null;
+const title = meta ? `${meta.title} | Kanary Boards` : "Kanary Boards";
+const description = meta?.description
+  ? meta.description.replace(/<[^>]+>/g, "").slice(0, 160)
+  : undefined;
+---
+
+<BaseLayout title={title} description={description}>
+  <section class="mx-auto w-full relative z-1">
+    <BoardWrapper client:only="react" boardId={boardId} initialTaskId={taskId} />
+  </section>
+</BaseLayout>

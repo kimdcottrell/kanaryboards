@@ -44,6 +44,8 @@ export interface BoardState {
   columns: Column[];
   tasks: Task[];
   defaultColumnNames: string[];
+  // Loading
+  boardLoaded: boolean;
   // Ephemeral
   newRowName: string;
   newRowPrompt: string;
@@ -168,4 +170,13 @@ export type BoardAction =
     payload: { taskId: string; beforeTaskId: string | null };
   }
   // Board
-  | { type: "BOARD/RESET" };
+  | { type: "BOARD/RESET" }
+  | {
+    type: "BOARD/LOAD";
+    payload: {
+      rows: Row[];
+      columns: Column[];
+      tasks: Task[];
+      defaultColumnNames: string[];
+    };
+  };

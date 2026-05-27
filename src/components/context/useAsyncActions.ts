@@ -117,6 +117,7 @@ export function useAsyncActions(
     if (confirmed) {
       dispatch({ type: "BOARD/RESET" });
       globalThis.localStorage?.removeItem(STORAGE_KEY);
+      fetch("/api/board", { method: "DELETE" });
     }
   };
 

@@ -7,7 +7,9 @@
 - [State architecture and types](project_store_types.md) — Types in context/types.ts, reducer in reducer.ts, three contexts in BoardContext.tsx; BoardState, BoardAction, null guard pattern, globalThis vs window; drag-and-drop state split; task ordering by array position; two inline-edit patterns (shared reducer vs local useState + ROW/RENAME)
 - [Drag-and-drop drop indicator style](feedback_drag_drop_indicator.md) — Use row.color for 2px border indicators; transparent default to prevent layout shift; 40% opacity on dragged card
 - [Shared state + autoFocus conflict](feedback_shared_state_autofocus.md) — Don't use shared reducer state for inline editing when multiple components render autoFocus inputs; the later-rendered component wins focus
-- [Project tech stack](project_stack.md) — Deno 2.x, Astro 6.x, React 19, Tailwind 4.x + DaisyUI 5.x, Google GenAI, localStorage only
+- [Project tech stack](project_stack.md) — Deno 2.x, Astro 6.x SSR on Deno Deploy, React 19 + react-router-dom 7, Tailwind 4.x + DaisyUI 5.x, Google GenAI, Deno KV for persistence
+- [URL routing and Deno KV architecture](project_url_routing_kv.md) — Task deep-links at /task/:taskId, KV key structure, boardId cookie, SEO via Astro SSR, BoardContext fetch/save flow
+- [crypto.randomUUID requires secure context](feedback_crypto_uuid_secure_context.md) — Always add a Math.random fallback; fails silently on network IPs over plain HTTP
 - [Preact to React migration](project_preact_to_react_migration.md) — Full migration history: what was removed, added, and changed across all source files
 - [Shell environment & available tooling](reference_environment.md) — Debian 13, bash 5.2, deno 2.7 only (no npm/yarn/pnpm/bun/python/node/ruby/go)
 - [Playwright test setup](project_playwright_setup.md) — Docker trigger architecture, deno task e2e-test, pre-commit enforcement, CI workflow, test file index, and MCP quirks

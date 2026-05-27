@@ -1,0 +1,58 @@
+---
+import "../styles/global.css";
+import "@lyfie/luthor/styles.css";
+import ThemeProvider from "../components/theme/ThemeProvider";
+import ThemeToggle from "../components/theme/ThemeToggle";
+import GoogleAnalytics from "../components/seo/GoogleAnalytics.astro";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title = "Kanary Boards", description } = Astro.props;
+const googleTag = import.meta.env.GOOGLE_TAG;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    {googleTag && <GoogleAnalytics tag={googleTag} />}
+  </head>
+  <body>
+    <nav class="navbar grid bg-base-300 shadow-sm">
+      <div class="w-11/12 mx-auto flex items-center justify-between">
+        <a href="/" class="flex items-center text-xl font-bold">
+          <span class="iconify hugeicons--calendar-love-01 text-5xl"></span>
+        </a>
+        <ThemeProvider>
+          <ThemeToggle client:only="react" />
+        </ThemeProvider>
+      </div>
+    </nav>
+    <main class="min-h-screen">
+      <div
+        class="absolute z-0 min-h-3/12 w-full bg-linear-to-br/oklch from-ctp-flamingo-100/50 dark:from-ctp-lavender-950 mask-b-from-base-100 to-base-100"
+      >
+      </div>
+      <slot />
+    </main>
+    <footer class="mt-10 p-10 text-center text-sm">
+      <p>
+        Made by <a href="https://kimdcottrell.com" class="hover:underline"
+          >Kim D. Cottrell</a
+        > with help by Claude.
+      </p>
+      <br />
+      <p>
+        <em
+          >AI-powered content generation rate limiting may occur when demand is
+          high.</em
+        >
+      </p>
+    </footer>
+  </body>
+</html>

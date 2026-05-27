@@ -1,8 +1,10 @@
+import { useNavigate } from "react-router-dom";
 import Modal from "./Modal.jsx";
 import TaskForm from "./TaskForm.jsx";
 import { useBoard } from "./context/useBoard.ts";
 
 export default function TaskEditModal() {
+  const navigate = useNavigate();
   const {
     taskEditModalOpen,
     editTaskDraft,
@@ -27,18 +29,29 @@ export default function TaskEditModal() {
     clearChecklistPreview,
   } = useBoard();
 
+  const handleClose = () => {
+    cancelEditTask();
+    navigate("/");
+  };
+
   return (
-    <Modal open={taskEditModalOpen} onClose={cancelEditTask}>
+    <Modal open={taskEditModalOpen} onClose={handleClose}>
       <h3 className="text-xl font-semibold">Edit task</h3>
       {editTaskDraft
         ? (
           <TaskForm
             taskDraft={editTaskDraft}
             setTaskDraft={setEditTaskDraft}
-            onSubmit={saveTaskEdit}
+            onSubmit={(e, content) => {
+              saveTaskEdit(e, content);
+              if (e.target.checkValidity()) navigate("/");
+            }}
             submitLabel="Save"
             initialMode="visual-only"
-            onDelete={() => deleteTask(editTaskDraft.id)}
+            onDelete={() => {
+              deleteTask(editTaskDraft.id);
+              navigate("/");
+            }}
             addChecklistItem={addEditChecklistItem}
             updateChecklistItem={updateEditChecklistItem}
             deleteChecklistItem={deleteEditChecklistItem}

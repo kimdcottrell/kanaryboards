@@ -47,12 +47,20 @@ Clears localStorage before React initializes → predictable state (one "Sample 
 
 **Opening task create modal:**
 ```ts
+// Wait for board to render first — evaluate fires before React mounts otherwise
+await page.waitForSelector("button:has(.hugeicons--credit-card-add)");
 await page.evaluate(() => {
   (document.querySelector("button:has(.hugeicons--credit-card-add)") as HTMLButtonElement)?.click();
 });
 await expect(page.getByRole("heading", { name: "Add task" })).toBeVisible();
 ```
-Direct click hits strict-mode violations (3 buttons match). Use `evaluate` or scope to a column locator.
+Direct click hits strict-mode violations (3 buttons match). Use `evaluate` or scope to a column locator. `waitForSelector` is required first — the board is loaded from `/api/board` via a useEffect after mount, so the buttons don't exist immediately after `goto`.
+
+**Filling the task title input:**
+```ts
+await page.getByRole("group", { name: "Title" }).getByRole("textbox").fill("...");
+```
+`dialog input[type='text']` matches 3 elements (title + two checklist inputs). Scope via the `fieldset` group role instead.
 
 **MCP browser quirk (mcp_playwright service):** `browser_click` throws `EACCES: permission denied, mkdir '/var/dev'` but the click executes — verify with `browser_snapshot`.
 

@@ -1,83 +1,31 @@
 ---
-import "../styles/global.css";
-import "@lyfie/luthor/styles.css";
-
+import BaseLayout from "../layouts/BaseLayout.astro";
 import BoardWrapper from "../components/BoardWrapper";
-import ThemeProvider from "../components/theme/ThemeProvider";
-import ThemeToggle from "../components/theme/ThemeToggle";
-import GoogleAnalytics from "../components/seo/GoogleAnalytics.astro";
 
-const googleTag = import.meta.env.GOOGLE_TAG;
+const boardId = Astro.locals.boardId;
 ---
 
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Kanary Boards</title>
-        {googleTag && <GoogleAnalytics tag={googleTag} />}
-    </head>
-    <body>
-        <nav class="navbar grid bg-base-300 shadow-sm">
-            <div class="w-11/12 mx-auto flex items-center justify-between">
-                <a href="" class="flex items-center text-xl font-bold">
-                    <span class="iconify hugeicons--calendar-love-01 text-5xl"
-                    ></span>
-                </a>
-                <ThemeProvider>
-                    <ThemeToggle client:only="react" />
-                </ThemeProvider>
-            </div>
-        </nav>
-        <main class="min-h-screen">
-            <div
-                class="absolute z-0 min-h-3/12 w-full bg-linear-to-br/oklch from-ctp-flamingo-100/50 dark:from-ctp-lavender-950 mask-b-from-base-100 to-base-100"
-            >
-            </div>
-            <header
-                class="w-11/12 relative z-1 m-auto py-16 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
-            >
-                <div>
-                    <p class="text-sm uppercase tracking-[0.3em]">
-                        Organize your workflow
-                    </p>
-                    <h1
-                        class="mt-3 text-5xl leading-15 font-semibold bg-clip-text text-transparent bg-linear-to-r from-accent to-secondary"
-                    >
-                        Kanary Boards
-                    </h1>
-                </div>
-                <p class="max-w-2xl">
-                    An AI-native kanban-style project management app built with
-                    Astro, React, Deno, and TailwindCSS / DaisyUI. <br /><br />
-                    Create rows and tasks, drag and drop them around as needed.<br
-                    /><br />
-                    Generate tasks using AI by entering a prompt describing the type
-                    of tasks you want to create, and the AI will return a list of
-                    tasks matching your description.<br /><br />
-                    Data is only persisted in local browser storage... <em
-                        ><small>For now.</small></em
-                    >
-                </p>
-            </header>
-            <section class="mx-auto w-full relative z-1">
-                <BoardWrapper client:only="react" />
-            </section>
-        </main>
-        <footer class="mt-10 p-10 text-center text-sm">
-            <p>
-                Made by <a
-                    href="https://kimdcottrell.com"
-                    class="hover:underline">Kim D. Cottrell</a
-                > with help by Claude.
-            </p>
-            <br />
-            <p>
-                <em
-                    >AI-powered content generation rate limiting may occur when
-                    demand is high.</em
-                >
-            </p>
-        </footer>
-    </body>
-</html>
+<BaseLayout>
+  <header
+    class="w-11/12 relative z-1 m-auto py-16 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+  >
+    <div>
+      <p class="text-sm uppercase tracking-[0.3em]">Organize your workflow</p>
+      <h1
+        class="mt-3 text-5xl leading-15 font-semibold bg-clip-text text-transparent bg-linear-to-r from-accent to-secondary"
+      >
+        Kanary Boards
+      </h1>
+    </div>
+    <p class="max-w-2xl">
+      An AI-native kanban-style project management app built with Astro, React,
+      Deno, and TailwindCSS / DaisyUI. <br /><br />
+      Create rows and tasks, drag and drop them around as needed.<br /><br />
+      Generate tasks using AI by entering a prompt describing the type of tasks you
+      want to create, and the AI will return a list of tasks matching your description.
+    </p>
+  </header>
+  <section class="mx-auto w-full relative z-1">
+    <BoardWrapper client:only="react" boardId={boardId} />
+  </section>
+</BaseLayout>
