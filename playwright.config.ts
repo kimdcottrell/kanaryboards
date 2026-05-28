@@ -12,6 +12,7 @@ export default defineConfig({
     webServer: {
       command: 'deno task dev',
       reuseExistingServer: true,
+      url: 'https://kanary.local.dev',
       wait: {
         stdout: /watching for file changes.../,
       },

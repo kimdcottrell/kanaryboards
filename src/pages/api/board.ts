@@ -1,26 +1,8 @@
 export const prerender = false;
 
 import type { APIRoute } from "astro";
-import { deleteBoard, getBoard, saveBoard } from "../../lib/kv.ts";
-import type { PersistedBoard } from "../../lib/kv.ts";
-import {
-  createId,
-  initialDefaultColumnNames,
-} from "../../components/context/constants.ts";
-
-function defaultBoard(): PersistedBoard {
-  const defaultColumnNames = initialDefaultColumnNames;
-  return {
-    rows: [{
-      id: createId(),
-      name: "Sample Project",
-      color: "var(--color-row-blue)",
-    }],
-    columns: defaultColumnNames.map((name) => ({ id: createId(), name })),
-    tasks: [],
-    defaultColumnNames,
-  };
-}
+import { deleteBoard, getBoard, saveBoard } from "@lib/kv.ts";
+import type { PersistedBoard } from "@lib/kv.ts";
 
 function jsonResponse(body: object, status: number): Response {
   return new Response(JSON.stringify(body), {
@@ -32,10 +14,13 @@ function jsonResponse(body: object, status: number): Response {
 export const GET: APIRoute = async ({ locals }) => {
   const boardId = locals.boardId;
   const board = await getBoard(boardId);
-  return jsonResponse(board ?? defaultBoard(), 200);
+  if (!board) return jsonResponse({ noData: true }, 404);
+  return jsonResponse(board, 200);
 };
 
 export const PUT: APIRoute = async ({ request, locals }) => {
+  const { userId } = locals.auth();
+  if (!userId) return jsonResponse({ error: "Unauthorized." }, 401);
   const boardId = locals.boardId;
   let body: PersistedBoard;
   try {

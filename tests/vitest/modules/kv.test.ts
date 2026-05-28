@@ -2,6 +2,7 @@
 import { beforeEach, afterEach, describe, test, expect } from "vitest";
 import {
   saveBoard,
+  saveTaskMetas,
   getBoard,
   getTaskMeta,
   deleteBoard,
@@ -113,6 +114,55 @@ describe("saveBoard — board entry", () => {
       expect(meta).not.toBeNull();
       expect(meta?.title).toBe(task.title);
     }
+  });
+});
+
+describe("saveBoard — writeTaskMeta: false", () => {
+  test("does not write task_meta entries", async () => {
+    await saveBoard(boardId, sampleBoard, { writeTaskMeta: false });
+    expect(await getTaskMeta("task-a")).toBeNull();
+    expect(await getTaskMeta("task-b")).toBeNull();
+  });
+
+  test("still persists the board entry", async () => {
+    await saveBoard(boardId, sampleBoard, { writeTaskMeta: false });
+    const board = await getBoard(boardId);
+    expect(board?.tasks).toHaveLength(2);
+  });
+});
+
+// ── saveTaskMetas ─────────────────────────────────────────────────────────────
+
+describe("saveTaskMetas", () => {
+  test("writes a task_meta entry for each supplied task", async () => {
+    await saveTaskMetas(boardId, [
+      { id: "task-a", title: "Write tests", description: "Important work" },
+      { id: "task-b", title: "Deploy", description: "" },
+    ]);
+    expect(await getTaskMeta("task-a")).not.toBeNull();
+    expect(await getTaskMeta("task-b")).not.toBeNull();
+  });
+
+  test("stores the correct title and description", async () => {
+    await saveTaskMetas(boardId, [
+      { id: "task-a", title: "Write tests", description: "Important work" },
+    ]);
+    expect((await getTaskMeta("task-a"))?.title).toBe("Write tests");
+    expect((await getTaskMeta("task-a"))?.description).toBe("Important work");
+  });
+
+  test("associates the boardId on each entry", async () => {
+    await saveTaskMetas(boardId, [
+      { id: "task-a", title: "Write tests", description: "" },
+    ]);
+    expect((await getTaskMeta("task-a"))?.boardId).toBe(boardId);
+  });
+
+  test("is independent of saveBoard — writes meta without touching board entry", async () => {
+    await saveTaskMetas(boardId, [
+      { id: "task-a", title: "Write tests", description: "" },
+    ]);
+    expect(await getBoard(boardId)).toBeNull();
   });
 });
 

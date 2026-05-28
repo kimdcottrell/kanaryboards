@@ -4,6 +4,8 @@ import BoardWrapper from "../components/BoardWrapper.jsx";
 import { Show } from "@clerk/astro/components";
 
 const boardId = Astro.locals.boardId;
+const { userId } = Astro.locals.auth();
+const isAuthenticated = !!userId;
 ---
 
 <BaseLayout>
@@ -34,6 +36,6 @@ const boardId = Astro.locals.boardId;
     </p>
   </header>
   <section class="mx-auto w-full relative z-1">
-    <BoardWrapper client:only="react" boardId={boardId} />
+    <BoardWrapper client:only="react" boardId={boardId} isAuthenticated={isAuthenticated} />
   </section>
 </BaseLayout>

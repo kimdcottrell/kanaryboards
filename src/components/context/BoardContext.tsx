@@ -3,7 +3,11 @@ import { useCallback, useContext, useEffect, useReducer, useRef } from "react";
 import type { Dispatch, ReactNode } from "react";
 import type { BoardAction, BoardState } from "./types.ts";
 import { boardReducer, createInitialState } from "./reducer.ts";
-import { STORAGE_KEY } from "./constants.ts";
+import {
+  createDefaultBoard,
+  STORAGE_KEY,
+  TASK_META_STORAGE_KEY,
+} from "./constants.ts";
 
 export const BoardStateContext = createContext<BoardState | null>(null);
 export const BoardDispatchContext = createContext<Dispatch<BoardAction> | null>(
@@ -33,7 +37,11 @@ export function useBoardDispatch(): Dispatch<BoardAction> {
 }
 
 export function BoardProvider(
-  { children, boardId }: { children: ReactNode; boardId: string },
+  { children, boardId, isAuthenticated = false }: {
+    children: ReactNode;
+    boardId: string;
+    isAuthenticated?: boolean;
+  },
 ) {
   const [state, dispatch] = useReducer(
     boardReducer,
@@ -41,59 +49,122 @@ export function BoardProvider(
     createInitialState,
   );
 
-  // Load board from API on mount, migrating localStorage data if present.
+  // Load board on mount. Authenticated: load from API, migrate localStorage if needed.
+  // Unauthenticated: load from localStorage (falling back to API for legacy KV data).
   useEffect(() => {
     async function load() {
-      const res = await fetch("/api/board");
-      if (!res.ok) return;
-      const remote = await res.json();
+      if (isAuthenticated) {
+        const res = await fetch("/api/board");
+        // Non-404 errors are unexpected — bail out and leave the board unloaded.
+        if (!res.ok && res.status !== 404) return;
+        const hasRemoteData = res.ok;
+        const remote = hasRemoteData ? await res.json() : null;
 
-      // If the server returned an empty board (no tasks/rows beyond defaults),
-      // check localStorage for data to migrate.
-      const hasRemoteData = remote.tasks?.length > 0 || remote.rows?.length > 1;
-      if (!hasRemoteData) {
-        const stored = globalThis.localStorage?.getItem(STORAGE_KEY);
-        if (stored) {
+        // Migrate task_meta that was held in localStorage while unauthenticated.
+        const storedMeta = globalThis.localStorage?.getItem(
+          TASK_META_STORAGE_KEY,
+        );
+        if (storedMeta) {
           try {
-            const local = JSON.parse(stored);
-            if (local.tasks?.length > 0 || local.rows?.length > 1) {
-              await fetch("/api/board", {
-                method: "PUT",
+            const meta = JSON.parse(storedMeta);
+            const tasks = Object.entries(meta).map(([id, m]) => {
+              const { title, description } = m as {
+                title: string;
+                description: string;
+              };
+              return { id, title, description };
+            });
+            if (tasks.length > 0) {
+              await fetch("/api/task-meta", {
+                method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(local),
+                body: JSON.stringify({ tasks }),
               });
-              globalThis.localStorage?.removeItem(STORAGE_KEY);
-              dispatch({ type: "BOARD/LOAD", payload: local });
-              return;
             }
+            globalThis.localStorage?.removeItem(TASK_META_STORAGE_KEY);
           } catch {
             // ignore malformed localStorage
           }
         }
-      }
 
-      dispatch({ type: "BOARD/LOAD", payload: remote });
+        // Migrate full board from localStorage if the server has no data yet.
+        if (!hasRemoteData) {
+          const stored = globalThis.localStorage?.getItem(STORAGE_KEY);
+          if (stored) {
+            try {
+              const local = JSON.parse(stored);
+              const putRes = await fetch("/api/board", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(local),
+              });
+              if (putRes.ok) {
+                globalThis.localStorage?.removeItem(STORAGE_KEY);
+              }
+              dispatch({ type: "BOARD/LOAD", payload: local });
+              return;
+            } catch {
+              // ignore malformed localStorage
+            }
+          }
+          dispatch({ type: "BOARD/LOAD", payload: createDefaultBoard() });
+          return;
+        }
+
+        dispatch({ type: "BOARD/LOAD", payload: remote });
+      } else {
+        // Unauthenticated: board lives in localStorage only, no KV interaction.
+        const stored = globalThis.localStorage?.getItem(STORAGE_KEY);
+        if (stored) {
+          try {
+            const local = JSON.parse(stored);
+            dispatch({ type: "BOARD/LOAD", payload: local });
+            return;
+          } catch {
+            // ignore malformed localStorage
+          }
+        }
+        dispatch({ type: "BOARD/LOAD", payload: createDefaultBoard() });
+      }
     }
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [boardId]);
+  }, [boardId, isAuthenticated]);
 
-  // Persist to API whenever board data changes (after initial load).
+  // Persist board on state changes (after initial load).
+  // Authenticated: save to API (KV). Unauthenticated: save to localStorage only.
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (!state.boardLoaded) return;
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
-      fetch("/api/board", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          rows: state.rows,
-          columns: state.columns,
-          tasks: state.tasks,
-          defaultColumnNames: state.defaultColumnNames,
-        }),
-      });
+      const boardSnapshot = {
+        rows: state.rows,
+        columns: state.columns,
+        tasks: state.tasks,
+        defaultColumnNames: state.defaultColumnNames,
+      };
+      if (isAuthenticated) {
+        fetch("/api/board", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(boardSnapshot),
+        });
+      } else {
+        globalThis.localStorage?.setItem(
+          STORAGE_KEY,
+          JSON.stringify(boardSnapshot),
+        );
+        const metaMap = Object.fromEntries(
+          state.tasks.map((
+            t,
+          ) => [t.id, { title: t.title, description: t.description }]),
+        );
+        globalThis.localStorage?.setItem(
+          TASK_META_STORAGE_KEY,
+          JSON.stringify(metaMap),
+        );
+      }
     }, 500);
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
@@ -104,6 +175,7 @@ export function BoardProvider(
     state.tasks,
     state.defaultColumnNames,
     state.boardLoaded,
+    isAuthenticated,
   ]);
 
   const checklistInputRefs = useRef<Record<string, HTMLInputElement>>({});

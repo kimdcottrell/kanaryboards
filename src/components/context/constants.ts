@@ -1,6 +1,7 @@
 import type { TaskDraft } from "./types.ts";
 
 export const STORAGE_KEY = "kanary-boards";
+export const TASK_META_STORAGE_KEY = "kanary-task-meta";
 
 export const createId = (): string =>
   typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
@@ -27,6 +28,17 @@ export const emptyTaskDraft = (rowId: string, colId: string): TaskDraft => ({
   checklist: [{ id: createId(), text: "", checked: false }],
   rowId,
   colId,
+});
+
+export const createDefaultBoard = () => ({
+  rows: [{
+    id: createId(),
+    name: "Sample Project",
+    color: "var(--color-row-blue)",
+  }],
+  columns: initialDefaultColumnNames.map((name) => ({ id: createId(), name })),
+  tasks: [] as import("./types.ts").Task[],
+  defaultColumnNames: initialDefaultColumnNames,
 });
 
 export const loadPersistedState = () => {

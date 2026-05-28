@@ -1,10 +1,13 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import BoardWrapper from "../../components/BoardWrapper";
-import { getTaskMeta } from "../../lib/kv.ts";
+import BoardWrapper from "@components/BoardWrapper";
+import { getTaskMeta } from "@lib/kv.ts";
 
 const { taskId } = Astro.params;
 const boardId = Astro.locals.boardId;
+const { userId } = Astro.locals.auth();
+console.log("Task ID:", taskId);
+const isAuthenticated = !!userId;
 
 const meta = taskId ? await getTaskMeta(taskId) : null;
 const title = meta ? `${meta.title} | Kanary Boards` : "Kanary Boards";
@@ -15,6 +18,11 @@ const description = meta?.description
 
 <BaseLayout title={title} description={description}>
   <section class="mx-auto w-full relative z-1">
-    <BoardWrapper client:only="react" boardId={boardId} initialTaskId={taskId} />
+    <BoardWrapper
+      client:only="react"
+      boardId={boardId}
+      initialTaskId={taskId}
+      isAuthenticated={isAuthenticated}
+    />
   </section>
 </BaseLayout>

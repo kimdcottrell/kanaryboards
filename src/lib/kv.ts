@@ -31,10 +31,32 @@ export async function getBoard(
 export async function saveBoard(
   boardId: string,
   board: PersistedBoard,
+  opts?: { writeTaskMeta?: boolean },
 ): Promise<void> {
   const kv = await getKv();
   const tx = kv.atomic().set(["board", boardId], board);
-  for (const task of board.tasks) {
+  if (opts?.writeTaskMeta !== false) {
+    for (const task of board.tasks) {
+      tx.set(
+        ["task_meta", task.id],
+        {
+          title: task.title,
+          description: task.description,
+          boardId,
+        } satisfies TaskMeta,
+      );
+    }
+  }
+  await tx.commit();
+}
+
+export async function saveTaskMetas(
+  boardId: string,
+  tasks: Array<{ id: string; title: string; description: string }>,
+): Promise<void> {
+  const kv = await getKv();
+  const tx = kv.atomic();
+  for (const task of tasks) {
     tx.set(
       ["task_meta", task.id],
       {
