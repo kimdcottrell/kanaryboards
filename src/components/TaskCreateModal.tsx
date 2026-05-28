@@ -1,5 +1,5 @@
-import Modal from "./Modal.jsx";
-import TaskForm from "./TaskForm.jsx";
+import Modal from "./Modal.tsx";
+import TaskForm from "./TaskForm.tsx";
 import { useBoard } from "./context/useBoard.ts";
 
 export default function TaskCreateModal() {

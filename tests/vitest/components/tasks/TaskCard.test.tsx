@@ -14,7 +14,7 @@ vi.mock("@components/context/useBoard.ts", () => ({
 }));
 
 import { useBoard } from "@components/context/useBoard.ts";
-import TaskCard from "@components/TaskCard.jsx";
+import TaskCard from "@components/TaskCard.tsx";
 
 const mockUseBoard = vi.mocked(useBoard);
 const board = makeBaseBoardState();

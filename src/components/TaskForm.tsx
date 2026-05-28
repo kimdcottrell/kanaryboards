@@ -54,7 +54,7 @@ function useLuthorTheme() {
 
 import ChecklistSection, {
   ChecklistGenerationCollapse,
-} from "./ChecklistSection.jsx";
+} from "./ChecklistSection.tsx";
 
 export default function TaskForm({
   taskDraft,

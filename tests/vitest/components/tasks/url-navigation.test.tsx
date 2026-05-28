@@ -20,9 +20,9 @@ vi.mock("react-router-dom", async (importOriginal) => {
 vi.mock("@components/context/useBoard.ts", () => ({ useBoard: vi.fn() }));
 
 // Stub heavy child components used by BoardView that aren't under test here
-vi.mock("@components/BoardConfiguration.jsx", () => ({ default: () => null }));
-vi.mock("@components/RowBoard.jsx", () => ({ default: () => null }));
-vi.mock("@components/TaskCreateModal.jsx", () => ({ default: () => null }));
+vi.mock("@components/BoardConfiguration.tsx", () => ({ default: () => null }));
+vi.mock("@components/RowBoard.tsx", () => ({ default: () => null }));
+vi.mock("@components/TaskCreateModal.tsx", () => ({ default: () => null }));
 // TaskEditModal is NOT mocked — it is rendered directly in tests below
 
 // Stub the rich-text editor used inside TaskForm / TaskEditModal
@@ -32,9 +32,9 @@ vi.mock("@lyfie/luthor", () => ({
 }));
 
 import { useBoard } from "@components/context/useBoard.ts";
-import TaskCard from "@components/TaskCard.jsx";
-import TaskEditModal from "@components/TaskEditModal.jsx";
-import BoardView from "@components/BoardView.jsx";
+import TaskCard from "@components/TaskCard.tsx";
+import TaskEditModal from "@components/TaskEditModal.tsx";
+import BoardView from "@components/BoardView.tsx";
 import {
   makeBaseBoardState,
   mockRow,

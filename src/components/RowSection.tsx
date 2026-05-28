@@ -1,5 +1,5 @@
 import { useState } from "react";
-import ColumnCard from "./ColumnCard.jsx";
+import ColumnCard from "./ColumnCard.tsx";
 import CloseButton from "./buttons/CloseButton.tsx";
 import { useBoard } from "./context/useBoard.ts";
 

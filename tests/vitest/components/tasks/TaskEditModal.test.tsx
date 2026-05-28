@@ -30,7 +30,7 @@ vi.mock("@lyfie/luthor", () => ({
 }));
 
 import { useBoard } from "@components/context/useBoard.ts";
-import TaskEditModal from "@components/TaskEditModal.jsx";
+import TaskEditModal from "@components/TaskEditModal.tsx";
 
 const mockUseBoard = vi.mocked(useBoard);
 const board = makeBaseBoardState();

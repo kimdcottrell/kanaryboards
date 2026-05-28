@@ -16,7 +16,7 @@ const MOCK_TASKS_RESPONSE = {
 };
 
 /**
- * BoardConfiguration.jsx — #board-config-create-new-row section.
+ * BoardConfiguration.tsx — #board-config-create-new-row section.
  * Contains a form with:
  *   - Row name input (required, no id, identified by placeholder)
  *   - AI prompt input (#newRowPrompt, optional)

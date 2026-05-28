@@ -1,4 +1,4 @@
-import RowSection from "./RowSection.jsx";
+import RowSection from "./RowSection.tsx";
 import { useBoard } from "./context/useBoard.ts";
 
 export default function RowBoard() {
