@@ -7,9 +7,7 @@ export interface PersistedBoard {
   defaultColumnNames: string[];
 }
 
-export interface TaskMeta {
-  title: string;
-  description: string | object;
+export interface TaskMeta extends Task {
   boardId: string;
 }
 
@@ -38,8 +36,12 @@ export async function saveBoard(
     tx.set(
       ["task_meta", task.id],
       {
+        id: task.id,
+        rowId: task.rowId,
+        colId: task.colId,
         title: task.title,
         description: task.description,
+        checklist: task.checklist,
         boardId,
       } satisfies TaskMeta,
     );
@@ -60,13 +62,7 @@ export async function deleteBoard(boardId: string): Promise<void> {
 export async function getTaskMeta(taskId: string): Promise<TaskMeta | null> {
   const kv = await getKv();
   const result = await kv.get<TaskMeta>(["task_meta", taskId]);
-  if (!result.value) return null;
-  const { description, ...rest } = result.value;
-  try {
-    return { ...rest, description: JSON.parse(description as string) };
-  } catch {
-    return result.value;
-  }
+  return result.value;
 }
 
 /** For unit tests only — injects a KV instance to replace the module singleton. */

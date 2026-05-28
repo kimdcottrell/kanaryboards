@@ -3,10 +3,7 @@ import { useCallback, useContext, useEffect, useReducer, useRef } from "react";
 import type { Dispatch, ReactNode } from "react";
 import type { BoardAction, BoardState } from "./types.ts";
 import { boardReducer, createInitialState } from "./reducer.ts";
-import {
-  createDefaultBoard,
-  STORAGE_KEY,
-} from "./constants.ts";
+import { createDefaultBoard, STORAGE_KEY } from "./constants.ts";
 
 export const BoardStateContext = createContext<BoardState | null>(null);
 export const BoardDispatchContext = createContext<Dispatch<BoardAction> | null>(

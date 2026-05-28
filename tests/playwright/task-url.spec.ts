@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, testNoClerk as test } from "./fixtures.ts";
 
 const CLEAN_BOARD = {
   rows: [{ id: "row-e2e-1", name: "Sample Project", color: "var(--color-row-blue)" }],

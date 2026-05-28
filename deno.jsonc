@@ -27,7 +27,7 @@
     "e2e-test": "deno task playwright test",
     "e2e-test:ui": "deno task playwright test --ui-port=8080 --ui-host=0.0.0.0",
     "husky": "deno run --allow-all husky",
-    "playwright": "START_DEV_SERVER=1 PW_TEST_CONNECT_WS_ENDPOINT='ws://playwright:3000' PW_DISABLE_TS_ESM=1 deno run --allow-all ./node_modules/.bin/playwright",
+    "playwright": "START_DEV_SERVER=1 PW_TEST_CONNECT_WS_ENDPOINT='ws://playwright:3000' PW_DISABLE_TS_ESM=1 deno run --env-file=.env --allow-all ./node_modules/.bin/playwright",
     "preview": "deno run --allow-net --allow-read --allow-env ./dist/server/entry.mjs",
     "vitest": "deno run --allow-all vitest"
   },

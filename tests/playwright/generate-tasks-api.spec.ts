@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, testNoClerk as test } from "./fixtures.ts";
 
 // Override baseURL for this spec: the request fixture runs in the test runner process
 // (app container), so localhost:4321 reaches the dev server directly, bypassing Traefik.

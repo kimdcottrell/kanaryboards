@@ -2,7 +2,6 @@
 import { beforeEach, afterEach, describe, test, expect } from "vitest";
 import {
   saveBoard,
-  saveTaskMetas,
   getBoard,
   getTaskMeta,
   deleteBoard,
@@ -36,7 +35,7 @@ const sampleBoard: PersistedBoard = {
       colId: "col-1",
       title: "Write tests",
       description: "Important work",
-      checklist: [],
+      checklist: [{ id: "item-1", text: "Step one", checked: false }],
     },
     {
       id: "task-b",
@@ -69,6 +68,23 @@ describe("saveBoard — task_meta entries", () => {
   test("task_meta contains the correct description", async () => {
     await saveBoard(boardId, sampleBoard);
     expect((await getTaskMeta("task-a"))?.description).toBe("Important work");
+  });
+
+  test("task_meta contains the correct rowId", async () => {
+    await saveBoard(boardId, sampleBoard);
+    expect((await getTaskMeta("task-a"))?.rowId).toBe("row-1");
+  });
+
+  test("task_meta contains the correct colId", async () => {
+    await saveBoard(boardId, sampleBoard);
+    expect((await getTaskMeta("task-a"))?.colId).toBe("col-1");
+  });
+
+  test("task_meta contains the correct checklist", async () => {
+    await saveBoard(boardId, sampleBoard);
+    expect((await getTaskMeta("task-a"))?.checklist).toEqual([
+      { id: "item-1", text: "Step one", checked: false },
+    ]);
   });
 
   test("task_meta contains the boardId (O(1) SSR lookup key)", async () => {
@@ -117,55 +133,6 @@ describe("saveBoard — board entry", () => {
   });
 });
 
-describe("saveBoard — writeTaskMeta: false", () => {
-  test("does not write task_meta entries", async () => {
-    await saveBoard(boardId, sampleBoard, { writeTaskMeta: false });
-    expect(await getTaskMeta("task-a")).toBeNull();
-    expect(await getTaskMeta("task-b")).toBeNull();
-  });
-
-  test("still persists the board entry", async () => {
-    await saveBoard(boardId, sampleBoard, { writeTaskMeta: false });
-    const board = await getBoard(boardId);
-    expect(board?.tasks).toHaveLength(2);
-  });
-});
-
-// ── saveTaskMetas ─────────────────────────────────────────────────────────────
-
-describe("saveTaskMetas", () => {
-  test("writes a task_meta entry for each supplied task", async () => {
-    await saveTaskMetas(boardId, [
-      { id: "task-a", title: "Write tests", description: "Important work" },
-      { id: "task-b", title: "Deploy", description: "" },
-    ]);
-    expect(await getTaskMeta("task-a")).not.toBeNull();
-    expect(await getTaskMeta("task-b")).not.toBeNull();
-  });
-
-  test("stores the correct title and description", async () => {
-    await saveTaskMetas(boardId, [
-      { id: "task-a", title: "Write tests", description: "Important work" },
-    ]);
-    expect((await getTaskMeta("task-a"))?.title).toBe("Write tests");
-    expect((await getTaskMeta("task-a"))?.description).toBe("Important work");
-  });
-
-  test("associates the boardId on each entry", async () => {
-    await saveTaskMetas(boardId, [
-      { id: "task-a", title: "Write tests", description: "" },
-    ]);
-    expect((await getTaskMeta("task-a"))?.boardId).toBe(boardId);
-  });
-
-  test("is independent of saveBoard — writes meta without touching board entry", async () => {
-    await saveTaskMetas(boardId, [
-      { id: "task-a", title: "Write tests", description: "" },
-    ]);
-    expect(await getBoard(boardId)).toBeNull();
-  });
-});
-
 // ── getTaskMeta ───────────────────────────────────────────────────────────────
 
 describe("getTaskMeta", () => {
@@ -176,7 +143,15 @@ describe("getTaskMeta", () => {
   test("returns the full TaskMeta shape after saveBoard", async () => {
     await saveBoard(boardId, sampleBoard);
     const meta = await getTaskMeta("task-b");
-    expect(meta).toEqual({ title: "Deploy", description: "", boardId });
+    expect(meta).toEqual({
+      id: "task-b",
+      rowId: "row-1",
+      colId: "col-2",
+      title: "Deploy",
+      description: "",
+      checklist: [],
+      boardId,
+    });
   });
 
   test("lookup by taskId is independent of which board the task belongs to", async () => {
