@@ -12,7 +12,7 @@
 - [crypto.randomUUID requires secure context](feedback_crypto_uuid_secure_context.md) — Always add a Math.random fallback; fails silently on network IPs over plain HTTP
 - [Preact to React migration](project_preact_to_react_migration.md) — Full migration history: what was removed, added, and changed across all source files
 - [Shell environment & available tooling](reference_environment.md) — Debian 13, bash 5.2, deno 2.7 only (no npm/yarn/pnpm/bun/python/node/ruby/go)
-- [Playwright test setup](project_playwright_setup.md) — Docker trigger architecture, deno task e2e-test, pre-commit enforcement, CI workflow, test file index, and MCP quirks
+- [Playwright test setup](project_playwright_setup.md) — Docker trigger, test file index, fixtures (test vs testNoClerk), Clerk rate-limit pattern, and standard interaction patterns
 - [CI/CD workflows](project_cicd_workflows.md) — auto-create-pr (feature/bugfix branches) and e2e (Deno Deploy preview polling) workflows; required secrets
 - [Playwright collapse test patterns](feedback_playwright_collapse_patterns.md) — per-mechanism selectors/assertions for DaisyUI checkbox collapse, DaisyUI React-state collapse, and custom conditional-render collapse; ID naming convention
 - [Docker Compose filename](feedback_compose_filename.md) — this project uses compose.yaml (V2 preferred name), not docker-compose.yml; always check compose.yaml first

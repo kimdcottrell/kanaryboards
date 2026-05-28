@@ -1,14 +1,14 @@
 ---
 name: Playwright test setup
-description: Playwright Docker architecture, trigger mechanism, test file locations, pre-commit hook, and CI workflow
+description: Playwright Docker architecture, trigger mechanism, test file locations, fixtures, and Clerk auth pattern
 type: project
 ---
 
 ## Architecture
 
-Playwright runs in a dedicated `playwright` Docker service (`images/playwright.Dockerfile`, `node:25-trixie` — official image is buggy). The container runs a lightweight HTTP trigger server (`images/playwright-trigger.js`) on port 3000. Tests are triggered from the `app` container via `deno task e2e-test`, which calls `curl http://playwright:3000/run`.
+Playwright runs in a dedicated `playwright` Docker service. Tests are triggered from the `app` container via `deno task e2e-test`, which connects via `PW_TEST_CONNECT_WS_ENDPOINT='ws://playwright:3000'` and starts the dev server (`START_DEV_SERVER=1`).
 
-The entrypoint (`images/playwright-entrypoint.sh`) resolves the Traefik IP at startup and writes `<IP> kanary.local.dev` to `/etc/hosts` using `gosu` to drop back from root to node after.
+Config: `playwright.config.ts`. Base URL: `https://kanary.local.dev`. HTTPS errors ignored (self-signed cert). Runs Chromium + Firefox + WebKit. `retries: 1`.
 
 ## Running tests
 
@@ -16,25 +16,35 @@ The entrypoint (`images/playwright-entrypoint.sh`) resolves the Traefik IP at st
 deno task e2e-test
 ```
 
-This auto-starts `deno task dev` if the dev server isn't running, waits for port 4321, fires the trigger, then kills the dev server if it started it.
+## Test files (`tests/playwright/`)
 
-Config: `playwright.config.ts`. Base URL: `https://kanary.local.dev`. HTTPS errors ignored (self-signed cert). Runs Chromium + Firefox + WebKit.
+- `global.setup.ts` — one-time Clerk setup via `clerkSetup()` (runs as "setup" project, others depend on it)
+- `fixtures.ts` — exports `test` (with auto Clerk fixture) and `testNoClerk` (plain base, no Clerk)
+- `theme-toggle.spec.ts` — theme switching, localStorage persistence
+- `board-config.spec.ts` — board configuration / create-row flow
+- `task-url.spec.ts` — task deep-link URL behaviour
+- `generate-tasks-api.spec.ts` — live POST /api/generate-tasks API call
 
-Tests live in `/var/dev/tests/`:
-- `collapse.ts` — collapse/expand behaviour
-- `board-config-create-new-row.ts` — board config create-row flow
-- `____collapse.ts` — draft/WIP collapse tests (leading `____` deprioritizes ordering)
-- `example.spec.ts` — smoke test
+## Fixtures and Clerk
 
-## Pre-commit enforcement
+`fixtures.ts` exports two test variants:
 
-`.husky/pre-commit` runs on every commit:
+```ts
+// Wraps every test with setupClerkTestingToken — use ONLY for tests that need auth
+export const test = base.extend<{ clerkSetup: void }>({
+  clerkSetup: [async ({ page }, use) => {
+    await setupClerkTestingToken({ page, options: { ... } });
+    await use();
+  }, { auto: true }],
+});
+
+// Plain base — no Clerk API calls, use for all non-auth tests
+export const testNoClerk = base;
 ```
-deno fmt
-deno lint
-deno task e2e-test
-```
-Installed via `npm run prepare` (husky). The full E2E suite must pass before a commit is accepted. **Why npm and not deno for husky:** `package.json` is required for husky; `npm install` (not `npm ci`) is used.
+
+**All 4 current spec files use `testNoClerk`** because none of them test authenticated flows. `setupClerkTestingToken` hits `https://guided-bream-79.clerk.accounts.dev/v1/client` on every test; with 4 parallel browser workers it rate-limits (429) and causes React hydration delays in Firefox/WebKit, producing flaky or failing tests.
+
+**Rule:** only import `test` (Clerk-wrapped) from `fixtures.ts` in specs that actually test signed-in behaviour. Everything else uses `testNoClerk`.
 
 ## Standard test patterns
 
@@ -43,30 +53,21 @@ Installed via `npm run prepare` (husky). The full E2E suite must pass before a c
 await page.addInitScript(() => localStorage.clear());
 await page.goto("/");
 ```
-Clears localStorage before React initializes → predictable state (one "Sample Project" row, columns: To Do / In Progress / Done).
+Clears localStorage before React initializes → predictable state.
+
+**Board config panel:**
+```ts
+await page.locator("#board-config-collapse-toggle").click();
+await expect(page.locator("#board-config-create-new-row")).toBeVisible();
+```
+`BoardController` is `client:only="react"` — the toggle only exists after React hydration.
 
 **Opening task create modal:**
 ```ts
-// Wait for board to render first — evaluate fires before React mounts otherwise
 await page.waitForSelector("button:has(.hugeicons--credit-card-add)");
 await page.evaluate(() => {
   (document.querySelector("button:has(.hugeicons--credit-card-add)") as HTMLButtonElement)?.click();
 });
 await expect(page.getByRole("heading", { name: "Add task" })).toBeVisible();
 ```
-Direct click hits strict-mode violations (3 buttons match). Use `evaluate` or scope to a column locator. `waitForSelector` is required first — the board is loaded from `/api/board` via a useEffect after mount, so the buttons don't exist immediately after `goto`.
-
-**Filling the task title input:**
-```ts
-await page.getByRole("group", { name: "Title" }).getByRole("textbox").fill("...");
-```
-`dialog input[type='text']` matches 3 elements (title + two checklist inputs). Scope via the `fieldset` group role instead.
-
-**MCP browser quirk (mcp_playwright service):** `browser_click` throws `EACCES: permission denied, mkdir '/var/dev'` but the click executes — verify with `browser_snapshot`.
-
-## CI
-
-- `auto-create-pr.yml`: auto-creates PR on push to `feature/**` / `bugfix/**` (idempotent).
-- `e2e.yml`: on every PR, polls GitHub Statuses API for Deno Deploy success, then polls Deno Deploy API for preview domain, then runs `npx playwright test` against it. Uploads `playwright-report` artifact (30-day retention).
-
-**Why:** E2E tests run against the real Deno Deploy preview, not localhost, so the CI workflow must wait for both the deploy status and the preview domain to be live before running.
+`waitForSelector` required — board loads from `/api/board` via useEffect after mount.
