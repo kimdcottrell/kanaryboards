@@ -9,7 +9,7 @@ export interface PersistedBoard {
 
 export interface TaskMeta {
   title: string;
-  description: string;
+  description: string | object;
   boardId: string;
 }
 
@@ -31,32 +31,10 @@ export async function getBoard(
 export async function saveBoard(
   boardId: string,
   board: PersistedBoard,
-  opts?: { writeTaskMeta?: boolean },
 ): Promise<void> {
   const kv = await getKv();
   const tx = kv.atomic().set(["board", boardId], board);
-  if (opts?.writeTaskMeta !== false) {
-    for (const task of board.tasks) {
-      tx.set(
-        ["task_meta", task.id],
-        {
-          title: task.title,
-          description: task.description,
-          boardId,
-        } satisfies TaskMeta,
-      );
-    }
-  }
-  await tx.commit();
-}
-
-export async function saveTaskMetas(
-  boardId: string,
-  tasks: Array<{ id: string; title: string; description: string }>,
-): Promise<void> {
-  const kv = await getKv();
-  const tx = kv.atomic();
-  for (const task of tasks) {
+  for (const task of board.tasks) {
     tx.set(
       ["task_meta", task.id],
       {
@@ -82,7 +60,13 @@ export async function deleteBoard(boardId: string): Promise<void> {
 export async function getTaskMeta(taskId: string): Promise<TaskMeta | null> {
   const kv = await getKv();
   const result = await kv.get<TaskMeta>(["task_meta", taskId]);
-  return result.value;
+  if (!result.value) return null;
+  const { description, ...rest } = result.value;
+  try {
+    return { ...rest, description: JSON.parse(description as string) };
+  } catch {
+    return result.value;
+  }
 }
 
 /** For unit tests only — injects a KV instance to replace the module singleton. */

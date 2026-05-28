@@ -44,7 +44,6 @@ export default function TaskEditModal() {
             setTaskDraft={setEditTaskDraft}
             onSubmit={(e, content) => {
               saveTaskEdit(e, content);
-              if (e.target.checkValidity()) navigate("/");
             }}
             submitLabel="Save"
             initialMode="visual-only"
@@ -118,7 +117,7 @@ export default function TaskEditModal() {
             </div>
           </TaskForm>
         )
-        : <p className="mt-4 text-sm">Loading task…</p>}
+        : <p className="mt-4 text-sm">Loading task...</p>}
     </Modal>
   );
 }

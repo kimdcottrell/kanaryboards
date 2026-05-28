@@ -1,7 +1,6 @@
-import type { TaskDraft } from "./types.ts";
+import type { Task, TaskDraft } from "./types.ts";
 
 export const STORAGE_KEY = "kanary-boards";
-export const TASK_META_STORAGE_KEY = "kanary-task-meta";
 
 export const createId = (): string =>
   typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
@@ -30,16 +29,167 @@ export const emptyTaskDraft = (rowId: string, colId: string): TaskDraft => ({
   colId,
 });
 
-export const createDefaultBoard = () => ({
-  rows: [{
+export const createDefaultBoard = () => {
+  const rowId = createId();
+  const columns = initialDefaultColumnNames.map((name) => ({
     id: createId(),
-    name: "Sample Project",
-    color: "var(--color-row-blue)",
-  }],
-  columns: initialDefaultColumnNames.map((name) => ({ id: createId(), name })),
-  tasks: [] as import("./types.ts").Task[],
-  defaultColumnNames: initialDefaultColumnNames,
-});
+    name,
+  }));
+  const todoColId = columns[0].id;
+
+  const task: Task = {
+    id: createId(),
+    rowId,
+    colId: todoColId,
+    title: "Getting Started",
+    description: JSON.stringify({
+      "root": {
+        "children": [{
+          "children": [{
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text": "What does this do?",
+            "type": "text",
+            "version": 1,
+          }],
+          "direction": null,
+          "format": "",
+          "indent": 0,
+          "type": "heading",
+          "version": 1,
+          "tag": "h1",
+        }, {
+          "children": [{
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text":
+              "Think of this as a really fancy todo board. You can use AI to do a lot of the grunt work, such as planning the tasks or checklist subtask items - or even some task execution!",
+            "type": "text",
+            "version": 1,
+          }],
+          "direction": null,
+          "format": "",
+          "indent": 0,
+          "type": "paragraph",
+          "version": 1,
+          "textFormat": 0,
+          "textStyle": "",
+        }, {
+          "children": [{
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text": "How can I get started?",
+            "type": "text",
+            "version": 1,
+          }],
+          "direction": null,
+          "format": "",
+          "indent": 0,
+          "type": "heading",
+          "version": 1,
+          "tag": "h1",
+        }, {
+          "children": [{
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text": "You can add cards in here, but that's boring.",
+            "type": "text",
+            "version": 1,
+          }],
+          "direction": null,
+          "format": "",
+          "indent": 0,
+          "type": "paragraph",
+          "version": 1,
+          "textFormat": 0,
+          "textStyle": "",
+        }, {
+          "children": [{
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text": "Open up the ",
+            "type": "text",
+            "version": 1,
+          }, {
+            "detail": 0,
+            "format": 16,
+            "mode": "normal",
+            "style": "",
+            "text": "Board Configuration",
+            "type": "text",
+            "version": 1,
+          }, {
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text":
+              " outside of this task modal and higher up in the page. In it, fill out the fields in ",
+            "type": "text",
+            "version": 1,
+          }, {
+            "detail": 0,
+            "format": 16,
+            "mode": "normal",
+            "style": "",
+            "text": "Create a new row",
+            "type": "text",
+            "version": 1,
+          }, {
+            "detail": 0,
+            "format": 0,
+            "mode": "normal",
+            "style": "",
+            "text": " to really get the party started.",
+            "type": "text",
+            "version": 1,
+          }],
+          "direction": null,
+          "format": "",
+          "indent": 0,
+          "type": "paragraph",
+          "version": 1,
+          "textFormat": 0,
+          "textStyle": "",
+        }],
+        "direction": null,
+        "format": "",
+        "indent": 0,
+        "type": "root",
+        "version": 1,
+      },
+    }),
+    checklist: [
+      { id: createId(), text: "Open me up", checked: false },
+      {
+        id: createId(),
+        text: "Create a new row via the Board Configuration",
+        checked: false,
+      },
+    ],
+  };
+
+  return {
+    rows: [{
+      id: rowId,
+      name: "Sample Project",
+      color: "var(--color-row-blue)",
+    }],
+    columns,
+    tasks: [task],
+    defaultColumnNames: initialDefaultColumnNames,
+  };
+};
 
 export const loadPersistedState = () => {
   if (typeof globalThis.localStorage === "undefined") return null;

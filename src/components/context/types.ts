@@ -26,7 +26,7 @@ export interface Task {
 
 export interface TaskDraft {
   title: string;
-  description: string;
+  description: string | object;
   checklist: ChecklistItem[];
   rowId: string;
   colId: string;

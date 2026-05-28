@@ -6,7 +6,6 @@ import { boardReducer, createInitialState } from "./reducer.ts";
 import {
   createDefaultBoard,
   STORAGE_KEY,
-  TASK_META_STORAGE_KEY,
 } from "./constants.ts";
 
 export const BoardStateContext = createContext<BoardState | null>(null);
@@ -59,33 +58,6 @@ export function BoardProvider(
         if (!res.ok && res.status !== 404) return;
         const hasRemoteData = res.ok;
         const remote = hasRemoteData ? await res.json() : null;
-
-        // Migrate task_meta that was held in localStorage while unauthenticated.
-        const storedMeta = globalThis.localStorage?.getItem(
-          TASK_META_STORAGE_KEY,
-        );
-        if (storedMeta) {
-          try {
-            const meta = JSON.parse(storedMeta);
-            const tasks = Object.entries(meta).map(([id, m]) => {
-              const { title, description } = m as {
-                title: string;
-                description: string;
-              };
-              return { id, title, description };
-            });
-            if (tasks.length > 0) {
-              await fetch("/api/task-meta", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ tasks }),
-              });
-            }
-            globalThis.localStorage?.removeItem(TASK_META_STORAGE_KEY);
-          } catch {
-            // ignore malformed localStorage
-          }
-        }
 
         // Migrate full board from localStorage if the server has no data yet.
         if (!hasRemoteData) {
@@ -154,15 +126,6 @@ export function BoardProvider(
         globalThis.localStorage?.setItem(
           STORAGE_KEY,
           JSON.stringify(boardSnapshot),
-        );
-        const metaMap = Object.fromEntries(
-          state.tasks.map((
-            t,
-          ) => [t.id, { title: t.title, description: t.description }]),
-        );
-        globalThis.localStorage?.setItem(
-          TASK_META_STORAGE_KEY,
-          JSON.stringify(metaMap),
         );
       }
     }, 500);
