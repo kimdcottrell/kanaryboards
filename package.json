@@ -11,6 +11,7 @@
     "@google/genai": "2.8.0",
     "@iconify/json": "2.2.484",
     "@clerk/astro": "^3.3.1",
+    "@clerk/testing": "^2.0.34",
     "@iconify/tailwind4": "1.2.3",
     "@lyfie/luthor": "2.8.0",
     "@types/react": "19.2.17",
