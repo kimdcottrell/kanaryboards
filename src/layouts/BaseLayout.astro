@@ -52,7 +52,9 @@ const googleTag = import.meta.env.GOOGLE_TAG;
         class="absolute z-0 min-h-3/12 w-full bg-linear-to-br/oklch from-ctp-flamingo-100/50 dark:from-ctp-lavender-950 mask-b-from-base-100 to-base-100"
       >
       </div>
-      <slot />
+      <section class="mx-auto w-full relative z-1">
+        <slot />
+      </section>
     </main>
     <footer class="mt-10 p-10 text-center text-sm">
       <p>

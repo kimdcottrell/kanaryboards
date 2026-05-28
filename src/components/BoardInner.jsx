@@ -6,10 +6,9 @@ import TaskCreateModal from "./TaskCreateModal.jsx";
 import TaskEditModal from "./TaskEditModal.jsx";
 import { useBoard } from "./context/useBoard.ts";
 
-export default function BoardInner({ initialTaskId }) {
+export default function BoardInner() {
   const navigate = useNavigate();
-  const { taskId: routeTaskId } = useParams();
-  const taskId = routeTaskId ?? initialTaskId;
+  const { taskId } = useParams();
   const { tasks, boardLoaded, startEditTask } = useBoard();
 
   useEffect(() => {
