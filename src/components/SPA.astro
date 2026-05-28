@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "@layouts/BaseLayout.astro";
-import BoardWrapper from "@components/BoardWrapper.jsx";
+import BoardController from "@components/BoardController.jsx";
 import { Show } from "@clerk/astro/components";
 
 const boardId = Astro.locals.boardId;
@@ -35,7 +35,7 @@ const isAuthenticated = !!userId;
       </Show>
     </p>
   </header>
-  <BoardWrapper
+  <BoardController
     client:only="react"
     boardId={boardId}
     isAuthenticated={isAuthenticated}

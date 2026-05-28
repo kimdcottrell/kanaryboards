@@ -19,7 +19,7 @@ vi.mock("react-router-dom", async (importOriginal) => {
 
 vi.mock("@components/context/useBoard.ts", () => ({ useBoard: vi.fn() }));
 
-// Stub heavy child components used by BoardInner that aren't under test here
+// Stub heavy child components used by BoardView that aren't under test here
 vi.mock("@components/BoardConfiguration.jsx", () => ({ default: () => null }));
 vi.mock("@components/RowBoard.jsx", () => ({ default: () => null }));
 vi.mock("@components/TaskCreateModal.jsx", () => ({ default: () => null }));
@@ -34,7 +34,7 @@ vi.mock("@lyfie/luthor", () => ({
 import { useBoard } from "@components/context/useBoard.ts";
 import TaskCard from "@components/TaskCard.jsx";
 import TaskEditModal from "@components/TaskEditModal.jsx";
-import BoardInner from "@components/BoardInner.jsx";
+import BoardView from "@components/BoardView.jsx";
 import {
   makeBaseBoardState,
   mockRow,
@@ -206,9 +206,9 @@ describe("TaskEditModal — URL updates on save actions", () => {
   });
 });
 
-// ── BoardInner: deep-link useEffect (URL → open task) ────────────────────────
+// ── BoardView: deep-link useEffect (URL → open task) ────────────────────────
 
-describe("BoardInner — deep-link via initialTaskId", () => {
+describe("BoardView — deep-link via useParams", () => {
   const deepTask = {
     id: "deep-task-id",
     rowId: "row-1",
@@ -219,6 +219,7 @@ describe("BoardInner — deep-link via initialTaskId", () => {
   };
 
   test("startEditTask is called with the matching task when boardLoaded=true and task exists", () => {
+    mockParams.taskId = deepTask.id;
     const startEditTask = vi.fn();
     mockUseBoard.mockReturnValue({
       ...makeBaseBoardState(),
@@ -227,12 +228,13 @@ describe("BoardInner — deep-link via initialTaskId", () => {
       startEditTask,
     } as any);
     act(() => {
-      render(<BoardInner initialTaskId={deepTask.id} />);
+      render(<BoardView />);
     });
     expect(startEditTask).toHaveBeenCalledWith(deepTask);
   });
 
   test("navigate('/', {replace:true}) is called when taskId is not found in loaded board", () => {
+    mockParams.taskId = "ghost-task-id";
     mockUseBoard.mockReturnValue({
       ...makeBaseBoardState(),
       boardLoaded: true,
@@ -240,12 +242,13 @@ describe("BoardInner — deep-link via initialTaskId", () => {
       startEditTask: vi.fn(),
     } as any);
     act(() => {
-      render(<BoardInner initialTaskId="ghost-task-id" />);
+      render(<BoardView />);
     });
     expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });
   });
 
   test("startEditTask is NOT called before the board has loaded", () => {
+    mockParams.taskId = deepTask.id;
     const startEditTask = vi.fn();
     mockUseBoard.mockReturnValue({
       ...makeBaseBoardState(),
@@ -254,7 +257,7 @@ describe("BoardInner — deep-link via initialTaskId", () => {
       startEditTask,
     } as any);
     act(() => {
-      render(<BoardInner initialTaskId={deepTask.id} />);
+      render(<BoardView />);
     });
     expect(startEditTask).not.toHaveBeenCalled();
     expect(mockNavigate).not.toHaveBeenCalled();
@@ -269,14 +272,14 @@ describe("BoardInner — deep-link via initialTaskId", () => {
       startEditTask,
     } as any);
     act(() => {
-      render(<BoardInner initialTaskId={undefined} />);
+      render(<BoardView />);
     });
     expect(startEditTask).not.toHaveBeenCalled();
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 });
 
-describe("BoardInner — deep-link via route params", () => {
+describe("BoardView — deep-link via route params", () => {
   const deepTask = {
     id: "route-task-id",
     rowId: "row-1",
@@ -296,7 +299,7 @@ describe("BoardInner — deep-link via route params", () => {
       startEditTask,
     } as any);
     act(() => {
-      render(<BoardInner />);
+      render(<BoardView />);
     });
     expect(startEditTask).toHaveBeenCalledWith(deepTask);
   });
@@ -310,7 +313,7 @@ describe("BoardInner — deep-link via route params", () => {
       startEditTask: vi.fn(),
     } as any);
     act(() => {
-      render(<BoardInner />);
+      render(<BoardView />);
     });
     expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });
   });
