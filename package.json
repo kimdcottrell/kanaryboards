@@ -11,7 +11,7 @@
     "@google/genai": "2.6.0",
     "@iconify/json": "2.2.478",
     "@iconify/tailwind4": "1.2.3",
-    "@lyfie/luthor": "2.7.11",
+    "@lyfie/luthor": "2.8.0",
     "@types/react": "19.2.15",
     "@types/react-dom": "19.2.3",
     "astro": "6.4.3",
