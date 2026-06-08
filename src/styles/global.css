@@ -94,6 +94,10 @@
 }
 
 @layer utilities {
+  .font-logo {
+    font-family:
+      var(--font-cherry-bomb-one), cursive;
+  }
   .list li, input, .btn {
     @apply rounded-sm;
   }

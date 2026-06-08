@@ -84,6 +84,7 @@ for domain in \
     "api.anthropic.com" \
     "generativelanguage.googleapis.com" \
     "guided-bream-79.clerk.accounts.dev" \
+    "api.clerk.com" \
     "googleapis.com" \
     "sentry.io" \
     "statsig.anthropic.com" \

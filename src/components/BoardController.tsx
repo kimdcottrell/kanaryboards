@@ -1,16 +1,11 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { RouterProvider } from "react-router-dom";
 import { BoardProvider } from "./context/BoardContext.tsx";
-import BoardView from "./BoardView.tsx";
+import { router } from "@lib/spa-router.ts";
 
 export default function BoardController({ boardId, isAuthenticated }) {
   return (
-    <BrowserRouter>
-      <BoardProvider boardId={boardId} isAuthenticated={isAuthenticated}>
-        <Routes>
-          <Route path="/" element={<BoardView />} />
-          <Route path="/task/:taskId" element={<BoardView />} />
-        </Routes>
-      </BoardProvider>
-    </BrowserRouter>
+    <BoardProvider boardId={boardId} isAuthenticated={isAuthenticated}>
+      <RouterProvider router={router} />
+    </BoardProvider>
   );
 }

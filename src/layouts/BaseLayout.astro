@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import "@lyfie/luthor/styles.css";
+import { Font } from "astro:assets";
 import ThemeProvider from "@components/theme/ThemeProvider";
 import ThemeToggle from "@components/theme/ThemeToggle";
 import GoogleAnalytics from "@components/seo/GoogleAnalytics.astro";
@@ -26,25 +27,37 @@ const googleTag = import.meta.env.GOOGLE_TAG;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
+    <Font cssVariable="--font-cherry-bomb-one" />
     {description && <meta name="description" content={description} />}
     {googleTag && <GoogleAnalytics tag={googleTag} />}
   </head>
   <body>
     <nav class="navbar grid bg-base-300 shadow-sm">
-      <Show when="signed-out">
-        <SignInButton mode="modal" />
-        <SignUpButton mode="modal" />
-      </Show>
-      <Show when="signed-in">
-        <UserButton />
-      </Show>
       <div class="w-11/12 mx-auto flex items-center justify-between">
         <a href="/" class="flex items-center text-xl font-bold">
           <span class="iconify hugeicons--calendar-love-01 text-5xl"></span>
+          <h1
+            class="text-3xl leading-15 font-semibold font-logo bg-clip-text text-transparent bg-linear-to-r from-accent to-secondary"
+          >
+            Kanby
+          </h1>
         </a>
-        <ThemeProvider>
-          <ThemeToggle client:only="react" />
-        </ThemeProvider>
+        <div id="login-controls" class="flex items-center gap-4">
+          <ThemeProvider>
+            <ThemeToggle client:only="react" />
+          </ThemeProvider>
+          <Show when="signed-out">
+            <SignInButton asChild mode="modal">
+              <button class="btn btn-warning">
+                <span class="iconify basil--login-solid text-xl"></span>
+                Sign In
+              </button>
+            </SignInButton>
+          </Show>
+          <Show when="signed-in">
+            <UserButton />
+          </Show>
+        </div>
       </div>
     </nav>
     <main class="min-h-screen">
