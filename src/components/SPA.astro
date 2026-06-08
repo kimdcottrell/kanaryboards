@@ -1,7 +1,6 @@
 ---
 import BaseLayout from "@layouts/BaseLayout.astro";
 import BoardController from "@components/BoardController.tsx";
-import { Show } from "@clerk/astro/components";
 
 const boardId = Astro.locals.boardId;
 const { userId } = Astro.locals.auth();
@@ -9,6 +8,9 @@ const isAuthenticated = !!userId;
 ---
 
 <BaseLayout>
+  {
+    /* Props are the only channel from Astro's server context into this client:only React island. */
+  }
   <BoardController
     client:only="react"
     boardId={boardId}

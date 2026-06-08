@@ -11,7 +11,13 @@ function jsonResponse(body: object, status: number): Response {
   });
 }
 
+function authorize(locals: App.Locals): App.Locals | Response {
+  const { isAuthenticated } = locals.auth();
+  if (!isAuthenticated) return jsonResponse({ error: "Unauthorized." }, 401);
+  return locals;
+}
 export const GET: APIRoute = async ({ locals }) => {
+  authorize(locals);
   const boardId = locals.boardId;
   const board = await getBoard(boardId);
   if (!board) return jsonResponse({ noData: true }, 404);
@@ -19,8 +25,7 @@ export const GET: APIRoute = async ({ locals }) => {
 };
 
 export const PUT: APIRoute = async ({ request, locals }) => {
-  const { userId } = locals.auth();
-  if (!userId) return jsonResponse({ error: "Unauthorized." }, 401);
+  authorize(locals);
   const boardId = locals.boardId;
   let body: PersistedBoard;
   try {
@@ -33,6 +38,7 @@ export const PUT: APIRoute = async ({ request, locals }) => {
 };
 
 export const DELETE: APIRoute = async ({ locals }) => {
+  authorize(locals);
   const boardId = locals.boardId;
   await deleteBoard(boardId);
   return jsonResponse({ ok: true }, 200);
