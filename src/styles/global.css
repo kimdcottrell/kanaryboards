@@ -6,7 +6,7 @@
 }
 
 @plugin "@iconify/tailwind4" {
-  prefixes: basil, hugeicons;
+  prefixes: basil, hugeicons, mingcute;
 }
 
 @custom-variant light (&:where([data-theme=kanary-day], [data-theme=kanary-day] *));

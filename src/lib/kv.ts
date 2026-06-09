@@ -13,7 +13,9 @@ async function getKv(): Promise<Deno.Kv> {
   return _kv;
 }
 
-export async function getBoardIdForUser(userId: string): Promise<string | null> {
+export async function getBoardIdForUser(
+  userId: string,
+): Promise<string | null> {
   const kv = await getKv();
   const result = await kv.get<string>(["user_board", userId]);
   return result.value;

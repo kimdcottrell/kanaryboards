@@ -54,7 +54,7 @@ export default function BoardConfiguration() {
     <div className="grid">
       <section
         id="board-config"
-        className="max-w-11/12 place-self-center collapse collapse-arrow mb-16 bg-base-300 p-4 shadow-xl shadow-base-300/20"
+        className="max-w-11/12 mt-16 place-self-center collapse collapse-arrow mb-16 bg-base-300 p-4 shadow-xl shadow-base-300/20"
       >
         <input
           id="board-config-collapse-toggle"

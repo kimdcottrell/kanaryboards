@@ -73,7 +73,10 @@ export function useBoard() {
       });
     },
     reorderColumn: (columnId: string, beforeColumnId: string | null) =>
-      dispatch({ type: "COLUMN/REORDER", payload: { columnId, beforeColumnId } }),
+      dispatch({
+        type: "COLUMN/REORDER",
+        payload: { columnId, beforeColumnId },
+      }),
     deleteColumn: (columnId: string) =>
       dispatch({ type: "COLUMN/DELETE", payload: { columnId } }),
     handleDefaultColumnInputKeyDown: (event: KeyboardEvent) => {

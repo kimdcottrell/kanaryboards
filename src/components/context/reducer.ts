@@ -647,7 +647,9 @@ export function boardReducer(
       }
       // Get sorted cell tasks without the moved task
       const cellTasks = state.tasks
-        .filter((t) => t.rowId === task.rowId && t.colId === task.colId && t.id !== taskId)
+        .filter((t) =>
+          t.rowId === task.rowId && t.colId === task.colId && t.id !== taskId
+        )
         .sort((a, b) => a.order < b.order ? -1 : 1);
 
       let newOrder: string;

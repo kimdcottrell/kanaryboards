@@ -27,7 +27,11 @@ export const emptyTaskDraft = (rowId: string, colId: string): TaskDraft => ({
 
 export const createDefaultBoard = () => {
   const rowId = createId();
-  const columnOrders = generateNKeysBetween(null, null, initialDefaultColumnNames.length);
+  const columnOrders = generateNKeysBetween(
+    null,
+    null,
+    initialDefaultColumnNames.length,
+  );
   const columns = initialDefaultColumnNames.map((title, i) => ({
     id: createId(),
     title,

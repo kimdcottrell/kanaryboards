@@ -76,9 +76,15 @@ export interface BoardState {
 
 export type BoardAction =
   // Columns
-  | { type: "COLUMN/ADD"; payload: { id: string; title: string; order: string } }
+  | {
+    type: "COLUMN/ADD";
+    payload: { id: string; title: string; order: string };
+  }
   | { type: "COLUMN/DELETE"; payload: { columnId: string } }
-  | { type: "COLUMN/REORDER"; payload: { columnId: string; beforeColumnId: string | null } }
+  | {
+    type: "COLUMN/REORDER";
+    payload: { columnId: string; beforeColumnId: string | null };
+  }
   | { type: "COLUMN/SET_INPUT"; payload: { value: string } }
   | { type: "COLUMN/SET_DRAGGED_INDEX"; payload: { index: number | null } }
   | {
@@ -89,7 +95,10 @@ export type BoardAction =
   | { type: "COLUMN/RENAME_SAVE"; payload: { columnId: string } }
   | { type: "COLUMN/RENAME_CANCEL" }
   // Rows
-  | { type: "ROW/ADD"; payload: { id: string; title: string; color: string; order: string } }
+  | {
+    type: "ROW/ADD";
+    payload: { id: string; title: string; color: string; order: string };
+  }
   | { type: "ROW/DELETE"; payload: { rowId: string } }
   | { type: "ROW/MOVE"; payload: { fromIndex: number; toIndex: number } }
   | { type: "ROW/UPDATE_COLOR"; payload: { rowId: string; color: string } }
