@@ -7,6 +7,7 @@ import { Show, UserButton, SignInButton } from "@clerk/astro/components";
 import ThemeProvider from "@components/theme/ThemeProvider";
 import ThemeToggle from "@components/theme/ThemeToggle";
 import GoogleAnalytics from "@components/seo/GoogleAnalytics.astro";
+import Favicons from "@components/seo/Favicons.astro";
 
 interface Props {
   title?: string;
@@ -25,6 +26,7 @@ const googleTag = import.meta.env.GOOGLE_TAG;
     <Font cssVariable="--font-cherry-bomb-one" />
     {description && <meta name="description" content={description} />}
     {googleTag && <GoogleAnalytics tag={googleTag} />}
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" ) />
   </head>
   <body>
     <nav class="navbar grid bg-base-300 shadow-sm">
@@ -74,6 +76,21 @@ const googleTag = import.meta.env.GOOGLE_TAG;
           >
             Discover what can be<br />
             with <span class="font-logo font-normal">Kanby</span>.
+
+            <div
+              role="alert"
+              class="mt-6 alert alert-soft border-1 border-warning/50 alert-warning alert-vertical sm:alert-horizontal"
+            >
+              <span class="iconify hugeicons--chat text-xl"></span>
+              <div>
+                <h3 class="font-bold">KANBY IS STILL IN DEVELOPMENT.</h3>
+                <div class="text-xs">
+                  This is a beta version of the application.<br />
+                  Expect bugs, missing features, and frequent updates.<br />
+                  Your data is not guaranteed to be preserved.
+                </div>
+              </div>
+            </div>
           </h1>
         </div>
         <div class="max-w-2xl flex flex-col">
