@@ -57,7 +57,8 @@ jobs:
         run: npx playwright test
         env:
           BASE_URL: ${{ steps.preview-url.outputs.base_url }}
-
+          PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
