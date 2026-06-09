@@ -1,4 +1,4 @@
-import { generate } from "@std/uuid/v7";
+import { generate } from "@jsr/std__uuid/v7";
 
 // NOTE:
 // This is a simple wrapper around the UUID generation function.
