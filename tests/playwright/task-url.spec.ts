@@ -1,14 +1,13 @@
 import { expect, testNoClerk as test } from "./fixtures.ts";
 
 const CLEAN_BOARD = {
-  rows: [{ id: "row-e2e-1", name: "Sample Project", color: "var(--color-row-blue)" }],
+  rows: [{ id: "row-e2e-1", title: "Sample Project", color: "var(--color-row-blue)", order: "a0" }],
   columns: [
-    { id: "col-e2e-1", name: "To Do" },
-    { id: "col-e2e-2", name: "In Progress" },
-    { id: "col-e2e-3", name: "Done" },
+    { id: "col-e2e-1", title: "To Do", order: "a0" },
+    { id: "col-e2e-2", title: "In Progress", order: "a1" },
+    { id: "col-e2e-3", title: "Done", order: "a2" },
   ],
   tasks: [],
-  defaultColumnNames: ["To Do", "In Progress", "Done"],
 };
 
 test.describe("Task URL", () => {

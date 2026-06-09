@@ -4,11 +4,11 @@
 - [Memory storage location](feedback_memory_location.md) — always write to /var/dev/.claude/memory/, never the global ~/.claude/ scope
 - [Prefer named exports over new files for related shared components](feedback_component_extraction.md) — Extract shared UI as named exports from related existing files; move pure UI state into the extracted component to avoid prop drilling
 - [Astro import extension resolution](reference_astro_import_extensions.md) — Omitting `.jsx`/`.tsx` from local imports is fine; Astro resolves them via TypeScript rules. Deno LSP `no-local` errors on these are false positives.
-- [State architecture and types](project_store_types.md) — Types in context/types.ts, reducer in reducer.ts, three contexts in BoardContext.tsx; BoardState, BoardAction, null guard pattern, globalThis vs window; drag-and-drop state split; task ordering by array position; two inline-edit patterns (shared reducer vs local useState + ROW/RENAME)
+- [State architecture and types](project_store_types.md) — Row/Column use `title`+`order`, Task has `order`; fractional-indexing via `@lib/order.ts`; `defaultColumnNames` removed; COLUMN/ADD, COLUMN/REORDER replace old default-name actions; createTask/addRow compute fractional order
 - [Drag-and-drop drop indicator style](feedback_drag_drop_indicator.md) — Use row.color for 2px border indicators; transparent default to prevent layout shift; 40% opacity on dragged card
 - [Shared state + autoFocus conflict](feedback_shared_state_autofocus.md) — Don't use shared reducer state for inline editing when multiple components render autoFocus inputs; the later-rendered component wins focus
 - [Project tech stack](project_stack.md) — Deno 2.x, Astro 6.x SSR on Deno Deploy, React 19 + react-router-dom 7, Tailwind 4.x + DaisyUI 5.x, Google GenAI, Deno KV for persistence
-- [URL routing and Deno KV architecture](project_url_routing_kv.md) — Task deep-links at /task/:taskId, KV key structure, boardId cookie, SEO via Astro SSR, BoardContext fetch/save flow
+- [URL routing and Deno KV architecture](project_url_routing_kv.md) — KV keys: ["user_board", userId]→boardId, ["board", boardId]→PersistedBoard; no task_meta; middleware uses Clerk userId for authenticated boardId; PersistedBoard has no defaultColumnNames
 - [crypto.randomUUID requires secure context](feedback_crypto_uuid_secure_context.md) — Always add a Math.random fallback; fails silently on network IPs over plain HTTP
 - [Preact to React migration](project_preact_to_react_migration.md) — Full migration history: what was removed, added, and changed across all source files
 - [Shell environment & available tooling](reference_environment.md) — Debian 13, bash 5.2, deno 2.7 only (no npm/yarn/pnpm/bun/python/node/ruby/go)

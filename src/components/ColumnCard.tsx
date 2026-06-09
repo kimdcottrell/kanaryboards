@@ -101,7 +101,7 @@ export default function ColumnCard({ column, row }) {
                 onDoubleClick={() => editColumnTitle(column, row)}
                 title="Double-click to edit"
               >
-                {column.name}
+                {column.title}
               </h4>
             )}
         </div>

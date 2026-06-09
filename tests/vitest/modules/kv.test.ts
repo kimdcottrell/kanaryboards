@@ -3,8 +3,9 @@ import { beforeEach, afterEach, describe, test, expect } from "vitest";
 import {
   saveBoard,
   getBoard,
-  getTaskMeta,
   deleteBoard,
+  getBoardIdForUser,
+  setBoardIdForUser,
   _setKvForTest,
 } from "@lib/kv.ts";
 import type { PersistedBoard } from "@lib/kv.ts";
@@ -23,16 +24,17 @@ afterEach(async () => {
 const boardId = "test-board-001";
 
 const sampleBoard: PersistedBoard = {
-  rows: [{ id: "row-1", name: "Feature", color: "#ff6b6b" }],
+  rows: [{ id: "row-1", title: "Feature", color: "#ff6b6b", order: "a0" }],
   columns: [
-    { id: "col-1", name: "To Do" },
-    { id: "col-2", name: "Done" },
+    { id: "col-1", title: "To Do", order: "a0" },
+    { id: "col-2", title: "Done", order: "a1" },
   ],
   tasks: [
     {
       id: "task-a",
       rowId: "row-1",
       colId: "col-1",
+      order: "a0",
       title: "Write tests",
       description: "Important work",
       checklist: [{ id: "item-1", text: "Step one", checked: false }],
@@ -41,80 +43,17 @@ const sampleBoard: PersistedBoard = {
       id: "task-b",
       rowId: "row-1",
       colId: "col-2",
+      order: "a0",
       title: "Deploy",
       description: "",
       checklist: [],
     },
   ],
-  defaultColumnNames: ["To Do", "Done"],
 };
 
-// ── saveBoard ────────────────────────────────────────────────────────────────
+// ── saveBoard / getBoard ──────────────────────────────────────────────────────
 
-describe("saveBoard — task_meta entries", () => {
-  test("writes a task_meta entry for each task", async () => {
-    await saveBoard(boardId, sampleBoard);
-    const metaA = await getTaskMeta("task-a");
-    const metaB = await getTaskMeta("task-b");
-    expect(metaA).not.toBeNull();
-    expect(metaB).not.toBeNull();
-  });
-
-  test("task_meta contains the correct title", async () => {
-    await saveBoard(boardId, sampleBoard);
-    expect((await getTaskMeta("task-a"))?.title).toBe("Write tests");
-  });
-
-  test("task_meta contains the correct description", async () => {
-    await saveBoard(boardId, sampleBoard);
-    expect((await getTaskMeta("task-a"))?.description).toBe("Important work");
-  });
-
-  test("task_meta contains the correct rowId", async () => {
-    await saveBoard(boardId, sampleBoard);
-    expect((await getTaskMeta("task-a"))?.rowId).toBe("row-1");
-  });
-
-  test("task_meta contains the correct colId", async () => {
-    await saveBoard(boardId, sampleBoard);
-    expect((await getTaskMeta("task-a"))?.colId).toBe("col-1");
-  });
-
-  test("task_meta contains the correct checklist", async () => {
-    await saveBoard(boardId, sampleBoard);
-    expect((await getTaskMeta("task-a"))?.checklist).toEqual([
-      { id: "item-1", text: "Step one", checked: false },
-    ]);
-  });
-
-  test("task_meta contains the boardId (O(1) SSR lookup key)", async () => {
-    await saveBoard(boardId, sampleBoard);
-    expect((await getTaskMeta("task-a"))?.boardId).toBe(boardId);
-  });
-
-  test("each task gets its own distinct task_meta entry", async () => {
-    await saveBoard(boardId, sampleBoard);
-    const metaA = await getTaskMeta("task-a");
-    const metaB = await getTaskMeta("task-b");
-    expect(metaA?.title).toBe("Write tests");
-    expect(metaB?.title).toBe("Deploy");
-  });
-
-  test("overwrites task_meta title when board is re-saved with updated task", async () => {
-    await saveBoard(boardId, sampleBoard);
-    const updated: PersistedBoard = {
-      ...sampleBoard,
-      tasks: [
-        { ...sampleBoard.tasks[0], title: "Write better tests" },
-        sampleBoard.tasks[1],
-      ],
-    };
-    await saveBoard(boardId, updated);
-    expect((await getTaskMeta("task-a"))?.title).toBe("Write better tests");
-  });
-});
-
-describe("saveBoard — board entry", () => {
+describe("saveBoard / getBoard", () => {
   test("getBoard returns the persisted board after saveBoard", async () => {
     await saveBoard(boardId, sampleBoard);
     const board = await getBoard(boardId);
@@ -122,48 +61,40 @@ describe("saveBoard — board entry", () => {
     expect(board?.tasks[0].id).toBe("task-a");
   });
 
-  test("task IDs in the stored board match the task_meta keys", async () => {
+  test("getBoard returns null when no board has been saved", async () => {
+    expect(await getBoard("nonexistent")).toBeNull();
+  });
+
+  test("overwrites the board on a second saveBoard call", async () => {
+    await saveBoard(boardId, sampleBoard);
+    const updated: PersistedBoard = {
+      ...sampleBoard,
+      tasks: [{ ...sampleBoard.tasks[0], title: "Write better tests" }],
+    };
+    await saveBoard(boardId, updated);
+    const board = await getBoard(boardId);
+    expect(board?.tasks).toHaveLength(1);
+    expect(board?.tasks[0].title).toBe("Write better tests");
+  });
+
+  test("board preserves row title and order fields", async () => {
     await saveBoard(boardId, sampleBoard);
     const board = await getBoard(boardId);
-    for (const task of board!.tasks) {
-      const meta = await getTaskMeta(task.id);
-      expect(meta).not.toBeNull();
-      expect(meta?.title).toBe(task.title);
-    }
-  });
-});
-
-// ── getTaskMeta ───────────────────────────────────────────────────────────────
-
-describe("getTaskMeta", () => {
-  test("returns null for an unknown taskId (no board saved yet)", async () => {
-    expect(await getTaskMeta("nonexistent-task")).toBeNull();
+    expect(board?.rows[0].title).toBe("Feature");
+    expect(board?.rows[0].order).toBe("a0");
   });
 
-  test("returns the full TaskMeta shape after saveBoard", async () => {
+  test("board preserves column title and order fields", async () => {
     await saveBoard(boardId, sampleBoard);
-    const meta = await getTaskMeta("task-b");
-    expect(meta).toEqual({
-      id: "task-b",
-      rowId: "row-1",
-      colId: "col-2",
-      title: "Deploy",
-      description: "",
-      checklist: [],
-      boardId,
-    });
+    const board = await getBoard(boardId);
+    expect(board?.columns[1].title).toBe("Done");
+    expect(board?.columns[1].order).toBe("a1");
   });
 
-  test("lookup by taskId is independent of which board the task belongs to", async () => {
-    const otherBoardId = "other-board-999";
-    const otherBoard: PersistedBoard = {
-      ...sampleBoard,
-      tasks: [{ id: "task-x", rowId: "row-1", colId: "col-1", title: "Other", description: "", checklist: [] }],
-    };
+  test("board preserves task order field", async () => {
     await saveBoard(boardId, sampleBoard);
-    await saveBoard(otherBoardId, otherBoard);
-    expect((await getTaskMeta("task-a"))?.boardId).toBe(boardId);
-    expect((await getTaskMeta("task-x"))?.boardId).toBe(otherBoardId);
+    const board = await getBoard(boardId);
+    expect(board?.tasks[0].order).toBe("a0");
   });
 });
 
@@ -176,26 +107,41 @@ describe("deleteBoard", () => {
     expect(await getBoard(boardId)).toBeNull();
   });
 
-  test("removes all task_meta entries for the deleted board's tasks", async () => {
-    await saveBoard(boardId, sampleBoard);
-    await deleteBoard(boardId);
-    expect(await getTaskMeta("task-a")).toBeNull();
-    expect(await getTaskMeta("task-b")).toBeNull();
-  });
-
   test("does not throw when deleting a board that does not exist", async () => {
     await expect(deleteBoard("never-existed")).resolves.not.toThrow();
   });
 
-  test("leaves task_meta of other boards untouched", async () => {
+  test("does not affect other boards", async () => {
     const otherBoardId = "other-board";
-    const otherBoard: PersistedBoard = {
-      ...sampleBoard,
-      tasks: [{ id: "task-other", rowId: "row-1", colId: "col-1", title: "Safe", description: "", checklist: [] }],
-    };
     await saveBoard(boardId, sampleBoard);
-    await saveBoard(otherBoardId, otherBoard);
+    await saveBoard(otherBoardId, sampleBoard);
     await deleteBoard(boardId);
-    expect(await getTaskMeta("task-other")).not.toBeNull();
+    expect(await getBoard(otherBoardId)).not.toBeNull();
+  });
+});
+
+// ── user_board mapping ────────────────────────────────────────────────────────
+
+describe("getBoardIdForUser / setBoardIdForUser", () => {
+  test("returns null when no mapping has been set", async () => {
+    expect(await getBoardIdForUser("user-xyz")).toBeNull();
+  });
+
+  test("returns the boardId after it has been set", async () => {
+    await setBoardIdForUser("user-abc", boardId);
+    expect(await getBoardIdForUser("user-abc")).toBe(boardId);
+  });
+
+  test("each userId maps to its own boardId independently", async () => {
+    await setBoardIdForUser("user-1", "board-111");
+    await setBoardIdForUser("user-2", "board-222");
+    expect(await getBoardIdForUser("user-1")).toBe("board-111");
+    expect(await getBoardIdForUser("user-2")).toBe("board-222");
+  });
+
+  test("overwrites an existing mapping on a second call", async () => {
+    await setBoardIdForUser("user-abc", "old-board");
+    await setBoardIdForUser("user-abc", "new-board");
+    expect(await getBoardIdForUser("user-abc")).toBe("new-board");
   });
 });

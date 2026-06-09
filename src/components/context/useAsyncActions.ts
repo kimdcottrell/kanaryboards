@@ -1,6 +1,7 @@
 import type { Dispatch } from "react";
 import type { BoardAction, BoardState, Task } from "./types.ts";
 import { createId, rowColorOptions, STORAGE_KEY } from "./constants.ts";
+import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
 import { findTodoColumnId } from "./selectors.ts";
 
 const fetchGeneratedItems = async (
@@ -40,10 +41,12 @@ export function useAsyncActions(
     try {
       const titles = await fetchGeneratedItems(prompt, 10);
       const todoColId = findTodoColumnId(state.columns);
-      const tasks: Task[] = titles.map((title) => ({
+      const orders = generateNKeysBetween(null, null, titles.length);
+      const tasks: Task[] = titles.map((title, i) => ({
         id: createId(),
         rowId,
         colId: todoColId,
+        order: orders[i],
         title,
         description: "",
         checklist: [],
@@ -94,12 +97,14 @@ export function useAsyncActions(
     event.preventDefault();
     if (!state.newRowName.trim()) return;
     const newRowId = createId();
+    const lastRow = state.rows[state.rows.length - 1];
     dispatch({
       type: "ROW/ADD",
       payload: {
         id: newRowId,
-        name: state.newRowName.trim(),
+        title: state.newRowName.trim(),
         color: rowColorOptions[0].value,
+        order: generateKeyBetween(lastRow?.order ?? null, null),
       },
     });
     if (state.newRowPrompt.trim()) {

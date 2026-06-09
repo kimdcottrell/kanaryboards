@@ -7,6 +7,7 @@ import {
 import { useAsyncActions } from "./useAsyncActions.ts";
 import { computeTasksByCell } from "./selectors.ts";
 import { createId, STORAGE_KEY } from "./constants.ts";
+import { generateKeyBetween } from "fractional-indexing";
 import type { ChecklistItem, Column, Row, Task, TaskDraft } from "./types.ts";
 
 export function useBoard() {
@@ -60,25 +61,37 @@ export function useBoard() {
     setChecklistInputRef,
 
     // ── Column handlers ─────────────────────────────────────────────────
-    updateColumnsFromDefaultNames: (names: string[]) =>
-      dispatch({ type: "COLUMN/SET_DEFAULT_NAMES", payload: { names } }),
-    addDefaultColumn: (name: string) =>
-      dispatch({ type: "COLUMN/ADD_DEFAULT", payload: { name } }),
-    removeDefaultColumn: (name: string) =>
-      dispatch({ type: "COLUMN/REMOVE_DEFAULT", payload: { name } }),
-    moveDefaultColumn: (fromIndex: number, toIndex: number) =>
+    addColumn: (title: string) => {
+      const lastCol = state.columns[state.columns.length - 1];
       dispatch({
-        type: "COLUMN/MOVE_DEFAULT",
-        payload: { fromIndex, toIndex },
-      }),
+        type: "COLUMN/ADD",
+        payload: {
+          id: createId(),
+          title,
+          order: generateKeyBetween(lastCol?.order ?? null, null),
+        },
+      });
+    },
+    reorderColumn: (columnId: string, beforeColumnId: string | null) =>
+      dispatch({ type: "COLUMN/REORDER", payload: { columnId, beforeColumnId } }),
+    deleteColumn: (columnId: string) =>
+      dispatch({ type: "COLUMN/DELETE", payload: { columnId } }),
     handleDefaultColumnInputKeyDown: (event: KeyboardEvent) => {
       if (event.key === "Enter") {
         event.preventDefault();
-        dispatch({
-          type: "COLUMN/ADD_DEFAULT",
-          payload: { name: state.defaultColumnInput },
-        });
-        dispatch({ type: "COLUMN/SET_INPUT", payload: { value: "" } });
+        const title = state.defaultColumnInput.trim();
+        if (title) {
+          const lastCol = state.columns[state.columns.length - 1];
+          dispatch({
+            type: "COLUMN/ADD",
+            payload: {
+              id: createId(),
+              title,
+              order: generateKeyBetween(lastCol?.order ?? null, null),
+            },
+          });
+          dispatch({ type: "COLUMN/SET_INPUT", payload: { value: "" } });
+        }
       }
     },
     handleDefaultColumnDragStart: (index: number) => (event: DragEvent) => {
@@ -89,21 +102,23 @@ export function useBoard() {
     handleDefaultColumnDragOver: (event: DragEvent) => {
       event.preventDefault();
     },
-    handleDefaultColumnDrop: (index: number) => (event: DragEvent) => {
+    handleDefaultColumnDrop: (targetColumnId: string) => (event: DragEvent) => {
       event.preventDefault();
-      const from = state.draggedDefaultIndex !== null
+      const fromIndex = state.draggedDefaultIndex !== null
         ? state.draggedDefaultIndex
         : Number(event.dataTransfer?.getData("text/plain"));
-      if (from !== index && !Number.isNaN(from)) {
-        dispatch({
-          type: "COLUMN/MOVE_DEFAULT",
-          payload: { fromIndex: from, toIndex: index },
-        });
+      if (!Number.isNaN(fromIndex) && state.columns[fromIndex]) {
+        const draggedId = state.columns[fromIndex].id;
+        if (draggedId !== targetColumnId) {
+          dispatch({
+            type: "COLUMN/REORDER",
+            payload: { columnId: draggedId, beforeColumnId: targetColumnId },
+          });
+        }
       }
       dispatch({ type: "DRAG/SET_DEFAULT_INDEX", payload: { index: null } });
     },
-    deleteColumn: (columnId: string) =>
-      dispatch({ type: "COLUMN/DELETE", payload: { columnId } }),
+
     // ── Row handlers ────────────────────────────────────────────────────
     moveRow: (fromIndex: number, toIndex: number) =>
       dispatch({ type: "ROW/MOVE", payload: { fromIndex, toIndex } }),
@@ -124,7 +139,7 @@ export function useBoard() {
     editRowTitle: (row: Row) =>
       dispatch({
         type: "ROW/EDIT_START",
-        payload: { rowId: row.id, currentName: row.name },
+        payload: { rowId: row.id, currentName: row.title },
       }),
     saveRowTitle: (rowId: string) =>
       dispatch({ type: "ROW/EDIT_SAVE", payload: { rowId } }),
@@ -136,7 +151,7 @@ export function useBoard() {
         payload: {
           columnId: column.id,
           rowId: row.id,
-          currentName: column.name,
+          currentName: column.title,
         },
       }),
     saveColumnTitle: (columnId: string) =>
@@ -153,10 +168,15 @@ export function useBoard() {
     ) => {
       event.preventDefault();
       if (!(event.target as HTMLFormElement).checkValidity()) return;
+      const { rowId, colId } = state.taskDraft;
+      const cellKey = `${rowId}|${colId}`;
+      const cellTasks = tasksByCell[cellKey] ?? [];
+      const firstOrder = cellTasks[0]?.order ?? null;
       const task: Task = {
         id: createId(),
-        rowId: state.taskDraft.rowId,
-        colId: state.taskDraft.colId,
+        rowId,
+        colId,
+        order: generateKeyBetween(null, firstOrder),
         title: state.taskDraft.title.trim(),
         description: content?.json ?? state.taskDraft.description,
         checklist: state.taskDraft.checklist.filter(

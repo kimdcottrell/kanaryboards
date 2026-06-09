@@ -1,16 +1,12 @@
 import type { Task, TaskDraft } from "./types.ts";
+import { createId } from "@lib/uuid.ts";
+import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
+
+export { createId };
 
 export const STORAGE_KEY = "kanary-boards";
 
-export const createId = (): string =>
-  typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-    ? crypto.randomUUID()
-    : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-      const r = Math.random() * 16 | 0;
-      return (c === "x" ? r : (r & 0x3 | 0x8)).toString(16);
-    });
-
-export const initialDefaultColumnNames = ["To Do", "In Progress", "Done"];
+const initialDefaultColumnNames = ["To Do", "In Progress", "Done"];
 
 export const rowColorOptions = [
   { label: "Blue", value: "var(--color-row-blue)" },
@@ -31,9 +27,11 @@ export const emptyTaskDraft = (rowId: string, colId: string): TaskDraft => ({
 
 export const createDefaultBoard = () => {
   const rowId = createId();
-  const columns = initialDefaultColumnNames.map((name) => ({
+  const columnOrders = generateNKeysBetween(null, null, initialDefaultColumnNames.length);
+  const columns = initialDefaultColumnNames.map((title, i) => ({
     id: createId(),
-    name,
+    title,
+    order: columnOrders[i],
   }));
   const todoColId = columns[0].id;
 
@@ -41,6 +39,7 @@ export const createDefaultBoard = () => {
     id: createId(),
     rowId,
     colId: todoColId,
+    order: generateKeyBetween(null, null),
     title: "Getting Started",
     description: JSON.stringify({
       "root": {
@@ -182,12 +181,12 @@ export const createDefaultBoard = () => {
   return {
     rows: [{
       id: rowId,
-      name: "Sample Project",
+      title: "Sample Project",
       color: "var(--color-row-blue)",
+      order: generateKeyBetween(null, null),
     }],
     columns,
     tasks: [task],
-    defaultColumnNames: initialDefaultColumnNames,
   };
 };
 

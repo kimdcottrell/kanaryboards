@@ -8,12 +8,12 @@ function stateWithTask(task: Task): BoardState {
   return {
     ...createInitialState(),
     rows: [
-      { id: "row-1", name: "Row A", color: "#000" },
-      { id: "row-2", name: "Row B", color: "#ccc" },
+      { id: "row-1", title: "Row A", color: "#000", order: "a0" },
+      { id: "row-2", title: "Row B", color: "#ccc", order: "a1" },
     ],
     columns: [
-      { id: "col-1", name: "To Do" },
-      { id: "col-2", name: "Done" },
+      { id: "col-1", title: "To Do", order: "a0" },
+      { id: "col-2", title: "Done", order: "a1" },
     ],
     tasks: [task],
   };
@@ -23,6 +23,7 @@ const baseTask: Task = {
   id: "url-stable-task",
   rowId: "row-1",
   colId: "col-1",
+  order: "a0",
   title: "Original title",
   description: "some desc",
   checklist: [],
@@ -37,6 +38,7 @@ describe("Task URL established on creation", () => {
       id: "brand-new-task-id",
       rowId: "row-1",
       colId: "col-1",
+      order: "a0",
       title: "New task",
       description: "",
       checklist: [],
@@ -51,6 +53,7 @@ describe("Task URL established on creation", () => {
       id: "second-task",
       rowId: "row-1",
       colId: "col-1",
+      order: "a1",
       title: "Second",
       description: "",
       checklist: [],

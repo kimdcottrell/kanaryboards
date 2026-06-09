@@ -1,16 +1,12 @@
 import type { BoardAction, BoardState, ChecklistItem } from "./types.ts";
-import {
-  createId,
-  emptyTaskDraft,
-  initialDefaultColumnNames,
-} from "./constants.ts";
+import { createId, emptyTaskDraft } from "./constants.ts";
+import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
 
 export const createInitialState = (): BoardState => {
   return {
     rows: [],
     columns: [],
     tasks: [],
-    defaultColumnNames: initialDefaultColumnNames,
     boardLoaded: false,
     newRowName: "",
     newRowPrompt: "",
@@ -35,21 +31,6 @@ export const createInitialState = (): BoardState => {
     defaultColumnInput: "",
     draggedDefaultIndex: null,
     draggedTask: null,
-  };
-};
-
-// Reconcile columns from a new set of names, dropping tasks in removed columns.
-const applyDefaultNames = (state: BoardState, names: string[]): BoardState => {
-  const nextColumns = names.map((name) => {
-    const existing = state.columns.find((c) => c.name === name);
-    return existing ?? { id: createId(), name };
-  });
-  const nextIds = new Set(nextColumns.map((c) => c.id));
-  return {
-    ...state,
-    defaultColumnNames: names,
-    columns: nextColumns,
-    tasks: state.tasks.filter((t) => nextIds.has(t.colId)),
   };
 };
 
@@ -91,28 +72,8 @@ export function boardReducer(
   switch (action.type) {
     // ── COLUMNS ──────────────────────────────────────────────────────────────
 
-    case "COLUMN/SET_DEFAULT_NAMES":
-      return applyDefaultNames(state, action.payload.names);
-
-    case "COLUMN/ADD_DEFAULT": {
-      const trimmed = action.payload.name.trim();
-      if (!trimmed || state.defaultColumnNames.includes(trimmed)) return state;
-      return applyDefaultNames(state, [...state.defaultColumnNames, trimmed]);
-    }
-
-    case "COLUMN/REMOVE_DEFAULT":
-      return applyDefaultNames(
-        state,
-        state.defaultColumnNames.filter((n) => n !== action.payload.name),
-      );
-
-    case "COLUMN/MOVE_DEFAULT": {
-      const { fromIndex, toIndex } = action.payload;
-      const names = [...state.defaultColumnNames];
-      const [moved] = names.splice(fromIndex, 1);
-      names.splice(toIndex, 0, moved);
-      return applyDefaultNames(state, names);
-    }
+    case "COLUMN/ADD":
+      return { ...state, columns: [...state.columns, action.payload] };
 
     case "COLUMN/DELETE": {
       const { columnId } = action.payload;
@@ -138,6 +99,26 @@ export function boardReducer(
       return next;
     }
 
+    case "COLUMN/REORDER": {
+      const { columnId, beforeColumnId } = action.payload;
+      const col = state.columns.find((c) => c.id === columnId);
+      if (!col) return state;
+      const without = state.columns.filter((c) => c.id !== columnId);
+      if (beforeColumnId === null) {
+        const last = without[without.length - 1];
+        const newOrder = generateKeyBetween(last?.order ?? null, null);
+        return { ...state, columns: [...without, { ...col, order: newOrder }] };
+      }
+      const idx = without.findIndex((c) => c.id === beforeColumnId);
+      if (idx === -1) return state;
+      const prev = without[idx - 1]?.order ?? null;
+      const next = without[idx].order;
+      const newOrder = generateKeyBetween(prev, next);
+      const result = [...without];
+      result.splice(idx, 0, { ...col, order: newOrder });
+      return { ...state, columns: result };
+    }
+
     case "COLUMN/SET_INPUT":
       return { ...state, defaultColumnInput: action.payload.value };
 
@@ -158,18 +139,10 @@ export function boardReducer(
     case "COLUMN/RENAME_SAVE": {
       const trimmed = state.editingColumnName.trim();
       if (!trimmed) return { ...state, editingColumnId: null };
-      const column = state.columns.find((c) =>
-        c.id === action.payload.columnId
-      );
-      if (!column) return { ...state, editingColumnId: null };
-      const oldName = column.name;
       return {
         ...state,
         columns: state.columns.map((c) =>
-          c.id === action.payload.columnId ? { ...c, name: trimmed } : c
-        ),
-        defaultColumnNames: state.defaultColumnNames.map((n) =>
-          n === oldName ? trimmed : n
+          c.id === action.payload.columnId ? { ...c, title: trimmed } : c
         ),
         editingColumnId: null,
         editingColumnRowId: null,
@@ -229,6 +202,9 @@ export function boardReducer(
       const next = [...state.rows];
       const [moved] = next.splice(fromIndex, 1);
       next.splice(toIndex, 0, moved);
+      const prev = next[toIndex - 1]?.order ?? null;
+      const after = next[toIndex + 1]?.order ?? null;
+      next[toIndex] = { ...moved, order: generateKeyBetween(prev, after) };
       return { ...state, rows: next };
     }
 
@@ -258,7 +234,7 @@ export function boardReducer(
       return {
         ...state,
         rows: state.rows.map((r) =>
-          r.id === action.payload.rowId ? { ...r, name: trimmed } : r
+          r.id === action.payload.rowId ? { ...r, title: trimmed } : r
         ),
         editingRowId: null,
       };
@@ -273,7 +249,7 @@ export function boardReducer(
       return {
         ...state,
         rows: state.rows.map((r) =>
-          r.id === action.payload.rowId ? { ...r, name: trimmed } : r
+          r.id === action.payload.rowId ? { ...r, title: trimmed } : r
         ),
       };
     }
@@ -643,10 +619,18 @@ export function boardReducer(
       if (state.draggedTask.colId === toColId) {
         return { ...state, draggedTask: null };
       }
+      // Append to the end of the target cell
+      const cellTasks = state.tasks
+        .filter((t) => t.rowId === toRowId && t.colId === toColId)
+        .sort((a, b) => a.order < b.order ? -1 : 1);
+      const lastOrder = cellTasks[cellTasks.length - 1]?.order ?? null;
+      const newOrder = generateKeyBetween(lastOrder, null);
       return {
         ...state,
         tasks: state.tasks.map((t) =>
-          t.id === state.draggedTask!.taskId ? { ...t, colId: toColId } : t
+          t.id === state.draggedTask!.taskId
+            ? { ...t, colId: toColId, order: newOrder }
+            : t
         ),
         draggedTask: null,
       };
@@ -661,44 +645,60 @@ export function boardReducer(
       if (!task || taskId === beforeTaskId) {
         return { ...state, draggedTask: null };
       }
-      const without = state.tasks.filter((t) => t.id !== taskId);
+      // Get sorted cell tasks without the moved task
+      const cellTasks = state.tasks
+        .filter((t) => t.rowId === task.rowId && t.colId === task.colId && t.id !== taskId)
+        .sort((a, b) => a.order < b.order ? -1 : 1);
+
+      let newOrder: string;
       if (beforeTaskId === null) {
-        return { ...state, tasks: [...without, task], draggedTask: null };
+        const last = cellTasks[cellTasks.length - 1];
+        newOrder = generateKeyBetween(last?.order ?? null, null);
+      } else {
+        const idx = cellTasks.findIndex((t) => t.id === beforeTaskId);
+        if (idx === -1) return { ...state, draggedTask: null };
+        const prev = cellTasks[idx - 1]?.order ?? null;
+        const next = cellTasks[idx].order;
+        newOrder = generateKeyBetween(prev, next);
       }
-      const idx = without.findIndex((t) => t.id === beforeTaskId);
-      if (idx === -1) return { ...state, draggedTask: null };
-      const next = [...without];
-      next.splice(idx, 0, task);
-      return { ...state, tasks: next, draggedTask: null };
+
+      return {
+        ...state,
+        tasks: state.tasks.map((t) =>
+          t.id === taskId ? { ...t, order: newOrder } : t
+        ),
+        draggedTask: null,
+      };
     }
 
     // ── BOARD ─────────────────────────────────────────────────────────────────
 
     case "BOARD/LOAD": {
-      const { rows, columns, tasks, defaultColumnNames } = action.payload;
+      const { rows, columns, tasks } = action.payload;
       return {
         ...state,
-        rows,
-        columns,
+        rows: [...rows].sort((a, b) => a.order < b.order ? -1 : 1),
+        columns: [...columns].sort((a, b) => a.order < b.order ? -1 : 1),
         tasks,
-        defaultColumnNames,
         boardLoaded: true,
       };
     }
 
     case "BOARD/RESET": {
-      const { defaultColumnNames } = state;
+      const columnOrders = generateNKeysBetween(null, null, 3);
       return {
         ...createInitialState(),
-        defaultColumnNames,
-        columns: defaultColumnNames.map((name) => ({ id: createId(), name })),
-        rows: [
-          {
-            id: createId(),
-            name: "Sample Project",
-            color: "var(--color-row-blue)",
-          },
-        ],
+        columns: ["To Do", "In Progress", "Done"].map((title, i) => ({
+          id: createId(),
+          title,
+          order: columnOrders[i],
+        })),
+        rows: [{
+          id: createId(),
+          title: "Sample Project",
+          color: "var(--color-row-blue)",
+          order: generateKeyBetween(null, null),
+        }],
         tasks: [],
         boardLoaded: true,
       };

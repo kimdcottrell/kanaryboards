@@ -1,41 +1,62 @@
 ---
 name: State architecture and types
 description: Where types, state, and reducers live in the Kanary Boards context architecture, and the key patterns used
-type: project
+metadata:
+  type: project
 ---
 
-State was refactored from a monolithic `store.ts` into separate files under `src/components/context/`:
+State lives under `src/components/context/`:
 
-- `types.ts` — all exported interfaces (`ChecklistItem`, `Row`, `Column`, `Task`, `TaskDraft`, `DraggedTask`, `BoardState`) and the `BoardAction` discriminated union
+- `types.ts` — all exported interfaces and the `BoardAction` discriminated union
 - `reducer.ts` — `boardReducer` and `createInitialState`
-- `selectors.ts` — derived/computed state selectors
-- `constants.ts` — `STORAGE_KEY` and other constants
-- `BoardContext.tsx` — three contexts (`BoardStateContext`, `BoardDispatchContext`, `BoardRefsContext`) and the `BoardProvider` component; also exports `useBoardState()` and `useBoardDispatch()` hooks
-- `useBoard.ts` — additional board hooks
-- `useAsyncActions.ts` — async action helpers (AI generation, etc.)
+- `selectors.ts` — `computeTasksByCell` (groups + sorts tasks by `order`), `findTodoColumnId`
+- `constants.ts` — `STORAGE_KEY`, `createDefaultBoard()`, `emptyTaskDraft()`
+- `BoardContext.tsx` — three contexts (`BoardStateContext`, `BoardDispatchContext`, `BoardRefsContext`) and `BoardProvider`; also exports `useBoardState()` / `useBoardDispatch()`
+- `useBoard.ts` — all board action handlers
+- `useAsyncActions.ts` — async action helpers (AI generation, row add with order)
 
 **Key interfaces (all in `types.ts`):**
 ```ts
-interface ChecklistItem { id: string; text: string; checked: boolean; }
-interface Row { id: string; name: string; color: string; }
-interface Column { id: string; name: string; }
-interface Task { id: string; rowId: string; colId: string; title: string; description: string; checklist: ChecklistItem[]; }
-interface TaskDraft { title: string; description: string; checklist: ChecklistItem[]; rowId: string; colId: string; }
-interface DraggedTask { taskId: string; rowId: string; colId: string; }
+interface Row    { id: string; title: string; color: string; order: string; }
+interface Column { id: string; title: string; order: string; }
+interface Task   { id: string; rowId: string; colId: string; title: string; description: string; checklist: ChecklistItem[]; order: string; }
 ```
+`name` was renamed to `title` on `Row` and `Column` to match schema.dbml. `order` (fractional index string) was added to all three types.
 
-`BoardState` includes both persistent (`rows`, `columns`, `tasks`, `defaultColumnNames`) and ephemeral fields (`editingTaskId`, `editTaskDraft: Task | null`, `draggedTask: DraggedTask | null`, `editingRowId`, `editingRowName`, `editingColumnId`, `editingColumnRowId`, `editingColumnName`, etc.).
+**Ordering — `fractional-indexing` package:**
+Import `generateKeyBetween` and `generateNKeysBetween` directly from `"fractional-indexing"`. Sort with native `<`/`>` comparison, NOT `localeCompare()`. Used everywhere ordering mutates state:
+- `ROW/MOVE` — computes `generateKeyBetween(prev?.order, next?.order)` for the moved row
+- `COLUMN/REORDER` — same pattern for columns
+- `TASK/REORDER_IN_CELL` — computes new order relative to cell neighbors; now purely order-field based, no global array splice
+- `DRAG/DROP_TASK` — appends to target cell via `generateKeyBetween(lastInCell?.order, null)`
+- `BOARD/LOAD` — sorts rows and columns by `order` on load
+- `computeTasksByCell` — sorts each cell's tasks by `order`
 
-`globalThis.` is used instead of `window.` everywhere (deno lint `no-window` rule).
+**`BoardState` persistent fields:** `rows`, `columns`, `tasks`. `defaultColumnNames` was removed — it is no longer persisted and no longer in `BoardState`. Column titles are the source of truth.
 
-**Drag-and-drop state split:** `draggedTask: DraggedTask | null` lives in reducer (shared across all columns). `dropTarget: { taskId, position }` for the hover indicator is local `useState` in `ColumnCard` — it's too ephemeral for the reducer. A `useEffect` in `ColumnCard` watches `draggedTask` and clears `dropTarget` when it becomes null (covers cancelled drags).
+**Column management actions (current):**
+- `COLUMN/ADD` — payload `{ id, title, order }`, appended to `state.columns`
+- `COLUMN/DELETE` — replaces old `COLUMN/REMOVE_DEFAULT`
+- `COLUMN/REORDER` — payload `{ columnId, beforeColumnId | null }`, replaces old `COLUMN/MOVE_DEFAULT`
+- `COLUMN/RENAME_SAVE` — only updates `column.title`; no longer syncs a separate `defaultColumnNames` array
 
-**Task ordering:** No explicit `order`/`position` field — ordering is determined by array position in `state.tasks`. `TASK/REORDER_IN_CELL` removes the task and splices it back in at the target index. Cross-row moves are blocked by the reducer (rowId must match). Cross-column moves within the same row are allowed via `DRAG/DROP_TASK`.
+**`useBoard.ts` column API:**
+- `addColumn(title)` — dispatches `COLUMN/ADD` with generated order
+- `reorderColumn(columnId, beforeColumnId)` — dispatches `COLUMN/REORDER`
+- `deleteColumn(columnId)` — dispatches `COLUMN/DELETE`
+- `handleDefaultColumnDrop(targetColumnId)` — now takes column ID, not array index
+
+**`createTask` in `useBoard.ts`:** Computes `order = generateKeyBetween(null, firstTaskInCell?.order)` to prepend to cell.
+
+**`addRow` in `useAsyncActions.ts`:** Computes `order = generateKeyBetween(lastRow?.order, null)` for new rows. Payload uses `title` not `name`.
+
+**Drag-and-drop state split:** `draggedTask: DraggedTask | null` lives in reducer. `dropTarget` for hover indicators is local `useState` in `ColumnCard`.
 
 **Inline editing patterns (two distinct approaches):**
-- `RowSection` (board view) uses shared reducer state: `ROW/EDIT_START`, `ROW/EDIT_CHANGE`, `ROW/EDIT_SAVE`, `ROW/EDIT_CANCEL` actions drive `editingRowId`/`editingRowName` in `BoardState`.
-- `BoardConfiguration` Row Settings uses **local component state** (`useState`) to avoid conflicts: `editId`/`editName` are local, saving dispatches `ROW/RENAME` (a direct one-shot rename action) instead of the shared editing state flow.
-- `ColumnCard` column name editing uses shared state: `COLUMN/RENAME_START`, `COLUMN/RENAME_CHANGE`, `COLUMN/RENAME_SAVE`, `COLUMN/RENAME_CANCEL` drive `editingColumnId`/`editingColumnRowId`/`editingColumnName`. The `editingColumnRowId` field scopes the edit input to the specific row where the double-click occurred — without it, every row renders an `autoFocus` input for the same column simultaneously, causing the first to immediately blur and save. On save, the rename propagates to all rows because columns are shared objects. The `COLUMN/RENAME_START` payload includes both `columnId` and `rowId`; `editColumnTitle(column, row)` in `useBoard.ts` must pass both.
+- `RowSection` (board view): shared reducer state via `ROW/EDIT_START` / `ROW/EDIT_CHANGE` / `ROW/EDIT_SAVE` / `ROW/EDIT_CANCEL`
+- `BoardConfiguration` row settings: local `useState` + `ROW/RENAME` (one-shot dispatch)
+- `ColumnCard`: shared state via `COLUMN/RENAME_*`; `editingColumnRowId` scopes the input to the clicked row (prevents multi-row autoFocus conflict)
 
-**Why:** deno lint `no-explicit-any` and `no-window` rules enforced across the codebase.
-**How to apply:** When adding state, add fields to `BoardState` in `types.ts`, handle them in `reducer.ts`, and dispatch via `BoardAction` union. Add null guards to `editTaskDraft` functional updaters. Keep per-column ephemeral UI state (hover targets, etc.) in component-local useState, not the reducer.
+**Why:** `globalThis.` used instead of `window.` (deno lint `no-window`). `defaultColumnNames` removed because schema.dbml has no such field — columns are the source of truth.
+
+**How to apply:** When adding fields: add to `BoardState` in `types.ts`, handle in `reducer.ts`, dispatch via `BoardAction`. For new entity types with ordering, import `generateKeyBetween`/`generateNKeysBetween` directly from `"fractional-indexing"`. Keep per-column ephemeral UI (hover targets) in local `useState`, not the reducer.

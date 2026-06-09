@@ -1,6 +1,6 @@
 {
   "allowScripts": {
-    "allow": ["npm:@anthropic-ai/claude-code", "npm:@clerk/shared@4.13.1", "npm:@google/genai@2.0.1", "npm:esbuild", "npm:protobufjs", "npm:sharp"],
+    "allow": ["npm:@anthropic-ai/claude-code", "npm:@clerk/shared@4.13.1", "npm:@clerk/shared@4.14.0", "npm:@google/genai@2.0.1", "npm:esbuild", "npm:protobufjs", "npm:sharp"],
     "deny": ["npm:@google/genai@2.6.0"]
   },
   "unstable": ["kv"],

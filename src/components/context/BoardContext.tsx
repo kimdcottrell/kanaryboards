@@ -111,7 +111,6 @@ export function BoardProvider(
         rows: state.rows,
         columns: state.columns,
         tasks: state.tasks,
-        defaultColumnNames: state.defaultColumnNames,
       };
       if (isAuthenticated) {
         fetch("/api/board", {
@@ -133,7 +132,6 @@ export function BoardProvider(
     state.rows,
     state.columns,
     state.tasks,
-    state.defaultColumnNames,
     state.boardLoaded,
     isAuthenticated,
   ]);

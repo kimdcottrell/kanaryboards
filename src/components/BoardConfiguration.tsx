@@ -5,7 +5,7 @@ import { rowColorOptions } from "./context/constants.ts";
 export default function BoardConfiguration() {
   const {
     rows,
-    defaultColumnNames,
+    columns,
     newRowName,
     newRowPrompt,
     newRowFormKey,
@@ -22,7 +22,7 @@ export default function BoardConfiguration() {
     handleDefaultColumnDragStart,
     handleDefaultColumnDragOver,
     handleDefaultColumnDrop,
-    removeDefaultColumn,
+    deleteColumn,
     updateRowColor,
     moveRowUp,
     moveRowDown,
@@ -36,7 +36,7 @@ export default function BoardConfiguration() {
 
   const startRowEdit = (row) => {
     setEditId(row.id);
-    setEditName(row.name);
+    setEditName(row.title);
   };
 
   const saveRowEdit = () => {
@@ -162,7 +162,7 @@ export default function BoardConfiguration() {
               </div>
             </div>
             <div className="flex flex-wrap items-baseline gap-2">
-              {defaultColumnNames.map((name, index) => {
+              {columns.map((column, index) => {
                 const isDraggingThis = draggedDefaultIndex === index;
                 const isHovered = dragHoverIndex === index &&
                   draggedDefaultIndex !== null &&
@@ -171,7 +171,7 @@ export default function BoardConfiguration() {
                   draggedDefaultIndex < index;
                 return (
                   <div
-                    key={name}
+                    key={column.id}
                     className="relative"
                     draggable="true"
                     onDragStart={handleDefaultColumnDragStart(index)}
@@ -180,7 +180,7 @@ export default function BoardConfiguration() {
                       setDragHoverIndex(index);
                     }}
                     onDrop={(e) => {
-                      handleDefaultColumnDrop(index)(e);
+                      handleDefaultColumnDrop(column.id)(e);
                       setDragHoverIndex(null);
                     }}
                     onDragEnd={() => {
@@ -206,13 +206,13 @@ export default function BoardConfiguration() {
                         type="button"
                         className="btn rounded-l! join-item btn-primary cursor-grab"
                       >
-                        {name}
+                        {column.title}
                       </button>
                       <button
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
-                          removeDefaultColumn(name);
+                          deleteColumn(column.id);
                         }}
                         className="btn rounded-r! join-item btn-primary p-2 dark:btn-border-primary light:text-primary-content bg-primary/40 hover:bg-primary/80 dark:text-base-100 text-primary! hover:text-primary-content!"
                       >
@@ -285,7 +285,7 @@ export default function BoardConfiguration() {
                           onDoubleClick={() => startRowEdit(row)}
                           title="Double-click to edit"
                         >
-                          {row.name}
+                          {row.title}
                         </h4>
                       )}
                   </div>
@@ -310,7 +310,7 @@ export default function BoardConfiguration() {
                         index === 0 ? "invisible" : ""
                       }`}
                       onClick={() => moveRowUp(index)}
-                      aria-label={`Move ${row.name} up`}
+                      aria-label={`Move ${row.title} up`}
                     >
                       <span className="iconify hugeicons--arrow-up-big text-xl" />
                     </button>
@@ -320,7 +320,7 @@ export default function BoardConfiguration() {
                         index === rows.length - 1 ? "invisible" : ""
                       }`}
                       onClick={() => moveRowDown(index)}
-                      aria-label={`Move ${row.name} down`}
+                      aria-label={`Move ${row.title} down`}
                     >
                       <span className="iconify hugeicons--arrow-down-big text-xl" />
                     </button>

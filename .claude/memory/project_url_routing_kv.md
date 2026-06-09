@@ -4,40 +4,40 @@ description: How URL-based task deep-linking and Deno KV persistence are impleme
 metadata:
   type: project
 ---
-Task edit modals are URL-addressable via `/task/:taskId`. Navigating directly to that URL opens the board with the edit modal pre-opened and renders SEO meta tags server-side.
 
-**Why:** User wanted shareable URLs for task edit views plus SEO (dynamic `<title>` per task), while keeping unauthenticated users' data private (not globally accessible in KV).
+Task edit modals are URL-addressable via `/task/:taskId`. Both `/` and `/task/:taskId` render the same `SPA.astro` → `BoardController` React island. There is no SSR task metadata lookup — the `[taskId].astro` page is a pure shell. Task routing is handled entirely client-side by React Router.
 
 **Auth-split persistence model:**
-- **Unauthenticated users**: board and task_meta live in `localStorage` only — no KV reads or writes. `PUT /api/board` returns 401. Task URLs at `/task/:taskId` render with a generic title (no KV entry to look up).
-- **Authenticated users**: board saved to KV via `PUT /api/board`; task_meta written atomically alongside it. Task URLs get rich SSR titles.
-- **Sign-in migration** (in `BoardContext.tsx` load effect): if remote has no data, the full board is read from `STORAGE_KEY` in localStorage → `PUT /api/board` → KV, then localStorage key is removed. No separate task-meta migration step.
+- **Unauthenticated users**: board lives in `localStorage` only (`STORAGE_KEY = "kanary-boards"`). `PUT /api/board` returns 401.
+- **Authenticated users**: board saved to KV via `PUT /api/board`. Board is keyed by a UUID7 `boardId` that is looked up (or created) in KV under `["user_board", clerkUserId]`.
+- **Sign-in migration**: if remote has no data, the full board is read from `STORAGE_KEY` in localStorage → `PUT /api/board` → KV, then localStorage key is removed.
 
-**Architecture:**
-- `src/middleware.ts` — generates `boardId` UUID cookie on first visit; sets `Astro.locals.boardId`
-- `src/lib/kv.ts` — `getBoard`, `saveBoard(boardId, board)`, `deleteBoard`, `getTaskMeta`
-- `src/pages/api/board.ts` — GET returns board or 404 `{noData:true}`; PUT requires auth (401 otherwise); DELETE clears board + task_meta
-- `src/components/context/constants.ts` — `createDefaultBoard()` shared by API and client; `STORAGE_KEY` and `TASK_META_STORAGE_KEY` localStorage keys
-- `src/pages/task/[taskId].astro` — SSR: fetches task title from KV → sets `<title>` and `<meta description>` (falls back to "Kanary Boards" if not in KV); passes `initialTaskId` and `isAuthenticated` to React island
+**Middleware (`src/middleware.ts`):**
+- Authenticated users: looks up `getBoardIdForUser(userId)` from KV; creates and stores a new UUID7 `boardId` if none exists. Sets `Astro.locals.boardId`.
+- Unauthenticated users: UUID7 cookie `boardId` (365-day); sets `Astro.locals.boardId`.
+- Order: `clerkMiddleware()` runs first, then `boardMiddleware` (which calls `locals.auth()` to get `userId`).
 
-**KV key structure (authenticated users only):**
-- `["board", boardId]` → `{ rows, columns, tasks, defaultColumnNames }`
-- `["task_meta", taskId]` → `{ id, rowId, colId, title, description, checklist, boardId }` — mirrors the full `Task` interface plus `boardId`; written atomically with every `saveBoard`
+**KV structure (`src/lib/kv.ts`):**
+- `["user_board", userId]` → `boardId` (UUID7 string) — maps Clerk userId to board
+- `["board", boardId]` → `PersistedBoard { rows, columns, tasks }` — full board blob
 
-**localStorage keys (unauthenticated users):**
-- `kanary-boards` (`STORAGE_KEY`) — full board snapshot `{ rows, columns, tasks, defaultColumnNames }`
+`PersistedBoard` no longer includes `defaultColumnNames`. `Row`, `Column`, and `Task` all include an `order: string` fractional index field. `Row` and `Column` use `title` not `name`.
+
+**No task_meta:** `TaskMeta`, `getTaskMeta`, and the `["task_meta", taskId]` KV entries were removed. The `[taskId].astro` page does not fetch task metadata from KV — it renders the same `<SPA />` shell regardless, and task routing is client-side only.
+
+**API routes:**
+- `GET /api/board` — returns board or 404 `{noData:true}`; auth required
+- `PUT /api/board` — saves board; auth required (401 otherwise)
+- `DELETE /api/board` — clears board; auth required
 
 **React routing (react-router-dom 7.x):**
-- `BrowserRouter` wraps app in `BoardWrapper.jsx`
-- Routes: `/` and `/task/:taskId` both render `<BoardInner />`
-- `BoardInner` has a `useEffect` watching `[boardLoaded, taskId, tasks]` — once data is loaded, finds the task and calls `startEditTask(task)`, or `navigate('/', { replace: true })` if not found
-- Clicking a task card: calls `startEditTask(task)` + `navigate('/task/:id')`
-- Closing/saving/deleting in `TaskEditModal`: calls `navigate('/')`
+- Routes: `/` and `/task/:taskId` both render `<BoardView />`
+- `BoardView` has a `useEffect` watching `[boardLoaded, taskId, tasks]` — finds task and calls `startEditTask(task)`, or `navigate('/', { replace: true })` if not found
 
-**BoardContext data flow:**
-- Authenticated mount: GET `/api/board` → if no remote data, migrate localStorage board (PUT `/api/board`, clear localStorage) → `dispatch(BOARD/LOAD)`
-- Unauthenticated mount: read `STORAGE_KEY` from localStorage → `dispatch(BOARD/LOAD)` with local data or `createDefaultBoard()`
-- Authenticated save: debounced (500ms) PUT to `/api/board`
-- Unauthenticated save: debounced write to `STORAGE_KEY` + `TASK_META_STORAGE_KEY` in localStorage
+**BoardContext save snapshot:**
+```ts
+const boardSnapshot = { rows: state.rows, columns: state.columns, tasks: state.tasks };
+```
+No `defaultColumnNames`.
 
-**How to apply:** When adding new entity types that need URL-based deep links, follow this pattern: add a KV meta index entry (written only for authenticated users), add an Astro SSR page for SEO with graceful null fallback, use `useNavigate` in the card component, and a `useEffect` in the inner board component to open the modal from the route param.
+**How to apply:** When adding new entity types that need URL deep-links, use React Router `useNavigate`/`useParams` and a `useEffect` in `BoardView`. For new KV entities, add to `kv.ts` following the existing patterns. For `boardId` resolution, always read from `Astro.locals.boardId` (set by middleware).

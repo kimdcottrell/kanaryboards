@@ -85,7 +85,7 @@ export default function TaskEditModal() {
                 >
                   {columns.map((option) => (
                     <option key={option.id} value={option.id}>
-                      {option.name}
+                      {option.title}
                     </option>
                   ))}
                 </select>
@@ -109,7 +109,7 @@ export default function TaskEditModal() {
                 >
                   {rows.map((option) => (
                     <option key={option.id} value={option.id}>
-                      {option.name}
+                      {option.title}
                     </option>
                   ))}
                 </select>
