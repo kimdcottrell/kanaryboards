@@ -32,6 +32,9 @@ USER node
 # Copy package.json and package-lock.json (if available) 
 COPY package*.json ./ 
 
+# Required to add in JSR packages
+RUN npm config set @jsr:registry https://npm.jsr.io --location=project
+
 # Install dependencies 
 RUN npm install @playwright/test typescript --no-save
 
