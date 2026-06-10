@@ -30,12 +30,8 @@ test.describe("Task URL", () => {
     // Wait for board to finish loading and render the add-task buttons
     await page.waitForSelector("button:has(.hugeicons--credit-card-add)");
 
-    // Open task create modal — evaluate avoids strict-mode multi-match (3 add-task buttons)
-    await page.evaluate(() => {
-      (document.querySelector(
-        "button:has(.hugeicons--credit-card-add)",
-      ) as HTMLButtonElement)?.click();
-    });
+    // Open task create modal — .first() avoids strict-mode multi-match (3 add-task buttons)
+    await page.locator("button:has(.hugeicons--credit-card-add)").first().click();
     await expect(page.getByRole("heading", { name: "Add task" })).toBeVisible();
 
     await page.getByRole("group", { name: "Title" }).getByRole("textbox").fill("My URL Test Task");

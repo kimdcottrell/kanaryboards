@@ -6,7 +6,7 @@ import path from "node:path";
 // Must run serially: https://playwright.dev/docs/test-parallel
 setup.describe.configure({ mode: "serial" });
 
-export const signUpUserFile = path.join(import.meta.dirname!,"./.clerk/signup-user.json");
+const authFile = path.join(import.meta.dirname!,'./.clerk/user.json')
 
 setup("global setup", async () => {
   await clerkSetup({
@@ -16,21 +16,27 @@ setup("global setup", async () => {
     publishableKey: process.env.PUBLIC_CLERK_PUBLISHABLE_KEY,
   });
 
-  // Ensure the e2e test user exists in Clerk, creating it if necessary.
+  // Ensure a test user exists with a +clerk_test email so no real
+  // emails are sent during tests (verification codes, notifications, etc.)
   const email = process.env.E2E_CLERK_USER_EMAIL!;
   const password = process.env.E2E_CLERK_USER_PASSWORD!;
   const clerkClient = createClerkClient({
     secretKey: process.env.CLERK_SECRET_KEY,
   });
+  
   const { data: users } = await clerkClient.users.getUserList({
     emailAddress: [email],
   });
+
   if (users.length === 0) {
     await clerkClient.users.createUser({ emailAddress: [email], password });
+  }else{
+    // Ensure the password matches in case it was changed manually
+    await clerkClient.users.updateUser(users[0].id, {
+      password: process.env.E2E_CLERK_USER_PASSWORD!,
+    });
   }
 });
-
-const authFile = path.join(import.meta.dirname!,'./.clerk/user.json')
 
 setup('authenticate and save state to storage', async ({ page }) => {
   // Sign in using the emailAddress parameter, which creates a
