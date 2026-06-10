@@ -10,6 +10,13 @@ import {
 } from "./setup.ts";
 import type { Task } from "@components/context/types.ts";
 
+const mockNavigate = vi.fn();
+
+vi.mock("react-router-dom", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react-router-dom")>();
+  return { ...actual, useNavigate: () => mockNavigate, useParams: () => ({}) };
+});
+
 vi.mock("@components/context/useBoard.ts", () => ({
   useBoard: vi.fn(),
 }));
@@ -23,7 +30,7 @@ vi.mock("@lyfie/luthor", () => ({
 }));
 
 import { useBoard } from "@components/context/useBoard.ts";
-import TaskEditModal from "@components/TaskEditModal.jsx";
+import TaskEditModal from "@components/TaskEditModal.tsx";
 
 const mockUseBoard = vi.mocked(useBoard);
 const board = makeBaseBoardState();
@@ -43,6 +50,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.clearAllMocks();
+  mockNavigate.mockClear();
 });
 
 describe("TaskEditModal", () => {

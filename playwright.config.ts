@@ -12,6 +12,7 @@ export default defineConfig({
     webServer: {
       command: 'deno task dev',
       reuseExistingServer: true,
+      url: 'https://kanary.local.dev',
       wait: {
         stdout: /watching for file changes.../,
       },
@@ -24,16 +25,28 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "setup",
+      testMatch: "**/global.setup.ts",
+      teardown: "teardown",
+    },
+    {
+      name: "teardown",
+      testMatch: "**/global.teardown.ts",
+    },
+    {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
+      dependencies: ["setup"],
     },
     {
       name: "firefox",
       use: { ...devices["Desktop Firefox"] },
+      dependencies: ["setup"],
     },
     {
       name: "webkit",
       use: { ...devices["Desktop Safari"] },
+      dependencies: ["setup"],
     },
   ],
 });

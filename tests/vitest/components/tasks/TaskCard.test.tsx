@@ -2,12 +2,19 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { vi, test, expect, describe, beforeEach, afterEach } from "vitest";
 import { makeBaseBoardState, mockRow, mockTask } from "./setup.ts";
 
+const mockNavigate = vi.fn();
+
+vi.mock("react-router-dom", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react-router-dom")>();
+  return { ...actual, useNavigate: () => mockNavigate, useParams: () => ({}) };
+});
+
 vi.mock("@components/context/useBoard.ts", () => ({
   useBoard: vi.fn(),
 }));
 
 import { useBoard } from "@components/context/useBoard.ts";
-import TaskCard from "@components/TaskCard.jsx";
+import TaskCard from "@components/TaskCard.tsx";
 
 const mockUseBoard = vi.mocked(useBoard);
 const board = makeBaseBoardState();
@@ -18,6 +25,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.clearAllMocks();
+  mockNavigate.mockClear();
 });
 
 const defaultProps = {

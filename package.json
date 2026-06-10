@@ -5,6 +5,9 @@
   "type": "module",
   "dependencies": {
     "@astrojs/react": "5.0.7",
+    "@clerk/astro": "3.3.3",
+    "@clerk/backend": "3.5.0",
+    "@clerk/testing": "2.0.35",
     "@deno/astro-adapter": "0.5.2",
     "@google/genai": "2.8.0",
     "@iconify/json": "2.2.484",
@@ -15,12 +18,15 @@
     "astro": "6.4.4",
     "astro-icon": "1.1.5",
     "daisyui": "5.5.23",
+    "fractional-indexing": "3.2.0",
     "husky": "9.1.7",
     "react": "19.2.7",
     "react-dom": "19.2.7",
+    "react-router-dom": "7.6.1",
     "tailwindcss": "4.3.0",
     "typescript": "6.0.3",
-    "vitest": "4.1.8"
+    "vitest": "4.1.8",
+    "@jsr/std__uuid": "1.1.1"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "2.1.168",

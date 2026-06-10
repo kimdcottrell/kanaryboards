@@ -6,13 +6,15 @@ export interface ChecklistItem {
 
 export interface Row {
   id: string;
-  name: string;
+  title: string;
   color: string;
+  order: string;
 }
 
 export interface Column {
   id: string;
-  name: string;
+  title: string;
+  order: string;
 }
 
 export interface Task {
@@ -22,6 +24,7 @@ export interface Task {
   title: string;
   description: string;
   checklist: ChecklistItem[];
+  order: string;
 }
 
 export interface TaskDraft {
@@ -43,7 +46,8 @@ export interface BoardState {
   rows: Row[];
   columns: Column[];
   tasks: Task[];
-  defaultColumnNames: string[];
+  // Loading
+  boardLoaded: boolean;
   // Ephemeral
   newRowName: string;
   newRowPrompt: string;
@@ -72,14 +76,15 @@ export interface BoardState {
 
 export type BoardAction =
   // Columns
-  | { type: "COLUMN/SET_DEFAULT_NAMES"; payload: { names: string[] } }
-  | { type: "COLUMN/ADD_DEFAULT"; payload: { name: string } }
-  | { type: "COLUMN/REMOVE_DEFAULT"; payload: { name: string } }
   | {
-    type: "COLUMN/MOVE_DEFAULT";
-    payload: { fromIndex: number; toIndex: number };
+    type: "COLUMN/ADD";
+    payload: { id: string; title: string; order: string };
   }
   | { type: "COLUMN/DELETE"; payload: { columnId: string } }
+  | {
+    type: "COLUMN/REORDER";
+    payload: { columnId: string; beforeColumnId: string | null };
+  }
   | { type: "COLUMN/SET_INPUT"; payload: { value: string } }
   | { type: "COLUMN/SET_DRAGGED_INDEX"; payload: { index: number | null } }
   | {
@@ -90,7 +95,10 @@ export type BoardAction =
   | { type: "COLUMN/RENAME_SAVE"; payload: { columnId: string } }
   | { type: "COLUMN/RENAME_CANCEL" }
   // Rows
-  | { type: "ROW/ADD"; payload: { id: string; name: string; color: string } }
+  | {
+    type: "ROW/ADD";
+    payload: { id: string; title: string; color: string; order: string };
+  }
   | { type: "ROW/DELETE"; payload: { rowId: string } }
   | { type: "ROW/MOVE"; payload: { fromIndex: number; toIndex: number } }
   | { type: "ROW/UPDATE_COLOR"; payload: { rowId: string; color: string } }
@@ -168,4 +176,12 @@ export type BoardAction =
     payload: { taskId: string; beforeTaskId: string | null };
   }
   // Board
-  | { type: "BOARD/RESET" };
+  | { type: "BOARD/RESET" }
+  | {
+    type: "BOARD/LOAD";
+    payload: {
+      rows: Row[];
+      columns: Column[];
+      tasks: Task[];
+    };
+  };

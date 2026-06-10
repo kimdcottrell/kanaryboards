@@ -11,14 +11,19 @@ describe("Astro components loaded in on the index page", () => {
 
     beforeAll(async () => {
       container = await createTestContainer();
-      result = await container.renderToString(IndexPage, {});
+      result = await container.renderToString(IndexPage, {
+        locals: {
+          boardId: "test-board-id",
+          auth: () => ({ userId: null }),
+        },
+      });
     });
 
-    test("BoardWrapper is rendered with react as the client framework", async () => {
-        expect(result).toContain(`BoardWrapper`)
+    test("BoardController is rendered with react as the client framework", async () => {
+        expect(result).toContain(`BoardController`)
 
         const { document } = new JSDOM(result).window;
-        const el = document.querySelector('astro-island[component-url*="BoardWrapper"][client="only"]')
+        const el = document.querySelector('astro-island[component-url*="BoardController"][client="only"]')
         
         expect(el).not.toBeNull();
         expect(el?.getAttribute('renderer-url')).toContain('react');

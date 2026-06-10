@@ -150,7 +150,7 @@ Edit either file freely — your changes stay local and are picked up the next t
 
 ### 6. Start the dev container
 
-Open the project in VS Code and when prompted, click **"Rebuild Container"**. VS Code will build the Docker image and start the services defined in `compose.yaml` (the app and a Redis instance).
+Open the project in VS Code and when prompted, click **"Rebuild Container"**. VS Code will build the Docker image and start the services defined in `compose.yaml` (the app container plus its Playwright and MCP server companions).
 
 ### 7. Start the development server
 
@@ -170,7 +170,9 @@ The app will be available at [http://localhost:4321](http://localhost:4321).
 | `deno task build` | Clear `.astro`/`dist` and build for production |
 | `deno task dev` | Start the Astro dev server with hot reload |
 | `deno task e2e-test` | Auto-start dev server if needed, trigger the Playwright E2E suite, then shut it down |
+| `deno task e2e-test:ui` | Same as `e2e-test`, but opens the Playwright UI mode |
 | `deno task husky` | Wrapper for the Husky git hooks CLI |
+| `deno task playwright` | Wrapper for the Playwright CLI, configured to connect to the remote `playwright` container |
 | `deno task preview` | Serve the production build from `dist/server/entry.mjs` |
 | `deno task vitest` | Run the Vitest unit test suite |
 
@@ -190,27 +192,27 @@ These run on your **host machine** (not inside the container).
 | Service | Port | Description |
 |---|---|---|
 | App | `4321` | Astro dev server |
-| Playwright (test runner) | `3000` | HTTP trigger server — `GET /run` fires the full Playwright suite |
+| Playwright (test runner) | `3000` | Remote Playwright server (`playwright run-server`) — `deno task e2e-test` connects to it via `PW_TEST_CONNECT_WS_ENDPOINT` to run the E2E suite |
 | Playwright (MCP) | `8931` | Playwright MCP server for Claude Code browser automation |
 | MCPDoc | `8082` | Documentation MCP server |
 
 ## E2E Testing
 
-Playwright tests run inside a dedicated `playwright` Docker container (`images/playwright.Dockerfile`). The container uses `node:25-trixie` (not the official Playwright image, which can act unpredictably at times, partly thanks to a possible version difference between the image and the package in package.json) and exposes a lightweight HTTP trigger server on port 3000.
+Playwright tests run inside a dedicated `playwright` Docker container (`images/playwright/Dockerfile`). The container uses `node:25-trixie` (not the official Playwright image, which can act unpredictably at times, partly thanks to a possible version difference between the image and the package in package.json) and exposes a remote Playwright server (`playwright run-server`) on port 3000.
 
 ### Architecture
 
 ```
 app container
   └─ deno task e2e-test
-       └─ curl http://playwright:3000/run   ← triggers tests
-             └─ npx playwright test         ← runs in playwright container
+       └─ playwright test (PW_TEST_CONNECT_WS_ENDPOINT=ws://playwright:3000)
+             └─ connects to remote browsers in the playwright container
                     └─ https://kanary.local.dev  ← via Traefik reverse proxy
 ```
 
-The entrypoint (`images/playwright-entrypoint.sh`) resolves the Traefik container IP at runtime and writes it to `/etc/hosts` so `kanary.local.dev` resolves inside the container. `gosu` is used to drop back from root to the `node` user after that write.
+The `playwright` container runs `npx playwright run-server`, hosting Chromium, Firefox, and WebKit for remote use. Its entrypoint (`images/playwright/entrypoint.sh`) resolves the Traefik container IP at runtime and writes it to `/etc/hosts` so `kanary.local.dev` resolves inside the container. `gosu` is used to drop back from root to the `node` user after that write.
 
-`deno task e2e-test` auto-starts the Astro dev server if it is not already running, triggers the test suite, then shuts the server back down if it started it.
+`deno task e2e-test` auto-starts the Astro dev server if it is not already running (via Playwright's `webServer` config), triggers the test suite, then shuts the server back down if it started it.
 
 ### Running locally
 
@@ -234,28 +236,30 @@ This executes `playwright codegen` inside the `playwright` container against `ht
 
 ### Pre-commit enforcement
 
-Every commit runs three checks in sequence:
+Every commit runs four checks in sequence:
 
 ```
-deno fmt → deno lint → deno task e2e-test
+deno fmt → deno lint → deno task vitest → deno task e2e-test
 ```
 
-The hook lives in `.husky/pre-commit` and is installed via `npm run prepare` (husky). The E2E suite must pass before a commit is accepted.
+The hook lives in `.husky/pre-commit` and is installed via `npm run prepare` (husky). The unit and E2E suites must both pass before a commit is accepted.
 
 ### CI (GitHub Actions)
 
-Two workflows run automatically:
+Four workflows run automatically:
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `auto-create-pr.yml` | Push to `feature/**` or `bugfix/**` | Creates a draft PR automatically (idempotent — skips if one already exists) |
+| `auto-create-pr.yml` | Push to `feature/**` or `bugfix/**` | Creates a PR automatically, titled `WIP: <branch>` and labeled `enhancement` (idempotent — skips if one already exists) |
+| `vitest.yml` | Pull request | Runs the Vitest unit test suite |
 | `e2e.yml` | Pull request | Waits for the Deno Deploy preview URL, then runs the full Playwright suite against it; uploads the HTML report as an artifact |
+| `dependabot-auto-merge.yml` | Pull request | Enables auto-merge (squash) on pull requests opened by Dependabot |
 
 The `e2e.yml` workflow polls the GitHub Statuses API until the Deno Deploy build URL appears, then polls the Deno Deploy API until the preview domain is live before handing it to `npx playwright test`.
 
 ## MCP Servers
 
-Claude Code inside the dev container connects to three MCP servers, configured in [.mcp.json](.mcp.json).
+Claude Code inside the dev container connects to four MCP servers, configured in [.mcp.json](.mcp.json).
 
 **Extra details you may be wondering about**
 
@@ -265,7 +269,7 @@ Claude Code inside the dev container connects to three MCP servers, configured i
 
 ### Playwright
 
-**Type:** HTTP — `http://playwright:8931/mcp`
+**Type:** HTTP — `http://mcp_playwright:8931/mcp`
 
 Runs the [official Microsoft Playwright MCP server](https://github.com/microsoft/playwright-mcp) as a Docker service. It gives Claude Code a headless browser it can navigate, click, fill forms, take screenshots, and inspect network traffic — useful for end-to-end testing and verifying UI changes without leaving the editor.
 
@@ -275,9 +279,15 @@ Runs the [official Microsoft Playwright MCP server](https://github.com/microsoft
 
 A remote MCP server hosted by the Astro team. It exposes the full Astro documentation as a searchable tool so Claude Code can look up framework APIs, component syntax, and configuration options in context.
 
+### Clerk Docs
+
+**Type:** HTTP — `https://mcp.clerk.com/mcp`
+
+A remote MCP server hosted by Clerk. It exposes Clerk's SDK documentation and code snippets so Claude Code can look up authentication APIs and integration patterns in context.
+
 ### MCPDoc
 
-**Type:** SSE — `http://mcpdoc:8082/sse`
+**Type:** SSE — `http://mcp_mcpdoc:8082/sse`
 
 Runs [mcpdoc](https://github.com/lancedb/mcpdoc) as a Docker service, configured via [.mcpdoc.yaml](.mcpdoc.yaml). It fetches and serves `llms.txt`-formatted documentation for the libraries used in this project:
 
@@ -291,3 +301,4 @@ Runs [mcpdoc](https://github.com/lancedb/mcpdoc) as a Docker service, configured
 | Zod | `zod.dev/llms.txt` |
 | React | `react.dev/llms.txt` |
 | Tailwind | GitHub — `rgfx/tailwind-llms` |
+| Vitest | `vitest.dev/llms.txt` |

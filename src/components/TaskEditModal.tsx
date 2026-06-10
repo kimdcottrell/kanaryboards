@@ -1,8 +1,10 @@
-import Modal from "./Modal.jsx";
-import TaskForm from "./TaskForm.jsx";
+import { useNavigate } from "react-router-dom";
+import Modal from "./Modal.tsx";
+import TaskForm from "./TaskForm.tsx";
 import { useBoard } from "./context/useBoard.ts";
 
 export default function TaskEditModal() {
+  const navigate = useNavigate();
   const {
     taskEditModalOpen,
     editTaskDraft,
@@ -27,18 +29,28 @@ export default function TaskEditModal() {
     clearChecklistPreview,
   } = useBoard();
 
+  const handleClose = () => {
+    cancelEditTask();
+    navigate("/");
+  };
+
   return (
-    <Modal open={taskEditModalOpen} onClose={cancelEditTask}>
+    <Modal open={taskEditModalOpen} onClose={handleClose}>
       <h3 className="text-xl font-semibold">Edit task</h3>
       {editTaskDraft
         ? (
           <TaskForm
             taskDraft={editTaskDraft}
             setTaskDraft={setEditTaskDraft}
-            onSubmit={saveTaskEdit}
+            onSubmit={(e, content) => {
+              saveTaskEdit(e, content);
+            }}
             submitLabel="Save"
             initialMode="visual-only"
-            onDelete={() => deleteTask(editTaskDraft.id)}
+            onDelete={() => {
+              deleteTask(editTaskDraft.id);
+              navigate("/");
+            }}
             addChecklistItem={addEditChecklistItem}
             updateChecklistItem={updateEditChecklistItem}
             deleteChecklistItem={deleteEditChecklistItem}
@@ -73,7 +85,7 @@ export default function TaskEditModal() {
                 >
                   {columns.map((option) => (
                     <option key={option.id} value={option.id}>
-                      {option.name}
+                      {option.title}
                     </option>
                   ))}
                 </select>
@@ -97,7 +109,7 @@ export default function TaskEditModal() {
                 >
                   {rows.map((option) => (
                     <option key={option.id} value={option.id}>
-                      {option.name}
+                      {option.title}
                     </option>
                   ))}
                 </select>
@@ -105,7 +117,7 @@ export default function TaskEditModal() {
             </div>
           </TaskForm>
         )
-        : <p className="mt-4 text-sm">Loading task…</p>}
+        : <p className="mt-4 text-sm">Loading task...</p>}
     </Modal>
   );
 }

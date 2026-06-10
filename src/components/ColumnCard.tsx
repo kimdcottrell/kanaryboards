@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import TaskCard from "./TaskCard.jsx";
+import TaskCard from "./TaskCard.tsx";
 import { useBoard } from "./context/useBoard.ts";
 
 export default function ColumnCard({ column, row }) {
@@ -101,7 +101,7 @@ export default function ColumnCard({ column, row }) {
                 onDoubleClick={() => editColumnTitle(column, row)}
                 title="Double-click to edit"
               >
-                {column.name}
+                {column.title}
               </h4>
             )}
         </div>

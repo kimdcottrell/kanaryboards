@@ -1,0 +1,50 @@
+import { expect, testNoClerk as test } from "./fixtures.ts";
+
+const CLEAN_BOARD = {
+  rows: [{ id: "row-e2e-1", title: "Sample Project", color: "var(--color-row-blue)", order: "a0" }],
+  columns: [
+    { id: "col-e2e-1", title: "To Do", order: "a0" },
+    { id: "col-e2e-2", title: "In Progress", order: "a1" },
+    { id: "col-e2e-3", title: "Done", order: "a2" },
+  ],
+  tasks: [],
+};
+
+test.describe("Task URL", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route("/api/board", async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(CLEAN_BOARD),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+    await page.goto("/");
+  });
+
+  test("created task gets a URL when the edit modal is opened", async ({ page }) => {
+    // Wait for board to finish loading and render the add-task buttons
+    await page.waitForSelector("button:has(.hugeicons--credit-card-add)");
+
+    // Open task create modal — .first() avoids strict-mode multi-match (3 add-task buttons)
+    await page.locator("button:has(.hugeicons--credit-card-add)").first().click();
+    await expect(page.getByRole("heading", { name: "Add task" })).toBeVisible();
+
+    await page.getByRole("group", { name: "Title" }).getByRole("textbox").fill("My URL Test Task");
+    await page.locator("dialog").getByRole("button", { name: "Create task" }).click();
+
+    // Task card is visible and URL is still /
+    await expect(page.getByText("My URL Test Task")).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe("/");
+
+    // Click the task title to open the edit modal
+    await page.getByText("My URL Test Task").click();
+
+    // URL is now /task/:id
+    await expect(page).toHaveURL(/\/task\/.+/);
+  });
+});

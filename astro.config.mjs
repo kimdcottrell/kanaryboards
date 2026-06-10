@@ -1,13 +1,27 @@
 // @ts-check
-import { defineConfig } from "astro/config";
+import { defineConfig, fontProviders } from "astro/config";
 import deno from "@deno/astro-adapter";
 import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
+import clerk from '@clerk/astro'
 
 // https://astro.build/config
 export default defineConfig({
   adapter: deno(),
-  integrations: [react()],
+  integrations: [
+    clerk({
+      appearance: {
+        cssLayerName: 'clerk',
+      },
+    }),
+    react()
+  ],
+
+  fonts: [{
+    provider: fontProviders.google(),
+    name: "Cherry Bomb One",
+    cssVariable: "--font-cherry-bomb-one",
+  }],
 
   output: "server",
 

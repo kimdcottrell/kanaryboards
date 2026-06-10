@@ -8,7 +8,7 @@ vi.mock("@lyfie/luthor", () => ({
     React.createElement("div", { "data-testid": "luthor-editor" }),
 }));
 
-import TaskForm from "@components/TaskForm.jsx";
+import TaskForm from "@components/TaskForm.tsx";
 
 afterEach(() => {
   vi.clearAllMocks();

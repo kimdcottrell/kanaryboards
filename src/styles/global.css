@@ -6,11 +6,24 @@
 }
 
 @plugin "@iconify/tailwind4" {
-  prefixes: basil, hugeicons;
+  prefixes: basil, hugeicons, mingcute;
 }
 
 @custom-variant light (&:where([data-theme=kanary-day], [data-theme=kanary-day] *));
 @custom-variant dark (&:where([data-theme=kanary-night], [data-theme=kanary-night] *));
+
+@theme {
+  --animate-wiggle: wiggle 1s ease-in-out infinite;
+}
+
+@keyframes wiggle {
+  0%, 100% {
+    transform: rotate(-1deg);
+  }
+  50% {
+    transform: rotate(1deg);
+  }
+}
 
 [data-theme] {
   --radius-selector: 1rem;
@@ -94,6 +107,10 @@
 }
 
 @layer utilities {
+  .font-logo {
+    font-family:
+      var(--font-cherry-bomb-one), cursive;
+  }
   .list li, input, .btn {
     @apply rounded-sm;
   }

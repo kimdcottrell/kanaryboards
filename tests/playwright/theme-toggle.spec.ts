@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, testNoClerk as test } from "./fixtures.ts";
 
 test.describe("ThemeController", () => {
   test.beforeEach(async ({ page }) => {

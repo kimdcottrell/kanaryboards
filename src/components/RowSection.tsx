@@ -1,5 +1,5 @@
 import { useState } from "react";
-import ColumnCard from "./ColumnCard.jsx";
+import ColumnCard from "./ColumnCard.tsx";
 import CloseButton from "./buttons/CloseButton.tsx";
 import { useBoard } from "./context/useBoard.ts";
 
@@ -50,7 +50,7 @@ export default function RowSection({ row }) {
                 title="Double-click to edit"
                 onDoubleClick={() => editRowTitle(row)}
               >
-                {row.name}
+                {row.title}
               </h3>
             )}
         </div>
@@ -75,12 +75,12 @@ export default function RowSection({ row }) {
               onClick={() => {
                 if (
                   confirm(
-                    `Delete row "${row.name}"? \n\nThis will remove the "${row.name}" row. All columns and tasks will be removed.\n\nIt cannot be undone.`,
+                    `Delete row "${row.title}"? \n\nThis will remove the "${row.title}" row. All columns and tasks will be removed.\n\nIt cannot be undone.`,
                   )
                 ) deleteRow(row.id);
               }}
               className="opacity-80 hover:opacity-100"
-              aria-label={`Delete project ${row.name}`}
+              aria-label={`Delete project ${row.title}`}
             />
           </div>
         </div>

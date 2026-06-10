@@ -1,5 +1,9 @@
 {
-  "allowScripts": ["npm:@anthropic-ai/claude-code", "npm:@google/genai@2.0.1", "npm:esbuild", "npm:protobufjs", "npm:sharp"],
+  "allowScripts": {
+    "allow": ["npm:@anthropic-ai/claude-code", "npm:@clerk/shared@4.14.0", "npm:@google/genai@2.8.0", "npm:esbuild", "npm:protobufjs", "npm:sharp"],
+    "deny": []
+  },
+  "unstable": ["kv"],
   "fmt": {
     "exclude": [
       "**/*.md",
@@ -23,7 +27,7 @@
     "e2e-test": "deno task playwright test",
     "e2e-test:ui": "deno task playwright test --ui-port=8080 --ui-host=0.0.0.0",
     "husky": "deno run --allow-all husky",
-    "playwright": "START_DEV_SERVER=1 PW_TEST_CONNECT_WS_ENDPOINT='ws://playwright:3000' PW_DISABLE_TS_ESM=1 deno run --allow-all ./node_modules/.bin/playwright",
+    "playwright": "START_DEV_SERVER=1 PW_TEST_CONNECT_WS_ENDPOINT='ws://playwright:3000' PW_DISABLE_TS_ESM=1 deno run --env-file=.env --allow-all ./node_modules/.bin/playwright",
     "preview": "deno run --allow-net --allow-read --allow-env ./dist/server/entry.mjs",
     "vitest": "deno run --allow-all vitest"
   },
@@ -37,7 +41,8 @@
     "@std/http": "jsr:@std/http@^1.1.0",
     "@std/path": "jsr:@std/path@^1.1.4",
     "@pages/": "./src/pages/",
-    "@components/": "./src/components/"
+    "@components/": "./src/components/",
+    "@lib/": "./src/lib/"
     // NOTE: package.json MUST exist for:
     // - resolving preview error of `error: [ERR_UNSUPPORTED_ESM_URL_SCHEME] Only file and data URLs are supported by the default ESM loader. Received protocol 'astro'`
     // - dependabot does not support deno.jsonc
