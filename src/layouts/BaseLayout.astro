@@ -23,10 +23,10 @@ const googleTag = import.meta.env.GOOGLE_TAG;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
-    <Font cssVariable="--font-cherry-bomb-one" />
+    <Font cssVariable="--font-cherry-bomb-one" preload />
     {description && <meta name="description" content={description} />}
     {googleTag && <GoogleAnalytics tag={googleTag} />}
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" ) />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   </head>
   <body>
     <nav class="navbar grid bg-base-300 shadow-sm">
