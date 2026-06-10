@@ -4,7 +4,7 @@ import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
 
 export { createId };
 
-export const STORAGE_KEY = "kanary-boards";
+export const STORAGE_KEY = "kanby-v0-1-0";
 
 const initialDefaultColumnNames = ["To Do", "In Progress", "Done"];
 
