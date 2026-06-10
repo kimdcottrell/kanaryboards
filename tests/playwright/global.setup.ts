@@ -6,7 +6,8 @@ import path from "node:path";
 // Must run serially: https://playwright.dev/docs/test-parallel
 setup.describe.configure({ mode: "serial" });
 
-const authFile = path.join(import.meta.dirname!,'./.clerk/user.json')
+const __dirname = path.resolve(path.dirname('.')); 
+const authFile = path.join(__dirname, '/tests/playwright/.clerk/user.json');
 
 setup("global setup", async () => {
   await clerkSetup({
@@ -20,6 +21,13 @@ setup("global setup", async () => {
   // emails are sent during tests (verification codes, notifications, etc.)
   const email = process.env.E2E_CLERK_USER_EMAIL!;
   const password = process.env.E2E_CLERK_USER_PASSWORD!;
+
+  if (!email || !password) {
+    throw new Error(
+      "Please provide E2E_CLERK_USER_EMAIL and E2E_CLERK_USER_PASSWORD environment variables."
+    );
+  }
+
   const clerkClient = createClerkClient({
     secretKey: process.env.CLERK_SECRET_KEY,
   });
