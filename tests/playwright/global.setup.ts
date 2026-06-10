@@ -1,5 +1,5 @@
 import { clerk, clerkSetup } from '@clerk/testing/playwright'
-import { createClerkClient } from "npm:@clerk/backend";
+import { createClerkClient } from "@clerk/backend";
 import { expect, test as setup } from "@playwright/test";
 import path from "node:path";
 

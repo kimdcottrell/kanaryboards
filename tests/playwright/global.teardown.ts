@@ -1,4 +1,4 @@
-import { createClerkClient } from "npm:@clerk/backend";
+import { createClerkClient } from "@clerk/backend";
 import { test as teardown } from "@playwright/test";
 import fs from "node:fs";
 import { signUpUserFile } from "./global.setup.ts";

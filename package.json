@@ -6,6 +6,7 @@
   "dependencies": {
     "@astrojs/react": "5.0.7",
     "@clerk/astro": "3.3.3",
+    "@clerk/backend": "3.5.0",
     "@clerk/testing": "2.0.35",
     "@deno/astro-adapter": "0.5.2",
     "@google/genai": "2.8.0",
