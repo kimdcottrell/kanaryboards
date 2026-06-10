@@ -54,7 +54,7 @@ test.describe("Board persistence across sign-in", () => {
     // Wait for the debounced localStorage save (BoardContext persists 500ms
     // after a state change) so sign-in migration picks up this task.
     await page.waitForFunction(
-      (name) => localStorage.getItem("kanary-boards")?.includes(name),
+      (name) => localStorage.getItem("kanby-v0-1-0")?.includes(name),
       taskName,
     );
 
