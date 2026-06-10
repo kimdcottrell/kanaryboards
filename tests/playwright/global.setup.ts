@@ -1,8 +1,12 @@
-import { clerkSetup } from "@clerk/testing/playwright";
-import { test as setup } from "@playwright/test";
+import { clerk, clerkSetup } from '@clerk/testing/playwright'
+import { createClerkClient } from "npm:@clerk/backend";
+import { expect, test as setup } from "@playwright/test";
+import path from "node:path";
 
 // Must run serially: https://playwright.dev/docs/test-parallel
 setup.describe.configure({ mode: "serial" });
+
+export const signUpUserFile = path.join(import.meta.dirname!,"./.clerk/signup-user.json");
 
 setup("global setup", async () => {
   await clerkSetup({
@@ -11,4 +15,34 @@ setup("global setup", async () => {
     // --env-file=.env in the deno task makes this available.
     publishableKey: process.env.PUBLIC_CLERK_PUBLISHABLE_KEY,
   });
+
+  // Ensure the e2e test user exists in Clerk, creating it if necessary.
+  const email = process.env.E2E_CLERK_USER_EMAIL!;
+  const password = process.env.E2E_CLERK_USER_PASSWORD!;
+  const clerkClient = createClerkClient({
+    secretKey: process.env.CLERK_SECRET_KEY,
+  });
+  const { data: users } = await clerkClient.users.getUserList({
+    emailAddress: [email],
+  });
+  if (users.length === 0) {
+    await clerkClient.users.createUser({ emailAddress: [email], password });
+  }
 });
+
+const authFile = path.join(import.meta.dirname!,'./.clerk/user.json')
+
+setup('authenticate and save state to storage', async ({ page }) => {
+  // Sign in using the emailAddress parameter, which creates a
+  // server-side token and bypasses all verification steps
+  await page.goto('/')
+  await clerk.signIn({
+    page,
+    emailAddress: process.env.E2E_CLERK_USER_EMAIL!,
+  })
+  // Reload so the server recomputes isAuthenticated and renders the signed-in nav
+  await page.goto('/')
+  await expect(page.getByRole('button', { name: 'Sign In' })).toBeHidden()
+
+  await page.context().storageState({ path: authFile })
+})

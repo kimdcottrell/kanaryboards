@@ -24,6 +24,7 @@ deno task e2e-test
 - `board-config.spec.ts` — board configuration / create-row flow
 - `task-url.spec.ts` — task deep-link URL behaviour
 - `generate-tasks-api.spec.ts` — live POST /api/generate-tasks API call
+- `board-persistence.spec.ts` — localStorage→KV migration on sign-in (chromium-only, shared Clerk account)
 
 ## Fixtures and Clerk
 
@@ -80,3 +81,45 @@ await page.getByRole("group", { name: "Title" }).getByRole("textbox").fill("..."
 `dialog input[type='text']` matches 3 elements (title + two checklist inputs). Scope via the `fieldset` group role instead.
 
 **MCP browser quirk (mcp_playwright service):** `browser_click` throws `EACCES: permission denied, mkdir '/var/dev'` but the click executes — verify with `browser_snapshot`.
+
+## Signing in within a test (`clerk.signIn`)
+
+This Clerk instance requires an `email_code` second factor on password sign-in
+(`signIn.status === "needs_second_factor"` even after a correct password).
+`clerk.signIn`'s `signInParams: {strategy: "password", ...}` branch does NOT
+handle second factors and silently leaves `Clerk.user`/`Clerk.session` null —
+no error is thrown.
+
+**Use the ticket-based approach instead**, which bypasses second factors entirely
+and resolves once `Clerk.user` is set:
+```ts
+await clerk.signIn({ page, emailAddress: process.env.E2E_CLERK_USER_EMAIL! });
+```
+This requires `CLERK_SECRET_KEY` (Backend API creates a sign-in token).
+
+`global.setup.ts`'s "global setup" step provisions `E2E_CLERK_USER_EMAIL` /
+`E2E_CLERK_USER_PASSWORD` as a real Clerk user via `npm:@clerk/backend`'s
+`createClerkClient` if one doesn't already exist (`users.getUserList` →
+`users.createUser`).
+
+## localStorage → KV migration on sign-in
+
+`BoardContext`'s migration effect runs once on mount keyed on
+`[boardId, isAuthenticated]` — it is NOT reactive. After `clerk.signIn`,
+`page.reload()` is required for SSR to recompute `isAuthenticated` and trigger
+migration. Migration only fires if `GET /api/board` 404s, so delete any
+leftover board first:
+```ts
+await page.request.delete("/api/board");
+const migrated = page.waitForResponse((res) =>
+  res.url().includes("/api/board") && res.request().method() === "PUT"
+);
+await page.reload();
+await migrated;
+```
+
+**Strict-mode violation after migration:** `page.getByText(rowName)` matches
+both the row's `<h3>` heading on the board AND the `<h4>` entry in
+`#board-config-row-display-settings` (present in the DOM even when the panel
+is visually collapsed). Scope to the row section locator instead, e.g.
+`newRow.getByText(rowName)`.
