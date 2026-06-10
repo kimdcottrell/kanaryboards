@@ -1,4 +1,4 @@
-# Kanary Boards
+# Kanby
 
 An AI-native kanban-style project management app built with Astro, React, Deno, and TailwindCSS / DaisyUI.
 
