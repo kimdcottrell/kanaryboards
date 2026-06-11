@@ -36,7 +36,7 @@ test.describe("ThemeController", () => {
       page,
     }) => {
       await page.emulateMedia({ colorScheme: "light" });
-      await page.goto("/");
+      await page.goto("/" ,{ waitUntil: 'load', });
 
       const html = page.locator("html");
       await expect(html).toHaveAttribute("data-theme", "kanary-day");

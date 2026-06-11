@@ -33,6 +33,13 @@ export const PUT: APIRoute = async ({ request, locals }) => {
   } catch {
     return jsonResponse({ error: "Invalid request body." }, 400);
   }
+  await Deno.writeTextFile(
+    "/tmp/board-debug.log",
+    `${new Date().toISOString()} PUT boardId=${boardId} auth=${
+      JSON.stringify(locals.auth())
+    } rows=${JSON.stringify(body.rows?.map((r) => r.title))}\n`,
+    { append: true },
+  );
   await saveBoard(boardId, body);
   return jsonResponse({ ok: true }, 200);
 };
@@ -40,6 +47,13 @@ export const PUT: APIRoute = async ({ request, locals }) => {
 export const DELETE: APIRoute = async ({ locals }) => {
   authorize(locals);
   const boardId = locals.boardId;
+  await Deno.writeTextFile(
+    "/tmp/board-debug.log",
+    `${new Date().toISOString()} DELETE boardId=${boardId} auth=${
+      JSON.stringify(locals.auth())
+    }\n`,
+    { append: true },
+  );
   await deleteBoard(boardId);
   return jsonResponse({ ok: true }, 200);
 };

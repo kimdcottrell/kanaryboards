@@ -1,10 +1,5 @@
 import { clerk } from "@clerk/testing/playwright";
 import { expect, test } from "./fixtures.ts";
-import fs from "node:fs/promises";
-import path from "node:path";
-
-const __dirname = path.resolve(path.dirname('.'));
-const clerkDir = path.join(__dirname, '/tests/playwright/.clerk');
 
 const E2E_EMAIL = process.env.E2E_CLERK_USER_EMAIL ?? "";
 
@@ -21,25 +16,8 @@ test.describe("Board persistence across sign-in", () => {
   });
 
   test.afterEach(async ({ page }) => {
-    // Teardown: delete the board so the next run starts from a clean slate.
-    await page.request.delete("/api/board");
-
-    if (process.env.DEVCONTAINER !== "true") return;
-    
-    const state = JSON.parse(await fs.readFile(path.join(clerkDir, 'user.json'), 'utf-8'));
-    const cookies: { name: string; value: string }[] = state.cookies;
-    const userId = cookies.find((cookie) => cookie.name === "__clerk_db_jwt")?.value;
-    const boardId = cookies.find((cookie) => cookie.name === "boardId")?.value;
-  
-    if (!userId || !boardId) {
-      console.warn("Could not find userId or boardId in Clerk cookies, skipping KV cleanup");
-      return;
-    }
-    
-    const kv = await Deno.openKv();
-    await kv.delete(["user_board", userId]);
-    await kv.delete(["board", boardId]);
-    kv.close();
+    // Teardown: delete the test account's board so the next run starts from a clean slate.
+    await page.request.get("/api/delete-test-data");
   });
 
   test("a row and task created before sign-in are present after sign-in", async ({ page }) => {
@@ -87,13 +65,9 @@ test.describe("Board persistence across sign-in", () => {
 
     // Clear out any board left over from a previous run so sign-in migrates
     // this test's localStorage data instead of loading stale remote data.
-    await page.request.delete("/api/board");
+    await page.request.get("/api/delete-test-data");
 
-    const migrated = page.waitForResponse((res) =>
-      res.url().includes("/api/board") && res.request().method() === "PUT"
-    );
-    await page.reload();
-    await migrated;
+    await page.goto("/");
 
     await expect(page.getByRole("button", { name: "Sign In" })).toBeHidden();
 
