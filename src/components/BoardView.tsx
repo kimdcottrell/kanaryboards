@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import BoardConfiguration from "./BoardConfiguration.tsx";
 import RowBoard from "./RowBoard.tsx";
@@ -10,12 +10,18 @@ export default function BoardView() {
   const navigate = useNavigate();
   const { taskId } = useParams();
   const { tasks, boardLoaded, startEditTask } = useBoard();
+  const syncedTaskId = useRef<string | undefined>(undefined);
 
   useEffect(() => {
-    if (!boardLoaded || !taskId) return;
+    if (!boardLoaded || !taskId) {
+      syncedTaskId.current = undefined;
+      return;
+    }
+    if (syncedTaskId.current === taskId) return;
     const task = tasks.find((t) => t.id === taskId);
     if (task) {
       startEditTask(task);
+      syncedTaskId.current = taskId;
     } else {
       navigate("/", { replace: true });
     }

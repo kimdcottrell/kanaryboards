@@ -7,8 +7,9 @@ metadata:
 
 State lives under `src/components/context/`:
 
-- `types.ts` — all exported interfaces and the `BoardAction` discriminated union
-- `reducer.ts` — `boardReducer` and `createInitialState`
+- `types.ts` — `BoardState` is now an intersection of 9 named interfaces (`BoardData`, `RowFormState`, `RowEditState`, `ColumnEditState`, `ColumnConfigState`, `TaskCreateState`, `TaskEditState`, `ChecklistAIState`, `DragState`); `BoardAction` is a union of 8 named per-domain unions (`ColumnAction`, `RowAction`, `TaskAction`, `ChecklistAction`, `ChecklistAIAction`, `TaskAIAction`, `DragAction`, `BoardLifecycleAction`). Same flattened shape/members as before — no consumer changes.
+- `reducer.ts` — thin router; `createInitialState` plus a `boardReducer` switch that delegates each case to `reducers/<domain>.ts` (one-line `case "X/Y": return domain.fn(state, action.payload);`)
+- `reducers/` — `board.ts`, `columns.ts`, `rows.ts`, `tasks.ts`, `checklist.ts`, `checklistAi.ts`, `taskAi.ts`, `drag.ts` — one function per action, typed via `Extract<XAction, {type: "..."}>["payload"]`
 - `selectors.ts` — `computeTasksByCell` (groups + sorts tasks by `order`), `findTodoColumnId`
 - `constants.ts` — `STORAGE_KEY`, `createDefaultBoard()`, `emptyTaskDraft()`
 - `BoardContext.tsx` — three contexts (`BoardStateContext`, `BoardDispatchContext`, `BoardRefsContext`) and `BoardProvider`; also exports `useBoardState()` / `useBoardDispatch()`
@@ -56,6 +57,8 @@ Import `generateKeyBetween` and `generateNKeysBetween` directly from `"fractiona
 - `RowSection` (board view): shared reducer state via `ROW/EDIT_START` / `ROW/EDIT_CHANGE` / `ROW/EDIT_SAVE` / `ROW/EDIT_CANCEL`
 - `BoardConfiguration` row settings: local `useState` + `ROW/RENAME` (one-shot dispatch)
 - `ColumnCard`: shared state via `COLUMN/RENAME_*`; `editingColumnRowId` scopes the input to the clicked row (prevents multi-row autoFocus conflict)
+
+**`BoardView.tsx` URL↔modal sync gotcha:** A `useEffect` keyed on `[boardLoaded, taskId, tasks]` opens `TaskEditModal` via `startEditTask(task)` whenever `/task/:taskId` matches a task. Because `tasks` is in the deps, saving an edit (which mutates `state.tasks`) used to re-fire this effect *while still on the same URL* and re-open the just-closed modal — so clicking "Save" appeared to do nothing. Fixed with a `syncedTaskId` ref: `startEditTask` only fires once per distinct `taskId` (reset to `undefined` when `taskId` becomes falsy). `TaskEditModal`'s Save handler also now calls `navigate("/")` after `saveTaskEdit`, matching Close/Delete. **If you add new reactive deps to that effect, re-check this interaction.**
 
 **Why:** `globalThis.` used instead of `window.` (deno lint `no-window`). `defaultColumnNames` removed because schema.dbml has no such field — columns are the source of truth.
 

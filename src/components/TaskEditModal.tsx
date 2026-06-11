@@ -44,6 +44,7 @@ export default function TaskEditModal() {
             setTaskDraft={setEditTaskDraft}
             onSubmit={(e, content) => {
               saveTaskEdit(e, content);
+              navigate("/");
             }}
             submitLabel="Save"
             initialMode="visual-only"
