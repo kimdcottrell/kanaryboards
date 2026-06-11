@@ -22,131 +22,129 @@ const googleTag = import.meta.env.GOOGLE_TAG;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
-    <Font cssVariable="--font-cherry-bomb-one" preload />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     {description && <meta name="description" content={description} />}
-    {googleTag && <GoogleAnalytics tag={googleTag} />}
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   </head>
-  <body>
-    <nav class="navbar grid bg-base-300 shadow-sm">
-      <div class="w-11/12 mx-auto flex items-center justify-between">
-        <a href="/" class="flex items-center text-xl font-bold">
-          <span
-            class="iconify mingcute--bird-fill text-5xl text-(--color-row-yellow)"
-          ></span>
-          <h1
-            class="text-3xl leading-15 font-normal font-logo bg-clip-text text-transparent bg-linear-to-r from-accent to-secondary"
-          >
-            Kanby
-          </h1>
-        </a>
-        <div id="login-controls" class="flex items-center gap-4">
-          <ThemeProvider>
-            <ThemeToggle client:only="react" />
-          </ThemeProvider>
-          <Show when="signed-out">
-            <SignInButton asChild mode="modal">
-              <button class="btn btn-warning">
-                <span class="iconify basil--login-solid text-xl"></span>
-                Sign In
-              </button>
-            </SignInButton>
-          </Show>
-          <Show when="signed-in">
-            <UserButton />
-          </Show>
-        </div>
-      </div>
-    </nav>
-    <main class="min-h-screen">
-      <div
-        class="absolute z-0 min-h-3/12 w-full bg-linear-to-br/oklch from-ctp-flamingo-100/50 dark:from-ctp-lavender-950 mask-b-from-base-100 to-base-100"
-      >
-      </div>
-      <header
-        class="w-11/12 relative z-1 m-auto py-16 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
-      >
-        <div>
-          <p class="text-sm uppercase tracking-[0.3em]">
-            Organize your workflow
-          </p>
-          <h1
-            class="mt-3 text-5xl leading-15 font-semibold bg-clip-text text-transparent bg-linear-to-r from-accent to-secondary"
-          >
-            Discover what can be<br />
-            with <span class="font-logo font-normal">Kanby</span>.
+</html>
+{googleTag && <GoogleAnalytics tag={googleTag} />}
+<link rel="icon" type="image/x-icon" href="/favicon.ico" />
 
-            <div
-              role="alert"
-              class="mt-6 alert alert-soft border-1 border-warning/50 alert-warning alert-vertical sm:alert-horizontal"
-            >
-              <span class="iconify hugeicons--chat text-xl"></span>
-              <div>
-                <h3 class="font-bold">KANBY IS STILL IN DEVELOPMENT.</h3>
-                <div class="text-xs">
-                  This is a beta version of the application.<br />
-                  Expect bugs, missing features, and frequent updates.<br />
-                  Your data is not guaranteed to be preserved.
-                </div>
+<body>
+  <nav class="navbar grid bg-base-300 shadow-sm">
+    <div class="w-11/12 mx-auto flex items-center justify-between">
+      <a href="/" class="flex items-center text-xl font-bold">
+        <span
+          class="iconify mingcute--bird-fill text-5xl text-(--color-row-yellow)"
+        ></span>
+        <h1
+          class="text-3xl leading-15 font-normal font-logo bg-clip-text text-transparent bg-linear-to-r from-accent to-secondary"
+        >
+          Kanby
+        </h1>
+      </a>
+      <div id="login-controls" class="flex items-center gap-4">
+        <ThemeProvider>
+          <ThemeToggle client:only="react" />
+        </ThemeProvider>
+        <Show when="signed-out">
+          <SignInButton asChild mode="modal">
+            <button class="btn btn-warning">
+              <span class="iconify basil--login-solid text-xl"></span>
+              Sign In
+            </button>
+          </SignInButton>
+        </Show>
+        <Show when="signed-in">
+          <UserButton />
+        </Show>
+      </div>
+    </div>
+  </nav>
+  <main class="min-h-screen">
+    <div
+      class="absolute z-0 min-h-3/12 w-full bg-linear-to-br/oklch from-ctp-flamingo-100/50 dark:from-ctp-lavender-950 mask-b-from-base-100 to-base-100"
+    >
+    </div>
+    <header
+      class="w-11/12 relative z-1 m-auto py-16 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+    >
+      <div>
+        <p class="text-sm uppercase tracking-[0.3em]">Organize your workflow</p>
+        <h1
+          class="mt-3 text-5xl leading-15 font-semibold bg-clip-text text-transparent bg-linear-to-r from-accent to-secondary"
+        >
+          Discover what can be<br />
+          with <span class="font-logo font-normal">Kanby</span>.
+
+          <div
+            role="alert"
+            class="mt-6 alert alert-soft border-1 border-warning/50 alert-warning alert-vertical sm:alert-horizontal"
+          >
+            <span class="iconify hugeicons--chat text-xl"></span>
+            <div>
+              <h3 class="font-bold">KANBY IS STILL IN DEVELOPMENT.</h3>
+              <div class="text-xs">
+                This is a beta version of the application.<br />
+                Expect bugs, missing features, and frequent updates.<br />
+                Your data is not guaranteed to be preserved.
               </div>
             </div>
-          </h1>
-        </div>
-        <div class="max-w-2xl flex flex-col">
-          <p>
-            <span class="font-bold">Have a goal in mind?</span><br /><br />
-            Kanby is here to help you break it down into manageable tasks and keep
-            you on track.<br /><br />
-            Generate tasks using AI by entering a prompt describing the type of tasks
-            you want to create, and the AI will return a list of tasks matching your
-            description.<br /><br />
-            Whether you're planning a project, organizing your day, or just trying
-            to get things done, Kanby is the tool you need to stay organized and focused.
-          </p>
-          <button
-            id="get-started-btn"
-            class="btn btn-lg btn-primary mt-4 self-end inline-flex items-center gap-2"
-          >
-            <span class="iconify hugeicons--rocket-01 text-xl"></span>
-            Get Started
-          </button>
-        </div>
-      </header>
-      <section class="mx-auto w-full relative z-1">
-        <slot />
-      </section>
-    </main>
-    <footer class="mt-10 p-10 text-center text-sm">
-      <p>
-        Made by <a href="https://kimdcottrell.com" class="hover:underline"
-          >Kim D. Cottrell</a
-        > with help by Claude.
-      </p>
-      <br />
-      <p>
-        <em
-          >AI-powered content generation rate limiting may occur when demand is
-          high.</em
+          </div>
+        </h1>
+      </div>
+      <div class="max-w-2xl flex flex-col">
+        <p>
+          <span class="font-bold">Have a goal in mind?</span><br /><br />
+          Kanby is here to help you break it down into manageable tasks and keep you
+          on track.<br /><br />
+          Generate tasks using AI by entering a prompt describing the type of tasks
+          you want to create, and the AI will return a list of tasks matching your
+          description.<br /><br />
+          Whether you're planning a project, organizing your day, or just trying to
+          get things done, Kanby is the tool you need to stay organized and focused.
+        </p>
+        <button
+          id="get-started-btn"
+          class="btn btn-lg btn-primary mt-4 self-end inline-flex items-center gap-2"
         >
-      </p>
-    </footer>
-  </body><script>
-    document
-      .getElementById("get-started-btn")
-      ?.addEventListener("click", () => {
-        const toggle = document.getElementById(
-          "board-config-collapse-toggle",
-        ) as HTMLInputElement | null;
-        if (toggle) toggle.checked = true;
+          <span class="iconify hugeicons--rocket-01 text-xl"></span>
+          Get Started
+        </button>
+      </div>
+    </header>
+    <section class="mx-auto w-full relative z-1">
+      <slot />
+    </section>
+  </main>
+  <footer class="mt-10 p-10 text-center text-sm">
+    <p>
+      Made by <a href="https://kimdcottrell.com" class="hover:underline"
+        >Kim D. Cottrell</a
+      > with help by Claude.
+    </p>
+    <br />
+    <p>
+      <em
+        >AI-powered content generation rate limiting may occur when demand is
+        high.</em
+      >
+    </p>
+  </footer>
+</body><script>
+  document.getElementById("get-started-btn")?.addEventListener("click", () => {
+    const toggle = document.getElementById(
+      "board-config-collapse-toggle",
+    ) as HTMLInputElement | null;
+    if (toggle) toggle.checked = true;
 
-        const target = document.getElementById("board-config-create-new-row");
-        if (target) {
-          setTimeout(() => {
-            target.scrollIntoView({ behavior: "smooth", block: "center" });
-            target.classList.add("animate-wiggle");
-            setTimeout(() => target.classList.remove("animate-wiggle"), 1000);
-          }, 300);
-        }
-      });
-  </script>
-</html>
+    const target = document.getElementById("board-config-create-new-row");
+    if (target) {
+      setTimeout(() => {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        target.classList.add("animate-wiggle");
+        setTimeout(() => target.classList.remove("animate-wiggle"), 1000);
+      }, 300);
+    }
+  });
+</script>

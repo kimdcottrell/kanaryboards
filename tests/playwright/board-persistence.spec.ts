@@ -62,7 +62,7 @@ test.describe("Board persistence across sign-in", () => {
     // param), which bypasses the email_code second factor required by this
     // Clerk instance and resolves once Clerk.user is set.
     await clerk.signIn({ page, emailAddress: E2E_EMAIL });
-
+    
     // Clear out any board left over from a previous run so sign-in migrates
     // this test's localStorage data instead of loading stale remote data.
     await page.request.delete("/api/board");
