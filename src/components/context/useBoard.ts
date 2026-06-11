@@ -8,7 +8,7 @@ import { useAsyncActions } from "./useAsyncActions.ts";
 import { computeTasksByCell } from "./selectors.ts";
 import { createId, STORAGE_KEY } from "./constants.ts";
 import { generateKeyBetween } from "fractional-indexing";
-import type { ChecklistItem, Column, Row, Task, TaskDraft } from "./types.ts";
+import type { ChecklistItem, Column, Row, Task } from "./types.ts";
 
 export function useBoard() {
   const state = useContext(BoardStateContext);
@@ -40,7 +40,7 @@ export function useBoard() {
       dispatch({ type: "COLUMN/SET_INPUT", payload: { value } }),
     setDraggedDefaultIndex: (index: number | null) =>
       dispatch({ type: "COLUMN/SET_DRAGGED_INDEX", payload: { index } }),
-    setTaskDraft: (draft: TaskDraft) =>
+    setTaskDraft: (draft: Task) =>
       dispatch({ type: "TASK/UPDATE_DRAFT", payload: { draft } }),
     setEditTaskDraft: (draft: Task | null) => {
       if (draft) {
@@ -220,7 +220,7 @@ export function useBoard() {
     handleTaskDragStart: (task: Task) => (event: DragEvent) => {
       dispatch({
         type: "DRAG/START_TASK",
-        payload: { taskId: task.id, rowId: task.rowId, colId: task.colId },
+        payload: { task },
       });
       event.dataTransfer!.effectAllowed = "move";
     },

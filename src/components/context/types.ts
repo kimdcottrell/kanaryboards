@@ -27,20 +27,6 @@ export interface Task {
   order: string;
 }
 
-export interface TaskDraft {
-  title: string;
-  description: string;
-  checklist: ChecklistItem[];
-  rowId: string;
-  colId: string;
-}
-
-export interface DraggedTask {
-  taskId: string;
-  rowId: string;
-  colId: string;
-}
-
 export interface BoardState {
   // Persistent
   rows: Row[];
@@ -58,7 +44,7 @@ export interface BoardState {
   editingColumnRowId: string | null;
   editingColumnName: string;
   taskCreateModalOpen: boolean;
-  taskDraft: TaskDraft;
+  taskDraft: Task;
   taskEditModalOpen: boolean;
   editingTaskId: string | null;
   editTaskDraft: Task | null;
@@ -71,7 +57,7 @@ export interface BoardState {
   taskGenerationStatus: string;
   defaultColumnInput: string;
   draggedDefaultIndex: number | null;
-  draggedTask: DraggedTask | null;
+  draggedTask: Task | null;
 }
 
 export type BoardAction =
@@ -126,7 +112,7 @@ export type BoardAction =
   | { type: "TASK/CLOSE_CREATE_MODAL" }
   | { type: "TASK/OPEN_EDIT_MODAL"; payload: { task: Task } }
   | { type: "TASK/CLOSE_EDIT_MODAL" }
-  | { type: "TASK/UPDATE_DRAFT"; payload: { draft: TaskDraft } }
+  | { type: "TASK/UPDATE_DRAFT"; payload: { draft: Task } }
   | { type: "TASK/UPDATE_EDIT_DRAFT"; payload: { draft: Task } }
   // Checklist items (target discriminates create-draft vs edit-draft)
   | {
@@ -163,10 +149,7 @@ export type BoardAction =
   | { type: "TASK_AI/GENERATE_SUCCESS"; payload: { tasks: Task[] } }
   | { type: "TASK_AI/GENERATE_FAILURE"; payload: { error: string } }
   // Drag
-  | {
-    type: "DRAG/START_TASK";
-    payload: { taskId: string; rowId: string; colId: string };
-  }
+  | { type: "DRAG/START_TASK"; payload: { task: Task } }
   | { type: "DRAG/END_TASK" }
   | { type: "DRAG/DROP_TASK"; payload: { toRowId: string; toColId: string } }
   | { type: "DRAG/SET_DEFAULT_INDEX"; payload: { index: number | null } }

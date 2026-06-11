@@ -58,7 +58,7 @@ export default function ColumnCard({ column, row }) {
           ? cellTasks[idx + 1].id
           : null;
       }
-      reorderTaskInCell(draggedTask.taskId, beforeTaskId);
+      reorderTaskInCell(draggedTask.id, beforeTaskId);
     } else {
       handleColumnDrop(row.id, column.id)(e);
     }
@@ -132,7 +132,7 @@ export default function ColumnCard({ column, row }) {
               dropTarget?.position === "before"}
             isDropAfter={dropTarget?.taskId === task.id &&
               dropTarget?.position === "after"}
-            isDragging={draggedTask?.taskId === task.id}
+            isDragging={draggedTask?.id === task.id}
           />
         ))}
       </div>

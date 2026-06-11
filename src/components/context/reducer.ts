@@ -605,7 +605,7 @@ export function boardReducer(
     // ── DRAG ──────────────────────────────────────────────────────────────────
 
     case "DRAG/START_TASK":
-      return { ...state, draggedTask: action.payload };
+      return { ...state, draggedTask: action.payload.task };
 
     case "DRAG/END_TASK":
       return { ...state, draggedTask: null };
@@ -628,7 +628,7 @@ export function boardReducer(
       return {
         ...state,
         tasks: state.tasks.map((t) =>
-          t.id === state.draggedTask!.taskId
+          t.id === state.draggedTask!.id
             ? { ...t, colId: toColId, order: newOrder }
             : t
         ),

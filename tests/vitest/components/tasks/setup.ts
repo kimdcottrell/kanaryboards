@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import type { Task, Row, Column, TaskDraft } from "@components/context/types.ts";
+import type { Task, Row, Column } from "@components/context/types.ts";
 
 export const mockRow: Row = { id: "row-1", title: "Feature", color: "#ff6b6b", order: "a0" };
 export const mockColumn: Column = { id: "col-1", title: "To Do", order: "a0" };
@@ -16,7 +16,9 @@ export const mockTask: Task = {
   checklist: [],
 };
 
-export const mockTaskDraft: TaskDraft = {
+export const mockTaskDraft: Task = {
+  id: "",
+  order: "",
   title: "",
   description: "",
   checklist: [],

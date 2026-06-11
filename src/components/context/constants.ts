@@ -1,4 +1,4 @@
-import type { Task, TaskDraft } from "./types.ts";
+import type { Task } from "./types.ts";
 import { createId } from "@lib/uuid.ts";
 import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
 
@@ -17,7 +17,9 @@ export const rowColorOptions = [
   { label: "Grey", value: "var(--color-row-grey)" },
 ];
 
-export const emptyTaskDraft = (rowId: string, colId: string): TaskDraft => ({
+export const emptyTaskDraft = (rowId: string, colId: string): Task => ({
+  id: "",
+  order: "",
   title: "",
   description: "",
   checklist: [{ id: createId(), text: "", checked: false }],
