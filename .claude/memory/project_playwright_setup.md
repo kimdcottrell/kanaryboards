@@ -25,6 +25,7 @@ deno task e2e-test
 - `task-url.spec.ts` — task deep-link URL behaviour
 - `generate-tasks-api.spec.ts` — live POST /api/generate-tasks API call
 - `board-persistence.spec.ts` — localStorage→KV migration on sign-in (chromium-only, shared Clerk account)
+- `board-crud.spec.ts` — column/row/task CRUD, checklist toggle, drag-and-drop (testNoClerk, seeds `kanby-v0-1-0` localStorage directly)
 
 ## Fixtures and Clerk
 
@@ -123,3 +124,41 @@ both the row's `<h3>` heading on the board AND the `<h4>` entry in
 `#board-config-row-display-settings` (present in the DOM even when the panel
 is visually collapsed). Scope to the row section locator instead, e.g.
 `newRow.getByText(rowName)`.
+
+## DOM types in spec files (Deno)
+
+Deno's default `lib` doesn't include `lib.dom.d.ts`, so any `page.evaluate`
+that references `document`, `DragEvent`, `DataTransfer`, `Element`, etc. fails
+`deno check` with "Cannot find name". Add this as the first line of the spec
+file (verified no conflicts with Deno's own globals):
+```ts
+/// <reference lib="dom" />
+```
+
+## Simulating HTML5 drag-and-drop
+
+`locator.dragTo()` doesn't trigger this app's drag handlers (it tracks
+`draggedTask` in React state via `onDragStart`/`onDrop`, not
+`dataTransfer` payload). Dispatching `dragstart`/`dragover`/`drop`/`dragend`
+all in one `page.evaluate` also fails — React batches the `dragstart`
+dispatch's state update, so `onDrop`'s closure still sees the stale
+`draggedTask: null` when it runs synchronously after. Fix: dispatch
+`dragstart` in its own `page.evaluate` round-trip (separate call = lets React
+flush/re-render), then dispatch `dragover`/`drop`/`dragend` in a second call.
+Use `page.evaluateHandle(() => new DataTransfer())` to share one
+`DataTransfer` instance across both calls:
+```ts
+const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
+await page.evaluate((dt) => {
+  document.querySelector("article#task-x")!
+    .dispatchEvent(new DragEvent("dragstart", { bubbles: true, cancelable: true, dataTransfer: dt }));
+}, dataTransfer);
+await page.evaluate((dt) => {
+  const target = document.querySelector("...")!;
+  const fire = (el: Element, type: string) =>
+    el.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt }));
+  fire(target, "dragover");
+  fire(target, "drop");
+  fire(document.querySelector("article#task-x")!, "dragend");
+}, dataTransfer);
+```

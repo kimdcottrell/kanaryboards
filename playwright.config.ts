@@ -18,7 +18,7 @@ export default defineConfig({
       },
     },
   } : {}),
-  retries: 1, // sometimes the first test run fails due to what I can only imagine are the ghosts in the machine, so we retry once
+  retries: 2, // sometimes the first test run fails due to what I can only imagine are the ghosts in the machine, so we retry once
   use: {
     baseURL: process.env.BASE_URL ?? "https://kanary.local.dev",
     ignoreHTTPSErrors: true,

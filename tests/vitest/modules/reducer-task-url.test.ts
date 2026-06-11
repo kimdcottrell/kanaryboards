@@ -80,7 +80,7 @@ describe("URL unchanged — status change", () => {
   test("DRAG/DROP_TASK preserves task ID after drag-to-column", () => {
     const state: BoardState = {
       ...stateWithTask(baseTask),
-      draggedTask: { taskId: "url-stable-task", rowId: "row-1", colId: "col-1" },
+      draggedTask: baseTask,
     };
     const next = boardReducer(state, {
       type: "DRAG/DROP_TASK",

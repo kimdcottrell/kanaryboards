@@ -4,7 +4,8 @@
 - [Memory storage location](feedback_memory_location.md) — always write to /var/dev/.claude/memory/, never the global ~/.claude/ scope
 - [Prefer named exports over new files for related shared components](feedback_component_extraction.md) — Extract shared UI as named exports from related existing files; move pure UI state into the extracted component to avoid prop drilling
 - [Astro import extension resolution](reference_astro_import_extensions.md) — Omitting `.jsx`/`.tsx` from local imports is fine; Astro resolves them via TypeScript rules. Deno LSP `no-local` errors on these are false positives.
-- [State architecture and types](project_store_types.md) — Row/Column use `title`+`order`, Task has `order`; fractional-indexing via `@lib/order.ts`; `defaultColumnNames` removed; COLUMN/ADD, COLUMN/REORDER replace old default-name actions; createTask/addRow compute fractional order
+- [State architecture and types](project_store_types.md) — Row/Column use `title`+`order`, Task has `order`; fractional-indexing via `@lib/order.ts`; `defaultColumnNames` removed; BoardState/BoardAction split into named groups + reducers/ modules; BoardView URL-sync gotcha
+- [Phase 2: per-concern context split](project_phase2_context_split.md) — deferred follow-up to split BoardProvider/useBoard into per-slice contexts; cross-cutting reducer cases to design around
 - [Drag-and-drop drop indicator style](feedback_drag_drop_indicator.md) — Use row.color for 2px border indicators; transparent default to prevent layout shift; 40% opacity on dragged card
 - [Shared state + autoFocus conflict](feedback_shared_state_autofocus.md) — Don't use shared reducer state for inline editing when multiple components render autoFocus inputs; the later-rendered component wins focus
 - [Project tech stack](project_stack.md) — Deno 2.x, Astro 6.x SSR on Deno Deploy, React 19 + react-router-dom 7, Tailwind 4.x + DaisyUI 5.x, Google GenAI, Deno KV for persistence
