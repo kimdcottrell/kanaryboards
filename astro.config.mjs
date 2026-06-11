@@ -1,5 +1,5 @@
 // @ts-check
-import { defineConfig, fontProviders } from "astro/config";
+import { defineConfig } from "astro/config";
 import deno from "@deno/astro-adapter";
 import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
@@ -17,19 +17,9 @@ export default defineConfig({
     react()
   ],
 
-  fonts: [{
-    provider: fontProviders.google(),
-    name: "Cherry Bomb One",
-    cssVariable: "--font-cherry-bomb-one",
-  }],
-
   output: "server",
 
-  security: {
-    checkOrigin: false,
-  },
-
-  site: "https://kanary.local.dev",
+  site: "https://kanby.ai",
 
   server: {
     port: 4321,
@@ -38,6 +28,7 @@ export default defineConfig({
       "0.0.0.0",
       "localhost",
       "kanary.local.dev",
+      "kanby--local.kimdcottrell.deno.net"
     ],
   },
 

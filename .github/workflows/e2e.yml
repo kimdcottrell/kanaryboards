@@ -15,7 +15,9 @@ jobs:
           node-version: lts/*
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          npm config set @jsr:registry https://npm.jsr.io --location=project
+          npm install
 
       - name: Wait for Deno Deploy and get preview URL
         id: preview-url

@@ -46,5 +46,10 @@
     // NOTE: package.json MUST exist for:
     // - resolving preview error of `error: [ERR_UNSUPPORTED_ESM_URL_SCHEME] Only file and data URLs are supported by the default ESM loader. Received protocol 'astro'`
     // - dependabot does not support deno.jsonc
+  },
+  "deploy": {
+    "org": "kimdcottrell",
+    "app": "kanby"
   }
 }
+

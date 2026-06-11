@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM denoland/deno:2.7.14 as dev 
+FROM denoland/deno:2.8.2 as dev 
 
 # Prefer not to run as root.
 ARG LOCAL_MACHINE_GID=${LOCAL_MACHINE_GID:-1000}

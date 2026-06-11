@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Cherry+Bomb+One&display=swap");
 @import "tailwindcss";
 @import "@catppuccin/tailwindcss/mocha.css";
 
@@ -14,6 +15,7 @@
 
 @theme {
   --animate-wiggle: wiggle 1s ease-in-out infinite;
+  --font-cherry-bomb-one: "Cherry Bomb One", system-ui;
 }
 
 @keyframes wiggle {
