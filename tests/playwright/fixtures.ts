@@ -20,8 +20,7 @@ export async function fillStable(
   });
   // Webkit on CI is the slowest engine and loses the controlled-input commit
   // race most often — give its retry loop more room before failing.
-  const isWebkit =
-    page.context().browser()?.browserType().name() === "webkit";
+  const isWebkit = page.context().browser()?.browserType().name() === "webkit";
   await expect(async () => {
     await locator.fill(value);
     await expect(locator).toHaveValue(value);
