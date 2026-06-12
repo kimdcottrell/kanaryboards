@@ -1,21 +1,25 @@
 import { useEffect, useState } from "react";
 import TaskCard from "./TaskCard.tsx";
-import { useBoard } from "./context/useBoard.ts";
+import {
+  useColumnEditActions,
+  useColumnEditState,
+  useDragActions,
+  useDragState,
+  useTaskActions,
+  useTasksByCell,
+} from "./context/hooks.ts";
+import { useRenderCount } from "@lib/use-render-count.ts";
 
 export default function ColumnCard({ column, row }) {
-  const {
-    tasksByCell,
-    openTaskForm,
-    handleColumnDrop,
-    reorderTaskInCell,
-    draggedTask,
-    editingColumnId,
-    editingColumnRowId,
-    editingColumnName,
-    setEditingColumnName,
-    editColumnTitle,
-    saveColumnTitle,
-  } = useBoard();
+  const tasksByCell = useTasksByCell();
+  const { draggedTask } = useDragState();
+  const { editingColumnId, editingColumnRowId, editingColumnName } =
+    useColumnEditState();
+  const { setEditingColumnName, editColumnTitle, saveColumnTitle } =
+    useColumnEditActions();
+  const { openTaskForm, reorderTaskInCell } = useTaskActions();
+  const { handleColumnDrop } = useDragActions();
+  const renderCount = useRenderCount();
 
   const [dropTarget, setDropTarget] = useState(null);
 
@@ -66,6 +70,8 @@ export default function ColumnCard({ column, row }) {
 
   return (
     <div
+      id={`column-card-${row.id}-${column.id}`}
+      data-render-count={renderCount}
       className="flex w-sm shrink-0 flex-col rounded gap-4 p-4 shadow-lg shadow-base-300/10"
       style={{
         backgroundColor: `color-mix(in srgb, ${row.color} 8%, transparent)`,

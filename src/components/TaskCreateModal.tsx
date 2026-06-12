@@ -1,28 +1,38 @@
 import Modal from "./Modal.tsx";
 import TaskForm from "./TaskForm.tsx";
-import { useBoard } from "./context/useBoard.ts";
+import {
+  handleChecklistKeyDown,
+  useBoardRefs,
+  useChecklistAIActions,
+  useChecklistAIState,
+  useTaskActions,
+  useTaskCreateActions,
+  useTaskCreateState,
+} from "./context/hooks.ts";
 
 export default function TaskCreateModal() {
+  const { taskCreateModalOpen, taskDraft } = useTaskCreateState();
   const {
-    taskCreateModalOpen,
-    taskDraft,
     setTaskDraft,
     createTask,
-    closeTaskCreateModal,
     addChecklistItem,
     updateChecklistItem,
     deleteChecklistItem,
-    handleChecklistKeyDown,
-    setChecklistInputRef,
+  } = useTaskCreateActions();
+  const { closeTaskCreateModal } = useTaskActions();
+  const { setChecklistInputRef } = useBoardRefs();
+  const {
     checklistPrompt,
     checklistPreview,
     isGeneratingChecklist,
     checklistModalError,
+  } = useChecklistAIState();
+  const {
     setChecklistPrompt,
     generateChecklistItems,
     applyChecklistPreviewToDraft,
     clearChecklistPreview,
-  } = useBoard();
+  } = useChecklistAIActions();
 
   return (
     <Modal open={taskCreateModalOpen} onClose={closeTaskCreateModal}>

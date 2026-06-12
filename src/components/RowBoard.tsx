@@ -1,8 +1,8 @@
 import RowSection from "./RowSection.tsx";
-import { useBoard } from "./context/useBoard.ts";
+import { useBoardDataState } from "./context/hooks.ts";
 
 export default function RowBoard() {
-  const { rows } = useBoard();
+  const { rows } = useBoardDataState();
 
   return (
     <div className="space-y-10">

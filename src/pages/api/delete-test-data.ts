@@ -3,12 +3,12 @@ export const prerender = false;
 import type { APIRoute } from "astro";
 
 let environment: string = "production";
-if (Deno.env.get("DEVCONTAINER") === "true") {
+if (import.meta.env.DEVCONTAINER === "true") {
   environment = "development";
 }
 if (
-  Deno.env.get("DENO_TIMELINE") !== undefined &&
-  Deno.env.get("DENO_TIMELINE") !== "production"
+  import.meta.env.DENO_TIMELINE !== undefined &&
+  import.meta.env.DENO_TIMELINE !== "production"
 ) {
   environment = "staging";
 }

@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { vi, test, expect, describe, beforeEach, afterEach } from "vitest";
-import { makeBaseBoardState, mockRow, mockTask } from "./setup.ts";
+import { makeTaskActions, makeDragActions, mockRow, mockTask } from "./setup.ts";
 
 const mockNavigate = vi.fn();
 
@@ -9,18 +9,20 @@ vi.mock("react-router-dom", async (importOriginal) => {
   return { ...actual, useNavigate: () => mockNavigate, useParams: () => ({}) };
 });
 
-vi.mock("@components/context/useBoard.ts", () => ({
-  useBoard: vi.fn(),
+vi.mock("@components/context/hooks.ts", () => ({
+  useTaskActions: vi.fn(),
+  useDragActions: vi.fn(),
 }));
 
-import { useBoard } from "@components/context/useBoard.ts";
+import { useTaskActions, useDragActions } from "@components/context/hooks.ts";
 import TaskCard from "@components/TaskCard.tsx";
 
-const mockUseBoard = vi.mocked(useBoard);
-const board = makeBaseBoardState();
+const taskActions = makeTaskActions();
+const dragActions = makeDragActions();
 
 beforeEach(() => {
-  mockUseBoard.mockReturnValue(board as any);
+  vi.mocked(useTaskActions).mockReturnValue(taskActions as any);
+  vi.mocked(useDragActions).mockReturnValue(dragActions as any);
 });
 
 afterEach(() => {
@@ -104,7 +106,7 @@ describe("TaskCard", () => {
   test("calls startEditTask with the task when the title area is clicked", () => {
     render(<TaskCard {...defaultProps} />);
     fireEvent.click(screen.getByText("Test task"));
-    expect(board.startEditTask).toHaveBeenCalledWith(mockTask);
+    expect(taskActions.startEditTask).toHaveBeenCalledWith(mockTask);
   });
 
   test("calls toggleTaskChecklist with task and item ids when checkbox changes", () => {
@@ -114,6 +116,6 @@ describe("TaskCard", () => {
     };
     render(<TaskCard {...defaultProps} task={task} />);
     fireEvent.click(screen.getByRole("checkbox"));
-    expect(board.toggleTaskChecklist).toHaveBeenCalledWith("task-1", "i1");
+    expect(taskActions.toggleTaskChecklist).toHaveBeenCalledWith("task-1", "i1");
   });
 });
