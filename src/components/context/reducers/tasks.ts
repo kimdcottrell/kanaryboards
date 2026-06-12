@@ -1,6 +1,15 @@
-import type { BoardState, TaskAction } from "../types.ts";
+import type { BoardState, ChecklistItem, TaskAction } from "../types.ts";
 import { createId, emptyTaskDraft } from "../constants.ts";
-import { generateKeyBetween } from "fractional-indexing";
+import { reorderKey } from "../ordering.ts";
+import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
+
+// Regenerate fractional orders for a loaded checklist, preserving its current
+// array order. Guarantees valid keys even for tasks persisted before checklist
+// items carried an `order`.
+function withChecklistOrders(checklist: ChecklistItem[]): ChecklistItem[] {
+  const orders = generateNKeysBetween(null, null, checklist.length);
+  return checklist.map((item, i) => ({ ...item, order: orders[i] }));
+}
 
 export function create(
   state: BoardState,
@@ -132,8 +141,13 @@ export function openEditModal(
     editTaskDraft: {
       ...task,
       checklist: task.checklist.length
-        ? task.checklist
-        : [{ id: createId(), text: "", checked: false }],
+        ? withChecklistOrders(task.checklist)
+        : [{
+          id: createId(),
+          text: "",
+          checked: false,
+          order: generateKeyBetween(null, null),
+        }],
     },
     taskEditModalOpen: true,
   };
@@ -168,27 +182,13 @@ export function reorderInCell(
 ): BoardState {
   const { taskId, beforeTaskId } = payload;
   const task = state.tasks.find((t) => t.id === taskId);
-  if (!task || taskId === beforeTaskId) {
-    return { ...state, draggedTask: null };
-  }
-  // Get sorted cell tasks without the moved task
-  const cellTasks = state.tasks
-    .filter((t) =>
-      t.rowId === task.rowId && t.colId === task.colId && t.id !== taskId
-    )
-    .sort((a, b) => a.order < b.order ? -1 : 1);
+  if (!task) return { ...state, draggedTask: null };
 
-  let newOrder: string;
-  if (beforeTaskId === null) {
-    const last = cellTasks[cellTasks.length - 1];
-    newOrder = generateKeyBetween(last?.order ?? null, null);
-  } else {
-    const idx = cellTasks.findIndex((t) => t.id === beforeTaskId);
-    if (idx === -1) return { ...state, draggedTask: null };
-    const prev = cellTasks[idx - 1]?.order ?? null;
-    const next = cellTasks[idx].order;
-    newOrder = generateKeyBetween(prev, next);
-  }
+  const cellTasks = state.tasks.filter((t) =>
+    t.rowId === task.rowId && t.colId === task.colId
+  );
+  const newOrder = reorderKey(cellTasks, taskId, beforeTaskId);
+  if (newOrder === null) return { ...state, draggedTask: null };
 
   return {
     ...state,

@@ -1,4 +1,5 @@
 import type { BoardState, ChecklistAction, ChecklistItem } from "../types.ts";
+import { byOrder, insertKey, reorderKey } from "../ordering.ts";
 
 const mutateChecklist = (
   list: ChecklistItem[],
@@ -12,13 +13,19 @@ const mutateChecklist = (
   },
 ): ChecklistItem[] => {
   if (op === "add") {
+    // Assign a fractional order between the insert position's neighbors and keep
+    // the array sorted by order so it stays the canonical display order.
+    const item = {
+      ...payload.item!,
+      order: insertKey(list, payload.insertBeforeIndex),
+    };
     const next = [...list];
     if (payload.insertBeforeIndex !== undefined) {
-      next.splice(payload.insertBeforeIndex, 0, payload.item!);
+      next.splice(payload.insertBeforeIndex, 0, item);
     } else {
-      next.unshift(payload.item!);
+      next.push(item);
     }
-    return next;
+    return next.sort(byOrder);
   }
   if (op === "update") {
     return list.map((item) =>
@@ -125,4 +132,27 @@ export function removeItem(
       }),
     },
   };
+}
+
+export function reorderItem(
+  state: BoardState,
+  payload: Extract<
+    ChecklistAction,
+    { type: "CHECKLIST/REORDER_ITEM" }
+  >["payload"],
+): BoardState {
+  const { target, itemId, beforeItemId } = payload;
+  const draft = target === "draft" ? state.taskDraft : state.editTaskDraft;
+  if (!draft) return state;
+
+  const newOrder = reorderKey(draft.checklist, itemId, beforeItemId);
+  if (newOrder === null) return state;
+
+  const checklist = draft.checklist
+    .map((item) => item.id === itemId ? { ...item, order: newOrder } : item)
+    .sort(byOrder);
+
+  return target === "draft"
+    ? { ...state, taskDraft: { ...state.taskDraft, checklist } }
+    : { ...state, editTaskDraft: { ...state.editTaskDraft!, checklist } };
 }

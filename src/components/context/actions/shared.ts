@@ -28,7 +28,7 @@ export function handleChecklistKeyDown(
 ) {
   if (event.key === "Enter" && event.shiftKey) {
     event.preventDefault();
-    addItemFn(true, index);
+    addItemFn(true, index + 1);
   } else if (event.key === "Enter") {
     event.preventDefault();
     (event.target as HTMLElement).blur();

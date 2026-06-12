@@ -2,6 +2,7 @@ export interface ChecklistItem {
   id: string;
   text: string;
   checked: boolean;
+  order: string;
 }
 
 export interface Row {
@@ -187,6 +188,14 @@ export type ChecklistAction =
   | {
     type: "CHECKLIST/DELETE_ITEM";
     payload: { target: "draft" | "editDraft"; itemId: string };
+  }
+  | {
+    type: "CHECKLIST/REORDER_ITEM";
+    payload: {
+      target: "draft" | "editDraft";
+      itemId: string;
+      beforeItemId: string | null;
+    };
   };
 
 export type ChecklistAIAction =

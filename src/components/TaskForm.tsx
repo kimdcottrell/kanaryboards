@@ -67,6 +67,7 @@ export default function TaskForm({
   addChecklistItem,
   updateChecklistItem,
   deleteChecklistItem,
+  reorderChecklistItem,
   handleChecklistKeyDown,
   setChecklistInputRef,
   checklistPrompt,
@@ -141,6 +142,7 @@ export default function TaskForm({
           addChecklistItem={addChecklistItem}
           updateChecklistItem={updateChecklistItem}
           deleteChecklistItem={deleteChecklistItem}
+          reorderChecklistItem={reorderChecklistItem}
           handleChecklistKeyDown={handleChecklistKeyDown}
           setChecklistInputRef={setChecklistInputRef}
         />

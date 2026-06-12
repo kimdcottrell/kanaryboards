@@ -33,7 +33,8 @@ export function useTaskEditActions() {
     focusNew = false,
     insertBeforeIndex?: number,
   ) => {
-    const item = { id: createId(), text: "", checked: false };
+    // order is assigned by the reducer from the insert position's neighbors.
+    const item = { id: createId(), text: "", checked: false, order: "" };
     dispatch({
       type: "CHECKLIST/ADD_ITEM",
       payload: { target: "editDraft", item, insertBeforeIndex },
@@ -65,6 +66,11 @@ export function useTaskEditActions() {
       dispatch({
         type: "CHECKLIST/DELETE_ITEM",
         payload: { target: "editDraft", itemId: id },
+      }),
+    reorderEditChecklistItem: (itemId: string, beforeItemId: string | null) =>
+      dispatch({
+        type: "CHECKLIST/REORDER_ITEM",
+        payload: { target: "editDraft", itemId, beforeItemId },
       }),
   }), [dispatch]);
 

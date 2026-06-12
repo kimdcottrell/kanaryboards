@@ -1,5 +1,5 @@
 import type { BoardState, DragAction } from "../types.ts";
-import { generateKeyBetween } from "fractional-indexing";
+import { reorderKey } from "../ordering.ts";
 
 export function startTask(
   state: BoardState,
@@ -25,11 +25,10 @@ export function dropTask(
     return { ...state, draggedTask: null };
   }
   // Append to the end of the target cell
-  const cellTasks = state.tasks
-    .filter((t) => t.rowId === toRowId && t.colId === toColId)
-    .sort((a, b) => a.order < b.order ? -1 : 1);
-  const lastOrder = cellTasks[cellTasks.length - 1]?.order ?? null;
-  const newOrder = generateKeyBetween(lastOrder, null);
+  const cellTasks = state.tasks.filter((t) =>
+    t.rowId === toRowId && t.colId === toColId
+  );
+  const newOrder = reorderKey(cellTasks, state.draggedTask.id, null)!;
   return {
     ...state,
     tasks: state.tasks.map((t) =>

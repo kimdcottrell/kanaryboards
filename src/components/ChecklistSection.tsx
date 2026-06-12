@@ -1,14 +1,49 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CloseButton from "./buttons/CloseButton.tsx";
+import {
+  beforeIdFromOrderedList,
+  type DropTarget,
+  dropPositionFromEvent,
+} from "@lib/drag.ts";
 
 export default function ChecklistSection({
   checklist,
   addChecklistItem,
   updateChecklistItem,
   deleteChecklistItem,
+  reorderChecklistItem,
   handleChecklistKeyDown,
   setChecklistInputRef,
 }) {
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
+
+  useEffect(() => {
+    if (!draggedId) setDropTarget(null);
+  }, [draggedId]);
+
+  const handleItemDragOver = (e, itemId) => {
+    if (!draggedId) return;
+    e.preventDefault();
+    const position = dropPositionFromEvent(e);
+    setDropTarget((prev) =>
+      prev?.id === itemId && prev?.position === position
+        ? prev
+        : { id: itemId, position }
+    );
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const target = dropTarget;
+    const moved = draggedId;
+    setDraggedId(null);
+    setDropTarget(null);
+    if (moved) {
+      reorderChecklistItem(moved, beforeIdFromOrderedList(checklist, target));
+    }
+  };
+
   return (
     <div className="space-y-3 rounded bg-base-content/10 p-4">
       <div className="flex items-center justify-between gap-3">
@@ -26,12 +61,35 @@ export default function ChecklistSection({
           </span>
         </button>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-3" onDrop={handleDrop}>
         {checklist.map((item, index) => (
           <div
             key={item.id}
+            data-checklist-item={item.id}
+            onDragOver={(e) => handleItemDragOver(e, item.id)}
             className="rounded flex items-center gap-3 bg-base-content/10 px-3 py-2"
+            style={{
+              opacity: draggedId === item.id ? 0.4 : 1,
+              borderTop: `2px solid ${
+                dropTarget?.id === item.id && dropTarget?.position === "before"
+                  ? "var(--color-secondary)"
+                  : "transparent"
+              }`,
+              borderBottom: `2px solid ${
+                dropTarget?.id === item.id && dropTarget?.position === "after"
+                  ? "var(--color-secondary)"
+                  : "transparent"
+              }`,
+            }}
           >
+            <span
+              draggable="true"
+              onDragStart={() => setDraggedId(item.id)}
+              onDragEnd={() => setDraggedId(null)}
+              aria-label="Drag to reorder"
+              className="iconify hugeicons--drag-drop-vertical text-xl shrink-0 cursor-grab text-base-content/50"
+            >
+            </span>
             <input
               type="checkbox"
               checked={item.checked}

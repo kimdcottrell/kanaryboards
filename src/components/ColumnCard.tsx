@@ -9,6 +9,7 @@ import {
   useTasksByCell,
 } from "./context/hooks.ts";
 import { useRenderCount } from "@lib/use-render-count.ts";
+import { beforeIdFromOrderedList, dropPositionFromEvent } from "@lib/drag.ts";
 
 export default function ColumnCard({ column, row }) {
   const tasksByCell = useTasksByCell();
@@ -33,14 +34,11 @@ export default function ColumnCard({ column, row }) {
   const handleTaskDragOver = (e, taskId) => {
     e.preventDefault();
     e.stopPropagation();
-    const rect = e.currentTarget.getBoundingClientRect();
-    const position = e.clientY < rect.top + rect.height / 2
-      ? "before"
-      : "after";
+    const position = dropPositionFromEvent(e);
     setDropTarget((prev) =>
-      prev?.taskId === taskId && prev?.position === position
+      prev?.id === taskId && prev?.position === position
         ? prev
-        : { taskId, position }
+        : { id: taskId, position }
     );
   };
 
@@ -51,18 +49,10 @@ export default function ColumnCard({ column, row }) {
     if (!draggedTask) return;
 
     if (draggedTask.rowId === row.id && draggedTask.colId === column.id) {
-      let beforeTaskId;
-      if (!target) {
-        beforeTaskId = null;
-      } else if (target.position === "before") {
-        beforeTaskId = target.taskId;
-      } else {
-        const idx = cellTasks.findIndex((t) => t.id === target.taskId);
-        beforeTaskId = idx !== -1 && idx < cellTasks.length - 1
-          ? cellTasks[idx + 1].id
-          : null;
-      }
-      reorderTaskInCell(draggedTask.id, beforeTaskId);
+      reorderTaskInCell(
+        draggedTask.id,
+        beforeIdFromOrderedList(cellTasks, target),
+      );
     } else {
       handleColumnDrop(row.id, column.id)(e);
     }
@@ -134,9 +124,9 @@ export default function ColumnCard({ column, row }) {
             row={row}
             column={column}
             onDragOver={(e) => handleTaskDragOver(e, task.id)}
-            isDropBefore={dropTarget?.taskId === task.id &&
+            isDropBefore={dropTarget?.id === task.id &&
               dropTarget?.position === "before"}
-            isDropAfter={dropTarget?.taskId === task.id &&
+            isDropAfter={dropTarget?.id === task.id &&
               dropTarget?.position === "after"}
             isDragging={draggedTask?.id === task.id}
           />
