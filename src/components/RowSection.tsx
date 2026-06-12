@@ -1,23 +1,26 @@
 import { useState } from "react";
 import ColumnCard from "./ColumnCard.tsx";
 import CloseButton from "./buttons/CloseButton.tsx";
-import { useBoard } from "./context/useBoard.ts";
+import {
+  useBoardDataState,
+  useRowActions,
+  useRowEditActions,
+  useRowEditState,
+} from "./context/hooks.ts";
+import { useRenderCount } from "@lib/use-render-count.ts";
 
 export default function RowSection({ row }) {
   const [collapsed, setCollapsed] = useState(false);
-  const {
-    columns,
-    editingRowId,
-    editingRowName,
-    setEditingRowName,
-    editRowTitle,
-    saveRowTitle,
-    deleteRow,
-  } = useBoard();
+  const { columns } = useBoardDataState();
+  const { editingRowId, editingRowName } = useRowEditState();
+  const { setEditingRowName, editRowTitle, saveRowTitle } = useRowEditActions();
+  const { deleteRow } = useRowActions();
+  const renderCount = useRenderCount();
 
   return (
     <section
       id={`row-section-${row.id}`}
+      data-render-count={renderCount}
       className="space-y-4 p-5 shadow-lg shadow-base-300/10"
       style={{
         backgroundColor: `color-mix(in srgb, ${row.color} 10%, transparent)`,

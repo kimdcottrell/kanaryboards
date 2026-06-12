@@ -1,13 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  DAY_THEME,
-  NIGHT_THEME,
   applyTheme,
+  DAY_THEME,
   getPreferredTheme,
+  NIGHT_THEME,
   toggleTheme,
 } from "@components/theme/theme.ts";
 
-const globalCss = await Deno.readTextFile(`${Deno.cwd()}/src/styles/global.css`);
+const globalCss = await Deno.readTextFile(
+  `${Deno.cwd()}/src/styles/global.css`,
+);
 
 describe("theme constants match global.css", () => {
   it("DAY_THEME is defined as a DaisyUI theme in global.css", () => {
@@ -48,7 +50,7 @@ describe("getPreferredTheme", () => {
   });
 
   it("returns NIGHT_THEME when no saved theme and dark mode is preferred", () => {
-    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
+    globalThis.matchMedia = vi.fn().mockReturnValue({ matches: true });
     expect(getPreferredTheme()).toBe(NIGHT_THEME);
   });
 

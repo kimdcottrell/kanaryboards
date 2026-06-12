@@ -1,8 +1,14 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { vi, test, expect, describe, beforeEach, afterEach } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
-  makeBaseBoardState,
+  makeBoardDataState,
+  makeBoardRefs,
+  makeChecklistAIActions,
+  makeChecklistAIState,
+  makeTaskActions,
+  makeTaskEditActions,
+  makeTaskEditState,
   mockColumn,
   mockRow,
   secondColumn,
@@ -17,23 +23,35 @@ vi.mock("react-router-dom", async (importOriginal) => {
   return { ...actual, useNavigate: () => mockNavigate, useParams: () => ({}) };
 });
 
-vi.mock("@components/context/useBoard.ts", () => ({
-  useBoard: vi.fn(),
+vi.mock("@components/context/hooks.ts", () => ({
+  useBoardDataState: vi.fn(),
+  useTaskEditState: vi.fn(),
+  useTaskEditActions: vi.fn(),
+  useTaskActions: vi.fn(),
+  useBoardRefs: vi.fn(),
+  useChecklistAIState: vi.fn(),
+  useChecklistAIActions: vi.fn(),
+  handleChecklistKeyDown: vi.fn(),
 }));
 
 vi.mock("@lyfie/luthor", () => ({
-  ExtensiveEditor: (props: any) =>
+  ExtensiveEditor: (props: { initialMode?: string }) =>
     React.createElement("div", {
       "data-testid": "luthor-editor",
       "data-initial-mode": props.initialMode,
     }),
 }));
 
-import { useBoard } from "@components/context/useBoard.ts";
+import {
+  useBoardDataState,
+  useBoardRefs,
+  useChecklistAIActions,
+  useChecklistAIState,
+  useTaskActions,
+  useTaskEditActions,
+  useTaskEditState,
+} from "@components/context/hooks.ts";
 import TaskEditModal from "@components/TaskEditModal.tsx";
-
-const mockUseBoard = vi.mocked(useBoard);
-const board = makeBaseBoardState();
 
 const editTask: Task = {
   id: "task-42",
@@ -45,7 +63,13 @@ const editTask: Task = {
 };
 
 beforeEach(() => {
-  mockUseBoard.mockReturnValue(board as any);
+  vi.mocked(useBoardDataState).mockReturnValue(makeBoardDataState());
+  vi.mocked(useTaskEditState).mockReturnValue(makeTaskEditState());
+  vi.mocked(useTaskEditActions).mockReturnValue(makeTaskEditActions());
+  vi.mocked(useTaskActions).mockReturnValue(makeTaskActions());
+  vi.mocked(useBoardRefs).mockReturnValue(makeBoardRefs());
+  vi.mocked(useChecklistAIState).mockReturnValue(makeChecklistAIState());
+  vi.mocked(useChecklistAIActions).mockReturnValue(makeChecklistAIActions());
 });
 
 afterEach(() => {
@@ -60,35 +84,31 @@ describe("TaskEditModal", () => {
   });
 
   test("shows loading message when editTaskDraft is null", () => {
-    mockUseBoard.mockReturnValue({
-      ...board,
-      taskEditModalOpen: true,
-      editTaskDraft: null,
-    } as any);
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: null }),
+    );
     render(<TaskEditModal />);
     expect(screen.getByText(/Loading task/)).toBeTruthy();
   });
 
   test("does not show loading message when editTaskDraft is set", () => {
-    mockUseBoard.mockReturnValue({
-      ...board,
-      taskEditModalOpen: true,
-      editTaskDraft: editTask,
-      columns: [mockColumn],
-      rows: [mockRow],
-    } as any);
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
+    );
+    vi.mocked(useBoardDataState).mockReturnValue(
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
+    );
     render(<TaskEditModal />);
     expect(screen.queryByText(/Loading task/)).toBeNull();
   });
 
   test("submit button label is 'Save' in edit mode", () => {
-    mockUseBoard.mockReturnValue({
-      ...board,
-      taskEditModalOpen: true,
-      editTaskDraft: editTask,
-      columns: [mockColumn],
-      rows: [mockRow],
-    } as any);
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
+    );
+    vi.mocked(useBoardDataState).mockReturnValue(
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
+    );
     render(<TaskEditModal />);
     expect(
       screen.getByRole("button", { name: "Save", hidden: true }),
@@ -96,13 +116,12 @@ describe("TaskEditModal", () => {
   });
 
   test("Delete button is present in edit modal", () => {
-    mockUseBoard.mockReturnValue({
-      ...board,
-      taskEditModalOpen: true,
-      editTaskDraft: editTask,
-      columns: [mockColumn],
-      rows: [mockRow],
-    } as any);
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
+    );
+    vi.mocked(useBoardDataState).mockReturnValue(
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
+    );
     render(<TaskEditModal />);
     expect(
       screen.getByRole("button", { name: "Delete", hidden: true }),
@@ -110,13 +129,12 @@ describe("TaskEditModal", () => {
   });
 
   test("Cancel button is absent in edit modal (TaskForm receives no onCancel)", () => {
-    mockUseBoard.mockReturnValue({
-      ...board,
-      taskEditModalOpen: true,
-      editTaskDraft: editTask,
-      columns: [mockColumn],
-      rows: [mockRow],
-    } as any);
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
+    );
+    vi.mocked(useBoardDataState).mockReturnValue(
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
+    );
     render(<TaskEditModal />);
     expect(
       screen.queryByRole("button", { name: "Cancel", hidden: true }),
@@ -124,13 +142,12 @@ describe("TaskEditModal", () => {
   });
 
   test("Luthor editor defaults to visual-only mode", () => {
-    mockUseBoard.mockReturnValue({
-      ...board,
-      taskEditModalOpen: true,
-      editTaskDraft: editTask,
-      columns: [mockColumn],
-      rows: [mockRow],
-    } as any);
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
+    );
+    vi.mocked(useBoardDataState).mockReturnValue(
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
+    );
     render(<TaskEditModal />);
     expect(
       screen.getByTestId("luthor-editor").getAttribute("data-initial-mode"),
@@ -138,13 +155,15 @@ describe("TaskEditModal", () => {
   });
 
   test("Status dropdown shows all column options", () => {
-    mockUseBoard.mockReturnValue({
-      ...board,
-      taskEditModalOpen: true,
-      editTaskDraft: editTask,
-      columns: [mockColumn, secondColumn],
-      rows: [mockRow],
-    } as any);
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
+    );
+    vi.mocked(useBoardDataState).mockReturnValue(
+      makeBoardDataState({
+        columns: [mockColumn, secondColumn],
+        rows: [mockRow],
+      }),
+    );
     render(<TaskEditModal />);
     expect(
       screen.getByRole("option", { name: "To Do", hidden: true }),
@@ -155,13 +174,12 @@ describe("TaskEditModal", () => {
   });
 
   test("Row dropdown shows all row options", () => {
-    mockUseBoard.mockReturnValue({
-      ...board,
-      taskEditModalOpen: true,
-      editTaskDraft: editTask,
-      columns: [mockColumn],
-      rows: [mockRow, secondRow],
-    } as any);
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
+    );
+    vi.mocked(useBoardDataState).mockReturnValue(
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow, secondRow] }),
+    );
     render(<TaskEditModal />);
     expect(
       screen.getByRole("option", { name: "Feature", hidden: true }),
@@ -172,13 +190,18 @@ describe("TaskEditModal", () => {
   });
 
   test("Status dropdown reflects the task's current colId", () => {
-    mockUseBoard.mockReturnValue({
-      ...board,
-      taskEditModalOpen: true,
-      editTaskDraft: { ...editTask, colId: "col-2" },
-      columns: [mockColumn, secondColumn],
-      rows: [mockRow],
-    } as any);
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({
+        taskEditModalOpen: true,
+        editTaskDraft: { ...editTask, colId: "col-2" },
+      }),
+    );
+    vi.mocked(useBoardDataState).mockReturnValue(
+      makeBoardDataState({
+        columns: [mockColumn, secondColumn],
+        rows: [mockRow],
+      }),
+    );
     render(<TaskEditModal />);
     const [statusSelect] = screen.getAllByRole("combobox", {
       hidden: true,
@@ -187,13 +210,15 @@ describe("TaskEditModal", () => {
   });
 
   test("Row dropdown reflects the task's current rowId", () => {
-    mockUseBoard.mockReturnValue({
-      ...board,
-      taskEditModalOpen: true,
-      editTaskDraft: { ...editTask, rowId: "row-2" },
-      columns: [mockColumn],
-      rows: [mockRow, secondRow],
-    } as any);
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({
+        taskEditModalOpen: true,
+        editTaskDraft: { ...editTask, rowId: "row-2" },
+      }),
+    );
+    vi.mocked(useBoardDataState).mockReturnValue(
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow, secondRow] }),
+    );
     render(<TaskEditModal />);
     const selects = screen.getAllByRole("combobox", {
       hidden: true,
@@ -203,14 +228,13 @@ describe("TaskEditModal", () => {
 
   test("calls deleteTask with the task id when Delete is clicked", () => {
     const deleteTask = vi.fn();
-    mockUseBoard.mockReturnValue({
-      ...board,
-      taskEditModalOpen: true,
-      editTaskDraft: editTask,
-      columns: [mockColumn],
-      rows: [mockRow],
-      deleteTask,
-    } as any);
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
+    );
+    vi.mocked(useBoardDataState).mockReturnValue(
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
+    );
+    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ deleteTask }));
     render(<TaskEditModal />);
     fireEvent.click(
       screen.getByRole("button", { name: "Delete", hidden: true }),

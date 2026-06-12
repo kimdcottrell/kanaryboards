@@ -1,12 +1,12 @@
 // @vitest-environment node
-import { beforeEach, afterEach, describe, test, expect } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import {
-  saveBoard,
-  getBoard,
-  deleteBoard,
-  getBoardIdForUser,
-  setBoardIdForUser,
   _setKvForTest,
+  deleteBoard,
+  getBoard,
+  getBoardIdForUser,
+  saveBoard,
+  setBoardIdForUser,
 } from "@lib/kv.ts";
 import type { PersistedBoard } from "@lib/kv.ts";
 

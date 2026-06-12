@@ -4,12 +4,13 @@ import BoardConfiguration from "./BoardConfiguration.tsx";
 import RowBoard from "./RowBoard.tsx";
 import TaskCreateModal from "./TaskCreateModal.tsx";
 import TaskEditModal from "./TaskEditModal.tsx";
-import { useBoard } from "./context/useBoard.ts";
+import { useBoardDataState, useTaskActions } from "./context/hooks.ts";
 
 export default function BoardView() {
   const navigate = useNavigate();
   const { taskId } = useParams();
-  const { tasks, boardLoaded, startEditTask } = useBoard();
+  const { tasks, boardLoaded } = useBoardDataState();
+  const { startEditTask } = useTaskActions();
   const syncedTaskId = useRef<string | undefined>(undefined);
 
   useEffect(() => {

@@ -1,6 +1,11 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { vi, test, expect, describe, beforeEach, afterEach } from "vitest";
-import { makeBaseBoardState, mockRow, mockTask } from "./setup.ts";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import {
+  makeDragActions,
+  makeTaskActions,
+  mockRow,
+  mockTask,
+} from "./setup.ts";
 
 const mockNavigate = vi.fn();
 
@@ -9,18 +14,20 @@ vi.mock("react-router-dom", async (importOriginal) => {
   return { ...actual, useNavigate: () => mockNavigate, useParams: () => ({}) };
 });
 
-vi.mock("@components/context/useBoard.ts", () => ({
-  useBoard: vi.fn(),
+vi.mock("@components/context/hooks.ts", () => ({
+  useTaskActions: vi.fn(),
+  useDragActions: vi.fn(),
 }));
 
-import { useBoard } from "@components/context/useBoard.ts";
+import { useDragActions, useTaskActions } from "@components/context/hooks.ts";
 import TaskCard from "@components/TaskCard.tsx";
 
-const mockUseBoard = vi.mocked(useBoard);
-const board = makeBaseBoardState();
+const taskActions = makeTaskActions();
+const dragActions = makeDragActions();
 
 beforeEach(() => {
-  mockUseBoard.mockReturnValue(board as any);
+  vi.mocked(useTaskActions).mockReturnValue(taskActions);
+  vi.mocked(useDragActions).mockReturnValue(dragActions);
 });
 
 afterEach(() => {
@@ -89,7 +96,7 @@ describe("TaskCard", () => {
 
   test("reduces opacity to 0.4 when isDragging is true", () => {
     const { container } = render(
-      <TaskCard {...defaultProps} isDragging={true} />,
+      <TaskCard {...defaultProps} isDragging />,
     );
     expect(container.querySelector("article")?.style.opacity).toBe("0.4");
   });
@@ -104,7 +111,7 @@ describe("TaskCard", () => {
   test("calls startEditTask with the task when the title area is clicked", () => {
     render(<TaskCard {...defaultProps} />);
     fireEvent.click(screen.getByText("Test task"));
-    expect(board.startEditTask).toHaveBeenCalledWith(mockTask);
+    expect(taskActions.startEditTask).toHaveBeenCalledWith(mockTask);
   });
 
   test("calls toggleTaskChecklist with task and item ids when checkbox changes", () => {
@@ -114,6 +121,9 @@ describe("TaskCard", () => {
     };
     render(<TaskCard {...defaultProps} task={task} />);
     fireEvent.click(screen.getByRole("checkbox"));
-    expect(board.toggleTaskChecklist).toHaveBeenCalledWith("task-1", "i1");
+    expect(taskActions.toggleTaskChecklist).toHaveBeenCalledWith(
+      "task-1",
+      "i1",
+    );
   });
 });

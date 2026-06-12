@@ -1,7 +1,12 @@
 import { expect, testNoClerk as test } from "./fixtures.ts";
 
 const CLEAN_BOARD = {
-  rows: [{ id: "row-e2e-1", title: "Sample Project", color: "var(--color-row-blue)", order: "a0" }],
+  rows: [{
+    id: "row-e2e-1",
+    title: "Sample Project",
+    color: "var(--color-row-blue)",
+    order: "a0",
+  }],
   columns: [
     { id: "col-e2e-1", title: "To Do", order: "a0" },
     { id: "col-e2e-2", title: "In Progress", order: "a1" },
@@ -31,11 +36,15 @@ test.describe("Task URL", () => {
     await page.waitForSelector("button:has(.hugeicons--credit-card-add)");
 
     // Open task create modal — .first() avoids strict-mode multi-match (3 add-task buttons)
-    await page.locator("button:has(.hugeicons--credit-card-add)").first().click();
+    await page.locator("button:has(.hugeicons--credit-card-add)").first()
+      .click();
     await expect(page.getByRole("heading", { name: "Add task" })).toBeVisible();
 
-    await page.getByRole("group", { name: "Title" }).getByRole("textbox").fill("My URL Test Task");
-    await page.locator("dialog").getByRole("button", { name: "Create task" }).click();
+    await page.getByRole("group", { name: "Title" }).getByRole("textbox").fill(
+      "My URL Test Task",
+    );
+    await page.locator("dialog").getByRole("button", { name: "Create task" })
+      .click();
 
     // Task card is visible and URL is still /
     await expect(page.getByText("My URL Test Task")).toBeVisible();

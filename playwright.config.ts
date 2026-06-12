@@ -4,21 +4,27 @@
 import process from "node:process";
 import { defineConfig, devices } from "@playwright/test";
 
-// TODO: https://stackoverflow.com/questions/74796008/how-to-generate-test-with-playwright-and-codegen-from-a-docker-container
-//       https://github.com/microsoft/playwright-python/issues/274
 export default defineConfig({
-  testDir: 'tests/playwright',
-  ...(process.env.START_DEV_SERVER ? {
-    webServer: {
-      command: 'deno task dev',
-      reuseExistingServer: true,
-      url: 'https://kanary.local.dev',
-      wait: {
-        stdout: /watching for file changes.../,
+  testDir: "tests/playwright",
+  ...(process.env.START_DEV_SERVER
+    ? {
+      webServer: {
+        command: "deno task dev",
+        reuseExistingServer: true,
+        url: "https://kanary.local.dev",
+        wait: {
+          stdout: /watching for file changes.../,
+        },
       },
-    },
-  } : {}),
-  retries: 2, // sometimes the first test run fails due to what I can only imagine are the ghosts in the machine, so we retry once
+    }
+    : {}),
+  // sometimes the first test run fails due to what I can only imagine are
+  // the ghosts in the machine
+  retries: 2,
+  // The app is served by the dev server (client:only React island), so the
+  // initial mount can take longer than the 5s default under concurrent
+  // multi-browser load — give web-first assertions more room before failing.
+  expect: { timeout: 10_000 },
   use: {
     baseURL: process.env.BASE_URL ?? "https://kanary.local.dev",
     ignoreHTTPSErrors: true,

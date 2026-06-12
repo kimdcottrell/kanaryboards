@@ -1,34 +1,39 @@
 import { useState } from "react";
-import { useBoard } from "./context/useBoard.ts";
+import {
+  useBoardDataState,
+  useBoardLifecycleActions,
+  useColumnConfigActions,
+  useColumnConfigState,
+  useRowActions,
+  useRowFormActions,
+  useRowFormState,
+} from "./context/hooks.ts";
 import { rowColorOptions } from "./context/constants.ts";
+import { useRenderCount } from "@lib/use-render-count.ts";
 
 export default function BoardConfiguration() {
+  const { rows, columns } = useBoardDataState();
   const {
-    rows,
-    columns,
     newRowName,
     newRowPrompt,
     newRowFormKey,
     isGeneratingTasks,
     taskGenerationStatus,
-    defaultColumnInput,
-    draggedDefaultIndex,
-    setNewRowName,
-    setNewRowPrompt,
+  } = useRowFormState();
+  const { setNewRowName, setNewRowPrompt, addRow } = useRowFormActions();
+  const { defaultColumnInput, draggedDefaultIndex } = useColumnConfigState();
+  const {
     setDefaultColumnInput,
     setDraggedDefaultIndex,
-    addRow,
     handleDefaultColumnInputKeyDown,
     handleDefaultColumnDragStart,
     handleDefaultColumnDragOver,
     handleDefaultColumnDrop,
     deleteColumn,
-    updateRowColor,
-    moveRowUp,
-    moveRowDown,
-    renameRow,
-    confirmResetBoard,
-  } = useBoard();
+  } = useColumnConfigActions();
+  const { updateRowColor, moveRowUp, moveRowDown, renameRow } = useRowActions();
+  const { confirmResetBoard } = useBoardLifecycleActions();
+  const renderCount = useRenderCount();
 
   const [editId, setEditId] = useState(null);
   const [editName, setEditName] = useState("");
@@ -54,6 +59,7 @@ export default function BoardConfiguration() {
     <div className="grid">
       <section
         id="board-config"
+        data-render-count={renderCount}
         className="max-w-11/12 place-self-center collapse collapse-arrow mb-16 bg-base-300 p-4 shadow-xl shadow-base-300/20"
       >
         <input

@@ -1,6 +1,13 @@
 {
   "allowScripts": {
-    "allow": ["npm:@anthropic-ai/claude-code", "npm:@clerk/shared@4.14.0", "npm:@google/genai@2.8.0", "npm:esbuild", "npm:protobufjs", "npm:sharp"],
+    "allow": [
+      "npm:@anthropic-ai/claude-code",
+      "npm:@clerk/shared@4.14.0",
+      "npm:@google/genai@2.8.0",
+      "npm:esbuild",
+      "npm:protobufjs",
+      "npm:sharp"
+    ],
     "deny": []
   },
   "unstable": ["kv"],
@@ -8,17 +15,20 @@
     "exclude": [
       "**/*.md",
       "**/*.mdx"
-    ],
-    "include": [
-      "./src/"
     ]
   },
-  "lint": {
-    "exclude": [
-      "./dist/", 
-      "./tests"
-    ]
-  },
+  "exclude": [
+    ".astro/",
+    ".claude/",
+    ".devcontainer/",
+    ".github/",
+    ".husky/",
+    ".vscode/",
+    "dist/",
+    "node_modules/",
+    "src/db",
+    "test-results/"
+  ],
   "nodeModulesDir": "auto",
   "tasks": {
     "astro": "deno run --allow-all astro",
@@ -52,4 +62,3 @@
     "app": "kanby"
   }
 }
-

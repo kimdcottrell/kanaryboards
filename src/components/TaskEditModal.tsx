@@ -1,33 +1,42 @@
 import { useNavigate } from "react-router-dom";
 import Modal from "./Modal.tsx";
 import TaskForm from "./TaskForm.tsx";
-import { useBoard } from "./context/useBoard.ts";
+import {
+  handleChecklistKeyDown,
+  useBoardDataState,
+  useBoardRefs,
+  useChecklistAIActions,
+  useChecklistAIState,
+  useTaskActions,
+  useTaskEditActions,
+  useTaskEditState,
+} from "./context/hooks.ts";
 
 export default function TaskEditModal() {
   const navigate = useNavigate();
+  const { columns, rows } = useBoardDataState();
+  const { taskEditModalOpen, editTaskDraft } = useTaskEditState();
   const {
-    taskEditModalOpen,
-    editTaskDraft,
-    columns,
-    rows,
-    cancelEditTask,
-    saveTaskEdit,
-    deleteTask,
     setEditTaskDraft,
+    saveTaskEdit,
     addEditChecklistItem,
     updateEditChecklistItem,
     deleteEditChecklistItem,
-    handleChecklistKeyDown,
-    setChecklistInputRef,
+  } = useTaskEditActions();
+  const { cancelEditTask, deleteTask } = useTaskActions();
+  const { setChecklistInputRef } = useBoardRefs();
+  const {
     checklistPrompt,
     checklistPreview,
     isGeneratingChecklist,
     checklistModalError,
+  } = useChecklistAIState();
+  const {
     setChecklistPrompt,
     generateChecklistItems,
     applyChecklistPreview,
     clearChecklistPreview,
-  } = useBoard();
+  } = useChecklistAIActions();
 
   const handleClose = () => {
     cancelEditTask();

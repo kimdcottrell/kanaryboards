@@ -1,4 +1,4 @@
-import { expect, testNoClerk as test } from "./fixtures.ts";
+import { expect, fillStable, testNoClerk as test } from "./fixtures.ts";
 
 const MOCK_TASKS_RESPONSE = {
   response: [
@@ -72,11 +72,10 @@ test.describe("Board Configuration — Create New Row section", () => {
 
     test("adds the new row to row settings when only a name is provided", async ({ page }) => {
       const section = page.locator("#board-config-create-new-row");
-      await section
-        .getByPlaceholder(
-          "A project name, a category for large project tasks, etc.",
-        )
-        .fill("My New Row");
+      const nameInput = section.getByPlaceholder(
+        "A project name, a category for large project tasks, etc.",
+      );
+      await fillStable(nameInput, "My New Row");
       await section.getByRole("button", { name: "Add Row" }).click();
 
       await expect(
@@ -91,7 +90,7 @@ test.describe("Board Configuration — Create New Row section", () => {
       const rowNameInput = section.getByPlaceholder(
         "A project name, a category for large project tasks, etc.",
       );
-      await rowNameInput.fill("My New Row");
+      await fillStable(rowNameInput, "My New Row");
       await section.getByRole("button", { name: "Add Row" }).click();
 
       await expect(rowNameInput).toHaveValue("");
@@ -101,25 +100,29 @@ test.describe("Board Configuration — Create New Row section", () => {
   test.describe("creating a row with AI task generation (mocked /api/generate-tasks)", () => {
     test("hides Add Row button and shows generating status while waiting for the API", async ({ page }) => {
       let resolveRoute!: () => void;
-      await page.route("/api/generate-tasks", (route) =>
-        new Promise<void>((resolve) => {
-          resolveRoute = resolve;
-        }).then(() =>
-          route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify(MOCK_TASKS_RESPONSE),
-          })
-        )
+      await page.route(
+        "/api/generate-tasks",
+        (route) =>
+          new Promise<void>((resolve) => {
+            resolveRoute = resolve;
+          }).then(() =>
+            route.fulfill({
+              status: 200,
+              contentType: "application/json",
+              body: JSON.stringify(MOCK_TASKS_RESPONSE),
+            })
+          ),
       );
 
       const section = page.locator("#board-config-create-new-row");
-      await section
-        .getByPlaceholder(
-          "A project name, a category for large project tasks, etc.",
-        )
-        .fill("Pizza Making");
-      await section.locator("#newRowPrompt").fill("Steps to make a pizza");
+      const nameInput = section.getByPlaceholder(
+        "A project name, a category for large project tasks, etc.",
+      );
+      const promptInput = section.locator("#newRowPrompt");
+      // addRow reads the name/prompt from React state, so commit both inputs
+      // (retrying if an early re-render clobbers them) before submitting.
+      await fillStable(nameInput, "Pizza Making");
+      await fillStable(promptInput, "Steps to make a pizza");
 
       const requestPromise = page.waitForRequest("**/api/generate-tasks");
       await section.getByRole("button", { name: "Add Row" }).click();
@@ -144,12 +147,12 @@ test.describe("Board Configuration — Create New Row section", () => {
         }));
 
       const section = page.locator("#board-config-create-new-row");
-      await section
-        .getByPlaceholder(
-          "A project name, a category for large project tasks, etc.",
-        )
-        .fill("Pizza Making");
-      await section.locator("#newRowPrompt").fill("Steps to make a pizza");
+      const nameInput = section.getByPlaceholder(
+        "A project name, a category for large project tasks, etc.",
+      );
+      const promptInput = section.locator("#newRowPrompt");
+      await fillStable(nameInput, "Pizza Making");
+      await fillStable(promptInput, "Steps to make a pizza");
       await section.getByRole("button", { name: "Add Row" }).click();
 
       await expect(
@@ -168,17 +171,23 @@ test.describe("Board Configuration — Create New Row section", () => {
         }));
 
       const section = page.locator("#board-config-create-new-row");
-      await section
-        .getByPlaceholder(
-          "A project name, a category for large project tasks, etc.",
-        )
-        .fill("Pizza Making");
-      await section.locator("#newRowPrompt").fill("Steps to make a pizza");
+      const nameInput = section.getByPlaceholder(
+        "A project name, a category for large project tasks, etc.",
+      );
+      const promptInput = section.locator("#newRowPrompt");
+      await fillStable(nameInput, "Pizza Making");
+      await fillStable(promptInput, "Steps to make a pizza");
       await section.getByRole("button", { name: "Add Row" }).click();
 
-      await expect(page.getByText("Prepare pizza dough")).toBeVisible({ timeout: 10000 });
-      await expect(page.getByText("Bake pizza")).toBeVisible({ timeout: 10000 });
-      await expect(page.getByText("Slice and serve")).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText("Prepare pizza dough")).toBeVisible({
+        timeout: 10000,
+      });
+      await expect(page.getByText("Bake pizza")).toBeVisible({
+        timeout: 10000,
+      });
+      await expect(page.getByText("Slice and serve")).toBeVisible({
+        timeout: 10000,
+      });
     });
 
     test("restores Add Row button after AI generation completes", async ({ page }) => {
@@ -190,12 +199,12 @@ test.describe("Board Configuration — Create New Row section", () => {
         }));
 
       const section = page.locator("#board-config-create-new-row");
-      await section
-        .getByPlaceholder(
-          "A project name, a category for large project tasks, etc.",
-        )
-        .fill("Pizza Making");
-      await section.locator("#newRowPrompt").fill("Steps to make a pizza");
+      const nameInput = section.getByPlaceholder(
+        "A project name, a category for large project tasks, etc.",
+      );
+      const promptInput = section.locator("#newRowPrompt");
+      await fillStable(nameInput, "Pizza Making");
+      await fillStable(promptInput, "Steps to make a pizza");
       await section.getByRole("button", { name: "Add Row" }).click();
 
       await expect(
@@ -217,8 +226,8 @@ test.describe("Board Configuration — Create New Row section", () => {
       );
       const promptInput = section.locator("#newRowPrompt");
 
-      await rowNameInput.fill("Pizza Making");
-      await promptInput.fill("Steps to make a pizza");
+      await fillStable(rowNameInput, "Pizza Making");
+      await fillStable(promptInput, "Steps to make a pizza");
       await section.getByRole("button", { name: "Add Row" }).click();
 
       await expect(section.getByRole("button", { name: "Add Row" }))

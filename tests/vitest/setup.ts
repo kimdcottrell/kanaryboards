@@ -9,6 +9,6 @@ import { loadRenderers } from "astro:container";
  * container throws a NoMatchingRenderer error at render time.
  */
 export async function createTestContainer() {
-    const renderers = await loadRenderers([reactRenderer()]);
-    return await experimental_AstroContainer.create({ renderers });
+  const renderers = await loadRenderers([reactRenderer()]);
+  return await experimental_AstroContainer.create({ renderers });
 }
