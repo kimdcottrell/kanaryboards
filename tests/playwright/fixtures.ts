@@ -1,5 +1,21 @@
 import { setupClerkTestingToken } from "@clerk/testing/playwright";
-import { expect, test as base } from "@playwright/test";
+import { expect, type Locator, test as base } from "@playwright/test";
+
+// Fills a React-controlled input and waits until the value actually commits.
+// The board mounts via client:only, so shortly after an input becomes
+// fillable an early re-render can clobber a freshly-filled controlled input
+// back to its state value ("") before onChange settles. Retrying the whole
+// fill+assert via toPass re-applies the value until it sticks, which removes
+// the cross-browser flakiness around typing into these inputs.
+export async function fillStable(
+  locator: Locator,
+  value: string,
+): Promise<void> {
+  await expect(async () => {
+    await locator.fill(value);
+    await expect(locator).toHaveValue(value);
+  }).toPass({ timeout: 10000 });
+}
 
 // Derive the Clerk Frontend API URL from the publishable key as a fallback.
 // CLERK_FAPI is set by clerkSetup() in global.setup.ts, but env vars don't

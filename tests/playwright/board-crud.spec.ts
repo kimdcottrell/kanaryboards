@@ -1,5 +1,5 @@
 /// <reference lib="dom" />
-import { expect, testNoClerk as test } from "./fixtures.ts";
+import { expect, fillStable, testNoClerk as test } from "./fixtures.ts";
 
 /**
  * Seeded board state, written to localStorage before navigation so every
@@ -56,13 +56,17 @@ test.describe("Board CRUD", () => {
     await page.goto("/");
     await expect(page.locator("#row-section-row-e2e-1")).toBeVisible();
     await page.locator("#board-config-collapse-toggle").click();
+    // Wait for the collapse to expand before tests interact with its contents.
+    await expect(page.locator("#board-config-column-settings")).toBeVisible();
   });
 
   test.describe("column management", () => {
     test("adds a new default column to every row", async ({ page }) => {
       const columnSettings = page.locator("#board-config-column-settings");
       const input = columnSettings.getByPlaceholder("Add new column");
-      await input.fill("Backlog");
+      // The Enter handler reads the column title from React state, so commit the
+      // value (retrying if an early re-render clobbers it) before the keypress.
+      await fillStable(input, "Backlog");
       await input.press("Enter");
 
       await expect(columnSettings.getByText("Backlog", { exact: true }))
@@ -224,8 +228,10 @@ test.describe("Board CRUD", () => {
         .toBeVisible();
       await expect(page).toHaveURL(/\/task\/task-e2e-1/);
 
-      await page.getByRole("group", { name: "Title" }).getByRole("textbox")
-        .fill("Write detailed specs");
+      await fillStable(
+        page.getByRole("group", { name: "Title" }).getByRole("textbox"),
+        "Write detailed specs",
+      );
       await page.locator("#edit-column-select-task-e2e-1").selectOption(
         "col-e2e-2",
       );
