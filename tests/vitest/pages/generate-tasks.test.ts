@@ -80,7 +80,7 @@ async function importApiModel() {
 
 describe("POST /api/generate-tasks", () => {
   describe("when AI service is not configured", () => {
-    beforeEach(async () => {
+    beforeEach(() => {
       vi.resetModules();
       vi.stubEnv("GOOGLE_AI_STUDIO_KEY", "");
     });

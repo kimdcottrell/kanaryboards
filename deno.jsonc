@@ -13,12 +13,18 @@
       "./src/"
     ]
   },
-  "lint": {
-    "exclude": [
-      "./dist/", 
-      "./tests"
-    ]
-  },
+  "exclude": [
+    ".astro/",
+    ".claude/",
+    ".devcontainer/",
+    ".github/",
+    ".husky/",
+    ".vscode/",
+    "dist/", 
+    "node_modules/", 
+    "src/db",
+    "test-results/"
+  ],
   "nodeModulesDir": "auto",
   "tasks": {
     "astro": "deno run --allow-all astro",

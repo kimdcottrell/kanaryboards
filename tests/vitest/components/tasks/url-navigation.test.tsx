@@ -37,7 +37,7 @@ vi.mock("@components/TaskCreateModal.tsx", () => ({ default: () => null }));
 
 // Stub the rich-text editor used inside TaskForm / TaskEditModal
 vi.mock("@lyfie/luthor", () => ({
-  ExtensiveEditor: (props: any) =>
+  ExtensiveEditor: () =>
     React.createElement("div", { "data-testid": "luthor-editor" }),
 }));
 
@@ -75,14 +75,14 @@ const urlTask = { ...mockTask, id: "task-abc-123" };
 beforeEach(() => {
   mockNavigate.mockClear();
   delete mockParams.taskId;
-  vi.mocked(useTaskActions).mockReturnValue(makeTaskActions() as any);
-  vi.mocked(useDragActions).mockReturnValue(makeDragActions() as any);
-  vi.mocked(useBoardDataState).mockReturnValue(makeBoardDataState() as any);
-  vi.mocked(useTaskEditState).mockReturnValue(makeTaskEditState() as any);
-  vi.mocked(useTaskEditActions).mockReturnValue(makeTaskEditActions() as any);
-  vi.mocked(useBoardRefs).mockReturnValue(makeBoardRefs() as any);
-  vi.mocked(useChecklistAIState).mockReturnValue(makeChecklistAIState() as any);
-  vi.mocked(useChecklistAIActions).mockReturnValue(makeChecklistAIActions() as any);
+  vi.mocked(useTaskActions).mockReturnValue(makeTaskActions());
+  vi.mocked(useDragActions).mockReturnValue(makeDragActions());
+  vi.mocked(useBoardDataState).mockReturnValue(makeBoardDataState());
+  vi.mocked(useTaskEditState).mockReturnValue(makeTaskEditState());
+  vi.mocked(useTaskEditActions).mockReturnValue(makeTaskEditActions());
+  vi.mocked(useBoardRefs).mockReturnValue(makeBoardRefs());
+  vi.mocked(useChecklistAIState).mockReturnValue(makeChecklistAIState());
+  vi.mocked(useChecklistAIActions).mockReturnValue(makeChecklistAIActions());
 });
 
 afterEach(() => {
@@ -116,7 +116,7 @@ describe("TaskCard — URL navigation", () => {
 
   test("startEditTask is called alongside navigate when clicking the title", () => {
     const startEditTask = vi.fn();
-    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ startEditTask }) as any);
+    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ startEditTask }));
     const { getByText } = render(<TaskCard {...cardProps} />);
     fireEvent.click(getByText(urlTask.title));
     expect(startEditTask).toHaveBeenCalledWith(urlTask);
@@ -153,10 +153,10 @@ const editTask = {
 
 function setEditState() {
   vi.mocked(useTaskEditState).mockReturnValue(
-    makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }) as any,
+    makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
   );
   vi.mocked(useBoardDataState).mockReturnValue(
-    makeBoardDataState({ columns: [mockColumn, secondColumn], rows: [mockRow, secondRow] }) as any,
+    makeBoardDataState({ columns: [mockColumn, secondColumn], rows: [mockRow, secondRow] }),
   );
 }
 
@@ -164,7 +164,7 @@ describe("TaskEditModal — URL unchanged when status changes", () => {
   test("changing Status dropdown does not call navigate", () => {
     const setEditTaskDraft = vi.fn();
     setEditState();
-    vi.mocked(useTaskEditActions).mockReturnValue(makeTaskEditActions({ setEditTaskDraft }) as any);
+    vi.mocked(useTaskEditActions).mockReturnValue(makeTaskEditActions({ setEditTaskDraft }));
     const { getAllByRole } = render(<TaskEditModal />);
     const [statusSelect] = getAllByRole("combobox", {
       hidden: true,
@@ -177,7 +177,7 @@ describe("TaskEditModal — URL unchanged when status changes", () => {
   test("Status dropdown change calls setEditTaskDraft with updated colId", () => {
     const setEditTaskDraft = vi.fn();
     setEditState();
-    vi.mocked(useTaskEditActions).mockReturnValue(makeTaskEditActions({ setEditTaskDraft }) as any);
+    vi.mocked(useTaskEditActions).mockReturnValue(makeTaskEditActions({ setEditTaskDraft }));
     const { getAllByRole } = render(<TaskEditModal />);
     const [statusSelect] = getAllByRole("combobox", {
       hidden: true,
@@ -193,7 +193,7 @@ describe("TaskEditModal — URL unchanged when row changes", () => {
   test("changing Row dropdown does not call navigate", () => {
     const setEditTaskDraft = vi.fn();
     setEditState();
-    vi.mocked(useTaskEditActions).mockReturnValue(makeTaskEditActions({ setEditTaskDraft }) as any);
+    vi.mocked(useTaskEditActions).mockReturnValue(makeTaskEditActions({ setEditTaskDraft }));
     const { getAllByRole } = render(<TaskEditModal />);
     const selects = getAllByRole("combobox", {
       hidden: true,
@@ -206,7 +206,7 @@ describe("TaskEditModal — URL unchanged when row changes", () => {
   test("Row dropdown change calls setEditTaskDraft with updated rowId", () => {
     const setEditTaskDraft = vi.fn();
     setEditState();
-    vi.mocked(useTaskEditActions).mockReturnValue(makeTaskEditActions({ setEditTaskDraft }) as any);
+    vi.mocked(useTaskEditActions).mockReturnValue(makeTaskEditActions({ setEditTaskDraft }));
     const { getAllByRole } = render(<TaskEditModal />);
     const selects = getAllByRole("combobox", {
       hidden: true,
@@ -222,7 +222,7 @@ describe("TaskEditModal — URL updates on save actions", () => {
   test("closing the modal calls navigate('/')", () => {
     const cancelEditTask = vi.fn();
     setEditState();
-    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ cancelEditTask }) as any);
+    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ cancelEditTask }));
     const { container } = render(<TaskEditModal />);
     const backdrop = container.querySelector(".modal-backdrop") as HTMLElement;
     fireEvent.click(backdrop);
@@ -233,7 +233,7 @@ describe("TaskEditModal — URL updates on save actions", () => {
   test("deleting the task calls navigate('/')", () => {
     const deleteTask = vi.fn();
     setEditState();
-    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ deleteTask }) as any);
+    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ deleteTask }));
     const { getByRole } = render(<TaskEditModal />);
     fireEvent.click(getByRole("button", { name: "Delete", hidden: true }));
     expect(deleteTask).toHaveBeenCalledWith(editTask.id);
@@ -257,9 +257,9 @@ describe("BoardView — deep-link via useParams", () => {
     mockParams.taskId = deepTask.id;
     const startEditTask = vi.fn();
     vi.mocked(useBoardDataState).mockReturnValue(
-      makeBoardDataState({ boardLoaded: true, tasks: [deepTask] }) as any,
+      makeBoardDataState({ boardLoaded: true, tasks: [deepTask] }),
     );
-    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ startEditTask }) as any);
+    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ startEditTask }));
     act(() => {
       render(<BoardView />);
     });
@@ -269,7 +269,7 @@ describe("BoardView — deep-link via useParams", () => {
   test("navigate('/', {replace:true}) is called when taskId is not found in loaded board", () => {
     mockParams.taskId = "ghost-task-id";
     vi.mocked(useBoardDataState).mockReturnValue(
-      makeBoardDataState({ boardLoaded: true, tasks: [] }) as any,
+      makeBoardDataState({ boardLoaded: true, tasks: [] }),
     );
     act(() => {
       render(<BoardView />);
@@ -281,9 +281,9 @@ describe("BoardView — deep-link via useParams", () => {
     mockParams.taskId = deepTask.id;
     const startEditTask = vi.fn();
     vi.mocked(useBoardDataState).mockReturnValue(
-      makeBoardDataState({ boardLoaded: false, tasks: [deepTask] }) as any,
+      makeBoardDataState({ boardLoaded: false, tasks: [deepTask] }),
     );
-    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ startEditTask }) as any);
+    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ startEditTask }));
     act(() => {
       render(<BoardView />);
     });
@@ -294,9 +294,9 @@ describe("BoardView — deep-link via useParams", () => {
   test("no navigation or modal is triggered when no taskId is present", () => {
     const startEditTask = vi.fn();
     vi.mocked(useBoardDataState).mockReturnValue(
-      makeBoardDataState({ boardLoaded: true, tasks: [deepTask] }) as any,
+      makeBoardDataState({ boardLoaded: true, tasks: [deepTask] }),
     );
-    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ startEditTask }) as any);
+    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ startEditTask }));
     act(() => {
       render(<BoardView />);
     });
@@ -319,9 +319,9 @@ describe("BoardView — deep-link via route params", () => {
     mockParams.taskId = deepTask.id;
     const startEditTask = vi.fn();
     vi.mocked(useBoardDataState).mockReturnValue(
-      makeBoardDataState({ boardLoaded: true, tasks: [deepTask] }) as any,
+      makeBoardDataState({ boardLoaded: true, tasks: [deepTask] }),
     );
-    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ startEditTask }) as any);
+    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ startEditTask }));
     act(() => {
       render(<BoardView />);
     });
@@ -331,7 +331,7 @@ describe("BoardView — deep-link via route params", () => {
   test("navigate to / when route taskId does not match any task", () => {
     mockParams.taskId = "no-such-task";
     vi.mocked(useBoardDataState).mockReturnValue(
-      makeBoardDataState({ boardLoaded: true, tasks: [] }) as any,
+      makeBoardDataState({ boardLoaded: true, tasks: [] }),
     );
     act(() => {
       render(<BoardView />);

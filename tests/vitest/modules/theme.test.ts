@@ -48,7 +48,7 @@ describe("getPreferredTheme", () => {
   });
 
   it("returns NIGHT_THEME when no saved theme and dark mode is preferred", () => {
-    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
+    globalThis.matchMedia = vi.fn().mockReturnValue({ matches: true });
     expect(getPreferredTheme()).toBe(NIGHT_THEME);
   });
 

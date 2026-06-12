@@ -21,8 +21,8 @@ const taskActions = makeTaskActions();
 const dragActions = makeDragActions();
 
 beforeEach(() => {
-  vi.mocked(useTaskActions).mockReturnValue(taskActions as any);
-  vi.mocked(useDragActions).mockReturnValue(dragActions as any);
+  vi.mocked(useTaskActions).mockReturnValue(taskActions);
+  vi.mocked(useDragActions).mockReturnValue(dragActions);
 });
 
 afterEach(() => {
@@ -91,7 +91,7 @@ describe("TaskCard", () => {
 
   test("reduces opacity to 0.4 when isDragging is true", () => {
     const { container } = render(
-      <TaskCard {...defaultProps} isDragging={true} />,
+      <TaskCard {...defaultProps} isDragging />,
     );
     expect(container.querySelector("article")?.style.opacity).toBe("0.4");
   });

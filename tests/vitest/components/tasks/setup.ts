@@ -1,5 +1,28 @@
 import { vi } from "vitest";
 import type { Task, Row, Column } from "@components/context/types.ts";
+import type {
+  useBoardDataState,
+  useBoardRefs,
+  useChecklistAIActions,
+  useChecklistAIState,
+  useDragActions,
+  useTaskActions,
+  useTaskCreateActions,
+  useTaskCreateState,
+  useTaskEditActions,
+  useTaskEditState,
+} from "@components/context/hooks.ts";
+
+type TaskCreateState = ReturnType<typeof useTaskCreateState>;
+type TaskCreateActions = ReturnType<typeof useTaskCreateActions>;
+type ChecklistAIState = ReturnType<typeof useChecklistAIState>;
+type ChecklistAIActions = ReturnType<typeof useChecklistAIActions>;
+type BoardRefs = ReturnType<typeof useBoardRefs>;
+type TaskEditState = ReturnType<typeof useTaskEditState>;
+type TaskEditActions = ReturnType<typeof useTaskEditActions>;
+type BoardDataState = ReturnType<typeof useBoardDataState>;
+type TaskActions = ReturnType<typeof useTaskActions>;
+type DragActions = ReturnType<typeof useDragActions>;
 
 export const mockRow: Row = { id: "row-1", title: "Feature", color: "#ff6b6b", order: "a0" };
 export const mockColumn: Column = { id: "col-1", title: "To Do", order: "a0" };
@@ -26,7 +49,9 @@ export const mockTaskDraft: Task = {
   colId: "col-1",
 };
 
-export function makeTaskCreateState(overrides = {}) {
+export function makeTaskCreateState(
+  overrides: Partial<TaskCreateState> = {},
+): TaskCreateState {
   return {
     taskCreateModalOpen: false,
     taskDraft: mockTaskDraft,
@@ -34,7 +59,9 @@ export function makeTaskCreateState(overrides = {}) {
   };
 }
 
-export function makeTaskCreateActions(overrides = {}) {
+export function makeTaskCreateActions(
+  overrides: Partial<TaskCreateActions> = {},
+): TaskCreateActions {
   return {
     setTaskDraft: vi.fn(),
     createTask: vi.fn(),
@@ -45,7 +72,9 @@ export function makeTaskCreateActions(overrides = {}) {
   };
 }
 
-export function makeChecklistAIState(overrides = {}) {
+export function makeChecklistAIState(
+  overrides: Partial<ChecklistAIState> = {},
+): ChecklistAIState {
   return {
     checklistModalTaskId: null,
     checklistPrompt: "",
@@ -56,7 +85,9 @@ export function makeChecklistAIState(overrides = {}) {
   };
 }
 
-export function makeChecklistAIActions(overrides = {}) {
+export function makeChecklistAIActions(
+  overrides: Partial<ChecklistAIActions> = {},
+): ChecklistAIActions {
   return {
     setChecklistPrompt: vi.fn(),
     generateChecklistItems: vi.fn(),
@@ -67,7 +98,9 @@ export function makeChecklistAIActions(overrides = {}) {
   };
 }
 
-export function makeBoardRefs(overrides = {}) {
+export function makeBoardRefs(
+  overrides: Partial<BoardRefs> = {},
+): BoardRefs {
   return {
     setChecklistInputRef: vi.fn(),
     focusChecklistInput: vi.fn(),
@@ -75,7 +108,9 @@ export function makeBoardRefs(overrides = {}) {
   };
 }
 
-export function makeTaskEditState(overrides = {}) {
+export function makeTaskEditState(
+  overrides: Partial<TaskEditState> = {},
+): TaskEditState {
   return {
     taskEditModalOpen: false,
     editingTaskId: null,
@@ -84,7 +119,9 @@ export function makeTaskEditState(overrides = {}) {
   };
 }
 
-export function makeTaskEditActions(overrides = {}) {
+export function makeTaskEditActions(
+  overrides: Partial<TaskEditActions> = {},
+): TaskEditActions {
   return {
     setEditTaskDraft: vi.fn(),
     saveTaskEdit: vi.fn(),
@@ -95,7 +132,9 @@ export function makeTaskEditActions(overrides = {}) {
   };
 }
 
-export function makeBoardDataState(overrides = {}) {
+export function makeBoardDataState(
+  overrides: Partial<BoardDataState> = {},
+): BoardDataState {
   return {
     rows: [mockRow],
     columns: [mockColumn],
@@ -105,7 +144,9 @@ export function makeBoardDataState(overrides = {}) {
   };
 }
 
-export function makeTaskActions(overrides = {}) {
+export function makeTaskActions(
+  overrides: Partial<TaskActions> = {},
+): TaskActions {
   return {
     startEditTask: vi.fn(),
     toggleTaskChecklist: vi.fn(),
@@ -119,7 +160,9 @@ export function makeTaskActions(overrides = {}) {
   };
 }
 
-export function makeDragActions(overrides = {}) {
+export function makeDragActions(
+  overrides: Partial<DragActions> = {},
+): DragActions {
   return {
     handleDragEnd: vi.fn(),
     handleTaskDragStart: vi.fn(() => vi.fn()),

@@ -19,7 +19,7 @@ describe("Astro components loaded in on the index page", () => {
       });
     });
 
-    test("BoardController is rendered with react as the client framework", async () => {
+    test("BoardController is rendered with react as the client framework", () => {
         expect(result).toContain(`BoardController`)
 
         const { document } = new JSDOM(result).window;
@@ -29,7 +29,7 @@ describe("Astro components loaded in on the index page", () => {
         expect(el?.getAttribute('renderer-url')).toContain('react');
     });
 
-    test("ThemeToggle renders on the client with the react client framework", async () => {
+    test("ThemeToggle renders on the client with the react client framework", () => {
         expect(result).toContain(`ThemeToggle`)
 
         const { document } = new JSDOM(result).window;

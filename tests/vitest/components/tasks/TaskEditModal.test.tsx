@@ -35,7 +35,7 @@ vi.mock("@components/context/hooks.ts", () => ({
 }));
 
 vi.mock("@lyfie/luthor", () => ({
-  ExtensiveEditor: (props: any) =>
+  ExtensiveEditor: (props: { initialMode?: string }) =>
     React.createElement("div", {
       "data-testid": "luthor-editor",
       "data-initial-mode": props.initialMode,
@@ -63,13 +63,13 @@ const editTask: Task = {
 };
 
 beforeEach(() => {
-  vi.mocked(useBoardDataState).mockReturnValue(makeBoardDataState() as any);
-  vi.mocked(useTaskEditState).mockReturnValue(makeTaskEditState() as any);
-  vi.mocked(useTaskEditActions).mockReturnValue(makeTaskEditActions() as any);
-  vi.mocked(useTaskActions).mockReturnValue(makeTaskActions() as any);
-  vi.mocked(useBoardRefs).mockReturnValue(makeBoardRefs() as any);
-  vi.mocked(useChecklistAIState).mockReturnValue(makeChecklistAIState() as any);
-  vi.mocked(useChecklistAIActions).mockReturnValue(makeChecklistAIActions() as any);
+  vi.mocked(useBoardDataState).mockReturnValue(makeBoardDataState());
+  vi.mocked(useTaskEditState).mockReturnValue(makeTaskEditState());
+  vi.mocked(useTaskEditActions).mockReturnValue(makeTaskEditActions());
+  vi.mocked(useTaskActions).mockReturnValue(makeTaskActions());
+  vi.mocked(useBoardRefs).mockReturnValue(makeBoardRefs());
+  vi.mocked(useChecklistAIState).mockReturnValue(makeChecklistAIState());
+  vi.mocked(useChecklistAIActions).mockReturnValue(makeChecklistAIActions());
 });
 
 afterEach(() => {
@@ -85,7 +85,7 @@ describe("TaskEditModal", () => {
 
   test("shows loading message when editTaskDraft is null", () => {
     vi.mocked(useTaskEditState).mockReturnValue(
-      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: null }) as any,
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: null }),
     );
     render(<TaskEditModal />);
     expect(screen.getByText(/Loading task/)).toBeTruthy();
@@ -93,10 +93,10 @@ describe("TaskEditModal", () => {
 
   test("does not show loading message when editTaskDraft is set", () => {
     vi.mocked(useTaskEditState).mockReturnValue(
-      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }) as any,
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
     );
     vi.mocked(useBoardDataState).mockReturnValue(
-      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }) as any,
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
     );
     render(<TaskEditModal />);
     expect(screen.queryByText(/Loading task/)).toBeNull();
@@ -104,10 +104,10 @@ describe("TaskEditModal", () => {
 
   test("submit button label is 'Save' in edit mode", () => {
     vi.mocked(useTaskEditState).mockReturnValue(
-      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }) as any,
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
     );
     vi.mocked(useBoardDataState).mockReturnValue(
-      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }) as any,
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
     );
     render(<TaskEditModal />);
     expect(
@@ -117,10 +117,10 @@ describe("TaskEditModal", () => {
 
   test("Delete button is present in edit modal", () => {
     vi.mocked(useTaskEditState).mockReturnValue(
-      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }) as any,
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
     );
     vi.mocked(useBoardDataState).mockReturnValue(
-      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }) as any,
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
     );
     render(<TaskEditModal />);
     expect(
@@ -130,10 +130,10 @@ describe("TaskEditModal", () => {
 
   test("Cancel button is absent in edit modal (TaskForm receives no onCancel)", () => {
     vi.mocked(useTaskEditState).mockReturnValue(
-      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }) as any,
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
     );
     vi.mocked(useBoardDataState).mockReturnValue(
-      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }) as any,
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
     );
     render(<TaskEditModal />);
     expect(
@@ -143,10 +143,10 @@ describe("TaskEditModal", () => {
 
   test("Luthor editor defaults to visual-only mode", () => {
     vi.mocked(useTaskEditState).mockReturnValue(
-      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }) as any,
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
     );
     vi.mocked(useBoardDataState).mockReturnValue(
-      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }) as any,
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
     );
     render(<TaskEditModal />);
     expect(
@@ -156,10 +156,10 @@ describe("TaskEditModal", () => {
 
   test("Status dropdown shows all column options", () => {
     vi.mocked(useTaskEditState).mockReturnValue(
-      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }) as any,
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
     );
     vi.mocked(useBoardDataState).mockReturnValue(
-      makeBoardDataState({ columns: [mockColumn, secondColumn], rows: [mockRow] }) as any,
+      makeBoardDataState({ columns: [mockColumn, secondColumn], rows: [mockRow] }),
     );
     render(<TaskEditModal />);
     expect(
@@ -172,10 +172,10 @@ describe("TaskEditModal", () => {
 
   test("Row dropdown shows all row options", () => {
     vi.mocked(useTaskEditState).mockReturnValue(
-      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }) as any,
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
     );
     vi.mocked(useBoardDataState).mockReturnValue(
-      makeBoardDataState({ columns: [mockColumn], rows: [mockRow, secondRow] }) as any,
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow, secondRow] }),
     );
     render(<TaskEditModal />);
     expect(
@@ -191,10 +191,10 @@ describe("TaskEditModal", () => {
       makeTaskEditState({
         taskEditModalOpen: true,
         editTaskDraft: { ...editTask, colId: "col-2" },
-      }) as any,
+      }),
     );
     vi.mocked(useBoardDataState).mockReturnValue(
-      makeBoardDataState({ columns: [mockColumn, secondColumn], rows: [mockRow] }) as any,
+      makeBoardDataState({ columns: [mockColumn, secondColumn], rows: [mockRow] }),
     );
     render(<TaskEditModal />);
     const [statusSelect] = screen.getAllByRole("combobox", {
@@ -208,10 +208,10 @@ describe("TaskEditModal", () => {
       makeTaskEditState({
         taskEditModalOpen: true,
         editTaskDraft: { ...editTask, rowId: "row-2" },
-      }) as any,
+      }),
     );
     vi.mocked(useBoardDataState).mockReturnValue(
-      makeBoardDataState({ columns: [mockColumn], rows: [mockRow, secondRow] }) as any,
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow, secondRow] }),
     );
     render(<TaskEditModal />);
     const selects = screen.getAllByRole("combobox", {
@@ -223,12 +223,12 @@ describe("TaskEditModal", () => {
   test("calls deleteTask with the task id when Delete is clicked", () => {
     const deleteTask = vi.fn();
     vi.mocked(useTaskEditState).mockReturnValue(
-      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }) as any,
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
     );
     vi.mocked(useBoardDataState).mockReturnValue(
-      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }) as any,
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
     );
-    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ deleteTask }) as any);
+    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ deleteTask }));
     render(<TaskEditModal />);
     fireEvent.click(
       screen.getByRole("button", { name: "Delete", hidden: true }),
