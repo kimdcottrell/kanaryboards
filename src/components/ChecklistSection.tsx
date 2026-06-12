@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import CloseButton from "./buttons/CloseButton.tsx";
 import {
   beforeIdFromOrderedList,
-  type DropTarget,
   dropPositionFromEvent,
+  type DropTarget,
 } from "@lib/drag.ts";
 
 export default function ChecklistSection({

@@ -21,7 +21,12 @@ const items: ChecklistItem[] = [
   { id: "b", text: "second", checked: false, order: "a1" },
 ];
 
-const newItem: ChecklistItem = { id: "new", text: "", checked: false, order: "" };
+const newItem: ChecklistItem = {
+  id: "new",
+  text: "",
+  checked: false,
+  order: "",
+};
 
 // ── Add ordering (button path) ────────────────────────────────────────────────
 

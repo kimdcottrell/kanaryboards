@@ -1,8 +1,4 @@
-import type {
-  BoardState,
-  ChecklistAIAction,
-  ChecklistItem,
-} from "../types.ts";
+import type { BoardState, ChecklistAIAction, ChecklistItem } from "../types.ts";
 import { createId } from "../constants.ts";
 import { generateNKeysBetween } from "fractional-indexing";
 

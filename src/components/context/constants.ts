@@ -182,7 +182,12 @@ export const createDefaultBoard = () => {
     checklist: (() => {
       const orders = generateNKeysBetween(null, null, 2);
       return [
-        { id: createId(), text: "Open me up", checked: false, order: orders[0] },
+        {
+          id: createId(),
+          text: "Open me up",
+          checked: false,
+          order: orders[0],
+        },
         {
           id: createId(),
           text: "Create a new row via the Board Configuration",

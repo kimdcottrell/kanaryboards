@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { byOrder, insertKey, reorderKey } from "@components/context/ordering.ts";
+import {
+  byOrder,
+  insertKey,
+  reorderKey,
+} from "@components/context/ordering.ts";
 
 const list = [
   { id: "a", order: "a0" },
