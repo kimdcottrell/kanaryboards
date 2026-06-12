@@ -12,7 +12,12 @@ import { expect, testNoClerk as test } from "./fixtures.ts";
  */
 const BOARD_STATE = {
   rows: [
-    { id: "row-e2e-1", title: "Engineering", color: "var(--color-row-blue)", order: "a0" },
+    {
+      id: "row-e2e-1",
+      title: "Engineering",
+      color: "var(--color-row-blue)",
+      order: "a0",
+    },
   ],
   columns: [
     { id: "col-e2e-1", title: "To Do", order: "a0" },
@@ -30,7 +35,7 @@ const BOARD_STATE = {
   ],
 };
 
-test.describe("Render isolation (Phase 2 context split)", () => {
+test.describe("Render isolation (individual components render on use, instead of the entire board re-rendering)", () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript((board) => {
       localStorage.setItem("kanby-v0-1-0", JSON.stringify(board));

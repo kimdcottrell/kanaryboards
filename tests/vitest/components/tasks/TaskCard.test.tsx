@@ -1,6 +1,11 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { vi, test, expect, describe, beforeEach, afterEach } from "vitest";
-import { makeTaskActions, makeDragActions, mockRow, mockTask } from "./setup.ts";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import {
+  makeDragActions,
+  makeTaskActions,
+  mockRow,
+  mockTask,
+} from "./setup.ts";
 
 const mockNavigate = vi.fn();
 
@@ -14,7 +19,7 @@ vi.mock("@components/context/hooks.ts", () => ({
   useDragActions: vi.fn(),
 }));
 
-import { useTaskActions, useDragActions } from "@components/context/hooks.ts";
+import { useDragActions, useTaskActions } from "@components/context/hooks.ts";
 import TaskCard from "@components/TaskCard.tsx";
 
 const taskActions = makeTaskActions();
@@ -116,6 +121,9 @@ describe("TaskCard", () => {
     };
     render(<TaskCard {...defaultProps} task={task} />);
     fireEvent.click(screen.getByRole("checkbox"));
-    expect(taskActions.toggleTaskChecklist).toHaveBeenCalledWith("task-1", "i1");
+    expect(taskActions.toggleTaskChecklist).toHaveBeenCalledWith(
+      "task-1",
+      "i1",
+    );
   });
 });

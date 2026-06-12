@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import type { Task, Row, Column } from "@components/context/types.ts";
+import type { Column, Row, Task } from "@components/context/types.ts";
 import type {
   useBoardDataState,
   useBoardRefs,
@@ -24,10 +24,24 @@ type BoardDataState = ReturnType<typeof useBoardDataState>;
 type TaskActions = ReturnType<typeof useTaskActions>;
 type DragActions = ReturnType<typeof useDragActions>;
 
-export const mockRow: Row = { id: "row-1", title: "Feature", color: "#ff6b6b", order: "a0" };
+export const mockRow: Row = {
+  id: "row-1",
+  title: "Feature",
+  color: "#ff6b6b",
+  order: "a0",
+};
 export const mockColumn: Column = { id: "col-1", title: "To Do", order: "a0" };
-export const secondColumn: Column = { id: "col-2", title: "In Progress", order: "a1" };
-export const secondRow: Row = { id: "row-2", title: "Backend", color: "#4ecdc4", order: "a1" };
+export const secondColumn: Column = {
+  id: "col-2",
+  title: "In Progress",
+  order: "a1",
+};
+export const secondRow: Row = {
+  id: "row-2",
+  title: "Backend",
+  color: "#4ecdc4",
+  order: "a1",
+};
 
 export const mockTask: Task = {
   id: "task-1",

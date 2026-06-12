@@ -1,6 +1,6 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { vi, test, expect, describe, beforeEach, afterEach } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
   makeBoardDataState,
   makeBoardRefs,
@@ -159,7 +159,10 @@ describe("TaskEditModal", () => {
       makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
     );
     vi.mocked(useBoardDataState).mockReturnValue(
-      makeBoardDataState({ columns: [mockColumn, secondColumn], rows: [mockRow] }),
+      makeBoardDataState({
+        columns: [mockColumn, secondColumn],
+        rows: [mockRow],
+      }),
     );
     render(<TaskEditModal />);
     expect(
@@ -194,7 +197,10 @@ describe("TaskEditModal", () => {
       }),
     );
     vi.mocked(useBoardDataState).mockReturnValue(
-      makeBoardDataState({ columns: [mockColumn, secondColumn], rows: [mockRow] }),
+      makeBoardDataState({
+        columns: [mockColumn, secondColumn],
+        rows: [mockRow],
+      }),
     );
     render(<TaskEditModal />);
     const [statusSelect] = screen.getAllByRole("combobox", {

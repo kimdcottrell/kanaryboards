@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { vi, test, expect, describe, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
   makeBoardRefs,
   makeChecklistAIActions,
@@ -87,7 +87,10 @@ describe("TaskCreateModal", () => {
 
   test("submit button label is 'Create task'", () => {
     vi.mocked(useTaskCreateState).mockReturnValue(
-      makeTaskCreateState({ taskCreateModalOpen: true, taskDraft: mockTaskDraft }),
+      makeTaskCreateState({
+        taskCreateModalOpen: true,
+        taskDraft: mockTaskDraft,
+      }),
     );
     render(<TaskCreateModal />);
     expect(
@@ -97,7 +100,10 @@ describe("TaskCreateModal", () => {
 
   test("Cancel button is present in create modal", () => {
     vi.mocked(useTaskCreateState).mockReturnValue(
-      makeTaskCreateState({ taskCreateModalOpen: true, taskDraft: mockTaskDraft }),
+      makeTaskCreateState({
+        taskCreateModalOpen: true,
+        taskDraft: mockTaskDraft,
+      }),
     );
     render(<TaskCreateModal />);
     expect(
@@ -107,7 +113,10 @@ describe("TaskCreateModal", () => {
 
   test("Luthor editor defaults to markdown mode", () => {
     vi.mocked(useTaskCreateState).mockReturnValue(
-      makeTaskCreateState({ taskCreateModalOpen: true, taskDraft: mockTaskDraft }),
+      makeTaskCreateState({
+        taskCreateModalOpen: true,
+        taskDraft: mockTaskDraft,
+      }),
     );
     render(<TaskCreateModal />);
     expect(
@@ -117,7 +126,10 @@ describe("TaskCreateModal", () => {
 
   test("Delete button is absent in create modal", () => {
     vi.mocked(useTaskCreateState).mockReturnValue(
-      makeTaskCreateState({ taskCreateModalOpen: true, taskDraft: mockTaskDraft }),
+      makeTaskCreateState({
+        taskCreateModalOpen: true,
+        taskDraft: mockTaskDraft,
+      }),
     );
     render(<TaskCreateModal />);
     expect(

@@ -11,10 +11,10 @@ services:
     cap_drop:
       - ALL
     cap_add:
-      # required for init-firewall.sh. 
+      # required for init-firewall.sh.
       # this stops Claude from being able to access the entire web
       - NET_ADMIN
-      - NET_RAW 
+      - NET_RAW
       # required for basic webserver capabilities
       - NET_BIND_SERVICE
       - CHOWN
@@ -42,7 +42,7 @@ services:
     volumes:
       - .:/var/dev
     networks:
-      - mcp 
+      - mcp
       - proxy
 
   playwright:

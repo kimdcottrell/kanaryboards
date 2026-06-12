@@ -1,5 +1,8 @@
-import { describe, test, expect } from "vitest";
-import { boardReducer, createInitialState } from "@components/context/reducer.ts";
+import { describe, expect, test } from "vitest";
+import {
+  boardReducer,
+  createInitialState,
+} from "@components/context/reducer.ts";
 import type { BoardState, Task } from "@components/context/types.ts";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -43,7 +46,10 @@ describe("Task URL established on creation", () => {
       description: "",
       checklist: [],
     };
-    const next = boardReducer(state, { type: "TASK/CREATE", payload: { task } });
+    const next = boardReducer(state, {
+      type: "TASK/CREATE",
+      payload: { task },
+    });
     expect(next.tasks[0].id).toBe("brand-new-task-id");
   });
 
@@ -58,7 +64,10 @@ describe("Task URL established on creation", () => {
       description: "",
       checklist: [],
     };
-    const next = boardReducer(state, { type: "TASK/CREATE", payload: { task: newTask } });
+    const next = boardReducer(state, {
+      type: "TASK/CREATE",
+      payload: { task: newTask },
+    });
     const existing = next.tasks.find((t) => t.id === "url-stable-task");
     expect(existing).toBeDefined();
   });

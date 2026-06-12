@@ -7,17 +7,19 @@ import { defineConfig, devices } from "@playwright/test";
 // TODO: https://stackoverflow.com/questions/74796008/how-to-generate-test-with-playwright-and-codegen-from-a-docker-container
 //       https://github.com/microsoft/playwright-python/issues/274
 export default defineConfig({
-  testDir: 'tests/playwright',
-  ...(process.env.START_DEV_SERVER ? {
-    webServer: {
-      command: 'deno task dev',
-      reuseExistingServer: true,
-      url: 'https://kanary.local.dev',
-      wait: {
-        stdout: /watching for file changes.../,
+  testDir: "tests/playwright",
+  ...(process.env.START_DEV_SERVER
+    ? {
+      webServer: {
+        command: "deno task dev",
+        reuseExistingServer: true,
+        url: "https://kanary.local.dev",
+        wait: {
+          stdout: /watching for file changes.../,
+        },
       },
-    },
-  } : {}),
+    }
+    : {}),
   retries: 2, // sometimes the first test run fails due to what I can only imagine are the ghosts in the machine, so we retry once
   use: {
     baseURL: process.env.BASE_URL ?? "https://kanary.local.dev",

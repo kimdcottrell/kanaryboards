@@ -3,7 +3,7 @@
   "include": [
     ".astro/types.d.ts",
     "src/content.config.js",
-    "**/*",
+    "**/*"
   ],
   "exclude": [
     "dist",

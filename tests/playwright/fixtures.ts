@@ -1,5 +1,5 @@
 import { setupClerkTestingToken } from "@clerk/testing/playwright";
-import { test as base, expect } from "@playwright/test";
+import { expect, test as base } from "@playwright/test";
 
 // Derive the Clerk Frontend API URL from the publishable key as a fallback.
 // CLERK_FAPI is set by clerkSetup() in global.setup.ts, but env vars don't
