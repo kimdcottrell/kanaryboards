@@ -149,6 +149,7 @@ const editTask = {
   rowId: "row-1",
   colId: "col-1",
   title: "Existing task",
+  order: "a0d",
   description: "",
   checklist: [],
 };
@@ -264,6 +265,7 @@ describe("BoardView — deep-link via useParams", () => {
     rowId: "row-1",
     colId: "col-1",
     title: "Deep task",
+    order: "a0c",
     description: "",
     checklist: [],
   };
@@ -332,6 +334,7 @@ describe("BoardView — deep-link via route params", () => {
     rowId: "row-1",
     colId: "col-1",
     title: "Route task",
+    order: "a0",
     description: "",
     checklist: [],
   };
