@@ -2,19 +2,8 @@ export const prerender = false;
 
 import type { APIRoute } from "astro";
 
-let environment: string = "production";
-if (import.meta.env.DEVCONTAINER === "true") {
-  environment = "development";
-}
-if (
-  import.meta.env.DENO_TIMELINE !== undefined &&
-  import.meta.env.DENO_TIMELINE !== "production"
-) {
-  environment = "staging";
-}
-
 let E2E_TEST_USER_ID: string | null;
-switch (environment) {
+switch (import.meta.env.MODE) {
   case "development":
     E2E_TEST_USER_ID = "user_3EyF80uaLUFw0Tm9gIWAe56nS8e";
     break;

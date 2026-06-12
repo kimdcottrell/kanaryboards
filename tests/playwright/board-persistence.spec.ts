@@ -13,11 +13,17 @@ test.describe("Board persistence across sign-in", () => {
       "shares one Clerk test account across runs",
     );
     await page.goto("/");
+
+    // Clear out any board left over from a previous run so sign-in migrates
+    // this test's localStorage data instead of loading stale remote data.
+    const response = await page.request.get("/api/delete-test-data");
+    expect(response.status()).toBe(200);
   });
 
   test.afterEach(async ({ page }) => {
     // Teardown: delete the test account's board so the next run starts from a clean slate.
-    await page.request.get("/api/delete-test-data");
+    const response = await page.request.get("/api/delete-test-data");
+    expect(response.status()).toBe(200);
   });
 
   test("a row and task created before sign-in are present after sign-in", async ({ page }) => {
@@ -62,10 +68,6 @@ test.describe("Board persistence across sign-in", () => {
     // param), which bypasses the email_code second factor required by this
     // Clerk instance and resolves once Clerk.user is set.
     await clerk.signIn({ page, emailAddress: E2E_EMAIL });
-
-    // Clear out any board left over from a previous run so sign-in migrates
-    // this test's localStorage data instead of loading stale remote data.
-    await page.request.get("/api/delete-test-data");
 
     await page.goto("/");
 
