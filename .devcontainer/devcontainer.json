@@ -5,6 +5,7 @@
   "dockerComposeFile": [
     "../compose.yaml"
   ],
+  "initializeCommand": ["bash", "-lc", "[[ $(type -t ssh_agent_reload) == function ]] && ssh_agent_reload || echo 'ERROR: on your local machine, run `make setup-ssh-agent` first.'"],
   "postAttachCommand": {
     "bashrc": "[ ! -f ${containerWorkspaceFolder}/.devcontainer/home/.bashrc ] || [ ! -s ${containerWorkspaceFolder}/.devcontainer/home/.bashrc ] && ( cp ${containerWorkspaceFolder}/.devcontainer/home/.sample_bashrc ${containerWorkspaceFolder}/.devcontainer/home/.bashrc ); echo 'source ${containerWorkspaceFolder}/.devcontainer/home/.bashrc' > /home/deno/.bashrc;",
     "zshrc": "[ ! -f ${containerWorkspaceFolder}/.devcontainer/home/.zshrc ] || [ ! -s ${containerWorkspaceFolder}/.devcontainer/home/.zshrc ] && ( cp ${containerWorkspaceFolder}/.devcontainer/home/.sample_zshrc ${containerWorkspaceFolder}/.devcontainer/home/.zshrc ); echo 'source ${containerWorkspaceFolder}/.devcontainer/home/.zshrc' > /home/deno/.zshrc;",
