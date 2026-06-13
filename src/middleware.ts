@@ -1,4 +1,4 @@
-import { defineMiddleware, sequence } from "astro:middleware";
+import { defineMiddleware, sequence } from "astro/middleware";
 import { clerkMiddleware } from "@clerk/astro/server";
 import { createId } from "@lib/uuid.ts";
 import { getBoardIdForUser, setBoardIdForUser } from "@lib/kv.ts";

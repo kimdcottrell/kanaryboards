@@ -236,13 +236,13 @@ This executes `playwright codegen` inside the `playwright` container against `ht
 
 ### Pre-commit enforcement
 
-Every commit runs four checks in sequence:
+Every commit runs five checks in sequence:
 
 ```
-deno fmt → deno lint → deno task vitest → deno task e2e-test
+deno fmt → deno lint → deno check → deno task vitest → deno task e2e-test
 ```
 
-The hook lives in `.husky/pre-commit` and is installed via `npm run prepare` (husky). The unit and E2E suites must both pass before a commit is accepted.
+The hook lives in `.husky/pre-commit` and is installed via `npm run prepare` (husky). Type checking (`deno check`) and the unit and E2E suites must all pass before a commit is accepted.
 
 ### CI (GitHub Actions)
 

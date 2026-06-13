@@ -51,7 +51,7 @@ test.describe("Board persistence across sign-in", () => {
       .click();
     await expect(page.getByRole("heading", { name: "Add task" }))
       .toBeVisible();
-    await page.getByRole("group", { name: "Title" }).getByRole("textbox")
+    await page.getByRole("textbox", { name: "Title" })
       .fill(taskName);
     await page.locator("dialog").getByRole("button", { name: "Create task" })
       .click();

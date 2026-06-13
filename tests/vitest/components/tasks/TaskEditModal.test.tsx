@@ -57,6 +57,7 @@ const editTask: Task = {
   id: "task-42",
   rowId: "row-1",
   colId: "col-1",
+  order: "a0",
   title: "Existing task",
   description: "",
   checklist: [],
@@ -128,7 +129,7 @@ describe("TaskEditModal", () => {
     ).toBeTruthy();
   });
 
-  test("Cancel button is absent in edit modal (TaskForm receives no onCancel)", () => {
+  test("Cancel button is present in edit modal", () => {
     vi.mocked(useTaskEditState).mockReturnValue(
       makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
     );
@@ -137,8 +138,8 @@ describe("TaskEditModal", () => {
     );
     render(<TaskEditModal />);
     expect(
-      screen.queryByRole("button", { name: "Cancel", hidden: true }),
-    ).toBeNull();
+      screen.getByRole("button", { name: "Cancel", hidden: true }),
+    ).toBeTruthy();
   });
 
   test("Luthor editor defaults to visual-only mode", () => {

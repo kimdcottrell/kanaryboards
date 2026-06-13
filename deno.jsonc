@@ -2,8 +2,8 @@
   "allowScripts": {
     "allow": [
       "npm:@anthropic-ai/claude-code",
-      "npm:@clerk/shared@4.14.0",
-      "npm:@google/genai@2.8.0",
+      "npm:@clerk/shared",
+      "npm:@google/genai",
       "npm:esbuild",
       "npm:protobufjs",
       "npm:sharp"
@@ -49,10 +49,7 @@
   "imports": {
     // these are needed to get> around Deno Deploy problems thanks to @deno/astro-adapter
     "@std/http": "jsr:@std/http@^1.1.0",
-    "@std/path": "jsr:@std/path@^1.1.4",
-    "@pages/": "./src/pages/",
-    "@components/": "./src/components/",
-    "@lib/": "./src/lib/"
+    "@std/path": "jsr:@std/path@^1.1.4"
     // NOTE: package.json MUST exist for:
     // - resolving preview error of `error: [ERR_UNSUPPORTED_ESM_URL_SCHEME] Only file and data URLs are supported by the default ESM loader. Received protocol 'astro'`
     // - dependabot does not support deno.jsonc

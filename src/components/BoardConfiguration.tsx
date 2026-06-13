@@ -37,7 +37,7 @@ export default function BoardConfiguration() {
 
   const [editId, setEditId] = useState(null);
   const [editName, setEditName] = useState("");
-  const [dragHoverIndex, setDragHoverIndex] = useState(null);
+  const [dragHoverIndex, setDragHoverIndex] = useState<number | null>(null);
 
   const startRowEdit = (row) => {
     setEditId(row.id);

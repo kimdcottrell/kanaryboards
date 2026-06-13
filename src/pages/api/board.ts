@@ -12,8 +12,8 @@ function jsonResponse(body: object, status: number): Response {
 }
 
 function authorize(locals: App.Locals): App.Locals | Response {
-  const { isAuthenticated } = locals.auth();
-  if (!isAuthenticated) return jsonResponse({ error: "Unauthorized." }, 401);
+  const { userId } = locals.auth();
+  if (!userId) return jsonResponse({ error: "Unauthorized." }, 401);
   return locals;
 }
 export const GET: APIRoute = async ({ locals }) => {

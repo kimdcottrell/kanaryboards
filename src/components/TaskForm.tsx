@@ -1,7 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import type { PropsWithChildren } from "react";
 import { ExtensiveEditor } from "@lyfie/luthor";
+import type {
+  CoreEditorMode,
+  CoreTheme,
+  ExtensiveEditorRef,
+  ToolbarLayout,
+} from "@lyfie/luthor";
+import type { ChecklistAIState, Task } from "./context/types.ts";
 
-const MD_TOOLBAR_LAYOUT = {
+const MD_TOOLBAR_LAYOUT: ToolbarLayout = {
   sections: [
     { items: ["undo", "redo"] },
     {
@@ -29,8 +37,8 @@ const MD_TOOLBAR_LAYOUT = {
   ],
 };
 
-function useLuthorTheme() {
-  const [theme, setTheme] = useState(() =>
+function useLuthorTheme(): CoreTheme {
+  const [theme, setTheme] = useState((): CoreTheme =>
     document.documentElement.getAttribute("data-theme") === "kanary-night"
       ? "dark"
       : "light"
@@ -56,6 +64,50 @@ import ChecklistSection, {
   ChecklistGenerationCollapse,
 } from "./ChecklistSection.tsx";
 
+type EditorContent = { json: string; markdown: string; html: string };
+
+// This interface is a view contract (React handlers, DOM events, children), so
+// it lives with the component rather than in context/types.ts. That module is
+// the framework-agnostic board state + reducer-action domain; mixing props in
+// would force a React dependency into it and break its convention (no *Props
+// interfaces there). The shared *data* it owns — Task, and the ChecklistAIState
+// slice forwarded below via Pick — is imported instead of redeclared here.
+interface TaskFormProps extends
+  PropsWithChildren,
+  Pick<
+    ChecklistAIState,
+    | "checklistPrompt"
+    | "checklistPreview"
+    | "isGeneratingChecklist"
+    | "checklistModalError"
+  > {
+  taskDraft: Task;
+  setTaskDraft: (draft: Task) => void;
+  onSubmit: (event: Event, content?: EditorContent) => void;
+  onCancel?: () => void;
+  submitLabel?: string;
+  onDelete?: () => void;
+  initialMode?: CoreEditorMode;
+  addChecklistItem: (focusNew?: boolean, insertBeforeIndex?: number) => void;
+  updateChecklistItem: (
+    id: string,
+    field: string,
+    value: string | boolean,
+  ) => void;
+  deleteChecklistItem: (id: string) => void;
+  reorderChecklistItem?: (itemId: string, beforeItemId: string | null) => void;
+  handleChecklistKeyDown: (
+    event: KeyboardEvent,
+    index: number,
+    addItemFn: (focusNew: boolean, insertBeforeIndex?: number) => void,
+  ) => void;
+  setChecklistInputRef: (id: string, el: HTMLInputElement | null) => void;
+  setChecklistPrompt: (prompt: string) => void;
+  generateChecklistItems: (task?: Task) => void;
+  applyChecklist: () => void;
+  clearChecklistPreview: () => void;
+}
+
 export default function TaskForm({
   taskDraft,
   setTaskDraft,
@@ -79,9 +131,10 @@ export default function TaskForm({
   applyChecklist,
   clearChecklistPreview,
   children,
-}) {
-  const editorRef = useRef(null);
+}: TaskFormProps) {
+  const editorRef = useRef<ExtensiveEditorRef | null>(null);
   const submitButtonRef = useRef(null);
+  const titleId = useId();
   const luthorTheme = useLuthorTheme();
   function handleSubmit(e) {
     const submitter = e.nativeEvent?.submitter;
@@ -99,8 +152,9 @@ export default function TaskForm({
   return (
     <form className="mt-4 space-y-4" onSubmit={handleSubmit} noValidate>
       <fieldset className="fieldset">
-        <legend className="fieldset-legend">Title</legend>
+        <label className="fieldset-legend" htmlFor={titleId}>Title</label>
         <input
+          id={titleId}
           className="input validator input-bordered w-full"
           type="text"
           value={taskDraft.title}
@@ -115,7 +169,7 @@ export default function TaskForm({
       </fieldset>
 
       <fieldset className="fieldset">
-        <legend className="fieldset-legend">Description</legend>
+        <label className="fieldset-legend">Description</label>
         <div className="border border-base-content/20 rounded-lg overflow-hidden">
           <ExtensiveEditor
             defaultContent={taskDraft.description}

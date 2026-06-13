@@ -9,6 +9,7 @@ import { findTodoColumnId } from "../selectors.ts";
 import { fetchGeneratedItems } from "./shared.ts";
 import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
 import type { Task } from "../types.ts";
+import type { SubmitEvent } from "react";
 
 export function useRowFormActions() {
   const dispatch = useBoardDispatch();
@@ -54,26 +55,29 @@ export function useRowFormActions() {
     }
   }, [newRowPrompt, columns, dispatch]);
 
-  const addRow = useCallback(async (event: Event) => {
-    event.preventDefault();
-    if (!newRowName.trim()) return;
-    const newRowId = createId();
-    const lastRow = rows[rows.length - 1];
-    dispatch({
-      type: "ROW/ADD",
-      payload: {
-        id: newRowId,
-        title: newRowName.trim(),
-        color: rowColorOptions[0].value,
-        order: generateKeyBetween(lastRow?.order ?? null, null),
-      },
-    });
-    if (newRowPrompt.trim()) {
-      await generateTasksForRow(newRowId);
-    } else {
-      dispatch({ type: "ROW/RESET_FORM" });
-    }
-  }, [newRowName, newRowPrompt, rows, dispatch, generateTasksForRow]);
+  const addRow = useCallback(
+    async (event: SubmitEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (!newRowName.trim()) return;
+      const newRowId = createId();
+      const lastRow = rows[rows.length - 1];
+      dispatch({
+        type: "ROW/ADD",
+        payload: {
+          id: newRowId,
+          title: newRowName.trim(),
+          color: rowColorOptions[0].value,
+          order: generateKeyBetween(lastRow?.order ?? null, null),
+        },
+      });
+      if (newRowPrompt.trim()) {
+        await generateTasksForRow(newRowId);
+      } else {
+        dispatch({ type: "ROW/RESET_FORM" });
+      }
+    },
+    [newRowName, newRowPrompt, rows, dispatch, generateTasksForRow],
+  );
 
   const setters = useMemo(() => ({
     setNewRowName: (name: string) =>

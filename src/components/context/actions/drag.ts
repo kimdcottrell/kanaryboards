@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useBoardDispatch } from "../BoardContext.tsx";
 import type { Task } from "../types.ts";
+import type { DragEvent } from "react";
 
 export function useDragActions() {
   const dispatch = useBoardDispatch();

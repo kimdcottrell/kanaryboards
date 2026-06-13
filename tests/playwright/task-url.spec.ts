@@ -40,7 +40,7 @@ test.describe("Task URL", () => {
       .click();
     await expect(page.getByRole("heading", { name: "Add task" })).toBeVisible();
 
-    await page.getByRole("group", { name: "Title" }).getByRole("textbox").fill(
+    await page.getByRole("textbox", { name: "Title" }).fill(
       "My URL Test Task",
     );
     await page.locator("dialog").getByRole("button", { name: "Create task" })

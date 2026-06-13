@@ -229,7 +229,7 @@ test.describe("Board CRUD", () => {
       await expect(page).toHaveURL(/\/task\/task-e2e-1/);
 
       await fillStable(
-        page.getByRole("group", { name: "Title" }).getByRole("textbox"),
+        page.getByRole("textbox", { name: "Title" }),
         "Write detailed specs",
       );
       await page.locator("#edit-column-select-task-e2e-1").selectOption(

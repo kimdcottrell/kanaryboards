@@ -2,13 +2,12 @@
   "extends": "astro/tsconfigs/strict",
   "include": [
     ".astro/types.d.ts",
+    "./node_modules/astro/client.d.ts",
     "src/content.config.js",
     "**/*"
   ],
   "exclude": [
     "dist",
-    "tests/playwright",
-    "playwright.config.ts",
     "playwright-report",
     "test-results"
   ],

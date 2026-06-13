@@ -82,6 +82,7 @@ export function makeTaskCreateActions(
     addChecklistItem: vi.fn(),
     updateChecklistItem: vi.fn(),
     deleteChecklistItem: vi.fn(),
+    reorderChecklistItem: vi.fn(),
     ...overrides,
   };
 }
@@ -142,6 +143,7 @@ export function makeTaskEditActions(
     addEditChecklistItem: vi.fn(),
     updateEditChecklistItem: vi.fn(),
     deleteEditChecklistItem: vi.fn(),
+    reorderEditChecklistItem: vi.fn(),
     ...overrides,
   };
 }

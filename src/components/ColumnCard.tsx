@@ -9,7 +9,11 @@ import {
   useTasksByCell,
 } from "./context/hooks.ts";
 import { useRenderCount } from "@lib/use-render-count.ts";
-import { beforeIdFromOrderedList, dropPositionFromEvent } from "@lib/drag.ts";
+import {
+  beforeIdFromOrderedList,
+  dropPositionFromEvent,
+  type DropTarget,
+} from "@lib/drag.ts";
 
 export default function ColumnCard({ column, row }) {
   const tasksByCell = useTasksByCell();
@@ -22,7 +26,7 @@ export default function ColumnCard({ column, row }) {
   const { handleColumnDrop } = useDragActions();
   const renderCount = useRenderCount();
 
-  const [dropTarget, setDropTarget] = useState(null);
+  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
 
   const cellKey = `${row.id}|${column.id}`;
   const cellTasks = tasksByCell[cellKey] || [];
@@ -122,7 +126,6 @@ export default function ColumnCard({ column, row }) {
             key={task.id}
             task={task}
             row={row}
-            column={column}
             onDragOver={(e) => handleTaskDragOver(e, task.id)}
             isDropBefore={dropTarget?.id === task.id &&
               dropTarget?.position === "before"}
