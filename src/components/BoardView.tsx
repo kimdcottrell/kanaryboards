@@ -13,6 +13,13 @@ export default function BoardView() {
   const { startEditTask } = useTaskActions();
   const syncedTaskId = useRef<string | undefined>(undefined);
 
+  // Reflect board-load state onto the root element so e2e tests can gate input
+  // interaction on hydration completing — an in-flight BOARD/LOAD re-render
+  // otherwise clobbers a freshly-filled controlled input back to its state value.
+  useEffect(() => {
+    document.documentElement.dataset.boardLoaded = String(boardLoaded);
+  }, [boardLoaded]);
+
   useEffect(() => {
     if (!boardLoaded || !taskId) {
       syncedTaskId.current = undefined;

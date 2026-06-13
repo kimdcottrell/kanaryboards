@@ -278,6 +278,32 @@ test.describe("Board CRUD", () => {
       await expect(item.locator("input[type='checkbox']")).toBeChecked();
       await expect(item.locator("span")).toHaveClass(/line-through/);
     });
+
+    test("appends new checklist items after the last one (button + Shift+Enter)", async ({ page }) => {
+      // Open the edit modal for task-e2e-1, seeded with one item: "Draft outline".
+      await page.locator("article#task-e2e-1").getByText("Write specs").click();
+      const modal = page.locator("dialog.modal-open");
+      await expect(modal.getByText("Edit task")).toBeVisible();
+
+      const fields = modal.getByPlaceholder("Shift+Enter to add more");
+      await expect(fields).toHaveCount(1);
+      await expect(fields.nth(0)).toHaveValue("Draft outline");
+
+      // Button add must append to the END, not unshift to the front.
+      await modal.locator("button[data-tip='Add checklist item']").click();
+      await expect(fields).toHaveCount(2);
+      await fillStable(fields.nth(1), "Second item");
+      await expect(fields.nth(0)).toHaveValue("Draft outline");
+      await expect(fields.nth(1)).toHaveValue("Second item");
+
+      // Shift+Enter from the last input also appends directly after it.
+      await fields.nth(1).press("Shift+Enter");
+      await expect(fields).toHaveCount(3);
+      await fillStable(fields.nth(2), "Third item");
+      await expect(fields.nth(0)).toHaveValue("Draft outline");
+      await expect(fields.nth(1)).toHaveValue("Second item");
+      await expect(fields.nth(2)).toHaveValue("Third item");
+    });
   });
 
   test.describe("drag and drop", () => {
@@ -328,6 +354,126 @@ test.describe("Board CRUD", () => {
         .toBeVisible();
       await expect(todoColumn.locator("article#task-e2e-2")).toHaveCount(0);
       await expect(todoColumn.locator("article#task-e2e-1")).toBeVisible();
+    });
+
+    test("reorders a task within the same column via drag and drop", async ({ page }) => {
+      const todoColumn = page.locator("#row-columns-row-e2e-1 > div > div")
+        .nth(0);
+      const cards = todoColumn.locator("article");
+
+      // Seeded order in To Do: task-e2e-1 (a0) then task-e2e-2 (a1).
+      await expect(cards.nth(0)).toHaveAttribute("id", "task-e2e-1");
+      await expect(cards.nth(1)).toHaveAttribute("id", "task-e2e-2");
+
+      // Drag task-e2e-2 onto task-e2e-1 to move it before. Each phase runs in
+      // its own round trip so React flushes draggedTask, then dropTarget,
+      // before drop is handled (a same-cell reorder reads dropTarget).
+      const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
+
+      await page.evaluate((dataTransfer) => {
+        document.querySelector("article#task-e2e-2")!.dispatchEvent(
+          new DragEvent("dragstart", {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer,
+          }),
+        );
+      }, dataTransfer);
+
+      await page.evaluate((dataTransfer) => {
+        document.querySelector("article#task-e2e-1")!.dispatchEvent(
+          new DragEvent("dragover", {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer,
+          }),
+        );
+      }, dataTransfer);
+
+      await page.evaluate((dataTransfer) => {
+        const fire = (sel: string, type: string) =>
+          document.querySelector(sel)!.dispatchEvent(
+            new DragEvent(type, {
+              bubbles: true,
+              cancelable: true,
+              dataTransfer,
+            }),
+          );
+        fire("article#task-e2e-1", "drop");
+        fire("article#task-e2e-2", "dragend");
+      }, dataTransfer);
+
+      // Order is now swapped: task-e2e-2 before task-e2e-1, both still in To Do.
+      await expect(cards.nth(0)).toHaveAttribute("id", "task-e2e-2");
+      await expect(cards.nth(1)).toHaveAttribute("id", "task-e2e-1");
+    });
+
+    test("reorders checklist items in the edit modal via drag and drop", async ({ page }) => {
+      // Open the edit modal (task-e2e-1 seeded with one item: "Draft outline")
+      // and add a second item so there are two to reorder.
+      await page.locator("article#task-e2e-1").getByText("Write specs").click();
+      const modal = page.locator("dialog.modal-open");
+      await expect(modal.getByText("Edit task")).toBeVisible();
+
+      const fields = modal.getByPlaceholder("Shift+Enter to add more");
+      await modal.locator("button[data-tip='Add checklist item']").click();
+      await fillStable(fields.nth(1), "Second item");
+      await expect(fields.nth(0)).toHaveValue("Draft outline");
+      await expect(fields.nth(1)).toHaveValue("Second item");
+
+      // Drag the second item's handle onto the first to move it before. Each
+      // HTML5 drag phase is fired in its own round trip so React can flush the
+      // resulting state (draggedId, then dropTarget) before drop is handled.
+      const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
+
+      await page.evaluate((dataTransfer) => {
+        const rows = document.querySelectorAll(
+          "dialog.modal-open [data-checklist-item]",
+        );
+        rows[1].querySelector("[aria-label='Drag to reorder']")!
+          .dispatchEvent(
+            new DragEvent("dragstart", {
+              bubbles: true,
+              cancelable: true,
+              dataTransfer,
+            }),
+          );
+      }, dataTransfer);
+
+      await page.evaluate((dataTransfer) => {
+        const rows = document.querySelectorAll(
+          "dialog.modal-open [data-checklist-item]",
+        );
+        rows[0].dispatchEvent(
+          new DragEvent("dragover", {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer,
+          }),
+        );
+      }, dataTransfer);
+
+      await page.evaluate((dataTransfer) => {
+        const rows = document.querySelectorAll(
+          "dialog.modal-open [data-checklist-item]",
+        );
+        const fire = (el: Element, type: string) =>
+          el.dispatchEvent(
+            new DragEvent(type, {
+              bubbles: true,
+              cancelable: true,
+              dataTransfer,
+            }),
+          );
+        fire(rows[0], "drop");
+        fire(
+          rows[1].querySelector("[aria-label='Drag to reorder']")!,
+          "dragend",
+        );
+      }, dataTransfer);
+
+      await expect(fields.nth(0)).toHaveValue("Second item");
+      await expect(fields.nth(1)).toHaveValue("Draft outline");
     });
   });
 });

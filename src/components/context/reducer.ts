@@ -131,6 +131,9 @@ export function boardReducer(
     case "CHECKLIST/DELETE_ITEM":
       return checklist.removeItem(state, action.payload);
 
+    case "CHECKLIST/REORDER_ITEM":
+      return checklist.reorderItem(state, action.payload);
+
     // ── CHECKLIST AI ──────────────────────────────────────────────────────────
 
     case "CHECKLIST_AI/SET_PROMPT":

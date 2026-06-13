@@ -1,5 +1,25 @@
-import type { BoardState, ChecklistAIAction } from "../types.ts";
+import type { BoardState, ChecklistAIAction, ChecklistItem } from "../types.ts";
 import { createId } from "../constants.ts";
+import { generateNKeysBetween } from "fractional-indexing";
+
+// Build checklist items for AI-generated text, appending fractional orders
+// after the last existing item so the array stays sorted by order.
+function appendItems(
+  existing: ChecklistItem[],
+  texts: string[],
+): ChecklistItem[] {
+  const lastOrder = existing[existing.length - 1]?.order ?? null;
+  const orders = generateNKeysBetween(lastOrder, null, texts.length);
+  return [
+    ...existing,
+    ...texts.map((text, i) => ({
+      id: createId(),
+      text,
+      checked: false,
+      order: orders[i],
+    })),
+  ];
+}
 
 export function setPrompt(
   state: BoardState,
@@ -71,14 +91,10 @@ export function applyToEditDraft(state: BoardState): BoardState {
     ...state,
     editTaskDraft: {
       ...state.editTaskDraft,
-      checklist: [
-        ...state.editTaskDraft.checklist,
-        ...state.checklistPreview.map((text) => ({
-          id: createId(),
-          text,
-          checked: false,
-        })),
-      ],
+      checklist: appendItems(
+        state.editTaskDraft.checklist,
+        state.checklistPreview,
+      ),
     },
     checklistModalTaskId: null,
     checklistPrompt: "",
@@ -93,14 +109,7 @@ export function applyToCreateDraft(state: BoardState): BoardState {
     ...state,
     taskDraft: {
       ...state.taskDraft,
-      checklist: [
-        ...state.taskDraft.checklist,
-        ...state.checklistPreview.map((text) => ({
-          id: createId(),
-          text,
-          checked: false,
-        })),
-      ],
+      checklist: appendItems(state.taskDraft.checklist, state.checklistPreview),
     },
     checklistPreview: [],
   };

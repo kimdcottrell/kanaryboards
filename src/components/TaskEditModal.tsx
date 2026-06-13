@@ -22,6 +22,7 @@ export default function TaskEditModal() {
     addEditChecklistItem,
     updateEditChecklistItem,
     deleteEditChecklistItem,
+    reorderEditChecklistItem,
   } = useTaskEditActions();
   const { cancelEditTask, deleteTask } = useTaskActions();
   const { setChecklistInputRef } = useBoardRefs();
@@ -64,6 +65,7 @@ export default function TaskEditModal() {
             addChecklistItem={addEditChecklistItem}
             updateChecklistItem={updateEditChecklistItem}
             deleteChecklistItem={deleteEditChecklistItem}
+            reorderChecklistItem={reorderEditChecklistItem}
             handleChecklistKeyDown={handleChecklistKeyDown}
             setChecklistInputRef={setChecklistInputRef}
             checklistPrompt={checklistPrompt}

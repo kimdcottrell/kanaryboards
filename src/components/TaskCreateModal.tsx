@@ -18,6 +18,7 @@ export default function TaskCreateModal() {
     addChecklistItem,
     updateChecklistItem,
     deleteChecklistItem,
+    reorderChecklistItem,
   } = useTaskCreateActions();
   const { closeTaskCreateModal } = useTaskActions();
   const { setChecklistInputRef } = useBoardRefs();
@@ -49,6 +50,7 @@ export default function TaskCreateModal() {
           addChecklistItem={addChecklistItem}
           updateChecklistItem={updateChecklistItem}
           deleteChecklistItem={deleteChecklistItem}
+          reorderChecklistItem={reorderChecklistItem}
           handleChecklistKeyDown={handleChecklistKeyDown}
           setChecklistInputRef={setChecklistInputRef}
           checklistPrompt={checklistPrompt}

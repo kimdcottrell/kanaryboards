@@ -22,7 +22,12 @@ export const emptyTaskDraft = (rowId: string, colId: string): Task => ({
   order: "",
   title: "",
   description: "",
-  checklist: [{ id: createId(), text: "", checked: false }],
+  checklist: [{
+    id: createId(),
+    text: "",
+    checked: false,
+    order: generateKeyBetween(null, null),
+  }],
   rowId,
   colId,
 });
@@ -174,14 +179,23 @@ export const createDefaultBoard = () => {
         "version": 1,
       },
     }),
-    checklist: [
-      { id: createId(), text: "Open me up", checked: false },
-      {
-        id: createId(),
-        text: "Create a new row via the Board Configuration",
-        checked: false,
-      },
-    ],
+    checklist: (() => {
+      const orders = generateNKeysBetween(null, null, 2);
+      return [
+        {
+          id: createId(),
+          text: "Open me up",
+          checked: false,
+          order: orders[0],
+        },
+        {
+          id: createId(),
+          text: "Create a new row via the Board Configuration",
+          checked: false,
+          order: orders[1],
+        },
+      ];
+    })(),
   };
 
   return {
