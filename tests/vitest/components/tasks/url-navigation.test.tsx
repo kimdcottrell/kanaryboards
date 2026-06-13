@@ -19,7 +19,6 @@ vi.mock("react-router-dom", async (importOriginal) => {
 
 vi.mock("@components/context/hooks.ts", () => ({
   useTaskActions: vi.fn(),
-  useDragActions: vi.fn(),
   useBoardDataState: vi.fn(),
   useTaskEditState: vi.fn(),
   useTaskEditActions: vi.fn(),
@@ -46,7 +45,6 @@ import {
   useBoardRefs,
   useChecklistAIActions,
   useChecklistAIState,
-  useDragActions,
   useTaskActions,
   useTaskEditActions,
   useTaskEditState,
@@ -59,7 +57,6 @@ import {
   makeBoardRefs,
   makeChecklistAIActions,
   makeChecklistAIState,
-  makeDragActions,
   makeTaskActions,
   makeTaskEditActions,
   makeTaskEditState,
@@ -76,7 +73,6 @@ beforeEach(() => {
   mockNavigate.mockClear();
   delete mockParams.taskId;
   vi.mocked(useTaskActions).mockReturnValue(makeTaskActions());
-  vi.mocked(useDragActions).mockReturnValue(makeDragActions());
   vi.mocked(useBoardDataState).mockReturnValue(makeBoardDataState());
   vi.mocked(useTaskEditState).mockReturnValue(makeTaskEditState());
   vi.mocked(useTaskEditActions).mockReturnValue(makeTaskEditActions());

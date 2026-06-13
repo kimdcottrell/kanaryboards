@@ -3,7 +3,6 @@ import * as board from "./reducers/board.ts";
 import * as checklist from "./reducers/checklist.ts";
 import * as checklistAi from "./reducers/checklistAi.ts";
 import * as columns from "./reducers/columns.ts";
-import * as drag from "./reducers/drag.ts";
 import * as rows from "./reducers/rows.ts";
 import * as taskAi from "./reducers/taskAi.ts";
 import * as tasks from "./reducers/tasks.ts";
@@ -120,6 +119,15 @@ export function boardReducer(
     case "TASK/REORDER_IN_CELL":
       return tasks.reorderInCell(state, action.payload);
 
+    case "TASK/START_DRAG":
+      return tasks.startDrag(state, action.payload);
+
+    case "TASK/END_DRAG":
+      return tasks.endDrag(state);
+
+    case "TASK/DROP_ON_CELL":
+      return tasks.dropOnCell(state, action.payload);
+
     // ── CHECKLIST ITEMS ───────────────────────────────────────────────────────
 
     case "CHECKLIST/ADD_ITEM":
@@ -167,20 +175,6 @@ export function boardReducer(
 
     case "TASK_AI/GENERATE_FAILURE":
       return taskAi.generateFailure(state, action.payload);
-
-    // ── DRAG ──────────────────────────────────────────────────────────────────
-
-    case "DRAG/START_TASK":
-      return drag.startTask(state, action.payload);
-
-    case "DRAG/END_TASK":
-      return drag.endTask(state);
-
-    case "DRAG/DROP_TASK":
-      return drag.dropTask(state, action.payload);
-
-    case "DRAG/SET_DEFAULT_INDEX":
-      return drag.setDefaultIndex(state, action.payload);
 
     // ── BOARD ─────────────────────────────────────────────────────────────────
 

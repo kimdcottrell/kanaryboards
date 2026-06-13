@@ -5,7 +5,6 @@ import type {
   useBoardRefs,
   useChecklistAIActions,
   useChecklistAIState,
-  useDragActions,
   useTaskActions,
   useTaskCreateActions,
   useTaskCreateState,
@@ -22,7 +21,6 @@ type TaskEditState = ReturnType<typeof useTaskEditState>;
 type TaskEditActions = ReturnType<typeof useTaskEditActions>;
 type BoardDataState = ReturnType<typeof useBoardDataState>;
 type TaskActions = ReturnType<typeof useTaskActions>;
-type DragActions = ReturnType<typeof useDragActions>;
 
 export const mockRow: Row = {
   id: "row-1",
@@ -172,15 +170,7 @@ export function makeTaskActions(
     closeTaskCreateModal: vi.fn(),
     reorderTaskInCell: vi.fn(),
     moveTaskToColumn: vi.fn(),
-    ...overrides,
-  };
-}
-
-export function makeDragActions(
-  overrides: Partial<DragActions> = {},
-): DragActions {
-  return {
-    handleDragEnd: vi.fn(),
+    handleTaskDragEnd: vi.fn(),
     handleTaskDragStart: vi.fn(() => vi.fn()),
     handleColumnDrop: vi.fn(() => vi.fn()),
     ...overrides,

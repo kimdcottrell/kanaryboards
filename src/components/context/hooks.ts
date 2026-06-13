@@ -16,7 +16,6 @@ export { useBoardLifecycleActions } from "./actions/boardLifecycle.ts";
 export { useChecklistAIActions } from "./actions/checklistAi.ts";
 export { useColumnConfigActions } from "./actions/columnConfig.ts";
 export { useColumnEditActions } from "./actions/columnEdit.ts";
-export { useDragActions } from "./actions/drag.ts";
 export { useRowActions } from "./actions/row.ts";
 export { useRowEditActions } from "./actions/rowEdit.ts";
 export { useRowFormActions } from "./actions/rowForm.ts";
