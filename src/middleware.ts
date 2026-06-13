@@ -1,22 +1,47 @@
 import { defineMiddleware, sequence } from "astro/middleware";
-import { clerkMiddleware } from "@clerk/astro/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/astro/server";
 import { createId } from "@lib/uuid.ts";
 import { getBoardIdForUser, setBoardIdForUser } from "@lib/kv.ts";
 
 const isProtectedRoute = createRouteMatcher(["/api/board(.*)"]);
 
-const boardMiddleware = defineMiddleware(async (context, next) => {
-  const { userId } = context.locals.auth();
+export const protectedRequestMiddleware = clerkMiddleware(
+  async (auth, context, next) => {
+    const { isAuthenticated, userId } = auth();
 
-  if (userId) {
-    let boardId = await getBoardIdForUser(userId);
-    if (!boardId) {
-      boardId = createId();
-      await setBoardIdForUser(userId, boardId);
+    if (!isAuthenticated && isProtectedRoute(context.request)) {
+      console.debug({
+        event:
+          `Unauthorized access to ${context.request.url} blocked and handled`,
+        ip: context.clientAddress,
+        method: context.request.method,
+        url: context.request.url,
+        headers: Object.fromEntries(context.request.headers),
+      });
+      return new Response(null, {
+        status: 302,
+        headers: {
+          Location: "/",
+          "x-authenticated": "false",
+        },
+      });
     }
-    context.locals.boardId = boardId;
+
+    if (userId) {
+      let boardId = await getBoardIdForUser(userId);
+      if (!boardId) {
+        boardId = createId();
+        await setBoardIdForUser(userId, boardId);
+      }
+      context.locals.boardId = boardId;
+    }
+
     return next();
-  }
+  },
+);
+
+const boardMiddleware = defineMiddleware((context, next) => {
+  if (context.locals.boardId) return next();
 
   // Unauthenticated: use a persistent cookie-based boardId
   let boardId = context.cookies.get("boardId")?.value;
@@ -33,14 +58,4 @@ const boardMiddleware = defineMiddleware(async (context, next) => {
   return next();
 });
 
-export const onRequest = clerkMiddleware((auth, context) => {
-  const { isAuthenticated, redirectToSignIn } = auth();
-
-  if (!isAuthenticated && isProtectedRoute(context.request)) {
-    // Add custom logic to run before redirecting
-
-    return redirectToSignIn();
-  }
-});
-
-export const onRequest = sequence(clerkMiddleware(), boardMiddleware);
+export const onRequest = sequence(protectedRequestMiddleware, boardMiddleware);
