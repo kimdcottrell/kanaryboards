@@ -57,6 +57,7 @@ const editTask: Task = {
   id: "task-42",
   rowId: "row-1",
   colId: "col-1",
+  order: "a0",
   title: "Existing task",
   description: "",
   checklist: [],
