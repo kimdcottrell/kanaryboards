@@ -124,6 +124,77 @@ test.describe("Board CRUD", () => {
         }),
       ).toBeVisible();
     });
+
+    test("dragging a column badge updates drag/hover visuals and reorders columns", async ({ page }) => {
+      const columnSettings = page.locator("#board-config-column-settings");
+      const badges = columnSettings.locator("div[draggable='true']");
+
+      // Seeded order: To Do (0), In Progress (1), Done (2).
+      await expect(badges.nth(0)).toContainText("To Do");
+      await expect(badges.nth(1)).toContainText("In Progress");
+      await expect(badges.nth(2)).toContainText("Done");
+
+      // Drag "To Do" onto "Done". Each phase runs in its own round trip so React
+      // flushes draggedDefaultIndex / dragHoverIndex before the next event fires.
+      const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
+
+      await page.evaluate((dataTransfer) => {
+        const badges = document.querySelectorAll(
+          "#board-config-column-settings div[draggable='true']",
+        );
+        badges[0].dispatchEvent(
+          new DragEvent("dragstart", {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer,
+          }),
+        );
+      }, dataTransfer);
+
+      // The dragged badge fades to 0.4 opacity while draggedDefaultIndex === 0.
+      await expect(badges.nth(0)).toHaveCSS("opacity", "0.4");
+
+      await page.evaluate((dataTransfer) => {
+        const badges = document.querySelectorAll(
+          "#board-config-column-settings div[draggable='true']",
+        );
+        badges[2].dispatchEvent(
+          new DragEvent("dragover", {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer,
+          }),
+        );
+      }, dataTransfer);
+
+      // Hovering "Done" while "To Do" is dragged shows a drop indicator on it.
+      await expect(badges.nth(2).locator("span.bg-secondary")).toBeVisible();
+
+      await page.evaluate((dataTransfer) => {
+        const badges = document.querySelectorAll(
+          "#board-config-column-settings div[draggable='true']",
+        );
+        const fire = (el: Element, type: string) =>
+          el.dispatchEvent(
+            new DragEvent(type, {
+              bubbles: true,
+              cancelable: true,
+              dataTransfer,
+            }),
+          );
+        fire(badges[2], "drop");
+        fire(badges[0], "dragend");
+      }, dataTransfer);
+
+      // "To Do" is reordered to sit before "Done": In Progress, To Do, Done.
+      await expect(badges.nth(0)).toContainText("In Progress");
+      await expect(badges.nth(1)).toContainText("To Do");
+      await expect(badges.nth(2)).toContainText("Done");
+
+      // Drag visuals reset once dragging ends.
+      await expect(badges.nth(1)).toHaveCSS("opacity", "1");
+      await expect(columnSettings.locator("span.bg-secondary")).toHaveCount(0);
+    });
   });
 
   test.describe("row management", () => {
