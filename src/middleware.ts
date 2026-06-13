@@ -3,6 +3,8 @@ import { clerkMiddleware } from "@clerk/astro/server";
 import { createId } from "@lib/uuid.ts";
 import { getBoardIdForUser, setBoardIdForUser } from "@lib/kv.ts";
 
+const isProtectedRoute = createRouteMatcher(["/api/board(.*)"]);
+
 const boardMiddleware = defineMiddleware(async (context, next) => {
   const { userId } = context.locals.auth();
 
@@ -29,6 +31,16 @@ const boardMiddleware = defineMiddleware(async (context, next) => {
   }
   context.locals.boardId = boardId;
   return next();
+});
+
+export const onRequest = clerkMiddleware((auth, context) => {
+  const { isAuthenticated, redirectToSignIn } = auth();
+
+  if (!isAuthenticated && isProtectedRoute(context.request)) {
+    // Add custom logic to run before redirecting
+
+    return redirectToSignIn();
+  }
 });
 
 export const onRequest = sequence(clerkMiddleware(), boardMiddleware);
