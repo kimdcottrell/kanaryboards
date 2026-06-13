@@ -21,7 +21,7 @@ export const protectedRequestMiddleware = clerkMiddleware(
       return new Response(null, {
         status: 302,
         headers: {
-          Location: "/",
+          Location: "/?unauthorized=1",
           "x-authenticated": "false",
         },
       });

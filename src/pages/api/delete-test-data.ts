@@ -2,17 +2,8 @@ export const prerender = false;
 
 import type { APIRoute } from "astro";
 
-let E2E_TEST_USER_ID: string | null;
-switch (import.meta.env.MODE) {
-  case "development":
-    E2E_TEST_USER_ID = "user_3EyF80uaLUFw0Tm9gIWAe56nS8e";
-    break;
-  case "staging":
-    E2E_TEST_USER_ID = "user_3EvXS29F2Ire2I1MGgHaBHONzzM";
-    break;
-  default:
-    E2E_TEST_USER_ID = null;
-}
+const E2E_TEST_USER_ID: string | null = import.meta.env.E2E_TEST_USER_ID ??
+  null;
 
 // making this so an endpoint that allows deleting data from ANYONE'S user_id
 // does not exist. That should NOT be made a thing in the REST API
