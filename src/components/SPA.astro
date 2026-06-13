@@ -5,9 +5,33 @@ import BoardController from "@components/BoardController";
 const boardId = Astro.locals.boardId;
 const { userId } = Astro.locals.auth();
 const isAuthenticated = !!userId;
+const unauthorized = Astro.url.searchParams.get("unauthorized") === "1";
 ---
 
 <BaseLayout>
+  {
+    unauthorized && (
+      <div
+        id="unauthorized-alert"
+        role="alert"
+        class="alert alert-error fixed inset-x-0 top-4 z-50 mx-auto w-11/12 max-w-2xl shadow-lg"
+      >
+        <span class="iconify hugeicons--alert-02 text-xl" />
+        <span>
+          <strong>Unauthorized request was made.</strong> You must be logged in
+          with the correct permissions to complete your request.
+        </span>
+        <button
+          type="button"
+          aria-label="Dismiss"
+          class="btn btn-ghost btn-sm btn-circle"
+          data-dismiss-unauthorized
+        >
+          ✕
+        </button>
+      </div>
+    )
+  }
   {
     /* Props are the only channel from Astro's server context into this client:only React island. */
   }
@@ -17,3 +41,14 @@ const isAuthenticated = !!userId;
     isAuthenticated={isAuthenticated}
   />
 </BaseLayout>
+
+<script>
+  document
+    .querySelector("[data-dismiss-unauthorized]")
+    ?.addEventListener("click", () => {
+      document.getElementById("unauthorized-alert")?.remove();
+      const url = new URL(window.location.href);
+      url.searchParams.delete("unauthorized");
+      window.history.replaceState({}, "", url);
+    });
+</script>
