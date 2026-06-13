@@ -56,9 +56,7 @@ export function useDropTarget(active: boolean) {
     event.preventDefault();
     const position = dropPositionFromEvent(event);
     setDropTarget((prev) =>
-      prev?.id === id && prev?.position === position
-        ? prev
-        : { id, position }
+      prev?.id === id && prev?.position === position ? prev : { id, position }
     );
   };
 
