@@ -56,6 +56,7 @@ export default function TaskEditModal() {
               saveTaskEdit(e, content);
               navigate("/");
             }}
+            onCancel={handleClose}
             submitLabel="Save"
             initialMode="visual-only"
             onDelete={() => {
@@ -79,12 +80,12 @@ export default function TaskEditModal() {
           >
             <div className="grid grid-cols-2 gap-4 items-start">
               <fieldset className="fieldset">
-                <legend
+                <label
                   className="fieldset-legend"
                   htmlFor={`edit-column-select-${editTaskDraft.id}`}
                 >
                   Status
-                </legend>
+                </label>
                 <select
                   id={`edit-column-select-${editTaskDraft.id}`}
                   className="select select-bordered w-full"
@@ -103,12 +104,12 @@ export default function TaskEditModal() {
                 </select>
               </fieldset>
               <fieldset className="fieldset">
-                <legend
+                <label
                   className="fieldset-legend"
                   htmlFor={`edit-row-select-${editTaskDraft.id}`}
                 >
                   Row
-                </legend>
+                </label>
                 <select
                   id={`edit-row-select-${editTaskDraft.id}`}
                   className="select select-bordered w-full"

@@ -4,6 +4,7 @@ import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { GoogleGenAI } from "@google/genai";
+import type { APIContext } from "astro";
 
 const mockGenerateContentStream = vi.hoisted(() => vi.fn());
 const mockModelsList = vi.hoisted(() => vi.fn());
@@ -51,6 +52,9 @@ async function* makeModelList(names: readonly string[]) {
   }
 }
 
+const apiContext = (request: Request): APIContext =>
+  ({ request }) as APIContext;
+
 function makeRequest(body: unknown) {
   return new Request("http://localhost/api/generate-tasks", {
     method: "POST",
@@ -96,9 +100,9 @@ describe("POST /api/generate-tasks", () => {
 
     test("returns 503 with error message", async () => {
       const POST = await importPOST();
-      const res = await POST({
-        request: makeRequest({ prompt: "build a kanban app" }),
-      });
+      const res = await POST(
+        apiContext(makeRequest({ prompt: "build a kanban app" })),
+      );
       expect(res.status).toBe(503);
       const json = await res.json();
       expect(json.error).toBe("AI service is not configured.");
@@ -124,21 +128,21 @@ describe("POST /api/generate-tasks", () => {
 
     describe("request body validation", () => {
       test("returns 400 when body is not valid JSON", async () => {
-        const res = await POST({ request: makeInvalidRequest() });
+        const res = await POST(apiContext(makeInvalidRequest()));
         expect(res.status).toBe(400);
         const json = await res.json();
         expect(json.error).toBe("Invalid request body.");
       });
 
       test("returns 400 when prompt is missing from body", async () => {
-        const res = await POST({ request: makeRequest({ maxTasks: 5 }) });
+        const res = await POST(apiContext(makeRequest({ maxTasks: 5 })));
         expect(res.status).toBe(400);
         const json = await res.json();
         expect(json.error).toBe("Missing prompt.");
       });
 
       test("returns 400 when prompt is an empty string", async () => {
-        const res = await POST({ request: makeRequest({ prompt: "" }) });
+        const res = await POST(apiContext(makeRequest({ prompt: "" })));
         expect(res.status).toBe(400);
         const json = await res.json();
         expect(json.error).toBe("Missing prompt.");
@@ -146,9 +150,9 @@ describe("POST /api/generate-tasks", () => {
 
       test("accepts prompt as a string and uses it in the AI call", async () => {
         mockGenerateContentStream.mockReturnValue(streamChunks(["Task one"]));
-        const res = await POST({
-          request: makeRequest({ prompt: "build a crm", maxTasks: 4 }),
-        });
+        const res = await POST(
+          apiContext(makeRequest({ prompt: "build a crm", maxTasks: 4 })),
+        );
         expect(res.status).toBe(200);
         const [args] = mockGenerateContentStream.mock.calls;
         expect(args[0].contents).toContain("build a crm");
@@ -156,9 +160,9 @@ describe("POST /api/generate-tasks", () => {
 
       test("coerces non-string prompt to string via String()", async () => {
         mockGenerateContentStream.mockReturnValue(streamChunks(["Task one"]));
-        const res = await POST({
-          request: makeRequest({ prompt: 99, maxTasks: 2 }),
-        });
+        const res = await POST(
+          apiContext(makeRequest({ prompt: 99, maxTasks: 2 })),
+        );
         expect(res.status).toBe(200);
         const [args] = mockGenerateContentStream.mock.calls;
         expect(args[0].contents).toContain("99");
@@ -166,9 +170,9 @@ describe("POST /api/generate-tasks", () => {
 
       test("accepts maxTasks as a number and uses it to bound the task count", async () => {
         mockGenerateContentStream.mockReturnValue(streamChunks(["Task one"]));
-        const res = await POST({
-          request: makeRequest({ prompt: "build an app", maxTasks: 20 }),
-        });
+        const res = await POST(
+          apiContext(makeRequest({ prompt: "build an app", maxTasks: 20 })),
+        );
         expect(res.status).toBe(200);
         const [args] = mockGenerateContentStream.mock.calls;
         expect(args[0].contents).toContain("10 to 20");
@@ -176,16 +180,16 @@ describe("POST /api/generate-tasks", () => {
 
       test("defaults maxTasks to 10 when not provided", async () => {
         mockGenerateContentStream.mockReturnValue(streamChunks(["Task one"]));
-        await POST({ request: makeRequest({ prompt: "build an app" }) });
+        await POST(apiContext(makeRequest({ prompt: "build an app" })));
         const [args] = mockGenerateContentStream.mock.calls;
         expect(args[0].contents).toContain("5 to 10");
       });
 
       test("uses maxTasks in the system prompt", async () => {
         mockGenerateContentStream.mockReturnValue(streamChunks(["Task one"]));
-        await POST({
-          request: makeRequest({ prompt: "build an app", maxTasks: 8 }),
-        });
+        await POST(
+          apiContext(makeRequest({ prompt: "build an app", maxTasks: 8 })),
+        );
         const [args] = mockGenerateContentStream.mock.calls;
         expect(args[0].config.systemInstruction).toContain("8");
       });
@@ -194,7 +198,7 @@ describe("POST /api/generate-tasks", () => {
     describe("AI model", () => {
       test("uses a model from the list of models that support generateContent", async () => {
         mockGenerateContentStream.mockReturnValue(streamChunks(["Task one"]));
-        await POST({ request: makeRequest({ prompt: "build an app" }) });
+        await POST(apiContext(makeRequest({ prompt: "build an app" })));
 
         const ai = new GoogleGenAI({ apiKey: "test-api-key" });
         const supported: string[] = [];
@@ -211,7 +215,7 @@ describe("POST /api/generate-tasks", () => {
       test("uses the configured model name", async () => {
         mockGenerateContentStream.mockReturnValue(streamChunks(["Task one"]));
         const apiModel = await importApiModel();
-        await POST({ request: makeRequest({ prompt: "build an app" }) });
+        await POST(apiContext(makeRequest({ prompt: "build an app" })));
         expect(mockGenerateContentStream).toHaveBeenCalledWith(
           expect.objectContaining({ model: apiModel }),
         );
@@ -219,7 +223,7 @@ describe("POST /api/generate-tasks", () => {
 
       test("passes a systemInstruction about kanban task titles", async () => {
         mockGenerateContentStream.mockReturnValue(streamChunks(["Task one"]));
-        await POST({ request: makeRequest({ prompt: "build an app" }) });
+        await POST(apiContext(makeRequest({ prompt: "build an app" })));
         const [args] = mockGenerateContentStream.mock.calls;
         expect(args[0].config.systemInstruction).toContain("kanban board");
       });
@@ -230,9 +234,9 @@ describe("POST /api/generate-tasks", () => {
         mockGenerateContentStream.mockReturnValue(
           streamChunks(["- Task one\n", "* Task two\n", "3. Task three"]),
         );
-        const res = await POST({
-          request: makeRequest({ prompt: "build an app" }),
-        });
+        const res = await POST(
+          apiContext(makeRequest({ prompt: "build an app" })),
+        );
         expect(res.status).toBe(200);
         const json = await res.json();
         expect(json.response).toEqual(["Task one", "Task two", "Task three"]);
@@ -242,9 +246,9 @@ describe("POST /api/generate-tasks", () => {
         mockGenerateContentStream.mockReturnValue(
           streamChunks(["1) First task,\n2. Second task,"]),
         );
-        const res = await POST({
-          request: makeRequest({ prompt: "build an app" }),
-        });
+        const res = await POST(
+          apiContext(makeRequest({ prompt: "build an app" })),
+        );
         const json = await res.json();
         expect(json.response).toEqual(["First task", "Second task"]);
       });
@@ -253,9 +257,9 @@ describe("POST /api/generate-tasks", () => {
         mockGenerateContentStream.mockReturnValue(
           streamChunks(["Task one\n\n\nTask two"]),
         );
-        const res = await POST({
-          request: makeRequest({ prompt: "build an app" }),
-        });
+        const res = await POST(
+          apiContext(makeRequest({ prompt: "build an app" })),
+        );
         const json = await res.json();
         expect(json.response).toEqual(["Task one", "Task two"]);
       });
@@ -264,18 +268,18 @@ describe("POST /api/generate-tasks", () => {
         mockGenerateContentStream.mockReturnValue(
           streamChunks(["- Task ", "one\n- Task two"]),
         );
-        const res = await POST({
-          request: makeRequest({ prompt: "build an app" }),
-        });
+        const res = await POST(
+          apiContext(makeRequest({ prompt: "build an app" })),
+        );
         const json = await res.json();
         expect(json.response).toEqual(["Task one", "Task two"]);
       });
 
       test("returns Content-Type: application/json header", async () => {
         mockGenerateContentStream.mockReturnValue(streamChunks(["Task one"]));
-        const res = await POST({
-          request: makeRequest({ prompt: "build an app" }),
-        });
+        const res = await POST(
+          apiContext(makeRequest({ prompt: "build an app" })),
+        );
         expect(res.headers.get("Content-Type")).toBe("application/json");
       });
     });
@@ -285,9 +289,9 @@ describe("POST /api/generate-tasks", () => {
         mockGenerateContentStream.mockRejectedValue(
           new Error("Network failure"),
         );
-        const res = await POST({
-          request: makeRequest({ prompt: "build an app" }),
-        });
+        const res = await POST(
+          apiContext(makeRequest({ prompt: "build an app" })),
+        );
         expect(res.status).toBe(500);
         const json = await res.json();
         expect(json.error).toBe("Network failure");
@@ -295,9 +299,9 @@ describe("POST /api/generate-tasks", () => {
 
       test("returns 500 with fallback message when error message is empty", async () => {
         mockGenerateContentStream.mockRejectedValue(new Error(""));
-        const res = await POST({
-          request: makeRequest({ prompt: "build an app" }),
-        });
+        const res = await POST(
+          apiContext(makeRequest({ prompt: "build an app" })),
+        );
         expect(res.status).toBe(500);
         const json = await res.json();
         expect(json.error).toBe("AI generation failed.");
@@ -309,9 +313,9 @@ describe("POST /api/generate-tasks", () => {
         });
         const outer = JSON.stringify({ error: { code: 429, message: inner } });
         mockGenerateContentStream.mockRejectedValue(new Error(outer));
-        const res = await POST({
-          request: makeRequest({ prompt: "build an app" }),
-        });
+        const res = await POST(
+          apiContext(makeRequest({ prompt: "build an app" })),
+        );
         expect(res.status).toBe(429);
         const json = await res.json();
         expect(json.error).toBe("Rate limit exceeded");
@@ -324,9 +328,9 @@ describe("POST /api/generate-tasks", () => {
           error: { code: 401, message: "Unauthorized" },
         });
         mockGenerateContentStream.mockRejectedValue(new Error(outer));
-        const res = await POST({
-          request: makeRequest({ prompt: "build an app" }),
-        });
+        const res = await POST(
+          apiContext(makeRequest({ prompt: "build an app" })),
+        );
         expect(res.status).toBe(500);
         const json = await res.json();
         expect(json.error).toBe(outer);
@@ -336,9 +340,9 @@ describe("POST /api/generate-tasks", () => {
         // innerRaw is undefined (not a string) so inner stays null and outer.error.code is used
         const outer = JSON.stringify({ error: { code: 403 } });
         mockGenerateContentStream.mockRejectedValue(new Error(outer));
-        const res = await POST({
-          request: makeRequest({ prompt: "build an app" }),
-        });
+        const res = await POST(
+          apiContext(makeRequest({ prompt: "build an app" })),
+        );
         expect(res.status).toBe(403);
         const json = await res.json();
         expect(json.error).toBe("AI generation failed.");
@@ -348,9 +352,9 @@ describe("POST /api/generate-tasks", () => {
         mockGenerateContentStream.mockRejectedValue(
           new Error("plain text error"),
         );
-        const res = await POST({
-          request: makeRequest({ prompt: "build an app" }),
-        });
+        const res = await POST(
+          apiContext(makeRequest({ prompt: "build an app" })),
+        );
         expect(res.status).toBe(500);
         const json = await res.json();
         expect(json.error).toBe("plain text error");

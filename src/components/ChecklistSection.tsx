@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import CloseButton from "./buttons/CloseButton.tsx";
 import {
   beforeIdFromOrderedList,
@@ -144,6 +144,7 @@ export function ChecklistGenerationCollapse({
   clearChecklistPreview,
 }) {
   const [showError, setShowError] = useState(false);
+  const promptId = useId();
 
   function tryGenerate() {
     if (!checklistPrompt.trim()) {
@@ -183,10 +184,11 @@ export function ChecklistGenerationCollapse({
       >
         <div className="form-control">
           <fieldset className="fieldset">
-            <legend className="fieldset-legend">
+            <label className="fieldset-legend" htmlFor={promptId}>
               What task do you need broken down into subtasks?
-            </legend>
+            </label>
             <input
+              id={promptId}
               className="input input-bordered w-full"
               type="text"
               value={checklistPrompt}

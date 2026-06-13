@@ -17,8 +17,8 @@ beforeEach(async () => {
   _setKvForTest(memKv);
 });
 
-afterEach(async () => {
-  await memKv.close();
+afterEach(() => {
+  memKv.close();
 });
 
 const boardId = "test-board-001";
@@ -37,7 +37,12 @@ const sampleBoard: PersistedBoard = {
       order: "a0",
       title: "Write tests",
       description: "Important work",
-      checklist: [{ id: "item-1", text: "Step one", checked: false }],
+      checklist: [{
+        id: "item-1",
+        text: "Step one",
+        order: "a0",
+        checked: false,
+      }],
     },
     {
       id: "task-b",
