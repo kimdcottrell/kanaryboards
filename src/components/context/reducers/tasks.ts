@@ -216,10 +216,10 @@ export function dropOnCell(
 ): BoardState {
   const { toRowId, toColId, beforeTaskId } = payload;
   if (!state.draggedTask) return state;
-  if (state.draggedTask.rowId !== toRowId) {
-    return { ...state, draggedTask: null };
-  }
-  if (state.draggedTask.colId === toColId) {
+  if (
+    state.draggedTask.rowId === toRowId &&
+    state.draggedTask.colId === toColId
+  ) {
     return { ...state, draggedTask: null };
   }
   const cellTasks = state.tasks.filter((t) =>
@@ -231,7 +231,7 @@ export function dropOnCell(
     ...state,
     tasks: state.tasks.map((t) =>
       t.id === state.draggedTask!.id
-        ? { ...t, colId: toColId, order: newOrder }
+        ? { ...t, rowId: toRowId, colId: toColId, order: newOrder }
         : t
     ),
     draggedTask: null,

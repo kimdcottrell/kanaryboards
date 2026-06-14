@@ -175,3 +175,101 @@ describe("TASK/DROP_ON_CELL", () => {
     expect(next.draggedTask).toBeNull();
   });
 });
+
+// ── TASK/DROP_ON_CELL across rows ────────────────────────────────────────────
+
+// One dragged task in row-1/col-1, three ordered tasks (t1 < t2 < t3) in
+// row-2/col-1, and one task (other) in row-2/col-2. Two rows, two columns.
+function stateWithTwoRows(): BoardState {
+  return {
+    ...createInitialState(),
+    rows: [
+      { id: "row-1", title: "Row A", color: "#000", order: "a0" },
+      { id: "row-2", title: "Row B", color: "#111", order: "a1" },
+    ],
+    columns: [
+      { id: "col-1", title: "To Do", order: "a0" },
+      { id: "col-2", title: "Done", order: "a1" },
+    ],
+    tasks: [
+      { ...task("dragged", "a0"), rowId: "row-1", colId: "col-1" },
+      { ...task("t1", "a0"), rowId: "row-2", colId: "col-1" },
+      { ...task("t2", "a1"), rowId: "row-2", colId: "col-1" },
+      { ...task("t3", "a2"), rowId: "row-2", colId: "col-1" },
+      { ...task("other", "a0"), rowId: "row-2", colId: "col-2" },
+    ],
+  };
+}
+
+const orderedIdsInRowCol = (
+  state: BoardState,
+  rowId: string,
+  colId: string,
+): string[] =>
+  [...state.tasks]
+    .filter((t) => t.rowId === rowId && t.colId === colId)
+    .sort((a, b) => (a.order < b.order ? -1 : a.order > b.order ? 1 : 0))
+    .map((t) => t.id);
+
+describe("TASK/DROP_ON_CELL across rows", () => {
+  test("moves to a different row, same column, at the drop-indicator position", () => {
+    const state: BoardState = {
+      ...stateWithTwoRows(),
+      draggedTask: { ...task("dragged", "a0"), rowId: "row-1", colId: "col-1" },
+    };
+    const next = boardReducer(state, {
+      type: "TASK/DROP_ON_CELL",
+      payload: { toRowId: "row-2", toColId: "col-1", beforeTaskId: "t2" },
+    });
+    expect(orderedIdsInRowCol(next, "row-2", "col-1")).toEqual([
+      "t1",
+      "dragged",
+      "t2",
+      "t3",
+    ]);
+    const moved = next.tasks.find((t) => t.id === "dragged")!;
+    expect(moved.rowId).toBe("row-2");
+    expect(moved.colId).toBe("col-1");
+    expect(next.draggedTask).toBeNull();
+  });
+
+  test("moves to a different row and a different column", () => {
+    const state: BoardState = {
+      ...stateWithTwoRows(),
+      draggedTask: { ...task("dragged", "a0"), rowId: "row-1", colId: "col-1" },
+    };
+    const next = boardReducer(state, {
+      type: "TASK/DROP_ON_CELL",
+      payload: { toRowId: "row-2", toColId: "col-2", beforeTaskId: null },
+    });
+    expect(orderedIdsInRowCol(next, "row-2", "col-2")).toEqual([
+      "other",
+      "dragged",
+    ]);
+    expect(orderedIdsInRowCol(next, "row-2", "col-1")).toEqual([
+      "t1",
+      "t2",
+      "t3",
+    ]);
+    const moved = next.tasks.find((t) => t.id === "dragged")!;
+    expect(moved.rowId).toBe("row-2");
+    expect(moved.colId).toBe("col-2");
+    expect(next.draggedTask).toBeNull();
+  });
+
+  test("dropping into the exact same cell (same row and column) is a no-op", () => {
+    const state: BoardState = {
+      ...stateWithTwoRows(),
+      draggedTask: { ...task("dragged", "a0"), rowId: "row-1", colId: "col-1" },
+    };
+    const next = boardReducer(state, {
+      type: "TASK/DROP_ON_CELL",
+      payload: { toRowId: "row-1", toColId: "col-1", beforeTaskId: null },
+    });
+    const moved = next.tasks.find((t) => t.id === "dragged")!;
+    expect(moved.rowId).toBe("row-1");
+    expect(moved.colId).toBe("col-1");
+    expect(moved.order).toBe("a0");
+    expect(next.draggedTask).toBeNull();
+  });
+});
