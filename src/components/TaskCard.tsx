@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useDragActions, useTaskActions } from "./context/hooks.ts";
+import { useTaskActions } from "./context/hooks.ts";
 import { useRenderCount } from "@lib/use-render-count.ts";
 
 export default function TaskCard({
@@ -11,8 +11,12 @@ export default function TaskCard({
   isDragging,
 }) {
   const navigate = useNavigate();
-  const { startEditTask, toggleTaskChecklist } = useTaskActions();
-  const { handleDragEnd, handleTaskDragStart } = useDragActions();
+  const {
+    startEditTask,
+    toggleTaskChecklist,
+    handleTaskDragEnd,
+    handleTaskDragStart,
+  } = useTaskActions();
   const renderCount = useRenderCount();
 
   return (
@@ -21,7 +25,7 @@ export default function TaskCard({
       data-render-count={renderCount}
       draggable="true"
       onDragStart={handleTaskDragStart(task)}
-      onDragEnd={handleDragEnd}
+      onDragEnd={handleTaskDragEnd}
       onDragOver={onDragOver}
       className="overflow-hidden shadow-sm shadow-base-900/5"
       style={{

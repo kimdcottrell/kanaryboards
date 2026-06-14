@@ -62,7 +62,7 @@ export function useColumnConfigActions() {
           });
         }
       }
-      dispatch({ type: "DRAG/SET_DEFAULT_INDEX", payload: { index: null } });
+      dispatch({ type: "COLUMN/SET_DRAGGED_INDEX", payload: { index: null } });
     },
     [draggedDefaultIndex, columns, dispatch],
   );
@@ -80,7 +80,7 @@ export function useColumnConfigActions() {
     deleteColumn: (columnId: string) =>
       dispatch({ type: "COLUMN/DELETE", payload: { columnId } }),
     handleDefaultColumnDragStart: (index: number) => (event: DragEvent) => {
-      dispatch({ type: "DRAG/SET_DEFAULT_INDEX", payload: { index } });
+      dispatch({ type: "COLUMN/SET_DRAGGED_INDEX", payload: { index } });
       event.dataTransfer!.effectAllowed = "move";
       event.dataTransfer!.setData("text/plain", String(index));
     },

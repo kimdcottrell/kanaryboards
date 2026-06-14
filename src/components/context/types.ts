@@ -88,7 +88,8 @@ export interface ChecklistAIState {
   checklistModalError: string;
 }
 
-// Task drag-and-drop across the board.
+// The task currently being dragged across the board (cross-cell moves). Global
+// because ColumnCard reads it to render drag visuals and route drops.
 export interface DragState {
   draggedTask: Task | null;
 }
@@ -161,9 +162,23 @@ export type TaskAction =
   | { type: "TASK/CLOSE_EDIT_MODAL" }
   | { type: "TASK/UPDATE_DRAFT"; payload: { draft: Task } }
   | { type: "TASK/UPDATE_EDIT_DRAFT"; payload: { draft: Task } }
+  // Task drag-and-drop spans 4 actions because dragging a task is a board-wide
+  // gesture: draggedTask lives in global BoardState so any column can render
+  // drop-zone highlights mid-drag, and a task can land in a different cell than
+  // it started in.
+  //   START_DRAG / END_DRAG - bookend the gesture (END_DRAG also acts as a
+  //                           cancel safety-net if no reorder/drop happened)
+  //   REORDER_IN_CELL       - same-cell reorder, precise before/after position
+  //   DROP_ON_CELL          - move to a different column, appended to the end
   | {
     type: "TASK/REORDER_IN_CELL";
     payload: { taskId: string; beforeTaskId: string | null };
+  }
+  | { type: "TASK/START_DRAG"; payload: { task: Task } }
+  | { type: "TASK/END_DRAG" }
+  | {
+    type: "TASK/DROP_ON_CELL";
+    payload: { toRowId: string; toColId: string };
   };
 
 // Checklist item edits (target discriminates create-draft vs edit-draft).
@@ -189,6 +204,10 @@ export type ChecklistAction =
     type: "CHECKLIST/DELETE_ITEM";
     payload: { target: "draft" | "editDraft"; itemId: string };
   }
+  // Unlike task drag-and-drop, checklist items only ever reorder within one
+  // fixed list local to a single draft, so drag state stays local to
+  // ChecklistSection and this single action (dispatched on drop) is enough to
+  // record the final position.
   | {
     type: "CHECKLIST/REORDER_ITEM";
     payload: {
@@ -212,12 +231,6 @@ export type TaskAIAction =
   | { type: "TASK_AI/GENERATE_SUCCESS"; payload: { tasks: Task[] } }
   | { type: "TASK_AI/GENERATE_FAILURE"; payload: { error: string } };
 
-export type DragAction =
-  | { type: "DRAG/START_TASK"; payload: { task: Task } }
-  | { type: "DRAG/END_TASK" }
-  | { type: "DRAG/DROP_TASK"; payload: { toRowId: string; toColId: string } }
-  | { type: "DRAG/SET_DEFAULT_INDEX"; payload: { index: number | null } };
-
 export type BoardLifecycleAction =
   | { type: "BOARD/RESET" }
   | {
@@ -236,5 +249,4 @@ export type BoardAction =
   | ChecklistAction
   | ChecklistAIAction
   | TaskAIAction
-  | DragAction
   | BoardLifecycleAction;

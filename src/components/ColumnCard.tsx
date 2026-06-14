@@ -1,19 +1,13 @@
-import { useEffect, useState } from "react";
 import TaskCard from "./TaskCard.tsx";
 import {
   useColumnEditActions,
   useColumnEditState,
-  useDragActions,
   useDragState,
   useTaskActions,
   useTasksByCell,
 } from "./context/hooks.ts";
 import { useRenderCount } from "@lib/use-render-count.ts";
-import {
-  beforeIdFromOrderedList,
-  dropPositionFromEvent,
-  type DropTarget,
-} from "@lib/drag.ts";
+import { beforeIdFromOrderedList, useDropTarget } from "@lib/drag.ts";
 
 export default function ColumnCard({ column, row }) {
   const tasksByCell = useTasksByCell();
@@ -22,34 +16,18 @@ export default function ColumnCard({ column, row }) {
     useColumnEditState();
   const { setEditingColumnName, editColumnTitle, saveColumnTitle } =
     useColumnEditActions();
-  const { openTaskForm, reorderTaskInCell } = useTaskActions();
-  const { handleColumnDrop } = useDragActions();
+  const { openTaskForm, reorderTaskInCell, handleColumnDrop } =
+    useTaskActions();
   const renderCount = useRenderCount();
 
-  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
+  const { dropTarget, handleDragOver } = useDropTarget(!!draggedTask);
 
   const cellKey = `${row.id}|${column.id}`;
   const cellTasks = tasksByCell[cellKey] || [];
 
-  useEffect(() => {
-    if (!draggedTask) setDropTarget(null);
-  }, [draggedTask]);
-
-  const handleTaskDragOver = (e, taskId) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const position = dropPositionFromEvent(e);
-    setDropTarget((prev) =>
-      prev?.id === taskId && prev?.position === position
-        ? prev
-        : { id: taskId, position }
-    );
-  };
-
   const handleDrop = (e) => {
     e.preventDefault();
     const target = dropTarget;
-    setDropTarget(null);
     if (!draggedTask) return;
 
     if (draggedTask.rowId === row.id && draggedTask.colId === column.id) {
@@ -126,7 +104,10 @@ export default function ColumnCard({ column, row }) {
             key={task.id}
             task={task}
             row={row}
-            onDragOver={(e) => handleTaskDragOver(e, task.id)}
+            onDragOver={(e) => {
+              e.stopPropagation();
+              handleDragOver(e, task.id);
+            }}
             isDropBefore={dropTarget?.id === task.id &&
               dropTarget?.position === "before"}
             isDropAfter={dropTarget?.id === task.id &&

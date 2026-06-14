@@ -1,10 +1,6 @@
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import CloseButton from "./buttons/CloseButton.tsx";
-import {
-  beforeIdFromOrderedList,
-  dropPositionFromEvent,
-  type DropTarget,
-} from "@lib/drag.ts";
+import { beforeIdFromOrderedList, useDropTarget } from "@lib/drag.ts";
 
 export default function ChecklistSection({
   checklist,
@@ -16,29 +12,13 @@ export default function ChecklistSection({
   setChecklistInputRef,
 }) {
   const [draggedId, setDraggedId] = useState<string | null>(null);
-  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
-
-  useEffect(() => {
-    if (!draggedId) setDropTarget(null);
-  }, [draggedId]);
-
-  const handleItemDragOver = (e, itemId) => {
-    if (!draggedId) return;
-    e.preventDefault();
-    const position = dropPositionFromEvent(e);
-    setDropTarget((prev) =>
-      prev?.id === itemId && prev?.position === position
-        ? prev
-        : { id: itemId, position }
-    );
-  };
+  const { dropTarget, handleDragOver } = useDropTarget(!!draggedId);
 
   const handleDrop = (e) => {
     e.preventDefault();
     const target = dropTarget;
     const moved = draggedId;
     setDraggedId(null);
-    setDropTarget(null);
     if (moved) {
       reorderChecklistItem(moved, beforeIdFromOrderedList(checklist, target));
     }
@@ -66,7 +46,7 @@ export default function ChecklistSection({
           <div
             key={item.id}
             data-checklist-item={item.id}
-            onDragOver={(e) => handleItemDragOver(e, item.id)}
+            onDragOver={(e) => handleDragOver(e, item.id)}
             className="rounded flex items-center gap-3 bg-base-content/10 px-3 py-2"
             style={{
               opacity: draggedId === item.id ? 0.4 : 1,

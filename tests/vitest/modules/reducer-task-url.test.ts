@@ -86,13 +86,13 @@ describe("URL unchanged — status change", () => {
     expect(next.tasks[0].colId).toBe("col-2");
   });
 
-  test("DRAG/DROP_TASK preserves task ID after drag-to-column", () => {
+  test("TASK/DROP_ON_CELL preserves task ID after drag-to-column", () => {
     const state: BoardState = {
       ...stateWithTask(baseTask),
       draggedTask: baseTask,
     };
     const next = boardReducer(state, {
-      type: "DRAG/DROP_TASK",
+      type: "TASK/DROP_ON_CELL",
       payload: { toRowId: "row-1", toColId: "col-2" },
     });
     expect(next.tasks[0].id).toBe("url-stable-task");

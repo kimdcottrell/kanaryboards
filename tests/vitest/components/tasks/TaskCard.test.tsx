@@ -1,11 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import {
-  makeDragActions,
-  makeTaskActions,
-  mockRow,
-  mockTask,
-} from "./setup.ts";
+import { makeTaskActions, mockRow, mockTask } from "./setup.ts";
 
 const mockNavigate = vi.fn();
 
@@ -16,18 +11,15 @@ vi.mock("react-router-dom", async (importOriginal) => {
 
 vi.mock("@components/context/hooks.ts", () => ({
   useTaskActions: vi.fn(),
-  useDragActions: vi.fn(),
 }));
 
-import { useDragActions, useTaskActions } from "@components/context/hooks.ts";
+import { useTaskActions } from "@components/context/hooks.ts";
 import TaskCard from "@components/TaskCard.tsx";
 
 const taskActions = makeTaskActions();
-const dragActions = makeDragActions();
 
 beforeEach(() => {
   vi.mocked(useTaskActions).mockReturnValue(taskActions);
-  vi.mocked(useDragActions).mockReturnValue(dragActions);
 });
 
 afterEach(() => {

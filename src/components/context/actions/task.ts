@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useBoardDispatch } from "../BoardContext.tsx";
 import type { Task } from "../types.ts";
+import type { DragEvent } from "react";
 
 export function useTaskActions() {
   const dispatch = useBoardDispatch();
@@ -26,5 +27,17 @@ export function useTaskActions() {
         type: "TASK/REORDER_IN_CELL",
         payload: { taskId, beforeTaskId },
       }),
+    handleTaskDragEnd: () => dispatch({ type: "TASK/END_DRAG" }),
+    handleTaskDragStart: (task: Task) => (event: DragEvent) => {
+      dispatch({ type: "TASK/START_DRAG", payload: { task } });
+      event.dataTransfer!.effectAllowed = "move";
+    },
+    handleColumnDrop: (rowId: string, colId: string) => (event: DragEvent) => {
+      event.preventDefault();
+      dispatch({
+        type: "TASK/DROP_ON_CELL",
+        payload: { toRowId: rowId, toColId: colId },
+      });
+    },
   }), [dispatch]);
 }
