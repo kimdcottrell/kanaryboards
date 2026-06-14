@@ -99,3 +99,79 @@ describe("TASK/REORDER_IN_CELL", () => {
     expect(next.draggedTask).toBeNull();
   });
 });
+
+// ── TASK/DROP_ON_CELL ────────────────────────────────────────────────────────
+
+// One dragged task in col-1, and three ordered tasks (t1 < t2 < t3) in col-2,
+// both in row-1.
+function stateWithTwoColumns(): BoardState {
+  return {
+    ...createInitialState(),
+    rows: [{ id: "row-1", title: "Row A", color: "#000", order: "a0" }],
+    columns: [
+      { id: "col-1", title: "To Do", order: "a0" },
+      { id: "col-2", title: "Done", order: "a1" },
+    ],
+    tasks: [
+      { ...task("dragged", "a0"), colId: "col-1" },
+      { ...task("t1", "a0"), colId: "col-2" },
+      { ...task("t2", "a1"), colId: "col-2" },
+      { ...task("t3", "a2"), colId: "col-2" },
+    ],
+  };
+}
+
+const orderedIdsInCol = (state: BoardState, colId: string): string[] =>
+  [...state.tasks]
+    .filter((t) => t.colId === colId)
+    .sort((a, b) => (a.order < b.order ? -1 : a.order > b.order ? 1 : 0))
+    .map((t) => t.id);
+
+describe("TASK/DROP_ON_CELL", () => {
+  test("inserts the dragged task at the drop-indicator position", () => {
+    const state: BoardState = {
+      ...stateWithTwoColumns(),
+      draggedTask: { ...task("dragged", "a0"), colId: "col-1" },
+    };
+    const next = boardReducer(state, {
+      type: "TASK/DROP_ON_CELL",
+      payload: { toRowId: "row-1", toColId: "col-2", beforeTaskId: "t2" },
+    });
+    expect(orderedIdsInCol(next, "col-2")).toEqual([
+      "t1",
+      "dragged",
+      "t2",
+      "t3",
+    ]);
+    expect(next.tasks.find((t) => t.id === "dragged")!.colId).toBe("col-2");
+  });
+
+  test("appends to the end when beforeTaskId is null", () => {
+    const state: BoardState = {
+      ...stateWithTwoColumns(),
+      draggedTask: { ...task("dragged", "a0"), colId: "col-1" },
+    };
+    const next = boardReducer(state, {
+      type: "TASK/DROP_ON_CELL",
+      payload: { toRowId: "row-1", toColId: "col-2", beforeTaskId: null },
+    });
+    expect(orderedIdsInCol(next, "col-2")).toEqual([
+      "t1",
+      "t2",
+      "t3",
+      "dragged",
+    ]);
+  });
+
+  test("clears draggedTask after a cross-column drop", () => {
+    const state: BoardState = {
+      ...stateWithTwoColumns(),
+      draggedTask: { ...task("dragged", "a0"), colId: "col-1" },
+    };
+    const next = boardReducer(state, {
+      type: "TASK/DROP_ON_CELL",
+      payload: { toRowId: "row-1", toColId: "col-2", beforeTaskId: "t1" },
+    });
+    expect(next.draggedTask).toBeNull();
+  });
+});
