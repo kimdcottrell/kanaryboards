@@ -427,6 +427,53 @@ test.describe("Board CRUD", () => {
       await expect(todoColumn.locator("article#task-e2e-1")).toBeVisible();
     });
 
+    test("moves a task to a different row via drag and drop", async ({ page }) => {
+      const todoColumnRow1 = page.locator("#row-columns-row-e2e-1 > div > div")
+        .nth(0);
+      const inProgressColumnRow2 = page.locator(
+        "#row-columns-row-e2e-2 > div > div",
+      ).nth(1);
+
+      const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
+
+      await page.evaluate((dataTransfer) => {
+        const source = document.querySelector("article#task-e2e-2")!;
+        source.dispatchEvent(
+          new DragEvent("dragstart", {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer,
+          }),
+        );
+      }, dataTransfer);
+
+      await page.evaluate((dataTransfer) => {
+        const source = document.querySelector("article#task-e2e-2")!;
+        const target = document.querySelector(
+          "#row-columns-row-e2e-2 > div > div:nth-child(2)",
+        )!;
+        const fire = (el: Element, type: string) =>
+          el.dispatchEvent(
+            new DragEvent(type, {
+              bubbles: true,
+              cancelable: true,
+              dataTransfer,
+            }),
+          );
+        fire(target, "dragover");
+        fire(target, "drop");
+        fire(source, "dragend");
+      }, dataTransfer);
+
+      await expect(inProgressColumnRow2.locator("article#task-e2e-2"))
+        .toBeVisible();
+      await expect(todoColumnRow1.locator("article#task-e2e-2")).toHaveCount(
+        0,
+      );
+      await expect(todoColumnRow1.locator("article#task-e2e-1"))
+        .toBeVisible();
+    });
+
     test("reorders a task within the same column via drag and drop", async ({ page }) => {
       const todoColumn = page.locator("#row-columns-row-e2e-1 > div > div")
         .nth(0);

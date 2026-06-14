@@ -93,7 +93,7 @@ describe("URL unchanged — status change", () => {
     };
     const next = boardReducer(state, {
       type: "TASK/DROP_ON_CELL",
-      payload: { toRowId: "row-1", toColId: "col-2" },
+      payload: { toRowId: "row-1", toColId: "col-2", beforeTaskId: null },
     });
     expect(next.tasks[0].id).toBe("url-stable-task");
   });

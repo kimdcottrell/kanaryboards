@@ -36,7 +36,11 @@ export default function ColumnCard({ column, row }) {
         beforeIdFromOrderedList(cellTasks, target),
       );
     } else {
-      handleColumnDrop(row.id, column.id)(e);
+      handleColumnDrop(
+        row.id,
+        column.id,
+        beforeIdFromOrderedList(cellTasks, target),
+      )(e);
     }
   };
 

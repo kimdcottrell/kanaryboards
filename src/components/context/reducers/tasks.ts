@@ -214,24 +214,24 @@ export function dropOnCell(
   state: BoardState,
   payload: Extract<TaskAction, { type: "TASK/DROP_ON_CELL" }>["payload"],
 ): BoardState {
-  const { toRowId, toColId } = payload;
+  const { toRowId, toColId, beforeTaskId } = payload;
   if (!state.draggedTask) return state;
-  if (state.draggedTask.rowId !== toRowId) {
+  if (
+    state.draggedTask.rowId === toRowId &&
+    state.draggedTask.colId === toColId
+  ) {
     return { ...state, draggedTask: null };
   }
-  if (state.draggedTask.colId === toColId) {
-    return { ...state, draggedTask: null };
-  }
-  // Append to the end of the target cell
   const cellTasks = state.tasks.filter((t) =>
     t.rowId === toRowId && t.colId === toColId
   );
-  const newOrder = reorderKey(cellTasks, state.draggedTask.id, null)!;
+  const newOrder = reorderKey(cellTasks, state.draggedTask.id, beforeTaskId);
+  if (newOrder === null) return { ...state, draggedTask: null };
   return {
     ...state,
     tasks: state.tasks.map((t) =>
       t.id === state.draggedTask!.id
-        ? { ...t, colId: toColId, order: newOrder }
+        ? { ...t, rowId: toRowId, colId: toColId, order: newOrder }
         : t
     ),
     draggedTask: null,

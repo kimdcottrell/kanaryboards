@@ -169,7 +169,8 @@ export type TaskAction =
   //   START_DRAG / END_DRAG - bookend the gesture (END_DRAG also acts as a
   //                           cancel safety-net if no reorder/drop happened)
   //   REORDER_IN_CELL       - same-cell reorder, precise before/after position
-  //   DROP_ON_CELL          - move to a different column, appended to the end
+  //   DROP_ON_CELL          - move to a different column, at the drop-indicator
+  //                           position (or appended to the end if none)
   | {
     type: "TASK/REORDER_IN_CELL";
     payload: { taskId: string; beforeTaskId: string | null };
@@ -178,7 +179,7 @@ export type TaskAction =
   | { type: "TASK/END_DRAG" }
   | {
     type: "TASK/DROP_ON_CELL";
-    payload: { toRowId: string; toColId: string };
+    payload: { toRowId: string; toColId: string; beforeTaskId: string | null };
   };
 
 // Checklist item edits (target discriminates create-draft vs edit-draft).

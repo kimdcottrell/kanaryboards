@@ -32,12 +32,14 @@ export function useTaskActions() {
       dispatch({ type: "TASK/START_DRAG", payload: { task } });
       event.dataTransfer!.effectAllowed = "move";
     },
-    handleColumnDrop: (rowId: string, colId: string) => (event: DragEvent) => {
-      event.preventDefault();
-      dispatch({
-        type: "TASK/DROP_ON_CELL",
-        payload: { toRowId: rowId, toColId: colId },
-      });
-    },
+    handleColumnDrop:
+      (rowId: string, colId: string, beforeTaskId: string | null) =>
+      (event: DragEvent) => {
+        event.preventDefault();
+        dispatch({
+          type: "TASK/DROP_ON_CELL",
+          payload: { toRowId: rowId, toColId: colId, beforeTaskId },
+        });
+      },
   }), [dispatch]);
 }
