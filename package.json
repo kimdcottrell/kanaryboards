@@ -5,7 +5,7 @@
   "type": "module",
   "dependencies": {
     "@astrojs/react": "5.0.7",
-    "@clerk/astro": "3.3.3",
+    "@clerk/astro": "3.4.2",
     "@clerk/backend": "3.7.0",
     "@clerk/testing": "2.1.1",
     "@deno/astro-adapter": "0.5.2",
