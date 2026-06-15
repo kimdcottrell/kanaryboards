@@ -1,0 +1,179 @@
+---
+title: Row & Column Management
+---
+sequenceDiagram
+    actor User
+    participant Config as BoardConfiguration<br/>(BoardConfiguration.tsx)
+    participant Row as RowSection<br/>(RowSection.tsx)
+    participant Cell as ColumnCard<br/>(ColumnCard.tsx)
+    participant Actions as action hooks<br/>(actions/row*.ts, column*.ts)
+    participant Reducer as reducers<br/>(rows.ts, columns.ts, taskAi.ts)
+    participant Ctx as BoardContext<br/>(BoardData/RowForm/RowEdit/<br/>ColumnEdit/ColumnConfig)
+    participant AI as /api/generate-tasks<br/>(Google GenAI)
+
+    Note over User,AI: Add row with AI task generation
+    User->>Config: type row name + AI prompt
+    Config->>Actions: setNewRowName / setNewRowPrompt<br/>(actions/rowForm.ts)
+    Actions->>Ctx: dispatch(ROW/SET_NEW_NAME | ROW/SET_NEW_PROMPT)
+    Ctx->>Reducer: rows.setNewName / setNewPrompt
+    Reducer-->>Ctx: newRowName / newRowPrompt updated
+    Ctx-->>Config: BoardConfiguration re-renders<br/>(RowFormContext: newRowName/newRowPrompt changed)
+
+    User->>Config: submit "Add row" form
+    Config->>Actions: addRow(event)<br/>(actions/rowForm.ts)
+    Actions->>Ctx: dispatch(ROW/ADD, {id, title, color: blue, order})
+    Ctx->>Reducer: rows.add(state, payload)
+    Reducer-->>Ctx: rows = [...rows, newRow]
+    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: rows changed)<br/>-> row settings list shows new row
+    Ctx-->>Row: RowBoard mounts a new RowSection<br/>(BoardData: rows changed)
+
+    alt newRowPrompt is non-empty
+        Actions->>Ctx: dispatch(TASK_AI/GENERATE_START)
+        Ctx->>Reducer: taskAi.generateStart
+        Reducer-->>Ctx: isGeneratingTasks = true<br/>taskGenerationStatus = "Generating tasks..."
+        Ctx-->>Config: BoardConfiguration re-renders<br/>(RowFormContext: isGeneratingTasks=true)<br/>-> shows status banner, disables inputs
+
+        Actions->>AI: fetchGeneratedItems(prompt, 10)<br/>(actions/shared.ts)<br/>POST /api/generate-tasks
+        AI-->>Actions: {response: string[]} (task titles)
+
+        alt titles returned
+            Actions->>Actions: todoColId = findTodoColumnId(columns)<br/>(selectors.ts)<br/>orders = generateNKeysBetween(null, null, n)<br/>build Task[] (empty description/checklist)
+            Actions->>Ctx: dispatch(TASK_AI/GENERATE_SUCCESS, {tasks})
+            Ctx->>Reducer: taskAi.generateSuccess
+            Reducer-->>Ctx: tasks = [...newTasks, ...tasks]<br/>isGeneratingTasks=false<br/>taskGenerationStatus = "Added N task(s) to Todo"<br/>newRowName="", newRowPrompt="", newRowFormKey++
+        else no titles / fetch error
+            Actions->>Ctx: dispatch(TASK_AI/GENERATE_FAILURE, {error})
+            Ctx->>Reducer: taskAi.generateFailure
+            Reducer-->>Ctx: isGeneratingTasks=false<br/>taskGenerationStatus=error<br/>newRowName="", newRowPrompt="", newRowFormKey++
+        end
+        Ctx-->>Config: BoardConfiguration re-renders<br/>(RowFormContext: isGeneratingTasks=false)<br/>-> form resets, "Add Row" button reappears
+        Ctx-->>Cell: ColumnCard (Todo column, new row)<br/>re-renders (TasksByCellContext changed)<br/>-> new TaskCards mount
+    else newRowPrompt empty
+        Actions->>Ctx: dispatch(ROW/RESET_FORM)
+        Ctx->>Reducer: rows.resetForm
+        Reducer-->>Ctx: newRowName="", newRowPrompt="", newRowFormKey++
+        Ctx-->>Config: BoardConfiguration re-renders<br/>(RowFormContext: form fields reset)
+    end
+
+    Note over User,AI: Rename row (RowSection)
+    User->>Row: double-click row title
+    Row->>Actions: editRowTitle(row)<br/>(actions/rowEdit.ts)
+    Actions->>Ctx: dispatch(ROW/EDIT_START, {rowId, currentName})
+    Ctx->>Reducer: rows.editStart
+    Reducer-->>Ctx: editingRowId = rowId, editingRowName = currentName
+    Ctx-->>Row: every RowSection re-renders<br/>(RowEditContext: editingRowId changed)<br/>-> matching row shows &lt;input&gt;, others unchanged
+
+    User->>Row: type new name
+    Row->>Actions: setEditingRowName(name)
+    Actions->>Ctx: dispatch(ROW/EDIT_CHANGE, {name})
+    Ctx->>Reducer: rows.editChange
+    Reducer-->>Ctx: editingRowName = name
+    Ctx-->>Row: editing RowSection's &lt;input&gt; re-renders<br/>(RowEditContext: editingRowName changed)
+
+    User->>Row: Enter / blur
+    Row->>Actions: saveRowTitle(rowId)
+    Actions->>Ctx: dispatch(ROW/EDIT_SAVE, {rowId})
+    Ctx->>Reducer: rows.editSave
+    Reducer-->>Ctx: rows[rowId].title = trimmed (if non-empty)<br/>editingRowId = null
+    Ctx-->>Row: that RowSection re-renders<br/>(BoardData: row.title changed)<br/>-> shows updated title
+    Ctx-->>Row: every RowSection re-renders<br/>(RowEditContext: editingRowId=null)<br/>-> &lt;input&gt; reverts to text
+
+    Note over Row: Escape -> ROW/EDIT_CANCEL -> rows.editCancel<br/>(discards edit, no title change;<br/>every RowSection re-renders via RowEditContext)
+
+    Note over User,AI: Delete row
+    User->>Row: click delete (confirm dialog)
+    Row->>Actions: deleteRow(rowId)<br/>(actions/row.ts)
+    Actions->>Ctx: dispatch(ROW/DELETE, {rowId})
+    Ctx->>Reducer: rows.remove(state, payload)
+    Reducer-->>Ctx: rows filtered; tasks for that row removed;<br/>clears any open modal/edit state referencing it
+    Ctx-->>Row: that RowSection (+ its ColumnCards/TaskCards)<br/>unmounts (BoardData: rows/tasks changed)
+    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: rows changed)<br/>-> row settings list loses the row
+
+    Note over User,AI: Reorder row (move up / down, BoardConfiguration only)
+    User->>Config: click move-up / move-down arrow
+    Config->>Actions: moveRowUp(index) / moveRowDown(index)<br/>(actions/row.ts)
+    Actions->>Ctx: dispatch(ROW/MOVE, {fromIndex, toIndex})
+    Ctx->>Reducer: rows.move(state, payload)
+    Reducer-->>Ctx: rows array reordered;<br/>moved row's order = generateKeyBetween(prev, next)
+    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: rows reordered)<br/>-> row settings list shows new order
+    Ctx-->>Row: RowSection instances re-render in new order<br/>(BoardData: rows reordered)<br/>-> RowBoard re-maps them by row.id
+
+    Note over User,AI: Update row color
+    User->>Config: change row color &lt;select&gt;
+    Config->>Actions: updateRowColor(rowId, color)<br/>(actions/row.ts)
+    Actions->>Ctx: dispatch(ROW/UPDATE_COLOR, {rowId, color})
+    Ctx->>Reducer: rows.updateColor
+    Reducer-->>Ctx: rows[rowId].color = color
+    Ctx-->>Row: that RowSection re-renders<br/>(BoardData: row.color changed)<br/>-> background color-mix updates
+    Ctx-->>Cell: every ColumnCard in that row re-renders<br/>(BoardData: row.color changed)<br/>-> background/border + add-task button tint update
+
+    Note over User,AI: Add column
+    User->>Config: type column name, press Enter<br/>(defaultColumnInput)
+    Config->>Actions: setDefaultColumnInput(value) /<br/>handleDefaultColumnInputKeyDown<br/>(actions/columnConfig.ts)
+    Actions->>Ctx: dispatch(COLUMN/SET_INPUT, {value})
+    Ctx->>Reducer: columns.setInput
+    Reducer-->>Ctx: defaultColumnInput = value
+    Ctx-->>Config: BoardConfiguration re-renders<br/>(ColumnConfigContext: defaultColumnInput changed)
+
+    Actions->>Ctx: dispatch(COLUMN/ADD, {id, title, order})
+    Ctx->>Reducer: columns.add(state, payload)
+    Reducer-->>Ctx: columns = [...columns, newColumn]
+    Actions->>Ctx: dispatch(COLUMN/SET_INPUT, {value: ""})
+    Ctx->>Reducer: columns.setInput
+    Reducer-->>Ctx: defaultColumnInput = ""
+    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: columns changed)<br/>-> column settings badge list shows new column,<br/>input clears
+    Ctx-->>Cell: every RowSection mounts a new ColumnCard<br/>(BoardData: columns changed)
+
+    Note over User,AI: Rename column (per ColumnCard, double-click)
+    User->>Cell: double-click column title
+    Cell->>Actions: editColumnTitle(column, row)<br/>(actions/columnEdit.ts)
+    Actions->>Ctx: dispatch(COLUMN/RENAME_START, {columnId, rowId, currentName})
+    Ctx->>Reducer: columns.renameStart
+    Reducer-->>Ctx: editingColumnId, editingColumnRowId, editingColumnName set
+    Ctx-->>Cell: the matching ColumnCard (columnId, rowId)<br/>re-renders (ColumnEditContext changed)<br/>-> shows &lt;input&gt;
+
+    User->>Cell: type name, Enter / blur
+    Cell->>Actions: setEditingColumnName(name) -> saveColumnTitle(columnId)
+    Actions->>Ctx: dispatch(COLUMN/RENAME_CHANGE, {name})<br/>dispatch(COLUMN/RENAME_SAVE, {columnId})
+    Ctx->>Reducer: columns.renameChange / renameSave
+    Reducer-->>Ctx: columns[columnId].title = trimmed (if non-empty)<br/>editingColumnId/editingColumnRowId = null
+    Ctx-->>Cell: every ColumnCard for this column<br/>(across all rows) re-renders<br/>(BoardData: column.title changed)<br/>-> shows new title
+    Ctx-->>Cell: the editing ColumnCard re-renders<br/>(ColumnEditContext: editingColumnId=null)<br/>-> &lt;input&gt; reverts to text
+
+    Note over Cell: Escape -> COLUMN/RENAME_CANCEL -> columns.renameCancel<br/>(editing ColumnCard re-renders via ColumnEditContext,<br/>no title change)
+
+    Note over User,AI: Delete column
+    User->>Config: click delete on column badge
+    Config->>Actions: deleteColumn(columnId)<br/>(actions/columnConfig.ts)
+    Actions->>Ctx: dispatch(COLUMN/DELETE, {columnId})
+    Ctx->>Reducer: columns.remove(state, payload)
+    Reducer-->>Ctx: columns filtered; tasks for that column removed;<br/>clears any open modal/edit state referencing it
+    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: columns changed)<br/>-> column settings badge list loses the column
+    Ctx-->>Cell: the corresponding ColumnCard instance in<br/>every RowSection unmounts<br/>(BoardData: columns/tasks changed)
+
+    Note over User,AI: Reorder column (drag, BoardConfiguration column badges)
+    User->>Config: dragstart on column badge
+    Config->>Actions: handleDefaultColumnDragStart(index)<br/>(actions/columnConfig.ts)
+    Actions->>Ctx: dispatch(COLUMN/SET_DRAGGED_INDEX, {index})
+    Ctx->>Reducer: columns.setDraggedIndex
+    Reducer-->>Ctx: draggedDefaultIndex = index
+    Ctx-->>Config: BoardConfiguration re-renders<br/>(ColumnConfigContext: draggedDefaultIndex set)<br/>-> dragged badge dims to opacity 0.4
+
+    User->>Config: dragover badge
+    Config->>Config: preventDefault()<br/>setDragHoverIndex(index) (local state)
+    Note over Config: hover indicator line is local useState,<br/>not dispatched to BoardContext<br/>-> BoardConfiguration re-renders locally only
+
+    User->>Config: drop on target badge
+    Config->>Actions: handleDefaultColumnDrop(targetColumnId)<br/>(actions/columnConfig.ts)
+    Actions->>Ctx: dispatch(COLUMN/REORDER, {columnId: draggedId, beforeColumnId: targetColumnId})
+    Ctx->>Reducer: columns.reorder(state, payload)
+    Reducer-->>Ctx: columns array reordered;<br/>moved column's order = generateKeyBetween(prev, next)
+    Actions->>Ctx: dispatch(COLUMN/SET_DRAGGED_INDEX, {index: null})
+    Ctx->>Reducer: columns.setDraggedIndex
+    Reducer-->>Ctx: draggedDefaultIndex = null
+    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: columns reordered;<br/>ColumnConfigContext: draggedDefaultIndex=null)<br/>-> column settings badges reorder, dim clears
+    Ctx-->>Cell: ColumnCard instances in every RowSection<br/>re-render in new order<br/>(BoardData: columns reordered)
+
+    Note over User,AI: Autosave (debounced, async)
+    Ctx->>Ctx: useEffect on rows/columns/tasks (500ms debounce)
+    Ctx->>Ctx: PUT /api/board {rows, columns, tasks}<br/>(or localStorage if unauthenticated)

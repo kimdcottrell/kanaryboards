@@ -1,0 +1,155 @@
+---
+title: Task Lifecycle & Checklist AI Generation
+---
+sequenceDiagram
+    actor User
+    participant Cell as ColumnCard<br/>(ColumnCard.tsx)
+    participant Card as TaskCard<br/>(TaskCard.tsx)
+    participant TaskModal as TaskCreateModal /<br/>TaskEditModal
+    participant Form as TaskForm +<br/>ChecklistSection
+    participant Actions as action hooks<br/>(actions/task*.ts, checklistAi.ts)
+    participant Reducer as reducers<br/>(tasks.ts, checklist.ts, checklistAi.ts)
+    participant Ctx as BoardContext<br/>(TaskCreate/TaskEdit/ChecklistAI/<br/>BoardData/TasksByCell)
+    participant AI as /api/generate-tasks<br/>(Google GenAI)
+
+    Note over User,AI: Create task: open modal
+    User->>Cell: click "add task"
+    Cell->>Actions: openTaskForm(rowId, colId)<br/>(actions/task.ts)
+    Actions->>Ctx: dispatch(TASK/OPEN_CREATE_MODAL, {rowId, colId})
+    Ctx->>Reducer: tasks.openCreateModal(state, payload)
+    Reducer-->>Ctx: taskCreateModalOpen = true<br/>taskDraft = emptyTaskDraft(rowId, colId)<br/>resets ChecklistAI slice
+    Ctx-->>TaskModal: TaskCreateModal re-renders<br/>(TaskCreateContext: taskCreateModalOpen=true)<br/>-> opens
+    TaskModal-->>Form: TaskForm + ChecklistSection mount<br/>(taskDraft = empty draft)
+
+    Note over User,AI: Create task: edit fields
+    User->>Form: edit title / description
+    Form->>Actions: setTaskDraft(draft)<br/>(actions/taskCreate.ts)
+    Actions->>Ctx: dispatch(TASK/UPDATE_DRAFT, {draft})
+    Ctx->>Reducer: tasks.updateDraft(state, payload)
+    Reducer-->>Ctx: taskDraft = draft
+    Ctx-->>Form: TaskForm re-renders<br/>(TaskCreateContext: taskDraft changed)
+
+    Note over User,AI: Create task: checklist editing (target = "draft")
+    User->>Form: add / edit / delete / reorder checklist item<br/>(ChecklistSection)
+    Form->>Actions: addChecklistItem / updateChecklistItem /<br/>deleteChecklistItem / reorderChecklistItem<br/>(actions/taskCreate.ts)
+    Actions->>Ctx: dispatch(CHECKLIST/ADD_ITEM | UPDATE_ITEM |<br/>DELETE_ITEM | REORDER_ITEM, {target:"draft", ...})
+    Ctx->>Reducer: checklist.addItem / updateItem /<br/>removeItem / reorderItem<br/>(insertKey / reorderKey from ordering.ts)
+    Reducer-->>Ctx: taskDraft.checklist updated
+    Ctx-->>Form: ChecklistSection re-renders<br/>(TaskCreateContext: taskDraft.checklist changed)<br/>-> item list updates
+
+    Note over User,AI: Create task: submit
+    User->>Form: submit form
+    Form->>Actions: createTask(event, content)<br/>(actions/taskCreate.ts)
+    Actions->>Actions: task = {id: createId(),<br/>order: generateKeyBetween(null, firstOrder),<br/>title, description: content.json,<br/>checklist: non-empty items}
+    Actions->>Ctx: dispatch(TASK/CREATE, {task})
+    Ctx->>Reducer: tasks.create(state, {task})
+    Reducer-->>Ctx: tasks = [task, ...tasks]<br/>taskCreateModalOpen = false<br/>resets ChecklistAI slice
+    Ctx->>Ctx: computeTasksByCell(tasks)
+    Ctx-->>TaskModal: TaskCreateModal re-renders<br/>(TaskCreateContext: taskCreateModalOpen=false)<br/>-> modal closes, unmounts Form
+    Ctx-->>Cell: ColumnCard (target cell) re-renders<br/>(TasksByCellContext changed)<br/>-> new TaskCard mounts as child
+
+    Note over User,AI: Edit task: open modal
+    User->>Card: click title
+    Card->>Actions: startEditTask(task)<br/>(actions/task.ts)
+    Actions->>Ctx: dispatch(TASK/OPEN_EDIT_MODAL, {task})
+    Ctx->>Reducer: tasks.openEditModal(state, {task})
+    Reducer-->>Ctx: editingTaskId = task.id<br/>editTaskDraft = normalized clone<br/>taskEditModalOpen = true
+    Card->>Card: navigate(/task/:id)
+    Ctx-->>TaskModal: TaskEditModal re-renders<br/>(TaskEditContext: taskEditModalOpen=true)<br/>-> opens
+    TaskModal-->>Form: TaskForm + ChecklistSection mount<br/>(taskDraft = editTaskDraft)
+
+    Note over User,AI: Edit task: edit fields & checklist (target = "editDraft")
+    User->>Form: edit title / description / status (colId) / row (rowId)
+    Form->>Actions: setEditTaskDraft(draft)<br/>(actions/taskEdit.ts)
+    Actions->>Ctx: dispatch(TASK/UPDATE_EDIT_DRAFT, {draft})
+    Ctx->>Reducer: tasks.updateEditDraft(state, payload)
+    Reducer-->>Ctx: editTaskDraft = draft
+    Ctx-->>Form: TaskForm re-renders<br/>(TaskEditContext: editTaskDraft changed)
+
+    User->>Form: add / edit / delete / reorder checklist item<br/>(ChecklistSection)
+    Form->>Actions: addEditChecklistItem / updateEditChecklistItem /<br/>deleteEditChecklistItem / reorderEditChecklistItem<br/>(actions/taskEdit.ts)
+    Actions->>Ctx: dispatch(CHECKLIST/..., {target:"editDraft", ...})
+    Ctx->>Reducer: checklist.* (editTaskDraft branch)
+    Reducer-->>Ctx: editTaskDraft.checklist updated
+    Ctx-->>Form: ChecklistSection re-renders<br/>(TaskEditContext: editTaskDraft.checklist changed)<br/>-> item list updates
+
+    Note over User,AI: Edit task: save
+    User->>Form: submit form
+    Form->>Actions: saveTaskEdit(event, content)<br/>(actions/taskEdit.ts)
+    Actions->>Ctx: dispatch(TASK/UPDATE_EDIT_DRAFT,<br/>{draft: {...editTaskDraft, description: content.json}})
+    Ctx->>Reducer: tasks.updateEditDraft
+    Actions->>Ctx: dispatch(TASK/SAVE_EDIT)
+    Ctx->>Reducer: tasks.saveEdit(state)
+    Reducer-->>Ctx: tasks updated (title/description/rowId/colId/checklist)<br/>editingTaskId = null, editTaskDraft = null<br/>taskEditModalOpen = false
+    TaskModal->>TaskModal: navigate(/)
+    Ctx->>Ctx: computeTasksByCell(tasks)
+    Ctx-->>TaskModal: TaskEditModal re-renders<br/>(TaskEditContext: taskEditModalOpen=false)<br/>-> modal closes, unmounts Form
+    Ctx-->>Cell: ColumnCard(s) re-render<br/>(TasksByCellContext changed)<br/>-> TaskCard moves to new cell if rowId/colId<br/>changed, otherwise updates in place
+
+    Note over User,AI: Delete task
+    User->>Form: click "Delete" (edit modal only)
+    Form->>Actions: deleteTask(taskId)<br/>(actions/task.ts)
+    Actions->>Ctx: dispatch(TASK/DELETE, {taskId})
+    Ctx->>Reducer: tasks.remove(state, {taskId})
+    Reducer-->>Ctx: tasks filtered<br/>closes edit modal if it was the edited task
+    TaskModal->>TaskModal: navigate(/)
+    Ctx-->>TaskModal: TaskEditModal re-renders<br/>(TaskEditContext: taskEditModalOpen=false)<br/>-> modal closes, unmounts Form
+    Ctx-->>Cell: ColumnCard re-renders<br/>(TasksByCellContext changed)<br/>-> TaskCard unmounts
+
+    Note over User,AI: Checklist AI: generate suggestions
+    User->>Form: open "Generate checklist" panel,<br/>edit prompt (ChecklistSection)
+    Form->>Actions: setChecklistPrompt(prompt)<br/>(actions/checklistAi.ts)
+    Actions->>Ctx: dispatch(CHECKLIST_AI/SET_PROMPT, {prompt})
+    Ctx->>Reducer: checklistAi.setPrompt
+    Reducer-->>Ctx: checklistPrompt = prompt
+    Ctx-->>Form: ChecklistSection re-renders<br/>(ChecklistAIContext: checklistPrompt changed)
+
+    User->>Form: click "Generate Checklist Items"
+    Form->>Actions: generateChecklistItems(taskDraft)<br/>(actions/checklistAi.ts)
+    Actions->>Ctx: dispatch(CHECKLIST_AI/GENERATE_START, {taskId})
+    Ctx->>Reducer: checklistAi.generateStart
+    Reducer-->>Ctx: isGeneratingChecklist = true<br/>checklistModalTaskId = taskId
+    Ctx-->>Form: ChecklistSection re-renders<br/>(ChecklistAIContext: isGeneratingChecklist=true)<br/>-> "Generate" button disabled, shows "Generating..."
+
+    Actions->>AI: fetchGeneratedItems(prompt, 10)<br/>(actions/shared.ts)<br/>POST /api/generate-tasks {prompt, maxTasks:10}
+    AI->>AI: GoogleGenAI.generateContentStream(...)<br/>normalizeTaskLines(fullText)
+    AI-->>Actions: {response: string[]}
+
+    alt success
+        Actions->>Ctx: dispatch(CHECKLIST_AI/GENERATE_SUCCESS, {items})
+        Ctx->>Reducer: checklistAi.generateSuccess
+        Reducer-->>Ctx: isGeneratingChecklist = false<br/>checklistPreview = items
+    else failure
+        Actions->>Ctx: dispatch(CHECKLIST_AI/GENERATE_FAILURE, {error})
+        Ctx->>Reducer: checklistAi.generateFailure
+        Reducer-->>Ctx: isGeneratingChecklist = false<br/>checklistModalError = error
+    end
+    Ctx-->>Form: ChecklistSection re-renders<br/>(ChecklistAIContext: checklistPreview /<br/>checklistModalError changed)<br/>-> shows preview list or error message
+
+    Note over User,AI: Checklist AI: apply suggestions
+    User->>Form: click "Copy checklist items to task"
+    alt create modal
+        Form->>Actions: applyChecklistPreviewToDraft()<br/>(actions/checklistAi.ts)
+        Actions->>Ctx: dispatch(CHECKLIST_AI/APPLY_TO_CREATE_DRAFT)
+        Ctx->>Reducer: checklistAi.applyToCreateDraft<br/>(appendItems via generateNKeysBetween)
+        Reducer-->>Ctx: taskDraft.checklist += items<br/>checklistPreview = []
+    else edit modal
+        Form->>Actions: applyChecklistPreview()<br/>(actions/checklistAi.ts)
+        Actions->>Ctx: dispatch(CHECKLIST_AI/APPLY_TO_EDIT_DRAFT)
+        Ctx->>Reducer: checklistAi.applyToEditDraft<br/>(guards checklistModalTaskId === editTaskDraft.id)
+        Reducer-->>Ctx: editTaskDraft.checklist += items<br/>resets ChecklistAI slice
+    end
+    Ctx-->>Form: ChecklistSection re-renders<br/>(ChecklistAIContext: checklistPreview=[])<br/>-> preview hides, "Generate" button reappears
+    Ctx-->>Form: ChecklistSection item list re-renders<br/>(TaskCreateContext / TaskEditContext:<br/>draft.checklist changed)<br/>-> new items appear
+
+    Note over User,AI: Checklist AI: discard suggestions
+    User->>Form: click "Empty generated items"
+    Form->>Actions: clearChecklistPreview()<br/>(actions/checklistAi.ts)
+    Actions->>Ctx: dispatch(CHECKLIST_AI/RESET)
+    Ctx->>Reducer: checklistAi.reset
+    Reducer-->>Ctx: ChecklistAI slice reset
+    Ctx-->>Form: ChecklistSection re-renders<br/>(ChecklistAIContext reset)<br/>-> reverts to empty-prompt "Generate" state
+
+    Note over User,AI: Autosave (debounced, async)
+    Ctx->>Ctx: useEffect on tasks (500ms debounce)
+    Ctx->>Ctx: PUT /api/board {rows, columns, tasks}<br/>(or localStorage if unauthenticated)

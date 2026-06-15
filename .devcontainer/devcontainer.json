@@ -31,7 +31,8 @@
         "streetsidesoftware.code-spell-checker",
         "ms-vscode-remote.remote-containers",
         "vitest.explorer",
-        "GitHub.vscode-github-actions"
+        "GitHub.vscode-github-actions",
+        "arichika.previewseqdiag-vscode"
       ],
       "settings": {
         "claudeCode.preferredLocation": "panel",
