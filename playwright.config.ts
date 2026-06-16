@@ -26,6 +26,9 @@ export default defineConfig({
   // multi-browser load — give web-first assertions more room before failing.
   expect: { timeout: 10_000 },
   use: {
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
     baseURL: process.env.BASE_URL ?? "https://kanary.local.dev",
     ignoreHTTPSErrors: true,
   },
@@ -54,5 +57,9 @@ export default defineConfig({
       use: { ...devices["Desktop Safari"] },
       dependencies: ["setup"],
     },
+  ],
+  reporter: [
+    ["html"],
+    ["list"],
   ],
 });

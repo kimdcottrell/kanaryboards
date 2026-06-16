@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  pull_request:
+  workflow_run:
+    workflows: [E2E Tests]
+    types:
+      - completed
+
+jobs:
+  lighthouseci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 18
+
+      - name: Wait for Deno Deploy and get preview URL
+        id: preview-url
+        uses: ./.github/actions/deno-deploy-preview-url
+        with:
+          deno-deploy-token: ${{ secrets.DENO_DEPLOY_TOKEN }}
+          gh-token: ${{ github.token }}
+          sha: ${{ github.event.pull_request.head.sha }}
+          repository: ${{ github.repository }}
+
+      - run: npm install && npm install -g @lhci/cli@0.15.x
+      - run: npm run build
+      - run: lhci autorun
+        env:
+            BASE_URL: ${{ steps.preview-url.outputs.base_url }}
