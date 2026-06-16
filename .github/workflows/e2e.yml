@@ -38,7 +38,7 @@ jobs:
           npm -v
           npx playwright --version
           echo "CI=$CI"
-          echo "BASE_URL=$BASE_URL"
+          echo "BASE_URL=${{ steps.preview-url.outputs.base_url }}"
           uname -a
 
       - name: Install Playwright browsers
