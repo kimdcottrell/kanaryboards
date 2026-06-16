@@ -46,7 +46,7 @@ sequenceDiagram
     Ctx->>Ctx: computeTasksByCell(tasks)<br/>(selectors.ts)
     Ctx-->>Cell: source + destination ColumnCard re-render<br/>(TasksByCellContext changed)
     Ctx-->>Cell: every other ColumnCard re-renders<br/>(DragContext: draggedTask -> null)
-    Cell-->>Card: TaskCards in the affected cell(s) re-render;<br/>a cross-cell move unmounts the TaskCard from its<br/>source ColumnCard and mounts it fresh in the<br/>destination ColumnCard
+    Cell-->>Card: TaskCards in the affected cell(s) re-render.<br/>a cross-cell move unmounts the TaskCard from its<br/>source ColumnCard and mounts it fresh in the<br/>destination ColumnCard
 
     Note over User,Ctx: Drag end (cancel safety net)
     User->>Card: dragend
