@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   workflow_run:
-    workflows: [E2E Tests]
+    workflows: [Unit Tests]
     types:
       - completed
 
@@ -25,8 +25,14 @@ jobs:
           sha: ${{ github.event.pull_request.head.sha }}
           repository: ${{ github.repository }}
 
-      - run: npm install && npm install -g @lhci/cli@0.15.x
+      - name: Install dependencies
+        run: |
+          npm config set @jsr:registry https://npm.jsr.io --location=project
+          npm install
+          npm install -g @lhci/cli@0.15.x
+
       - run: npm run build
+      
       - run: lhci autorun
         env:
             BASE_URL: ${{ steps.preview-url.outputs.base_url }}
