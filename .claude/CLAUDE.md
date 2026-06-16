@@ -63,3 +63,23 @@ For multi-step tasks, state a brief plan:
 ```
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+## 5. Sequence Diagram Maintenance
+
+**Plans that touch the BoardContext dispatch/reducer/re-render flow must update the diagrams.**
+
+`docs/sequence-diagrams/` documents how the Kanban board's `BoardContext` reducer architecture handles key user-triggered events (task drag-and-drop, task lifecycle & checklist AI, board load & autosave, row & column management) — what gets dispatched, which reducers run, and which components re-render.
+
+When planning a change that touches this code (actions, reducers, `BoardContext`, or the components/contexts it re-renders):
+- Identify which diagram file(s) under `docs/sequence-diagrams/` are affected.
+- Draft the updated diagram content and present it as part of the plan, before the plan is accepted.
+- Once the plan is approved, update the corresponding file(s) under `docs/sequence-diagrams/` as part of the implementation.
+
+## 6. Schema Alignment
+
+**Row, Column, and Task interfaces must stay aligned with `src/db/schema.dbml`.**
+
+When adding, removing, or renaming fields on Row, Column, or Task:
+- Check `src/db/schema.dbml` for the corresponding table definition.
+- Keep field names, types, and nullability consistent with the dbml schema.
+- If the dbml schema itself needs to change, call this out as part of the plan.

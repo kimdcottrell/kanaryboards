@@ -1,0 +1,90 @@
+---
+title: Board Load & Autosave
+---
+sequenceDiagram
+    actor User
+    participant Router as spa-router<br/>(BoardController -> RouterProvider)
+    participant Provider as BoardProvider<br/>(BoardContext.tsx)
+    participant Reducer as board reducer<br/>(reducers/board.ts)
+    participant View as BoardView /<br/>RowBoard / BoardConfiguration
+    participant API@{ "type" : "boundary" } as /api/board<br/>(pages/api/board.ts)
+    participant KV@{ "type" : "database" } as Deno KV<br/>(lib/kv.ts)
+    participant LS@{ "type" : "database" } as localStorage
+
+    Note over User,LS: Initial mount
+    User->>Router: navigate to "/"
+    Router->>Provider: render BoardProvider<br/>useReducer(boardReducer, createInitialState)
+    Provider->>View: initial render, boardLoaded = false
+
+    Note over User,LS: Load on mount (useEffect)
+    rect rgba(38, 240, 58, 0.25)
+        critical isAuthenticated
+            Provider->>API: GET /api/board
+            API->>KV: getBoard(boardId)
+            rect rgba(255, 255, 255, 0.5)
+                alt board exists (200)
+                    rect rgba(38, 240, 58, 0.25)
+                        KV-->>API: PersistedBoard {rows, columns, tasks}
+                        API-->>Provider: 200 board JSON
+                        Provider->>Reducer: dispatch(BOARD/LOAD, remote)<br/>-> board.load(state, payload)
+                    end
+                else no data (404)
+                    
+                    rect rgba(240, 38, 38, 0.25)
+                        KV--xAPI: null
+                        API--xProvider: 404 {noData: true}
+                        Provider->>LS: localStorage.getItem(STORAGE_KEY)
+                        activate Provider
+                    end
+                    rect rgba(240, 163, 38, 0.25)
+                        break legacy local data found
+                            rect rgba(38, 240, 58, 0.25)
+                                LS-->>Provider: stored JSON
+                                Provider->>API: PUT /api/board (migrate local -> remote)
+                                API->>KV: saveBoard(boardId, body)
+                                Provider->>LS: localStorage.removeItem(STORAGE_KEY)
+                                Provider->>Reducer: dispatch(BOARD/LOAD, local)<br/>-> board.load(state, payload)
+                            end
+                        end
+                        opt no local data
+                            Provider->>Reducer: dispatch(BOARD/LOAD, createDefaultBoard())<br/>-> board.load(state, payload)
+                        end
+                    end 
+                    deactivate Provider
+                end
+            end
+        end
+    end
+    rect rgba(240, 38, 38, 0.25)
+        break not authenticated
+            Provider->>LS: localStorage.getItem(STORAGE_KEY)
+            alt stored data found
+                LS-->>Provider: stored board JSON
+                activate Provider
+                Provider->>Reducer: dispatch(BOARD/LOAD, local)<br/>-> board.load(state, payload)
+            else nothing stored
+                Provider->>Reducer: dispatch(BOARD/LOAD, createDefaultBoard())<br/>-> board.load(state, payload)
+                deactivate Provider
+            end
+        end
+    end
+
+    Note right of Provider: There is now enough data to start to initialize the app.<br />All logic above is just bootstrapping to get to this point, where we have rows/columns/tasks data.
+
+    Reducer-->>Provider: rows/columns sorted by order (byOrder)<br/>tasks set, boardLoaded = true
+    Provider->>View: BoardView, RowBoard, BoardConfiguration<br/>all re-render (BoardDataContext: rows/columns/<br/>tasks/boardLoaded changed)<br/>-> RowBoard mounts one RowSection per row,<br/>BoardConfiguration renders row/column settings
+    Provider->>Provider: document.documentElement.dataset.boardLoaded = "true"<br/>(BoardView.tsx, for e2e hydration gating)
+
+    Note over User,LS: Autosave (on every state.{rows,columns,tasks} change)
+    Note over Provider: useEffect deps: [rows, columns, tasks, boardLoaded]<br/>guarded by boardLoaded === true
+    Provider->>Provider: clearTimeout(prev)<br/>setTimeout(..., 500ms)
+    alt isAuthenticated
+        rect rgba(38, 240, 58, 0.25)
+            Provider->>API: PUT /api/board {rows, columns, tasks}
+            API->>KV: saveBoard(boardId, body)
+        end
+    else not authenticated
+        rect rgba(240, 38, 38, 0.25)
+            Provider->>LS: localStorage.setItem(STORAGE_KEY, JSON.stringify({rows,columns,tasks}))
+        end
+    end

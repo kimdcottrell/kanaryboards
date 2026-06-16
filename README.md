@@ -236,13 +236,13 @@ This executes `playwright codegen` inside the `playwright` container against `ht
 
 ### Pre-commit enforcement
 
-Every commit runs five checks in sequence:
+Every commit runs six checks in sequence:
 
 ```
-deno fmt → deno lint → deno check → deno task vitest → deno task e2e-test
+deno fmt → deno lint → deno check → deno task astro check → deno task vitest → deno task e2e-test
 ```
 
-The hook lives in `.husky/pre-commit` and is installed via `npm run prepare` (husky). Type checking (`deno check`) and the unit and E2E suites must all pass before a commit is accepted.
+The hook lives in `.husky/pre-commit` and is installed via `deno task husky`, which runs automatically when the dev container image is built. Type checking (`deno check` and `deno task astro check`) and the unit and E2E suites must all pass before a commit is accepted.
 
 ### CI (GitHub Actions)
 
@@ -302,3 +302,16 @@ Runs [mcpdoc](https://github.com/lancedb/mcpdoc) as a Docker service, configured
 | React | `react.dev/llms.txt` |
 | Tailwind | GitHub — `rgfx/tailwind-llms` |
 | Vitest | `vitest.dev/llms.txt` |
+
+## Sequence Diagrams
+
+`docs/sequence-diagrams/` documents how the Kanban board's `BoardContext` reducer architecture handles key user-triggered events — what gets dispatched, which reducers run, and which components re-render:
+
+| File | Covers |
+|---|---|
+| `task-drag-and-drop.mmd` | Dragging tasks (and checklist items) between rows/columns |
+| `task-lifecycle-checklist-ai.mmd` | Creating, editing, and deleting tasks, plus AI checklist generation |
+| `board-load-autosave.mmd` | Initial board load and debounced autosave |
+| `row-column-management.mmd` | Adding, renaming, reordering, and deleting rows/columns |
+
+These use [Mermaid](https://mermaid.js.org/) sequence diagram syntax — paste a file's contents into [mermaid.live](https://mermaid.live/) to render it visually, or preview with a Mermaid-compatible editor extension.

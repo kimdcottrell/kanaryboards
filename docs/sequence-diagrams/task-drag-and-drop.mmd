@@ -1,0 +1,60 @@
+---
+title: Task Drag-and-Drop
+---
+sequenceDiagram
+    actor User
+    participant Card as TaskCard<br/>(TaskCard.tsx)
+    participant Cell as ColumnCard<br/>(ColumnCard.tsx)
+    participant Actions as task actions<br/>(actions/task.ts)
+    participant Reducer as tasks reducer<br/>(reducers/tasks.ts)
+    participant Ctx as BoardContext<br/>(Drag / TasksByCell / BoardData)
+
+    Note over User,Ctx: Drag start
+    User->>Card: dragstart
+    Card->>Actions: handleTaskDragStart(task)
+    Actions->>Ctx: dispatch(TASK/START_DRAG, {task})
+    Ctx->>Reducer: startDrag(state, {task})
+    Reducer-->>Ctx: draggedTask = task
+    Ctx-->>Cell: every ColumnCard re-renders<br/>(DragContext: draggedTask set)
+    Note over Cell: useDropTarget(active=true)<br/>useRenderCount++ (all cells)
+    Cell-->>Card: the dragged TaskCard re-renders<br/>(isDragging=true prop) -> dimmed (opacity 0.4)
+
+    Note over User,Ctx: Drag over (no dispatch, local state only)
+    User->>Cell: dragover
+    Cell->>Cell: preventDefault()
+    Card->>Cell: dragover (per task), stopPropagation
+    Cell->>Cell: useDropTarget.handleDragOver()<br/>-> dropPositionFromEvent() (lib/drag.ts)<br/>-> local dropTarget state
+    Cell-->>Card: the hovered TaskCard re-renders locally<br/>(isDropBefore/isDropAfter props)<br/>-> shows top/bottom drop-indicator border
+
+    Note over User,Ctx: Drop: same cell -> reorder
+    User->>Cell: drop
+    Cell->>Actions: reorderTaskInCell(taskId, beforeTaskId)<br/>beforeTaskId = beforeIdFromOrderedList(cellTasks, dropTarget)
+    Actions->>Ctx: dispatch(TASK/REORDER_IN_CELL, {taskId, beforeTaskId})
+    Ctx->>Reducer: reorderInCell(state, payload)
+    Reducer->>Reducer: reorderKey(cellTasks, taskId, beforeTaskId)<br/>(ordering.ts: byOrder + generateKeyBetween)
+    Reducer-->>Ctx: task.order updated, draggedTask = null
+
+    Note over User,Ctx: Drop: different cell -> move
+    User->>Cell: drop
+    Cell->>Actions: handleColumnDrop(toRowId, toColId, beforeTaskId)
+    Actions->>Ctx: dispatch(TASK/DROP_ON_CELL, {toRowId, toColId, beforeTaskId})
+    Ctx->>Reducer: dropOnCell(state, payload)
+    Reducer->>Reducer: reorderKey(destCellTasks, draggedTask.id, beforeTaskId)<br/>(ordering.ts)
+    Reducer-->>Ctx: task.rowId/colId/order updated, draggedTask = null
+
+    Note over User,Ctx: Re-render after drop
+    Ctx->>Ctx: computeTasksByCell(tasks)<br/>(selectors.ts)
+    Ctx-->>Cell: source + destination ColumnCard re-render<br/>(TasksByCellContext changed)
+    Ctx-->>Cell: every other ColumnCard re-renders<br/>(DragContext: draggedTask -> null)
+    Cell-->>Card: TaskCards in the affected cell(s) re-render.<br/>a cross-cell move unmounts the TaskCard from its<br/>source ColumnCard and mounts it fresh in the<br/>destination ColumnCard
+
+    Note over User,Ctx: Drag end (cancel safety net)
+    User->>Card: dragend
+    Card->>Actions: handleTaskDragEnd()
+    Actions->>Ctx: dispatch(TASK/END_DRAG)
+    Ctx->>Reducer: endDrag(state)
+    Reducer-->>Ctx: draggedTask = null<br/>(no-op if already cleared by a drop)
+
+    Note over User,Ctx: Autosave (debounced, async)
+    Ctx->>Ctx: useEffect on tasks/rows/columns (500ms debounce)
+    Ctx->>Ctx: PUT /api/board {rows, columns, tasks}<br/>(or localStorage if unauthenticated)
