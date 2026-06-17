@@ -1,4 +1,4 @@
-name: Auto Edit PR
+name: Auto-Edit PR
 
 on:
   pull_request:
@@ -24,7 +24,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           claude_args: |
             --allowedTools "Bash(git log:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
-            --json-schema '{"type":"object","properties":{"body":{"type":"string"}},"required":["body"]}'
+            --json-schema '{"type":"object","properties":{"pr_body":{"type":"string"}},"required":["pr_body"]}'
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
@@ -46,7 +46,7 @@ jobs:
       - name: Update PR description
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_BODY: ${{ fromJSON(steps.claude.outputs.structured_output).body }}
+          PR_BODY: ${{ fromJSON(steps.claude.outputs.structured_output).body.pr_body }}
         run: |
           gh api --method PATCH /repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }} \
             -f body="$PR_BODY"

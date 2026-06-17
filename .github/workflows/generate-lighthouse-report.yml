@@ -1,4 +1,4 @@
-name: CI
+name: Generate Lighthouse Report
 
 on:
   pull_request:

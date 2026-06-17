@@ -1,4 +1,4 @@
-name: Auto Create PR
+name: Auto-Create PR
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
         with:
           fetch-depth: 0 # Required for proper branch comparison
 
-      - name: Auto-Create Pull Request
+      - name: If Not Exists, Create Pull Request
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_BODY: |
