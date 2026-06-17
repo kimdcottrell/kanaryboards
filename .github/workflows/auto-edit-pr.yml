@@ -1,6 +1,6 @@
 name: Auto Edit PR
 
-on: 
+on:
   pull_request:
 
 jobs:
@@ -16,16 +16,15 @@ jobs:
         with:
           fetch-depth: 0 # Required for proper branch comparison
 
-      - name: Generate and update PR description
+      - name: Generate PR description
+        id: claude
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           claude_args: |
-            --allowedTools "Bash(git log:*),
-            Bash(gh pr diff:*),
-            Bash(gh pr view:*),
-            mcp__github_inline_comment__create_inline_comment"
+            --allowedTools "Bash(git log:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
+            --json-schema '{"type":"object","properties":{"body":{"type":"string"}},"required":["body"]}'
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
@@ -38,8 +37,16 @@ jobs:
             - gh pr view --json number,body --jq '{number: .number, body: .body}'
 
             Steps:
-            1. Run git log and git diff to understand what changed.
+            1. Run git log and gh pr diff to understand what changed.
             2. Get the existing PR number and current body: gh pr view --json number,body --jq '{number: .number, body: .body}'
             3. If no PR exists, exit without doing anything.
             4. Write a concise markdown PR description with a summary paragraph and bullet list of key changes.
-            5. Update the PR body description
+            5. Return a JSON object with a single "body" field containing the markdown PR description.
+
+      - name: Update PR description
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_BODY: ${{ fromJSON(steps.claude.outputs.structured_output).body }}
+        run: |
+          gh api --method PATCH /repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }} \
+            -f body="$PR_BODY"
