@@ -11,6 +11,10 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox, webkit]
     steps:
       - uses: actions/checkout@v6
 
@@ -45,7 +49,7 @@ jobs:
         run: npx playwright install --with-deps
 
       - name: Run e2e tests
-        run: npx playwright test
+        run: npx playwright test --project=${{ matrix.project }}
         env:
           BASE_URL: ${{ steps.preview-url.outputs.base_url }}
           PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.PUBLIC_CLERK_PUBLISHABLE_KEY }}
@@ -57,7 +61,21 @@ jobs:
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-artifacts
-          path: |
-            playwright-report/
-            test-results/
+          name: playwright-report-${{ matrix.project }}
+          path: playwright-report/
+          retention-days: 3
+
+      - name: Deploy report to Cloudflare Pages
+        if: failure()
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy playwright-report --project-name=kanby --branch=pr-${{ github.event.pull_request.number }}-${{ matrix.project }}
+
+      - name: Print deployment URL
+        if: failure()
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: echo "$DEPLOYMENT_URL"
