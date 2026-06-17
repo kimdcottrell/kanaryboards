@@ -46,7 +46,7 @@ jobs:
       - name: Update PR description
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_BODY: ${{ fromJSON(steps.claude.outputs.structured_output).body.pr_body }}
+          PR_BODY: ${{ fromJSON(steps.claude.outputs.structured_output).pr_body }}
         run: |
           gh api --method PATCH /repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }} \
             -f body="$PR_BODY"
