@@ -1,4 +1,4 @@
-name: Auto Create PR
+name: Auto-Create PR
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
         with:
           fetch-depth: 0 # Required for proper branch comparison
 
-      - name: Create Pull Request
+      - name: If Not Exists, Create Pull Request
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_BODY: |
@@ -28,6 +28,7 @@ jobs:
 
             Branch: ${{ github.ref_name }}
             Triggered by: ${{ github.actor }}
+            
         run: |
           if gh pr list --head "${{ github.ref_name }}" --base main --json number --jq '.[0].number' | grep -q .; then
             echo "PR already exists for ${{ github.ref_name }}, skipping."

@@ -29,11 +29,15 @@ updates:
       individual_task_display:
         patterns:
           - "@lyfie/*"
+      clerk:
+        patterns:
+          - "@clerk/*"
       misc_core:
         patterns:
           - "@anthropic-ai/*"
           - "typescript"
           - "@google/genai"
+          - "fractional-indexing"
 
   - package-ecosystem: "docker"
     directory: "/"

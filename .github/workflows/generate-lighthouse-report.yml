@@ -1,0 +1,98 @@
+name: Generate Lighthouse Report
+
+on:
+  pull_request:
+  workflow_run:
+    workflows: [Unit Tests]
+    types:
+      - completed
+
+jobs:
+  lighthouseci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+
+      - uses: ./.github/actions/install-npm-dependencies
+
+      - name: Wait for Deno Deploy and get preview URL
+        id: preview-url
+        uses: ./.github/actions/deno-deploy-preview-url
+        with:
+          deno-deploy-token: ${{ secrets.DENO_DEPLOY_TOKEN }}
+          gh-token: ${{ github.token }}
+          sha: ${{ github.event.pull_request.head.sha }}
+          repository: ${{ github.repository }}
+
+      - name: Audit URLs using Lighthouse (mobile)
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            ${{ steps.preview-url.outputs.base_url }}
+          uploadArtifacts: true # save results as an action artifacts
+          artifactName: lighthouse-results-mobile
+
+      - name: Rename mobile report directory
+        run: mv .lighthouseci lighthouseci-mobile
+
+      - name: Deploy mobile report to Cloudflare Pages
+        id: deploy-mobile
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy lighthouseci-mobile --project-name=kanby --branch=pr-${{ github.event.pull_request.number }}-mobile
+
+      - name: Write desktop Lighthouse CI config
+        run: |
+          cat > "$RUNNER_TEMP/lighthouserc-desktop.json" <<'EOF'
+          {
+            "ci": {
+              "collect": {
+                "settings": {
+                  "preset": "desktop"
+                }
+              }
+            }
+          }
+          EOF
+
+      - name: Audit URLs using Lighthouse (desktop)
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            ${{ steps.preview-url.outputs.base_url }}
+          uploadArtifacts: true # save results as an action artifacts
+          artifactName: lighthouse-results-desktop
+          configPath: ${{ runner.temp }}/lighthouserc-desktop.json
+
+      - name: Rename desktop report directory
+        run: mv .lighthouseci lighthouseci-desktop
+
+      - name: Deploy desktop report to Cloudflare Pages
+        id: deploy-desktop
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy lighthouseci-desktop --project-name=kanby --branch=pr-${{ github.event.pull_request.number }}-desktop
+
+      - name: Print report urls
+        run: |
+          desktop_html=$(jq -r '(map(select(.isRepresentativeRun)) | first // first).htmlPath' lighthouseci-desktop/manifest.json | xargs basename)
+          desktop_json=$(jq -r '(map(select(.isRepresentativeRun)) | first // first).jsonPath' lighthouseci-desktop/manifest.json | xargs basename)
+          mobile_html=$(jq -r '(map(select(.isRepresentativeRun)) | first // first).htmlPath' lighthouseci-mobile/manifest.json | xargs basename)
+          mobile_json=$(jq -r '(map(select(.isRepresentativeRun)) | first // first).jsonPath' lighthouseci-mobile/manifest.json | xargs basename)
+
+          desktop_base="${{ steps.deploy-desktop.outputs.pages-deployment-alias-url }}"
+          mobile_base="${{ steps.deploy-mobile.outputs.pages-deployment-alias-url }}"
+
+          {
+            echo "| Desktop | Mobile |"
+            echo "| ------------- | ------------- |"
+            echo "| [HTML report]($desktop_base/$desktop_html) | [HTML report]($mobile_base/$mobile_html) |"
+            echo "| [JSON report]($desktop_base/$desktop_json) | [JSON report]($mobile_base/$mobile_json) |"
+          } >> "$GITHUB_STEP_SUMMARY"

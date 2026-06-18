@@ -1,0 +1,58 @@
+name: Get Deno Deploy Preview URL
+description: Waits for Deno Deploy to publish a preview and outputs the base URL.
+
+inputs:
+  deno-deploy-token:
+    description: Deno Deploy API token
+    required: true
+  gh-token:
+    description: GitHub token for reading commit statuses
+    required: true
+  sha:
+    description: The commit SHA to watch
+    required: true
+  repository:
+    description: The GitHub repository (owner/repo)
+    required: true
+
+outputs:
+  base_url:
+    description: The preview base URL (e.g. https://kanby-abc123.deno.dev)
+    value: ${{ steps.wait.outputs.base_url }}
+
+runs:
+  using: composite
+  steps:
+    - name: Wait for Deno Deploy and get preview URL
+      id: wait
+      shell: bash
+      env:
+        DENO_DEPLOY_TOKEN: ${{ inputs.deno-deploy-token }}
+        GH_TOKEN: ${{ inputs.gh-token }}
+      run: |
+        SHA="${{ inputs.sha }}"
+        for i in $(seq 1 24); do
+          STATUSES=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/${{ inputs.repository }}/statuses/$SHA")
+          TARGET_URL=$(echo "$STATUSES" | jq -r \
+            '.[] | select(.context == "deploy/kimdcottrell/kanby" and .state == "success") | .target_url // empty' \
+            | head -1)
+          if [ -n "$TARGET_URL" ]; then
+            REVISION_ID="${TARGET_URL##*/}"
+            for j in $(seq 1 12); do
+              RESPONSE=$(curl -s -H "Authorization: Bearer $DENO_DEPLOY_TOKEN" \
+                "https://api.deno.com/v2/revisions/$REVISION_ID/timelines")
+              DOMAIN=$(echo "$RESPONSE" | jq -r '.[] | select(.slug == "preview") | .domains[0].domain // empty')
+              if [ -n "$DOMAIN" ]; then
+                echo "base_url=https://$DOMAIN" >> $GITHUB_OUTPUT
+                exit 0
+              fi
+              sleep 5
+            done
+            echo "Timed out waiting for Deno preview domain"
+            exit 1
+          fi
+          sleep 10
+        done
+        echo "Timed out waiting for Deno Deploy status"
+        exit 1

@@ -6,6 +6,7 @@ export default getViteConfig({
     dir: "tests/vitest",
     environment: "jsdom",
     globals: true,
+    reporters: ["default", "github-actions"],
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],

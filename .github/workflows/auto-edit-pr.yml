@@ -1,0 +1,58 @@
+name: Auto-Edit PR
+
+on:
+  pull_request:
+
+jobs:
+  edit-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # Required for proper branch comparison
+
+      - name: Generate PR description
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.READ_ONLY_GH_TOKEN }}
+          claude_args: |
+            --allowedTools "Bash(git log:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
+            --json-schema '{"type":"object","properties":{"pr_body":{"type":"string"}},"required":["pr_body"]}'
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Update the description of the existing PR for branch ${{ github.ref_name }}.
+
+            Use only these commands to gather information:
+            - git log origin/main..HEAD --format='* %s%n%b'
+            - gh pr diff
+            - gh pr view --json number,body --jq '{number: .number, body: .body}'
+
+            Steps:
+            1. Run git log and gh pr diff to understand what changed.
+            2. Get the existing PR number and current body: gh pr view --json number,body --jq '{number: .number, body: .body}'
+            3. If no PR exists, exit without doing anything.
+            4. Write a concise markdown PR description with a summary paragraph and bullet list of key changes. Bullets should do a good job summarizing all changes in less than 10 bullets.
+            5. Return a JSON object with a single "body" field containing the markdown PR description.
+
+      - name: Update PR description
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_BODY: ${{ fromJSON(steps.claude.outputs.structured_output).pr_body }}
+        run: |
+          gh api --method PATCH /repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }} \
+            -f body="$PR_BODY"
+
+      - name: Print PR description to summary
+        env:
+          PR_BODY: ${{ fromJSON(steps.claude.outputs.structured_output).pr_body }}
+        run: |
+          echo "$PR_BODY" >> "$GITHUB_STEP_SUMMARY"
