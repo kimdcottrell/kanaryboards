@@ -24,7 +24,7 @@ jobs:
               --project-name=kanby \
               --environment=preview \
               --json |
-            jq -r --arg prefix "PR_PREFIX" '
+            jq -r --arg prefix "$PR_PREFIX" '
               .[]
               | select(.Branch | startswith($prefix))
               | .Id
@@ -41,4 +41,4 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           deno run -A npm:wrangler pages deployment list --project-name=kanby --environment=preview --json \
-            | jq '[.[] | {Deployment, Status}]'
+            | jq '[.[] | {Deployment, Status}]' > >> "$GITHUB_STEP_SUMMARY"
