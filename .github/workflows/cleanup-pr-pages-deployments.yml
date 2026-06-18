@@ -1,0 +1,37 @@
+name: Cleanup PR Cloudflare Pages Deployments
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  cleanup:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Delete Cloudflare Pages deployments for this PR
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PR_PREFIX: pr-${{ github.event.pull_request.number }}
+        run: |
+          deno run -A npm:wrangler pages deployment list --project-name=kanby --environment=preview --json \
+            | jq -r --arg prefix "$PR_PREFIX" '.[] | select(.deployment_trigger.metadata.branch | startswith($prefix)) | .id' \
+            | while read -r DEPLOYMENT_ID; do
+                echo "Deleting deployment $DEPLOYMENT_ID"
+                deno run -A npm:wrangler pages deployment delete "$DEPLOYMENT_ID" --project-name=kanby --force
+              done
+
+      - name: Summary of remaining deployed Cloudflare Pages
+        if: always()
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          deno run -A npm:wrangler pages deployment list --project-name=kanby --environment=preview --json \
+            | jq '[.[] | {Deployment, Status}]'

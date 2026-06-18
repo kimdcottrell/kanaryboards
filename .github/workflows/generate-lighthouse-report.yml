@@ -25,10 +25,58 @@ jobs:
           sha: ${{ github.event.pull_request.head.sha }}
           repository: ${{ github.repository }}
 
-      - name: Audit URLs using Lighthouse
+      - name: Audit URLs using Lighthouse (mobile)
         uses: treosh/lighthouse-ci-action@v12
         with:
           urls: |
             ${{ steps.preview-url.outputs.base_url }}
           uploadArtifacts: true # save results as an action artifacts
-          temporaryPublicStorage: true # upload lighthouse report to the temporary storage
+
+      - name: Rename mobile report directory
+        run: mv .lighthouseci lighthouseci-mobile
+
+      - name: Deploy mobile report to Cloudflare Pages
+        id: deploy-mobile
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy lighthouseci-mobile --project-name=kanby --branch=pr-${{ github.event.pull_request.number }}-mobile
+
+      - name: Write desktop Lighthouse CI config
+        run: |
+          cat > "$RUNNER_TEMP/lighthouserc-desktop.json" <<'EOF'
+          {
+            "ci": {
+              "collect": {
+                "settings": {
+                  "preset": "desktop"
+                }
+              }
+            }
+          }
+          EOF
+
+      - name: Audit URLs using Lighthouse (desktop)
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            ${{ steps.preview-url.outputs.base_url }}
+          uploadArtifacts: true # save results as an action artifacts
+          configPath: ${{ runner.temp }}/lighthouserc-desktop.json
+
+      - name: Rename desktop report directory
+        run: mv .lighthouseci lighthouseci-desktop
+
+      - name: Deploy desktop report to Cloudflare Pages
+        id: deploy-desktop
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy lighthouseci-desktop --project-name=kanby --branch=pr-${{ github.event.pull_request.number }}-desktop
+
+      - name: Print report urls
+        run: |
+          echo "Desktop: ${{ steps.deploy-desktop.outputs.pages-deployment-alias-url }}"
+          echo "Mobile: ${{ steps.deploy-mobile.outputs.pages-deployment-alias-url }}"

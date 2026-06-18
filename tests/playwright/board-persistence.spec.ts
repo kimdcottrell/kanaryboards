@@ -17,7 +17,7 @@ test.describe("Board persistence across sign-in", () => {
     // Clear out any board left over from a previous run so sign-in migrates
     // this test's localStorage data instead of loading stale remote data.
     const response = await page.request.get("/api/delete-test-data");
-    expect(response.status()).toBe(400); // TODO: THIS IS TO FORCE A FAILING TEST
+    expect(response.status()).toBe(200);
   });
 
   test.afterEach(async ({ page }) => {

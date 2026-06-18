@@ -76,6 +76,4 @@ jobs:
 
       - name: Print deployment URL
         if: failure()
-        env:
-          DEPLOYMENT_URL: ${{ steps.deploy.outputs.pages-deployment-alias-url }}
-        run: echo "$DEPLOYMENT_URL"
+        run: echo "${{ steps.deploy.outputs.pages-deployment-alias-url }}"
