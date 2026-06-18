@@ -85,5 +85,7 @@ jobs:
 
       - name: Print report urls
         run: |
-          echo "Desktop: ${{ steps.deploy-desktop.outputs.pages-deployment-alias-url }}"
-          echo "Mobile: ${{ steps.deploy-mobile.outputs.pages-deployment-alias-url }}"
+          mobile_report=$(jq -r '(map(select(.isRepresentativeRun)) | first // first).htmlPath' lighthouseci-mobile/manifest.json | xargs basename)
+          desktop_report=$(jq -r '(map(select(.isRepresentativeRun)) | first // first).htmlPath' lighthouseci-desktop/manifest.json | xargs basename)
+          echo "Desktop: ${{ steps.deploy-desktop.outputs.pages-deployment-alias-url }}/$desktop_report"
+          echo "Mobile: ${{ steps.deploy-mobile.outputs.pages-deployment-alias-url }}/$mobile_report"
