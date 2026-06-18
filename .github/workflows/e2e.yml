@@ -11,10 +11,6 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        project: [chromium, firefox, webkit]
     steps:
       - uses: actions/checkout@v6
 
@@ -59,19 +55,20 @@ jobs:
 
       - name: Run e2e tests
         id: run-tests
-        run: npx playwright test --project=${{ matrix.project }}
+        run: npx playwright test --reporter=list,json
         env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: results.json
           BASE_URL: ${{ steps.preview-url.outputs.base_url }}
           PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.PUBLIC_CLERK_PUBLISHABLE_KEY }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           E2E_CLERK_USER_EMAIL: ${{ secrets.E2E_CLERK_USER_EMAIL }}
           E2E_CLERK_USER_PASSWORD: ${{ secrets.E2E_CLERK_USER_PASSWORD }}
-  
+
       - name: Upload Playwright artifacts
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-report-${{ matrix.project }}
+          name: playwright-report
           path: playwright-report/
           retention-days: 3
 
@@ -82,54 +79,65 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy playwright-report --project-name=kanby --branch=pr-${{ github.event.pull_request.number }}-${{ matrix.project }}
-
-      - name: Save run status
-        if: always()
-        run: |
-          jq -n \
-            --arg project "${{ matrix.project }}" \
-            --arg status "${{ steps.run-tests.outcome }}" \
-            --arg url "${{ steps.deploy.outputs.pages-deployment-alias-url }}" \
-            '{project: $project, status: $status, url: $url}' > status.json
-
-      - name: Upload run status
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: status-${{ matrix.project }}
-          path: status.json
-          retention-days: 3
-
-  e2e-summary:
-    needs: e2e
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download run statuses
-        uses: actions/download-artifact@v4
-        with:
-          pattern: status-*
-          path: statuses
+          command: pages deploy playwright-report --project-name=kanby --branch=pr-${{ github.event.pull_request.number }}
 
       - name: Write summary
+        if: always()
+        env:
+          REPORT_URL: ${{ steps.deploy.outputs.pages-deployment-alias-url }}
         run: |
-          shopt -s nullglob
-          files=(statuses/*/status.json)
+          {
+            if [ -n "$REPORT_URL" ]; then
+              echo "🔦 Playwright failure report: $REPORT_URL"
+            else
+              echo "🎉 All Playwright tests succeeded!"
+            fi
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
 
-          if [ ${#files[@]} -eq 0 ]; then
-            echo "No status reports found." >> "$GITHUB_STEP_SUMMARY"
+          if [ ! -f results.json ]; then
+            echo "No Playwright results found." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
-          failures="$(jq -s 'map(select(.status != "success")) | length' "${files[@]}")"
+          jq -r '
+            def collect(path):
+              ( .suites[]? | collect(path + [.title]) ),
+              ( .specs[]? | { title: ((path + [.title]) | join(" > ")), file: .file, tests: .tests } )
+            ;
 
-          if [ "$failures" -eq 0 ]; then
-            echo "🎉 All Playwright tests succeeded in all browsers." >> "$GITHUB_STEP_SUMMARY"
-          else
-            {
-              echo "| Status | Browser | Report |"
-              echo "| --- | --- | --- |"
-              jq -s -r '.[] | "| " + (if .status == "success" then "✅" else "❌" end) + " | " + .project + " | " + (if .url != "" then ("[Report](" + .url + ")") else "—" end) + " |"' "${files[@]}"
-            } >> "$GITHUB_STEP_SUMMARY"
-          fi
+            . as $root
+            | ($root.config.retries // 0) as $maxRetries
+            | [$root.suites[]? | collect([])] as $specs
+            | ($specs
+                | map(.title as $t | .file as $f | .tests[] | {title: $t, file: $f, project: .projectName, status: .status, retries: ((.results // []) | length)})
+                | map(select(.project == "chromium" or .project == "firefox" or .project == "webkit"))
+              ) as $tests
+            | ($tests | map(select(.status=="expected")) | length) as $passed
+            | ($tests | map(select(.status=="flaky")) | length) as $flaky
+            | ($tests | map(select(.status=="unexpected")) | length) as $failed
+            | ($tests | map(select(.status=="skipped")) | length) as $skipped
+            | ($tests | length) as $total
+            | ($tests | map(select(.status=="flaky"))) as $flakyTests
+            | [
+                "### Summary",
+                "",
+                "- **Test Results:** " + (if $failed>0 then "❌ " + ($failed|tostring) + " failures · " else "" end) + "✅ " + ($passed|tostring) + " passes · ⚠️ " + ($flaky|tostring) + " flaky" + (if $skipped>0 then " · ⏭️ " + ($skipped|tostring) + " skipped" else "" end) + " · " + ($total|tostring) + " total"
+              ]
+              + (if ($flakyTests|length) > 0 then
+                  [
+                    "",
+                    "### Flaky Tests",
+                    "",
+                    "These tests passed only after one or more retries on a specific browser, indicating potential instability.",
+                    ""
+                  ] + (
+                    $flakyTests | group_by(.file) | map(
+                      ["`" + .[0].file + "` (" + (length|tostring) + " flaky)", ""]
+                      + (map("- `" + .title + "` — flaky on **" + .project + "** (passed on retry " + ((.retries-1)|tostring) + " out of " + ($maxRetries|tostring) + ")"))
+                      + [""]
+                    ) | flatten
+                  )
+                else [] end)
+            | join("\n")
+          ' results.json >> "$GITHUB_STEP_SUMMARY"
