@@ -29,7 +29,7 @@
     "@jsr/std__uuid": "1.1.1"
   },
   "devDependencies": {
-    "@anthropic-ai/claude-code": "2.1.177",
+    "@anthropic-ai/claude-code": "2.1.181",
     "@astrojs/check": "0.9.9",
     "@catppuccin/tailwindcss": "1.0.0",
     "@playwright/test": "1.61.0",
