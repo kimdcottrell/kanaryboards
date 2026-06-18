@@ -20,8 +20,15 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           PR_PREFIX: pr-${{ github.event.pull_request.number }}
         run: |
-          deno run -A npm:wrangler pages deployment list --project-name=kanby --environment=preview --json \
-            | jq -r --arg prefix "$PR_PREFIX" '.[] | select(.deployment_trigger.metadata.branch | startswith($prefix)) | .id' \
+          deno run -A npm:wrangler pages deployment list \
+              --project-name=kanby \
+              --environment=preview \
+              --json |
+            jq -r --arg prefix "PR_PREFIX" '
+              .[]
+              | select(.Branch | startswith($prefix))
+              | .Id
+            ' \
             | while read -r DEPLOYMENT_ID; do
                 echo "Deleting deployment $DEPLOYMENT_ID"
                 deno run -A npm:wrangler pages deployment delete "$DEPLOYMENT_ID" --project-name=kanby --force
