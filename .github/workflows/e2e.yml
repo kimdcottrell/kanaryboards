@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: lts/*
 
-      - uses: ./.github/actions/install-dependencies
+      - uses: ./.github/actions/install-npm-dependencies
 
       - name: Wait for Deno Deploy and get preview URL
         id: preview-url
