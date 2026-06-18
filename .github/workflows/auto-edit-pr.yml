@@ -50,3 +50,9 @@ jobs:
         run: |
           gh api --method PATCH /repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }} \
             -f body="$PR_BODY"
+
+      - name: Print PR description to summary
+        env:
+          PR_BODY: ${{ fromJSON(steps.claude.outputs.structured_output).pr_body }}
+        run: |
+          echo "$PR_BODY" >> "$GITHUB_STEP_SUMMARY"

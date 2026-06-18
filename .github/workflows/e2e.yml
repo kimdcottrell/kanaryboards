@@ -22,10 +22,7 @@ jobs:
         with:
           node-version: lts/*
 
-      - name: Install dependencies
-        run: |
-          npm config set @jsr:registry https://npm.jsr.io --location=project
-          npm install
+      - uses: ./.github/actions/install-dependencies
 
       - name: Wait for Deno Deploy and get preview URL
         id: preview-url
@@ -46,9 +43,10 @@ jobs:
           uname -a
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        run: npx playwright install --with-deps ${{ matrix.project }}
 
       - name: Run e2e tests
+        id: run-tests
         run: npx playwright test --project=${{ matrix.project }}
         env:
           BASE_URL: ${{ steps.preview-url.outputs.base_url }}
@@ -74,6 +72,52 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy playwright-report --project-name=kanby --branch=pr-${{ github.event.pull_request.number }}-${{ matrix.project }}
 
-      - name: Print deployment URL
-        if: failure()
-        run: echo "${{ steps.deploy.outputs.pages-deployment-alias-url }}"
+      - name: Save run status
+        if: always()
+        run: |
+          jq -n \
+            --arg project "${{ matrix.project }}" \
+            --arg status "${{ steps.run-tests.outcome }}" \
+            --arg url "${{ steps.deploy.outputs.pages-deployment-alias-url }}" \
+            '{project: $project, status: $status, url: $url}' > status.json
+
+      - name: Upload run status
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: status-${{ matrix.project }}
+          path: status.json
+          retention-days: 3
+
+  e2e-summary:
+    needs: e2e
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download run statuses
+        uses: actions/download-artifact@v4
+        with:
+          pattern: status-*
+          path: statuses
+
+      - name: Write summary
+        run: |
+          shopt -s nullglob
+          files=(statuses/*/status.json)
+
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No status reports found." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          failures="$(jq -s 'map(select(.status != "success")) | length' "${files[@]}")"
+
+          if [ "$failures" -eq 0 ]; then
+            echo "🎉 All Playwright tests succeeded in all browsers." >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "| Status | Browser | Report |"
+              echo "| --- | --- | --- |"
+              jq -s -r '.[] | "| " + (if .status == "success" then "✅" else "❌" end) + " | " + .project + " | " + (if .url != "" then ("[Report](" + .url + ")") else "—" end) + " |"' "${files[@]}"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi

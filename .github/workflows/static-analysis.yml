@@ -22,10 +22,35 @@ jobs:
           deno-version: v2.x
 
       - name: Format code
+        id: fmt
+        continue-on-error: true
         run: "deno fmt --check"
 
       - name: Lint code
+        id: lint
+        continue-on-error: true
         run: "deno lint"
 
       - name: Check code
+        id: check
+        continue-on-error: true
         run: "deno check"
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ "${{ steps.fmt.outcome }}" = "success" ] && [ "${{ steps.lint.outcome }}" = "success" ] && [ "${{ steps.check.outcome }}" = "success" ]; then
+            echo "🎉 Your code is lookin' pretty good." >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "| Status | Analysis |"
+              echo "| --- | --- |"
+              [ "${{ steps.fmt.outcome }}" = "success" ] && echo "| ✅ | Format code |" || echo "| ❌ | Format code |"
+              [ "${{ steps.lint.outcome }}" = "success" ] && echo "| ✅ | Lint code |" || echo "| ❌ | Lint code |"
+              [ "${{ steps.check.outcome }}" = "success" ] && echo "| ✅ | Check code |" || echo "| ❌ | Check code |"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Fail if any check failed
+        if: steps.fmt.outcome == 'failure' || steps.lint.outcome == 'failure' || steps.check.outcome == 'failure'
+        run: exit 1
