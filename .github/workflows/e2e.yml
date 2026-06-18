@@ -43,7 +43,7 @@ jobs:
           uname -a
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps ${{ matrix.project }}
+        run: npx playwright install --with-deps
 
       - name: Run e2e tests
         id: run-tests
