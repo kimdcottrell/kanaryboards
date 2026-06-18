@@ -36,6 +36,7 @@ jobs:
           urls: |
             ${{ steps.preview-url.outputs.base_url }}
           uploadArtifacts: true # save results as an action artifacts
+          artifactName: lighthouse-results-mobile
 
       - name: Rename mobile report directory
         run: mv .lighthouseci lighthouseci-mobile
@@ -68,6 +69,7 @@ jobs:
           urls: |
             ${{ steps.preview-url.outputs.base_url }}
           uploadArtifacts: true # save results as an action artifacts
+          artifactName: lighthouse-results-desktop
           configPath: ${{ runner.temp }}/lighthouserc-desktop.json
 
       - name: Rename desktop report directory
