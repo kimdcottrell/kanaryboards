@@ -12,9 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: denoland/setup-deno@v2
+      - uses: actions/setup-node@v6
         with:
-          deno-version: v2.x
+          node-version: lts/*
+
+      - name: Install dependencies
+        run: |
+          npm config set @jsr:registry https://npm.jsr.io --location=project
+          npm install
 
       - name: Wait for Deno Deploy and get preview URL
         id: preview-url
