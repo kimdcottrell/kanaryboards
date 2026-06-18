@@ -40,5 +40,5 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          deno run -A npm:wrangler pages deployment list --project-name=kanby --environment=preview --json \
-            | jq '[.[] | {Deployment, Status}]' > >> "$GITHUB_STEP_SUMMARY"
+          deno run -A npm:wrangler pages deployment list --project-name=kanby --json \
+            | jq '[.[] | {Branch, Deployment, Status}]' >> "$GITHUB_STEP_SUMMARY"
