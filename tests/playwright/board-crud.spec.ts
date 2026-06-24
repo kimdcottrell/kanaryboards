@@ -53,7 +53,7 @@ test.describe("Board CRUD", () => {
     await page.addInitScript((board) => {
       localStorage.setItem("kanby-v0-1-0", JSON.stringify(board));
     }, BOARD_STATE);
-    await page.goto("/");
+    await page.goto("/dashboard");
     await expect(page.locator("#row-section-row-e2e-1")).toBeVisible();
     await page.locator("#board-config-collapse-toggle").click();
     // Wait for the collapse to expand before tests interact with its contents.
@@ -297,7 +297,7 @@ test.describe("Board CRUD", () => {
       }).click();
       await expect(page.getByRole("heading", { name: "Edit task" }))
         .toBeVisible();
-      await expect(page).toHaveURL(/\/task\/task-e2e-1/);
+      await expect(page).toHaveURL(/\/dashboard\/task\/task-e2e-1/);
 
       await fillStable(
         page.getByRole("textbox", { name: "Title" }),
@@ -314,7 +314,7 @@ test.describe("Board CRUD", () => {
 
       await expect(page.getByRole("heading", { name: "Edit task" }))
         .toBeHidden();
-      await expect(page).toHaveURL("/");
+      await expect(page).toHaveURL("/dashboard");
       const targetColumn = page.locator("#row-columns-row-e2e-2 > div > div")
         .nth(1);
       await expect(
@@ -334,7 +334,7 @@ test.describe("Board CRUD", () => {
         exact: true,
       }).click();
 
-      await expect(page).toHaveURL("/");
+      await expect(page).toHaveURL("/dashboard");
       await expect(page.getByText("Drag me", { exact: true })).toHaveCount(0);
     });
   });

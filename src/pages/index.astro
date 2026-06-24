@@ -1,5 +1,165 @@
 ---
-import SPA from "@components/SPA.astro";
+import BaseLayout from "@layouts/BaseLayout.astro";
 ---
 
-<SPA />
+<BaseLayout>
+  <section id="hero">
+    <div
+      class="min-h-screen bg-linear-to-br/oklch from-ctp-flamingo-100/50 dark:from-ctp-lavender-950 mask-b-from-base-100 to-base-100"
+    >
+    </div>
+    <div class="hero min-h-screen top-0 absolute z-10">
+      <div class="hero-content flex-col lg:flex-row">
+        <div class="text-center lg:text-left">
+          <h1
+            class="text-7xl font-semibold bg-clip-text text-transparent bg-linear-to-r from-accent to-secondary"
+          >
+            Discover what can be with <span class="font-logo font-normal"
+              >Kanby</span
+            >.
+          </h1>
+          <p class="py-6">
+            <span class="text-2xl">
+              Whether you're
+              <span class="text-rotate">
+                <span>
+                  <span class="bg-primary text-primary-content px-2">
+                    planning a project
+                  </span>
+                  <span class="bg-secondary text-primary-content px-2">
+                    organizing your day
+                  </span>
+                  <span class="bg-info text-primary-content px-2">
+                    feeling overwhelmed with decision fatigue
+                  </span>
+                  <span class="bg-success text-primary-content px-2">
+                    confused on where to start
+                  </span>
+                </span>
+              </span>
+              <br />
+              Kanby is the tool you need to stay organized and focused.
+            </span>
+          </p>
+          <div
+            role="alert"
+            class="mb-6 alert alert-soft border-1 border-info/50 alert-info alert-vertical sm:alert-horizontal w-fit"
+          >
+            <span class="iconify hugeicons--chat text-xl"></span>
+            <div>
+              <h3 class="font-bold">KANBY IS STILL IN DEVELOPMENT.</h3>
+              <div class="text-xs">
+                This is a beta version of the application.<br />
+                Expect bugs, missing features, and frequent updates.<br />
+                Your data is not guaranteed to be preserved.
+              </div>
+            </div>
+          </div>
+          <div class="join">
+            <label
+              style="border-radius: 0"
+              class="input input-lg input-warning join-item rounded-l!"
+            >
+              <span class="iconify hugeicons--ai-magic"></span>
+              <span class="relative grow">
+                <input
+                  type="text"
+                  class="w-full"
+                  required
+                  placeholder="What do you want to do?"
+                />
+                <span
+                  aria-hidden="true"
+                  class="fake-cursor animate-blink absolute left-0 top-1/2 -translate-y-1/2 pointer-events-none"
+                  >|</span
+                >
+              </span>
+            </label>
+            <button
+              style="border-radius: 0"
+              class="rounded-r! btn btn-lg btn-warning self-end inline-flex items-center gap-2"
+            >
+              <span class="iconify hugeicons--rocket-01 text-xl"></span>
+              Get Started
+            </button>
+          </div>
+        </div>
+        <div class="card bg-base-100 w-full max-w-sm shrink-0 shadow-2xl">
+          <div class="card-body">
+            <ul class="timeline timeline-vertical">
+              <li>
+                <div class="timeline-start timeline-box bg-neutral">
+                  Describe your goal
+                </div>
+                <div class="timeline-middle">
+                  <span
+                    class="bg-info text-secondary-content rounded-full p-1.5 inline-flex items-center justify-center"
+                  >
+                    <span class="iconify hugeicons--edit-01 text-xl"></span>
+                  </span>
+                </div>
+                <hr class="bg-info" />
+              </li>
+              <li>
+                <hr class="bg-info" />
+                <div class="timeline-middle">
+                  <span
+                    class="bg-info text-secondary-content rounded-full p-1.5 inline-flex items-center justify-center"
+                  >
+                    <span class="iconify hugeicons--ai-innovation-02 text-xl"
+                    ></span>
+                  </span>
+                </div>
+                <div class="timeline-end timeline-box bg-neutral">
+                  Kanby turns it into an actionable plan
+                </div>
+                <hr class="bg-info" />
+              </li>
+              <li>
+                <hr />
+                <div class="timeline-start timeline-box bg-neutral">
+                  Your task board is generated within seconds
+                </div>
+                <div class="timeline-middle">
+                  <span
+                    class="bg-neutral text-neutral-content rounded-full p-1.5 inline-flex items-center justify-center"
+                  >
+                    <span class="iconify hugeicons--rocket-01 text-xl"></span>
+                  </span>
+                </div>
+                <hr />
+              </li>
+              <li>
+                <hr />
+                <div class="timeline-middle">
+                  <span
+                    class="bg-neutral text-neutral-content rounded-full p-1.5 inline-flex items-center justify-center"
+                  >
+                    <span class="iconify hugeicons--ai-user text-xl"></span>
+                  </span>
+                </div>
+                <div class="timeline-end timeline-box bg-neutral">
+                  Choose where AI helps along the way
+                </div>
+                <hr />
+              </li>
+              <li>
+                <hr />
+                <div class="timeline-start timeline-box bg-neutral">
+                  Turn your goals into completed projects
+                </div>
+                <div class="timeline-middle">
+                  <span
+                    class="bg-success text-success-content rounded-full p-1.5 inline-flex items-center justify-center"
+                  >
+                    <span class="iconify hugeicons--party text-xl"></span>
+                  </span>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

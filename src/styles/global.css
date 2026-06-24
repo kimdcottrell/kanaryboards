@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Cherry+Bomb+One&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Roboto+Slab:wght@100..900&family=Varela+Round&display=swap");
 @import "tailwindcss";
 @import "@catppuccin/tailwindcss/mocha.css";
 
@@ -15,16 +16,11 @@
 
 @theme {
   --animate-wiggle: wiggle 1s ease-in-out infinite;
+  --animate-blink: blink 2s step-end infinite;
   --font-cherry-bomb-one: "Cherry Bomb One", system-ui;
-}
-
-@keyframes wiggle {
-  0%, 100% {
-    transform: rotate(-1deg);
-  }
-  50% {
-    transform: rotate(1deg);
-  }
+  --font-roboto-slab: "Roboto Slab", serif;
+  --font-varela-round: "Varela Round", sans-serif;
+  --font-inter: "Inter", sans-serif;
 }
 
 [data-theme] {
@@ -108,7 +104,42 @@
   --color-row-grey: var(--catppuccin-color-overlay2);
 }
 
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
 @layer utilities {
+  .fake-cursor {
+    transition: opacity 0.1s;
+  }
+  input:not(:placeholder-shown) ~ .fake-cursor,
+  input:focus ~ .fake-cursor {
+    opacity: 0;
+  }
+
+  body {
+    font-family: var(--font-inter);
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: normal;
+  }
+
+  h1, h2, h3, h4, h5 {
+    font-family: var(--font-varela-round);
+    font-weight: 400;
+    font-style: normal;
+  }
+
+  .display-table {
+    display: table;
+  }
+
+  .btn {
+    font-family: var(--font-varela-round);
+  }
+
   .font-logo {
     font-family:
       var(--font-cherry-bomb-one), cursive;

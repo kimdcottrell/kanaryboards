@@ -40,7 +40,7 @@ test.describe("Render isolation (individual components render on use, instead of
     await page.addInitScript((board) => {
       localStorage.setItem("kanby-v0-1-0", JSON.stringify(board));
     }, BOARD_STATE);
-    await page.goto("/");
+    await page.goto("/dashboard");
     await expect(page.locator("#row-section-row-e2e-1")).toBeVisible();
   });
 
@@ -106,7 +106,7 @@ test.describe("Render isolation (individual components render on use, instead of
 
   test("typing in the create-task checklist AI prompt does not re-render board-shell components", async ({ page }) => {
     await page.locator("#column-card-row-e2e-1-col-e2e-1").locator(
-      "button:has(.hugeicons--credit-card-add)",
+      "button:has(.hugeicons--add-01)",
     ).click();
     await expect(page.getByRole("heading", { name: "Add task" }))
       .toBeVisible();

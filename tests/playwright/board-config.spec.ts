@@ -31,7 +31,7 @@ const MOCK_TASKS_RESPONSE = {
 test.describe("Board Configuration — Create New Row section", () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => localStorage.clear());
-    await page.goto("/");
+    await page.goto("/dashboard");
     await page.locator("#board-config-collapse-toggle").click();
     await expect(page.locator("#board-config-create-new-row")).toBeVisible();
   });

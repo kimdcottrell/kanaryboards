@@ -49,13 +49,13 @@ setup("global setup", async () => {
 setup("authenticate and save state to storage", async ({ page }) => {
   // Sign in using the emailAddress parameter, which creates a
   // server-side token and bypasses all verification steps
-  await page.goto("/");
+  await page.goto("/dashboard");
   await clerk.signIn({
     page,
     emailAddress: process.env.E2E_CLERK_USER_EMAIL!,
   });
   // Reload so the server recomputes isAuthenticated and renders the signed-in nav
-  await page.goto("/");
+  await page.goto("/dashboard");
   await expect(page.getByRole("button", { name: "Sign In" })).toBeHidden();
 
   await page.context().storageState({ path: authFile });

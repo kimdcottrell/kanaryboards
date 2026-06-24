@@ -12,7 +12,7 @@ test.describe("Board persistence across sign-in", () => {
       browserName !== "chromium",
       "shares one Clerk test account across runs",
     );
-    await page.goto("/");
+    await page.goto("/dashboard");
 
     // Clear out any board left over from a previous run so sign-in migrates
     // this test's localStorage data instead of loading stale remote data.
@@ -47,7 +47,7 @@ test.describe("Board persistence across sign-in", () => {
     // Add a task to the new row
     const newRow = page.locator("[id^='row-section-']").last();
     await expect(newRow.getByText(rowName)).toBeVisible();
-    await newRow.locator("button:has(.hugeicons--credit-card-add)").first()
+    await newRow.locator("button:has(.hugeicons--add-01)").first()
       .click();
     await expect(page.getByRole("heading", { name: "Add task" }))
       .toBeVisible();
@@ -69,7 +69,7 @@ test.describe("Board persistence across sign-in", () => {
     // Clerk instance and resolves once Clerk.user is set.
     await clerk.signIn({ page, emailAddress: E2E_EMAIL });
 
-    await page.goto("/");
+    await page.goto("/dashboard");
 
     await expect(page.getByRole("button", { name: "Sign In" })).toBeHidden();
 

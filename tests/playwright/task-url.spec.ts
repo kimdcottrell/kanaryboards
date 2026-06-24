@@ -28,15 +28,15 @@ test.describe("Task URL", () => {
         await route.continue();
       }
     });
-    await page.goto("/");
+    await page.goto("/dashboard");
   });
 
   test("created task gets a URL when the edit modal is opened", async ({ page }) => {
     // Wait for board to finish loading and render the add-task buttons
-    await page.waitForSelector("button:has(.hugeicons--credit-card-add)");
+    await page.waitForSelector("button:has(.hugeicons--add-01)");
 
     // Open task create modal — .first() avoids strict-mode multi-match (3 add-task buttons)
-    await page.locator("button:has(.hugeicons--credit-card-add)").first()
+    await page.locator("button:has(.hugeicons--add-01)").first()
       .click();
     await expect(page.getByRole("heading", { name: "Add task" })).toBeVisible();
 
@@ -46,14 +46,14 @@ test.describe("Task URL", () => {
     await page.locator("dialog").getByRole("button", { name: "Create task" })
       .click();
 
-    // Task card is visible and URL is still /
+    // Task card is visible and URL is still /dashboard
     await expect(page.getByText("My URL Test Task")).toBeVisible();
-    expect(new URL(page.url()).pathname).toBe("/");
+    expect(new URL(page.url()).pathname).toBe("/dashboard");
 
     // Click the task title to open the edit modal
     await page.getByText("My URL Test Task").click();
 
-    // URL is now /task/:id
-    await expect(page).toHaveURL(/\/task\/.+/);
+    // URL is now /dashboard/task/:id
+    await expect(page).toHaveURL(/\/dashboard\/task\/.+/);
   });
 });

@@ -41,7 +41,7 @@ export default function TaskEditModal() {
 
   const handleClose = () => {
     cancelEditTask();
-    navigate("/");
+    navigate("/dashboard");
   };
 
   return (
@@ -54,14 +54,14 @@ export default function TaskEditModal() {
             setTaskDraft={setEditTaskDraft}
             onSubmit={(e, content) => {
               saveTaskEdit(e, content);
-              navigate("/");
+              navigate("/dashboard");
             }}
             onCancel={handleClose}
             submitLabel="Save"
             initialMode="visual-only"
             onDelete={() => {
               deleteTask(editTaskDraft.id);
-              navigate("/");
+              navigate("/dashboard");
             }}
             addChecklistItem={addEditChecklistItem}
             updateChecklistItem={updateEditChecklistItem}

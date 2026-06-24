@@ -1,5 +1,5 @@
 ---
-import BaseLayout from "@layouts/BaseLayout.astro";
+import Dashboard from "@layouts/Dashboard.astro";
 import BoardController from "@components/BoardController";
 
 const boardId = Astro.locals.boardId;
@@ -8,7 +8,7 @@ const isAuthenticated = !!userId;
 const unauthorized = Astro.url.searchParams.get("unauthorized") === "1";
 ---
 
-<BaseLayout>
+<Dashboard>
   {
     unauthorized && (
       <div
@@ -40,7 +40,7 @@ const unauthorized = Astro.url.searchParams.get("unauthorized") === "1";
     boardId={boardId}
     isAuthenticated={isAuthenticated}
   />
-</BaseLayout>
+</Dashboard>
 
 <script>
   document

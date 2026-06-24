@@ -31,7 +31,7 @@ export default function BoardView() {
       startEditTask(task);
       syncedTaskId.current = taskId;
     } else {
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
     }
   }, [boardLoaded, taskId, tasks]);
 

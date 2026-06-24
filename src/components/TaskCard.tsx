@@ -27,7 +27,7 @@ export default function TaskCard({
       onDragStart={handleTaskDragStart(task)}
       onDragEnd={handleTaskDragEnd}
       onDragOver={onDragOver}
-      className="overflow-hidden shadow-sm shadow-base-900/5"
+      className="rounded overflow-hidden shadow-sm shadow-base-900/5"
       style={{
         opacity: isDragging ? 0.4 : 1,
         borderTop: `2px solid ${isDropBefore ? row.color : "transparent"}`,
@@ -35,11 +35,11 @@ export default function TaskCard({
       }}
     >
       <div className="block">
-        <div className="join-item bg-base-200 p-4">
+        <div className="join-item bg-base-200 p-3">
           <div
             onClick={() => {
               startEditTask(task);
-              navigate(`/task/${task.id}`);
+              navigate(`/dashboard/task/${task.id}`);
             }}
             className="flex items-center justify-between gap-3 cursor-grab"
           >
@@ -59,7 +59,7 @@ export default function TaskCard({
                   `color-mix(in srgb, ${row.color} 60%, transparent)`,
               }}
             >
-              <span className="iconify hugeicons--pencil-edit-02 text-xl">
+              <span className="iconify hugeicons--edit-03 text-xl">
               </span>
             </button>
           </div>

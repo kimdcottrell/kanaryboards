@@ -1,0 +1,28 @@
+<input id="drawer-menu" type="checkbox" class="drawer-toggle" />
+<div class="drawer-side z-99">
+    <label for="drawer-menu" aria-label="close sidebar" class="drawer-overlay"
+    ></label>
+
+    <ul class="menu bg-base-200 min-h-full w-80 p-4">
+        <li><a>Board Configuration</a></li>
+        <li>
+            <details open>
+                <summary>Parent</summary>
+                <ul>
+                    <li><a>Submenu 1</a></li>
+                    <li><a>Submenu 2</a></li>
+                    <li>
+                        <details open>
+                            <summary>Parent</summary>
+                            <ul>
+                                <li><a>Submenu 1</a></li>
+                                <li><a>Submenu 2</a></li>
+                            </ul>
+                        </details>
+                    </li>
+                </ul>
+            </details>
+        </li>
+        <li><a>Item 3</a></li>
+    </ul>
+</div>

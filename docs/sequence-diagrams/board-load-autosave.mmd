@@ -12,7 +12,7 @@ sequenceDiagram
     participant LS@{ "type" : "database" } as localStorage
 
     Note over User,LS: Initial mount
-    User->>Router: navigate to "/"
+    User->>Router: navigate to "/dashboard"
     Router->>Provider: render BoardProvider<br/>useReducer(boardReducer, createInitialState)
     Provider->>View: initial render, boardLoaded = false
 

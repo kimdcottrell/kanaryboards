@@ -1,0 +1,21 @@
+---
+import "@styles/global.css";
+import GoogleAnalytics from "@components/seo/GoogleAnalytics.astro";
+
+interface Props {
+    title?: string;
+    description?: string;
+}
+
+const { title = "Kanby", description } = Astro.props;
+const googleTag = import.meta.env.GOOGLE_TAG;
+---
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>{title}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+{description && <meta name="description" content={description} />}
+{googleTag && <GoogleAnalytics tag={googleTag} />}
+<link rel="icon" type="image/x-icon" href="/favicon.ico" />

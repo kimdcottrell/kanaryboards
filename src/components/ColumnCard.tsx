@@ -48,7 +48,7 @@ export default function ColumnCard({ column, row }) {
     <div
       id={`column-card-${row.id}-${column.id}`}
       data-render-count={renderCount}
-      className="flex w-sm shrink-0 flex-col rounded gap-4 p-4 shadow-lg shadow-base-300/10"
+      className="flex w-sm shrink-0 flex-col rounded gap-3 p-3 shadow-sm shadow-base-300/10"
       style={{
         backgroundColor: `color-mix(in srgb, ${row.color} 8%, transparent)`,
         border: `1px solid color-mix(in srgb, ${row.color} 13%, transparent)`,
@@ -79,7 +79,7 @@ export default function ColumnCard({ column, row }) {
             )
             : (
               <h4
-                className="text-xl font-semibold cursor-text"
+                className="text-xl font-semibold cursor-text font-roboto-slab"
                 onDoubleClick={() => editColumnTitle(column, row)}
                 title="Double-click to edit"
               >
@@ -96,12 +96,12 @@ export default function ColumnCard({ column, row }) {
             }}
             onClick={() => openTaskForm(row.id, column.id)}
           >
-            <span className="iconify hugeicons--credit-card-add text-xl text-base-100">
+            <span className="iconify hugeicons--add-01 text-xl text-base-100">
             </span>
           </button>
         </div>
       </div>
-      <div className="space-y-4 rounded">
+      <div className="space-y-3 rounded">
         {cellTasks.length === 0 && <p className="text-sm">No cards yet.</p>}
         {cellTasks.map((task) => (
           <TaskCard
