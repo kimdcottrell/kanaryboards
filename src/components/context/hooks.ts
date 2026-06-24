@@ -1,4 +1,5 @@
 export {
+  useBoardConfigState,
   useBoardDataState,
   useBoardDispatch,
   useBoardMeta,
@@ -13,6 +14,7 @@ export {
   useTaskEditState,
   useTasksByCell,
 } from "./BoardContext.tsx";
+export { useBoardConfigActions } from "./actions/boardConfig.ts";
 export { useBoardLifecycleActions } from "./actions/boardLifecycle.ts";
 export { useChecklistAIActions } from "./actions/checklistAi.ts";
 export { useColumnConfigActions } from "./actions/columnConfig.ts";

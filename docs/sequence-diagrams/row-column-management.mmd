@@ -3,15 +3,23 @@ title: Row & Column Management
 ---
 sequenceDiagram
     actor User
-    participant Config as BoardConfiguration<br/>(BoardConfiguration.tsx)
+    participant Config as BoardConfigModal<br/>(BoardConfigModal.tsx +<br/>config/board/*Section.tsx)
     participant Row as RowSection<br/>(RowSection.tsx)
     participant Cell as ColumnCard<br/>(ColumnCard.tsx)
-    participant Actions as action hooks<br/>(actions/row*.ts, column*.ts)
-    participant Reducer as reducers<br/>(rows.ts, columns.ts, taskAi.ts)
-    participant Ctx as BoardContext<br/>(BoardData/RowForm/RowEdit/<br/>ColumnEdit/ColumnConfig)
+    participant Actions as action hooks<br/>(actions/boardConfig.ts,<br/>row*.ts, column*.ts)
+    participant Reducer as reducers<br/>(board.ts, rows.ts, columns.ts, taskAi.ts)
+    participant Ctx as BoardContext<br/>(BoardConfig/BoardData/RowForm/<br/>RowEdit/ColumnEdit/ColumnConfig)
     participant AI as /api/generate-tasks<br/>(Google GenAI)
 
-    Note over User,AI: Add row with AI task generation
+    Note over User,AI: Open board configuration modal
+    User->>Config: click "Board Configuration" button<br/>(#board-config-collapse-toggle, BoardView.tsx)
+    Config->>Actions: openBoardConfigModal()<br/>(actions/boardConfig.ts)
+    Actions->>Ctx: dispatch(BOARD_CONFIG/OPEN_MODAL)
+    Ctx->>Reducer: board.openConfigModal
+    Reducer-->>Ctx: boardConfigModalOpen = true
+    Ctx-->>Config: BoardConfigModal re-renders<br/>(BoardConfigContext: boardConfigModalOpen=true)<br/>-> modal opens, sections below become visible
+
+    Note over User,AI: Add row with AI task generation<br/>(CreateRowSection, inside BoardConfigModal)
     User->>Config: type row name + AI prompt
     Config->>Actions: setNewRowName / setNewRowPrompt<br/>(actions/rowForm.ts)
     Actions->>Ctx: dispatch(ROW/SET_NEW_NAME | ROW/SET_NEW_PROMPT)
@@ -80,7 +88,7 @@ sequenceDiagram
 
     Note over Row: Escape → ROW/EDIT_CANCEL → rows.editCancel<br/>(discards edit, no title change.<br/>every RowSection re-renders via RowEditContext)
 
-    Note over User,AI: Delete row
+    Note over User,AI: Delete row (RowSection)
     User->>Row: click delete (confirm dialog)
     Row->>Actions: deleteRow(rowId)<br/>(actions/row.ts)
     Actions->>Ctx: dispatch(ROW/DELETE, {rowId})
@@ -89,7 +97,7 @@ sequenceDiagram
     Ctx-->>Row: that RowSection (+ its ColumnCards/TaskCards)<br/>unmounts (BoardData: rows/tasks changed)
     Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: rows changed)<br/>-> row settings list loses the row
 
-    Note over User,AI: Reorder row (move up / down, BoardConfiguration only)
+    Note over User,AI: Reorder row (move up / down, RowSettingsSection only)
     User->>Config: click move-up / move-down arrow
     Config->>Actions: moveRowUp(index) / moveRowDown(index)<br/>(actions/row.ts)
     Actions->>Ctx: dispatch(ROW/MOVE, {fromIndex, toIndex})
@@ -98,7 +106,7 @@ sequenceDiagram
     Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: rows reordered)<br/>-> row settings list shows new order
     Ctx-->>Row: RowSection instances re-render in new order<br/>(BoardData: rows reordered)<br/>-> RowBoard re-maps them by row.id
 
-    Note over User,AI: Update row color
+    Note over User,AI: Update row color (RowSettingsSection)
     User->>Config: change row color select
     Config->>Actions: updateRowColor(rowId, color)<br/>(actions/row.ts)
     Actions->>Ctx: dispatch(ROW/UPDATE_COLOR, {rowId, color})
@@ -107,7 +115,7 @@ sequenceDiagram
     Ctx-->>Row: that RowSection re-renders<br/>(BoardData: row.color changed)<br/>-> background color-mix updates
     Ctx-->>Cell: every ColumnCard in that row re-renders<br/>(BoardData: row.color changed)<br/>-> background/border + add-task button tint update
 
-    Note over User,AI: Add column
+    Note over User,AI: Add column (ColumnSettingsSection)
     User->>Config: type column name, press Enter<br/>(defaultColumnInput)
     Config->>Actions: setDefaultColumnInput(value) /<br/>handleDefaultColumnInputKeyDown<br/>(actions/columnConfig.ts)
     Actions->>Ctx: dispatch(COLUMN/SET_INPUT, {value})
@@ -142,7 +150,7 @@ sequenceDiagram
 
     Note over Cell: Escape → COLUMN/RENAME_CANCEL → columns.renameCancel<br/>(editing ColumnCard re-renders via ColumnEditContext,<br/>no title change)
 
-    Note over User,AI: Delete column
+    Note over User,AI: Delete column (ColumnSettingsSection)
     User->>Config: click delete on column badge
     Config->>Actions: deleteColumn(columnId)<br/>(actions/columnConfig.ts)
     Actions->>Ctx: dispatch(COLUMN/DELETE, {columnId})
@@ -151,7 +159,7 @@ sequenceDiagram
     Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: columns changed)<br/>-> column settings badge list loses the column
     Ctx-->>Cell: the corresponding ColumnCard instance in<br/>every RowSection unmounts<br/>(BoardData: columns/tasks changed)
 
-    Note over User,AI: Reorder column (drag, BoardConfiguration column badges)
+    Note over User,AI: Reorder column (drag, ColumnSettingsSection column badges)
     User->>Config: dragstart on column badge
     Config->>Actions: handleDefaultColumnDragStart(index)<br/>(actions/columnConfig.ts)
     Actions->>Ctx: dispatch(COLUMN/SET_DRAGGED_INDEX, {index})
@@ -161,7 +169,7 @@ sequenceDiagram
 
     User->>Config: dragover badge
     Config->>Config: preventDefault()<br/>setDragHoverIndex(index) (local state)
-    Note over Config: hover indicator line is local useState,<br/>not dispatched to BoardContext<br/>→ BoardConfiguration re-renders locally only
+    Note over Config: hover indicator line is local useState,<br/>not dispatched to BoardContext<br/>→ ColumnSettingsSection re-renders locally only
 
     User->>Config: drop on target badge
     Config->>Actions: handleDefaultColumnDrop(targetColumnId)<br/>(actions/columnConfig.ts)

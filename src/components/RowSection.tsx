@@ -23,7 +23,7 @@ export default function RowSection({ row }) {
     <section
       id={`row-section-${row.id}`}
       data-render-count={renderCount}
-      className="space-y-6 p-5"
+      className="space-y-6 p-5 relative"
       style={{
         backgroundColor: `color-mix(in srgb, ${row.color} 10%, transparent)`,
       }}

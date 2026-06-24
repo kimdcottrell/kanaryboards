@@ -44,6 +44,16 @@ test.describe("Board persistence across sign-in", () => {
       page.locator("#board-config-row-display-settings").getByText(rowName),
     ).toBeVisible();
 
+    // Close the board configuration modal so its backdrop no longer
+    // intercepts pointer events on the board behind it. The close button and
+    // backdrop both sit under the fixed navbar in places Playwright's
+    // hit-testing considers the click target, so dispatch the backdrop's
+    // click handler directly instead of simulating a real pointer click.
+    await page.evaluate(() => {
+      document.querySelector("dialog.modal-open .modal-backdrop")
+        ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
     // Add a task to the new row
     const newRow = page.locator("[id^='row-section-']").last();
     await expect(newRow.getByText(rowName)).toBeVisible();

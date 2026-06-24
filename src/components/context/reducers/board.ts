@@ -31,8 +31,17 @@ export const createInitialState = (): BoardState => {
     defaultColumnInput: "",
     draggedDefaultIndex: null,
     draggedTask: null,
+    boardConfigModalOpen: false,
   };
 };
+
+export function openConfigModal(state: BoardState): BoardState {
+  return { ...state, boardConfigModalOpen: true };
+}
+
+export function closeConfigModal(state: BoardState): BoardState {
+  return { ...state, boardConfigModalOpen: false };
+}
 
 export function load(
   state: BoardState,

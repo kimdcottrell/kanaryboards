@@ -20,6 +20,7 @@ vi.mock("react-router-dom", async (importOriginal) => {
 vi.mock("@components/context/hooks.ts", () => ({
   useTaskActions: vi.fn(),
   useBoardDataState: vi.fn(),
+  useBoardConfigActions: vi.fn(),
   useTaskEditState: vi.fn(),
   useTaskEditActions: vi.fn(),
   useBoardRefs: vi.fn(),
@@ -29,7 +30,7 @@ vi.mock("@components/context/hooks.ts", () => ({
 }));
 
 // Stub heavy child components used by BoardView that aren't under test here
-vi.mock("@components/BoardConfiguration.tsx", () => ({ default: () => null }));
+vi.mock("@components/BoardConfigModal.tsx", () => ({ default: () => null }));
 vi.mock("@components/RowBoard.tsx", () => ({ default: () => null }));
 vi.mock("@components/TaskCreateModal.tsx", () => ({ default: () => null }));
 // TaskEditModal is NOT mocked — it is rendered directly in tests below
@@ -41,6 +42,7 @@ vi.mock("@lyfie/luthor", () => ({
 }));
 
 import {
+  useBoardConfigActions,
   useBoardDataState,
   useBoardRefs,
   useChecklistAIActions,
@@ -74,6 +76,10 @@ beforeEach(() => {
   delete mockParams.taskId;
   vi.mocked(useTaskActions).mockReturnValue(makeTaskActions());
   vi.mocked(useBoardDataState).mockReturnValue(makeBoardDataState());
+  vi.mocked(useBoardConfigActions).mockReturnValue({
+    openBoardConfigModal: vi.fn(),
+    closeBoardConfigModal: vi.fn(),
+  });
   vi.mocked(useTaskEditState).mockReturnValue(makeTaskEditState());
   vi.mocked(useTaskEditActions).mockReturnValue(makeTaskEditActions());
   vi.mocked(useBoardRefs).mockReturnValue(makeBoardRefs());

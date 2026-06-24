@@ -176,6 +176,14 @@ export function boardReducer(
     case "TASK_AI/GENERATE_FAILURE":
       return taskAi.generateFailure(state, action.payload);
 
+    // ── BOARD CONFIG ──────────────────────────────────────────────────────────
+
+    case "BOARD_CONFIG/OPEN_MODAL":
+      return board.openConfigModal(state);
+
+    case "BOARD_CONFIG/CLOSE_MODAL":
+      return board.closeConfigModal(state);
+
     // ── BOARD ─────────────────────────────────────────────────────────────────
 
     case "BOARD/LOAD":

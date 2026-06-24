@@ -10,6 +10,7 @@ import {
 import type { Dispatch, ReactNode } from "react";
 import type {
   BoardAction,
+  BoardConfigState,
   BoardData,
   ChecklistAIState,
   ColumnConfigState,
@@ -93,6 +94,15 @@ export function useColumnConfigState(): ColumnConfigState {
   const v = useContext(ColumnConfigContext);
   if (!v) {
     throw new Error("useColumnConfigState must be used within a BoardProvider");
+  }
+  return v;
+}
+
+const BoardConfigContext = createContext<BoardConfigState | null>(null);
+export function useBoardConfigState(): BoardConfigState {
+  const v = useContext(BoardConfigContext);
+  if (!v) {
+    throw new Error("useBoardConfigState must be used within a BoardProvider");
   }
   return v;
 }
@@ -323,6 +333,11 @@ export function BoardProvider(
     [state.defaultColumnInput, state.draggedDefaultIndex],
   );
 
+  const boardConfigState = useMemo(
+    () => ({ boardConfigModalOpen: state.boardConfigModalOpen }),
+    [state.boardConfigModalOpen],
+  );
+
   const taskCreateState = useMemo(
     () => ({
       taskCreateModalOpen: state.taskCreateModalOpen,
@@ -380,17 +395,19 @@ export function BoardProvider(
               <RowEditContext.Provider value={rowEditState}>
                 <ColumnEditContext.Provider value={columnEditState}>
                   <ColumnConfigContext.Provider value={columnConfigState}>
-                    <TaskCreateContext.Provider value={taskCreateState}>
-                      <TaskEditContext.Provider value={taskEditState}>
-                        <ChecklistAIContext.Provider value={checklistAIState}>
-                          <DragContext.Provider value={dragState}>
-                            <TasksByCellContext.Provider value={tasksByCell}>
-                              {children}
-                            </TasksByCellContext.Provider>
-                          </DragContext.Provider>
-                        </ChecklistAIContext.Provider>
-                      </TaskEditContext.Provider>
-                    </TaskCreateContext.Provider>
+                    <BoardConfigContext.Provider value={boardConfigState}>
+                      <TaskCreateContext.Provider value={taskCreateState}>
+                        <TaskEditContext.Provider value={taskEditState}>
+                          <ChecklistAIContext.Provider value={checklistAIState}>
+                            <DragContext.Provider value={dragState}>
+                              <TasksByCellContext.Provider value={tasksByCell}>
+                                {children}
+                              </TasksByCellContext.Provider>
+                            </DragContext.Provider>
+                          </ChecklistAIContext.Provider>
+                        </TaskEditContext.Provider>
+                      </TaskCreateContext.Provider>
+                    </BoardConfigContext.Provider>
                   </ColumnConfigContext.Provider>
                 </ColumnEditContext.Provider>
               </RowEditContext.Provider>

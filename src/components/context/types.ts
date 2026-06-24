@@ -38,7 +38,7 @@ export interface BoardData {
   boardLoaded: boolean;
 }
 
-// "Create a new row" form, including AI task generation (BoardConfiguration).
+// "Create a new row" form, including AI task generation (CreateRowSection).
 export interface RowFormState {
   newRowName: string;
   newRowPrompt: string;
@@ -60,10 +60,15 @@ export interface ColumnEditState {
   editingColumnName: string;
 }
 
-// Default-column management: input field and drag reordering (BoardConfiguration).
+// Default-column management: input field and drag reordering (ColumnSettingsSection).
 export interface ColumnConfigState {
   defaultColumnInput: string;
   draggedDefaultIndex: number | null;
+}
+
+// Board configuration modal (BoardConfigModal).
+export interface BoardConfigState {
+  boardConfigModalOpen: boolean;
 }
 
 // Task creation modal (TaskCreateModal).
@@ -100,6 +105,7 @@ export type BoardState =
   & RowEditState
   & ColumnEditState
   & ColumnConfigState
+  & BoardConfigState
   & TaskCreateState
   & TaskEditState
   & ChecklistAIState
@@ -232,6 +238,10 @@ export type TaskAIAction =
   | { type: "TASK_AI/GENERATE_SUCCESS"; payload: { tasks: Task[] } }
   | { type: "TASK_AI/GENERATE_FAILURE"; payload: { error: string } };
 
+export type BoardConfigAction =
+  | { type: "BOARD_CONFIG/OPEN_MODAL" }
+  | { type: "BOARD_CONFIG/CLOSE_MODAL" };
+
 export type BoardLifecycleAction =
   | { type: "BOARD/RESET" }
   | {
@@ -250,4 +260,5 @@ export type BoardAction =
   | ChecklistAction
   | ChecklistAIAction
   | TaskAIAction
+  | BoardConfigAction
   | BoardLifecycleAction;

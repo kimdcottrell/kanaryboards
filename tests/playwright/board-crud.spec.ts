@@ -55,12 +55,32 @@ test.describe("Board CRUD", () => {
     }, BOARD_STATE);
     await page.goto("/dashboard");
     await expect(page.locator("#row-section-row-e2e-1")).toBeVisible();
-    await page.locator("#board-config-collapse-toggle").click();
-    // Wait for the collapse to expand before tests interact with its contents.
-    await expect(page.locator("#board-config-column-settings")).toBeVisible();
   });
 
+  // The board configuration modal sits on top of the board (with a backdrop
+  // that intercepts pointer events on the row/column/task elements behind
+  // it), so it must be closed before interacting with the board, and can be
+  // reopened afterward if a test needs to read its content again.
+  async function openBoardConfigModal(page: import("@playwright/test").Page) {
+    await page.locator("#board-config-collapse-toggle").click();
+  }
+  async function closeBoardConfigModal(page: import("@playwright/test").Page) {
+    // Both the close button and the backdrop sit under elements with a
+    // higher stacking context (e.g. the fixed navbar) in places Playwright's
+    // hit-testing considers the click target, so dispatch the backdrop's
+    // click handler directly instead of simulating a real pointer click.
+    await page.evaluate(() => {
+      document.querySelector("dialog.modal-open .modal-backdrop")
+        ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+  }
+
   test.describe("column management", () => {
+    test.beforeEach(async ({ page }) => {
+      await openBoardConfigModal(page);
+      await expect(page.locator("#board-config-column-settings"))
+        .toBeVisible();
+    });
     test("adds a new default column to every row", async ({ page }) => {
       const columnSettings = page.locator("#board-config-column-settings");
       const input = columnSettings.getByPlaceholder("Add new column");
@@ -98,6 +118,7 @@ test.describe("Board CRUD", () => {
     });
 
     test("renames a column inline and reflects the change everywhere", async ({ page }) => {
+      await closeBoardConfigModal(page);
       const todoHeading = page.locator("#row-columns-row-e2e-1").getByText(
         "To Do",
         { exact: true },
@@ -118,6 +139,8 @@ test.describe("Board CRUD", () => {
           exact: true,
         }),
       ).toBeVisible();
+
+      await openBoardConfigModal(page);
       await expect(
         page.locator("#board-config-column-settings").getByText("Backlog", {
           exact: true,
@@ -198,7 +221,14 @@ test.describe("Board CRUD", () => {
   });
 
   test.describe("row management", () => {
+    test.beforeEach(async ({ page }) => {
+      await openBoardConfigModal(page);
+      await expect(page.locator("#board-config-row-display-settings"))
+        .toBeVisible();
+    });
+
     test("renames a row title inline from the row header", async ({ page }) => {
+      await closeBoardConfigModal(page);
       await page.locator("#row-section-row-e2e-1").getByText("Engineering", {
         exact: true,
       }).dblclick();
@@ -212,6 +242,8 @@ test.describe("Board CRUD", () => {
           exact: true,
         }),
       ).toBeVisible();
+
+      await openBoardConfigModal(page);
       await expect(
         page.locator("#board-config-row-display-settings").getByText(
           "Eng Team",
@@ -275,6 +307,7 @@ test.describe("Board CRUD", () => {
 
     test("deletes a row after confirming", async ({ page }) => {
       page.on("dialog", (dialog) => dialog.accept());
+      await closeBoardConfigModal(page);
 
       await page.locator("#row-section-row-e2e-1").getByRole("button", {
         name: "Delete project Engineering",
