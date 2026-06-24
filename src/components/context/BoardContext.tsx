@@ -138,10 +138,11 @@ export function useTasksByCell(): Record<string, Task[]> {
 }
 
 export function BoardProvider(
-  { children, boardId, isAuthenticated = false }: {
+  { children, boardId, isAuthenticated = false, persist = true }: {
     children: ReactNode;
     boardId: string;
     isAuthenticated?: boolean;
+    persist?: boolean;
   },
 ) {
   const [state, dispatch] = useReducer(
@@ -152,8 +153,13 @@ export function BoardProvider(
 
   // Load board on mount. Authenticated: load from API, migrate localStorage if needed.
   // Unauthenticated: load from localStorage (falling back to API for legacy KV data).
+  // persist=false (e.g. landing-page demo): always seed from createDefaultBoard(), skip storage entirely.
   useEffect(() => {
     async function load() {
+      if (!persist) {
+        dispatch({ type: "BOARD/LOAD", payload: createDefaultBoard() });
+        return;
+      }
       if (isAuthenticated) {
         const res = await fetch("/api/board");
         // Non-404 errors are unexpected — bail out and leave the board unloaded.
@@ -203,12 +209,14 @@ export function BoardProvider(
     }
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [boardId, isAuthenticated]);
+  }, [boardId, isAuthenticated, persist]);
 
   // Persist board on state changes (after initial load).
   // Authenticated: save to API (KV). Unauthenticated: save to localStorage only.
+  // persist=false: never write anywhere — the demo board is ephemeral.
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
+    if (!persist) return;
     if (!state.boardLoaded) return;
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
@@ -239,6 +247,7 @@ export function BoardProvider(
     state.tasks,
     state.boardLoaded,
     isAuthenticated,
+    persist,
   ]);
 
   const checklistInputRefs = useRef<Record<string, HTMLInputElement>>({});
