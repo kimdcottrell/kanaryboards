@@ -6,7 +6,6 @@ export function useBoardConfigActions() {
 
   return useMemo(() => ({
     openBoardConfigModal: () => dispatch({ type: "BOARD_CONFIG/OPEN_MODAL" }),
-    closeBoardConfigModal: () =>
-      dispatch({ type: "BOARD_CONFIG/CLOSE_MODAL" }),
+    closeBoardConfigModal: () => dispatch({ type: "BOARD_CONFIG/CLOSE_MODAL" }),
   }), [dispatch]);
 }

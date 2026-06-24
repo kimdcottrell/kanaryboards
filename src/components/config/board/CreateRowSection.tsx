@@ -1,7 +1,4 @@
-import {
-  useRowFormActions,
-  useRowFormState,
-} from "../../context/hooks.ts";
+import { useRowFormActions, useRowFormState } from "../../context/hooks.ts";
 
 export default function CreateRowSection() {
   const {

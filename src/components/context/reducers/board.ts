@@ -58,10 +58,10 @@ export function load(
 }
 
 export function reset(): BoardState {
-  const columnOrders = generateNKeysBetween(null, null, 3);
+  const columnOrders = generateNKeysBetween(null, null, 4);
   return {
     ...createInitialState(),
-    columns: ["To Do", "In Progress", "Done"].map((title, i) => ({
+    columns: ["To Do", "In Progress", "Review", "Done"].map((title, i) => ({
       id: createId(),
       title,
       order: columnOrders[i],

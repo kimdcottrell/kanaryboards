@@ -31,8 +31,8 @@ export default function ColumnSettingsSection() {
             Column settings
           </h3>
           <p className="text-sm">
-            Manage the columns set used across projects. Drag badges to
-            reorder, click x to remove, or add a new default column.
+            Manage the columns set used across projects. Drag badges to reorder,
+            click x to remove, or add a new default column.
           </p>
         </div>
       </div>

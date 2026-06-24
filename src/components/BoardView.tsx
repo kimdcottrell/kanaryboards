@@ -13,10 +13,21 @@ import {
 export default function BoardView() {
   const navigate = useNavigate();
   const { taskId } = useParams();
-  const { tasks, boardLoaded } = useBoardDataState();
+  const { tasks, columns, boardLoaded } = useBoardDataState();
   const { startEditTask } = useTaskActions();
   const { openBoardConfigModal } = useBoardConfigActions();
   const syncedTaskId = useRef<string | undefined>(undefined);
+
+  const inProgressColumnIds = new Set(
+    columns.filter((c) => c.title === "In Progress").map((c) => c.id),
+  );
+  const inProgressCount =
+    tasks.filter((t) => inProgressColumnIds.has(t.colId)).length;
+
+  const reviewColumnIds = new Set(
+    columns.filter((c) => c.title === "Review").map((c) => c.id),
+  );
+  const reviewCount = tasks.filter((t) => reviewColumnIds.has(t.colId)).length;
 
   // Reflect board-load state onto the root element so e2e tests can gate input
   // interaction on hydration completing — an in-flight BOARD/LOAD re-render
@@ -67,14 +78,18 @@ export default function BoardView() {
           <a>
             <span className="iconify hugeicons--task-01"></span>
             In Progress
-            <span className="badge badge-xs badge-neutral">4</span>
+            <span className="badge badge-sm font-roboto-slab font-semibold badge-info">
+              {inProgressCount}
+            </span>
           </a>
         </li>
         <li>
           <a>
             <span className="iconify hugeicons--arrow-up-narrow-wide"></span>
             Review
-            <span className="badge badge-xs badge-success">4</span>
+            <span className="badge badge-sm font-roboto-slab font-semibold badge-success">
+              {reviewCount}
+            </span>
           </a>
         </li>
         <li>

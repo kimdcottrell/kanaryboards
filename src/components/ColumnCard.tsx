@@ -48,7 +48,7 @@ export default function ColumnCard({ column, row }) {
     <div
       id={`column-card-${row.id}-${column.id}`}
       data-render-count={renderCount}
-      className="flex w-sm shrink-0 flex-col rounded gap-3 p-3 shadow-sm shadow-base-300/10"
+      className="flex w-xs shrink-0 flex-col rounded gap-3 p-3 shadow-sm shadow-base-300/10"
       style={{
         backgroundColor: `color-mix(in srgb, ${row.color} 8%, transparent)`,
         border: `1px solid color-mix(in srgb, ${row.color} 13%, transparent)`,
@@ -84,6 +84,9 @@ export default function ColumnCard({ column, row }) {
                 title="Double-click to edit"
               >
                 {column.title}
+                <div className="ml-3 badge badge-sm badge-base-100 opacity-80">
+                  {cellTasks.length}
+                </div>
               </h4>
             )}
         </div>

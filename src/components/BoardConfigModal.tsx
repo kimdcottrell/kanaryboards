@@ -18,8 +18,8 @@ export default function BoardConfigModal() {
           Board Configuration
         </h2>
         <p className="mt-3">
-          Add rows and columns, then place tasks into each column. Each task
-          can include a title, description, and optional checklist.
+          Add rows and columns, then place tasks into each column. Each task can
+          include a title, description, and optional checklist.
         </p>
         <CreateRowSection />
         <ColumnSettingsSection />

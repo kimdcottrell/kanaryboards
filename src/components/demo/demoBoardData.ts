@@ -2,7 +2,7 @@ import type { Task } from "../context/types.ts";
 import { createId } from "@lib/uuid.ts";
 import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
 
-const initialDefaultColumnNames = ["To Do", "In Progress", "Done"];
+const initialDefaultColumnNames = ["To Do", "In Progress", "Review", "Done"];
 
 export const createDemoBoard = () => {
   const rowId = createId();

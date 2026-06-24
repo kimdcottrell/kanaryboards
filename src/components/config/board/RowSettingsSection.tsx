@@ -4,8 +4,7 @@ import { rowColorOptions } from "../../context/constants.ts";
 
 export default function RowSettingsSection() {
   const { rows } = useBoardDataState();
-  const { updateRowColor, moveRowUp, moveRowDown, renameRow } =
-    useRowActions();
+  const { updateRowColor, moveRowUp, moveRowDown, renameRow } = useRowActions();
 
   const [editId, setEditId] = useState(null);
   const [editName, setEditName] = useState("");
@@ -37,8 +36,8 @@ export default function RowSettingsSection() {
             Row settings
           </h3>
           <p className="text-sm">
-            Use the arrow buttons to move rows up or down and pick a color
-            for each project row.
+            Use the arrow buttons to move rows up or down and pick a color for
+            each project row.
           </p>
         </div>
       </div>
