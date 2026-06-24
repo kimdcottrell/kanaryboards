@@ -1,6 +1,7 @@
 export {
   useBoardDataState,
   useBoardDispatch,
+  useBoardMeta,
   useBoardRefs,
   useChecklistAIState,
   useColumnConfigState,

@@ -1,10 +1,9 @@
 ---
-import { AstroError } from "astro/errors";
 const { tag } = Astro.props;
 if (!tag)
-    throw new AstroError(
-        "GoogleTag is missing. This will cause analytics to not load.",
-        "Check to see if the GOOGLE_TAG environment variable is set and being passed correctly to the component.",
+    throw new Error(
+        `GoogleTag is missing. This will cause analytics to not load.\n
+        Check to see if the GOOGLE_TAG environment variable is set and being passed correctly to the component.`,
     );
 const url = `https://www.googletagmanager.com/gtag/js?id=${tag}`;
 const htmlString = `

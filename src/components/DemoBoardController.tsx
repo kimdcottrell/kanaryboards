@@ -12,7 +12,7 @@ const demoRouter = createMemoryRouter(
 
 export default function DemoBoardController() {
   return (
-    <BoardProvider boardId="demo" isAuthenticated={false} persist={false}>
+    <BoardProvider boardId="demo" isAuthenticated={false}>
       <RouterProvider router={demoRouter} />
     </BoardProvider>
   );

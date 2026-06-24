@@ -22,7 +22,8 @@ import type {
   TaskEditState,
 } from "./types.ts";
 import { boardReducer, createInitialState } from "./reducer.ts";
-import { createDefaultBoard, STORAGE_KEY } from "./constants.ts";
+import { STORAGE_KEY } from "./constants.ts";
+import { createDemoBoard } from "../demo/demoBoardData.ts";
 import { computeTasksByCell } from "./selectors.ts";
 
 export const BoardDispatchContext = createContext<Dispatch<BoardAction> | null>(
@@ -137,12 +138,18 @@ export function useTasksByCell(): Record<string, Task[]> {
   return v;
 }
 
+const BoardMetaContext = createContext<{ boardId: string } | null>(null);
+export function useBoardMeta(): { boardId: string } {
+  const v = useContext(BoardMetaContext);
+  if (!v) throw new Error("useBoardMeta must be used within a BoardProvider");
+  return v;
+}
+
 export function BoardProvider(
-  { children, boardId, isAuthenticated = false, persist = true }: {
+  { children, boardId, isAuthenticated = false }: {
     children: ReactNode;
     boardId: string;
     isAuthenticated?: boolean;
-    persist?: boolean;
   },
 ) {
   const [state, dispatch] = useReducer(
@@ -153,11 +160,11 @@ export function BoardProvider(
 
   // Load board on mount. Authenticated: load from API, migrate localStorage if needed.
   // Unauthenticated: load from localStorage (falling back to API for legacy KV data).
-  // persist=false (e.g. landing-page demo): always seed from createDefaultBoard(), skip storage entirely.
+  // boardId === "demo" (landing-page demo): always seed from createDemoBoard(), skip storage entirely.
   useEffect(() => {
     async function load() {
-      if (!persist) {
-        dispatch({ type: "BOARD/LOAD", payload: createDefaultBoard() });
+      if (boardId === "demo") {
+        dispatch({ type: "BOARD/LOAD", payload: createDemoBoard() });
         return;
       }
       if (isAuthenticated) {
@@ -187,7 +194,7 @@ export function BoardProvider(
               // ignore malformed localStorage
             }
           }
-          dispatch({ type: "BOARD/LOAD", payload: createDefaultBoard() });
+          dispatch({ type: "BOARD/RESET" });
           return;
         }
 
@@ -204,19 +211,19 @@ export function BoardProvider(
             // ignore malformed localStorage
           }
         }
-        dispatch({ type: "BOARD/LOAD", payload: createDefaultBoard() });
+        dispatch({ type: "BOARD/RESET" });
       }
     }
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [boardId, isAuthenticated, persist]);
+  }, [boardId, isAuthenticated]);
 
   // Persist board on state changes (after initial load).
   // Authenticated: save to API (KV). Unauthenticated: save to localStorage only.
-  // persist=false: never write anywhere — the demo board is ephemeral.
+  // boardId === "demo": never write anywhere — the demo board is ephemeral.
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (!persist) return;
+    if (boardId === "demo") return;
     if (!state.boardLoaded) return;
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
@@ -247,7 +254,7 @@ export function BoardProvider(
     state.tasks,
     state.boardLoaded,
     isAuthenticated,
-    persist,
+    boardId,
   ]);
 
   const checklistInputRefs = useRef<Record<string, HTMLInputElement>>({});
@@ -360,32 +367,36 @@ export function BoardProvider(
     [state.tasks],
   );
 
+  const boardMeta = useMemo(() => ({ boardId }), [boardId]);
+
   return (
     <BoardDispatchContext.Provider value={dispatch}>
       <BoardRefsContext.Provider
         value={{ setChecklistInputRef, focusChecklistInput }}
       >
-        <BoardDataContext.Provider value={boardData}>
-          <RowFormContext.Provider value={rowFormState}>
-            <RowEditContext.Provider value={rowEditState}>
-              <ColumnEditContext.Provider value={columnEditState}>
-                <ColumnConfigContext.Provider value={columnConfigState}>
-                  <TaskCreateContext.Provider value={taskCreateState}>
-                    <TaskEditContext.Provider value={taskEditState}>
-                      <ChecklistAIContext.Provider value={checklistAIState}>
-                        <DragContext.Provider value={dragState}>
-                          <TasksByCellContext.Provider value={tasksByCell}>
-                            {children}
-                          </TasksByCellContext.Provider>
-                        </DragContext.Provider>
-                      </ChecklistAIContext.Provider>
-                    </TaskEditContext.Provider>
-                  </TaskCreateContext.Provider>
-                </ColumnConfigContext.Provider>
-              </ColumnEditContext.Provider>
-            </RowEditContext.Provider>
-          </RowFormContext.Provider>
-        </BoardDataContext.Provider>
+        <BoardMetaContext.Provider value={boardMeta}>
+          <BoardDataContext.Provider value={boardData}>
+            <RowFormContext.Provider value={rowFormState}>
+              <RowEditContext.Provider value={rowEditState}>
+                <ColumnEditContext.Provider value={columnEditState}>
+                  <ColumnConfigContext.Provider value={columnConfigState}>
+                    <TaskCreateContext.Provider value={taskCreateState}>
+                      <TaskEditContext.Provider value={taskEditState}>
+                        <ChecklistAIContext.Provider value={checklistAIState}>
+                          <DragContext.Provider value={dragState}>
+                            <TasksByCellContext.Provider value={tasksByCell}>
+                              {children}
+                            </TasksByCellContext.Provider>
+                          </DragContext.Provider>
+                        </ChecklistAIContext.Provider>
+                      </TaskEditContext.Provider>
+                    </TaskCreateContext.Provider>
+                  </ColumnConfigContext.Provider>
+                </ColumnEditContext.Provider>
+              </RowEditContext.Provider>
+            </RowFormContext.Provider>
+          </BoardDataContext.Provider>
+        </BoardMetaContext.Provider>
       </BoardRefsContext.Provider>
     </BoardDispatchContext.Provider>
   );

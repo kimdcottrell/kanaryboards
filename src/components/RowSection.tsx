@@ -3,6 +3,7 @@ import ColumnCard from "./ColumnCard.tsx";
 import CloseButton from "./buttons/CloseButton.tsx";
 import {
   useBoardDataState,
+  useBoardMeta,
   useRowActions,
   useRowEditActions,
   useRowEditState,
@@ -12,6 +13,7 @@ import { useRenderCount } from "@lib/use-render-count.ts";
 export default function RowSection({ row }) {
   const [collapsed, setCollapsed] = useState(false);
   const { columns } = useBoardDataState();
+  const { boardId } = useBoardMeta();
   const { editingRowId, editingRowName } = useRowEditState();
   const { setEditingRowName, editRowTitle, saveRowTitle } = useRowEditActions();
   const { deleteRow } = useRowActions();
@@ -76,6 +78,12 @@ export default function RowSection({ row }) {
             </button>
             <CloseButton
               onClick={() => {
+                if (boardId === "demo") {
+                  alert(
+                    "Normally, this would allow you to delete a row and all the tasks inside it.\n\nBut this is a demo board, so... No.",
+                  );
+                  return;
+                }
                 if (
                   confirm(
                     `Delete row "${row.title}"? \n\nThis will remove the "${row.title}" row. All columns and tasks will be removed.\n\nIt cannot be undone.`,

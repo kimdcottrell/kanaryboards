@@ -1,6 +1,5 @@
 ---
 import HtmlHead from "./partials/HtmlHead.astro";
-import "@lyfie/luthor/styles.css";
 
 import Header from "./partials/Header.astro";
 import DrawerMenu from "./partials/DrawerMenu.astro";
@@ -15,7 +14,9 @@ import Footer from "./partials/Footer.astro";
   <body class="drawer">
     <DrawerMenu />
     <main class="drawer-content">
-      <Header />
+      <div class="absolute top-0 left-0 w-full">
+        <Header />
+      </div>
       <slot />
       <Footer />
     </main>
