@@ -101,7 +101,7 @@ export default function RowSection({ row }) {
         </div>
 
         {!collapsed && (
-          <div id={`row-columns-${row.id}`} className="overflow-x-auto pb-4">
+          <div id={`row-columns-${row.id}`} className="pb-4">
             <div className="flex gap-3">
               {columns.map((column) => (
                 <ColumnCard

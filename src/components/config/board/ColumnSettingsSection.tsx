@@ -1,4 +1,8 @@
 import { useState } from "react";
+import AsyncCreatableSelect from "react-select/async-creatable";
+import BoardMenu from "../../BoardMenu.tsx";
+import Icon from "../../Icon.tsx";
+import { searchHugeicons } from "@lib/icons.ts";
 import {
   useBoardDataState,
   useColumnConfigActions,
@@ -10,33 +14,49 @@ export default function ColumnSettingsSection() {
   const { defaultColumnInput, draggedDefaultIndex } = useColumnConfigState();
   const {
     setDefaultColumnInput,
+    setColumnIcon,
     setDraggedDefaultIndex,
     handleDefaultColumnInputKeyDown,
     handleDefaultColumnDragStart,
     handleDefaultColumnDragOver,
     handleDefaultColumnDrop,
     deleteColumn,
+    togglePinColumn,
+    toggleIconInBoardMenu,
   } = useColumnConfigActions();
 
   const [dragHoverIndex, setDragHoverIndex] = useState<number | null>(null);
+
+  const pinnedCount = columns.filter((column) => column.pinned).length;
 
   return (
     <div
       id="board-config-column-settings"
       className="mt-6 bg-base-200 p-5"
     >
-      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">
-            Column settings
-          </h3>
-          <p className="text-sm">
-            Manage the columns set used across projects. Drag badges to reorder,
-            click x to remove, or add a new default column.
-          </p>
-        </div>
+      <div className="mb-6 sm:items-center sm:justify-between">
+        <h3 className="text-lg font-semibold">
+          Column settings
+        </h3>
+        <p className="text-sm">
+          Manage the columns set used across projects. Drag cards to reorder,
+          pin to the board shortcut menu, or add a new default column.
+        </p>
       </div>
-      <div className="flex flex-wrap items-baseline gap-2">
+      {columns.some((column) => column.pinned) && (
+        <>
+          <hr className="opacity-50" />
+          <div className="mt-6 h-12 flex items-center justify-center">
+            <div className="indicator">
+              <span className="indicator-item badge badge-warning text-xl p-3 rounded-xs badge-sm z-101">
+                Preview
+              </span>
+              <BoardMenu isPreview />
+            </div>
+          </div>
+        </>
+      )}
+      <div className="flex gap-2 overflow-x-auto my-6">
         {columns.map((column, index) => {
           const isDraggingThis = draggedDefaultIndex === index;
           const isHovered = dragHoverIndex === index &&
@@ -44,10 +64,10 @@ export default function ColumnSettingsSection() {
             draggedDefaultIndex !== index;
           const dropFromLeft = draggedDefaultIndex !== null &&
             draggedDefaultIndex < index;
+          const pinBlocked = !column.pinned && pinnedCount >= 3;
           return (
             <div
               key={column.id}
-              className="relative"
               draggable="true"
               onDragStart={handleDefaultColumnDragStart(index)}
               onDragOver={(e) => {
@@ -76,40 +96,156 @@ export default function ColumnSettingsSection() {
                   style={{ right: "-0.30rem" }}
                 />
               )}
-              <div className="join">
-                <button
-                  type="button"
-                  className="btn rounded-l! join-item btn-primary cursor-grab"
-                >
-                  {column.title}
-                </button>
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    deleteColumn(column.id);
-                  }}
-                  className="btn rounded-r! join-item btn-primary p-2 dark:btn-border-primary light:text-primary-content bg-primary/40 hover:bg-primary/80 dark:text-base-100 text-primary! hover:text-primary-content!"
-                >
-                  <span className="iconify basil--cross-outline text-2xl font-bold">
-                  </span>
-                </button>
+              <div className="w-xs h-full shrink-0 flex-col card card-border card-md bg-base-300 border-base-content/50 cursor-grab">
+                <div className="card-body">
+                  <h2 className="card-title">
+                    <span className="group inline-flex w-fit cursor-text items-center gap-2">
+                      {column.title}
+                      <span className="iconify hugeicons--edit-03 text-base-content text-md opacity-0 group-hover:opacity-100 shrink-0">
+                      </span>
+                    </span>
+                  </h2>
+                  <hr className="my-3" />
+                  <h4>Pin to board shortcut menu</h4>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={pinBlocked ? "tooltip tooltip-error" : ""}
+                      data-tip={pinBlocked
+                        ? "You can only pin 3 columns. Unpin one to proceed."
+                        : undefined}
+                    >
+                      <button
+                        type="button"
+                        disabled={pinBlocked}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (!pinBlocked) togglePinColumn(column.id);
+                        }}
+                        aria-label={column.pinned
+                          ? "Unpin column from board menu"
+                          : "Pin column to board menu"}
+                        className={`shadow-none w-fit py-2 px-1 btn btn-sm btn-secondary dark:btn-border-secondary light:text-secondary-content hover:bg-secondary/80 dark:text-base-100 hover:text-secondary-content! ${
+                          column.pinned
+                            ? "bg-secondary text-secondary-content!"
+                            : "bg-secondary/20 text-secondary!"
+                        }`}
+                      >
+                        <span className="iconify hugeicons--pin text-2xl font-bold">
+                        </span>
+                      </button>
+                    </div>
+                    <section className="total-pinned">
+                      <div className="inline-block badge badge-lg text-base-100 bg-base-content/60">
+                        {pinnedCount}/3
+                      </div>
+                    </section>
+                  </div>
+                  <hr className="my-3" />
+                  <h4>Column icon</h4>
+
+                  <div className="space-y-3">
+                    <p>
+                      Icons are generated from Iconify's{" "}
+                      <a
+                        href="https://icon-sets.iconify.design/hugeicons/"
+                        target="_blank"
+                      >
+                        HugeIcons
+                      </a>{" "}
+                      library.
+                    </p>
+                    <AsyncCreatableSelect
+                      className="textarea-md"
+                      value={column.icon ? { value: column.icon } : null}
+                      onChange={(option) =>
+                        setColumnIcon(column.id, option?.value ?? null)}
+                      isSearchable
+                      isClearable
+                      cacheOptions
+                      defaultOptions={false}
+                      loadOptions={(input) => searchHugeicons(input)}
+                      placeholder="Start typing a hugeicon name..."
+                      formatOptionLabel={(option) => (
+                        <div className="flex items-center gap-2">
+                          <Icon name={option.value} className="h-6 w-6" />
+                          <span>{option.value}</span>
+                        </div>
+                      )}
+                    />
+                    {column.pinned && (
+                      <label
+                        key={`${column.id}-enable-shortcut-menu`}
+                        className="flex items-center gap-1 text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={column.iconInBoardMenu}
+                          onChange={() => toggleIconInBoardMenu(column.id)}
+                          className="checkbox checkbox-primary checkbox-sm"
+                        />
+                        Display on shortcut menu
+                      </label>
+                    )}
+                    <label
+                      key={`${column.id}-display-in-row`}
+                      className="flex items-center gap-1 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={false}
+                        className="checkbox checkbox-primary checkbox-sm"
+                      />
+                      Display in row column near title
+                    </label>
+                  </div>
+                  <div className="flex-1" />
+                  <details
+                    tabIndex={0}
+                    className="collapse mt-6 collapse-arrow bg-error/10 border-error border-1"
+                  >
+                    <summary className="collapse-title flex items-center font-semibold text-error">
+                      <span
+                        className="iconify hugeicons--alert-01 text-xl mr-3 tooltip"
+                        data-tip="WARNING: cannot be undone"
+                      >
+                      </span>{" "}
+                      Delete the column
+                    </summary>
+                    <div className="collapse-content text-sm space-y-3">
+                      <p>This change CANNOT be undone.</p>
+                      <p>The following tasks will be deleted if you proceed:</p>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          deleteColumn(column.id);
+                        }}
+                        className="btn btn-sm btn-error ml-auto"
+                      >
+                        <span className="iconify hugeicons--column-delete text-xl">
+                        </span>
+                        Destroy all {column.title} columns
+                      </button>
+                    </div>
+                  </details>
+                </div>
               </div>
             </div>
           );
         })}
-        <fieldset className="fieldset">
-          <input
-            className="input input-primary"
-            type="text"
-            value={defaultColumnInput}
-            onChange={(e) => setDefaultColumnInput(e.currentTarget.value)}
-            onKeyDown={handleDefaultColumnInputKeyDown}
-            placeholder="Add new column"
-          />
-          <p className="label">Hit enter to create</p>
-        </fieldset>
       </div>
+
+      <fieldset className="fieldset">
+        <input
+          className="input input-primary"
+          type="text"
+          value={defaultColumnInput}
+          onChange={(e) => setDefaultColumnInput(e.currentTarget.value)}
+          onKeyDown={handleDefaultColumnInputKeyDown}
+          placeholder="Add new column"
+        />
+        <p className="label">Hit enter to create</p>
+      </fieldset>
     </div>
   );
 }

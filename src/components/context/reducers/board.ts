@@ -29,6 +29,7 @@ export const createInitialState = (): BoardState => {
     isGeneratingTasks: false,
     taskGenerationStatus: "",
     defaultColumnInput: "",
+    defaultColumnIcon: null,
     draggedDefaultIndex: null,
     draggedTask: null,
     boardConfigModalOpen: false,
@@ -65,6 +66,9 @@ export function reset(): BoardState {
       id: createId(),
       title,
       order: columnOrders[i],
+      pinned: title === "In Progress" || title === "Review",
+      icon: null,
+      iconInBoardMenu: title === "In Progress" || title === "Review",
     })),
     rows: [{
       id: createId(),

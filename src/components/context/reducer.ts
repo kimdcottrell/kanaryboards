@@ -28,6 +28,12 @@ export function boardReducer(
     case "COLUMN/SET_INPUT":
       return columns.setInput(state, action.payload);
 
+    case "COLUMN/SET_ICON":
+      return columns.setIcon(state, action.payload);
+
+    case "COLUMN/SET_COLUMN_ICON":
+      return columns.setColumnIcon(state, action.payload);
+
     case "COLUMN/SET_DRAGGED_INDEX":
       return columns.setDraggedIndex(state, action.payload);
 
@@ -42,6 +48,12 @@ export function boardReducer(
 
     case "COLUMN/RENAME_CANCEL":
       return columns.renameCancel(state);
+
+    case "COLUMN/TOGGLE_PIN":
+      return columns.togglePin(state, action.payload);
+
+    case "COLUMN/TOGGLE_ICON_IN_BOARD_MENU":
+      return columns.toggleIconInBoardMenu(state, action.payload);
 
     // ── ROWS ──────────────────────────────────────────────────────────────────
 

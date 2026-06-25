@@ -5,7 +5,42 @@ export function add(
   state: BoardState,
   payload: Extract<ColumnAction, { type: "COLUMN/ADD" }>["payload"],
 ): BoardState {
-  return { ...state, columns: [...state.columns, payload] };
+  return {
+    ...state,
+    columns: [
+      ...state.columns,
+      { ...payload, pinned: false, iconInBoardMenu: false },
+    ],
+  };
+}
+
+export function togglePin(
+  state: BoardState,
+  payload: Extract<ColumnAction, { type: "COLUMN/TOGGLE_PIN" }>["payload"],
+): BoardState {
+  return {
+    ...state,
+    columns: state.columns.map((c) =>
+      c.id === payload.columnId ? { ...c, pinned: !c.pinned } : c
+    ),
+  };
+}
+
+export function toggleIconInBoardMenu(
+  state: BoardState,
+  payload: Extract<
+    ColumnAction,
+    { type: "COLUMN/TOGGLE_ICON_IN_BOARD_MENU" }
+  >["payload"],
+): BoardState {
+  return {
+    ...state,
+    columns: state.columns.map((c) =>
+      c.id === payload.columnId
+        ? { ...c, iconInBoardMenu: !c.iconInBoardMenu }
+        : c
+    ),
+  };
 }
 
 export function remove(
@@ -63,6 +98,28 @@ export function setInput(
   payload: Extract<ColumnAction, { type: "COLUMN/SET_INPUT" }>["payload"],
 ): BoardState {
   return { ...state, defaultColumnInput: payload.value };
+}
+
+export function setIcon(
+  state: BoardState,
+  payload: Extract<ColumnAction, { type: "COLUMN/SET_ICON" }>["payload"],
+): BoardState {
+  return { ...state, defaultColumnIcon: payload.icon };
+}
+
+export function setColumnIcon(
+  state: BoardState,
+  payload: Extract<
+    ColumnAction,
+    { type: "COLUMN/SET_COLUMN_ICON" }
+  >["payload"],
+): BoardState {
+  return {
+    ...state,
+    columns: state.columns.map((c) =>
+      c.id === payload.columnId ? { ...c, icon: payload.icon } : c
+    ),
+  };
 }
 
 export function setDraggedIndex(

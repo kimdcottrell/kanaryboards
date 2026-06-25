@@ -16,6 +16,9 @@ export interface Column {
   id: string;
   title: string;
   order: string;
+  pinned: boolean;
+  icon: string | null;
+  iconInBoardMenu: boolean;
 }
 
 export interface Task {
@@ -63,6 +66,7 @@ export interface ColumnEditState {
 // Default-column management: input field and drag reordering (ColumnSettingsSection).
 export interface ColumnConfigState {
   defaultColumnInput: string;
+  defaultColumnIcon: string | null;
   draggedDefaultIndex: number | null;
 }
 
@@ -116,7 +120,7 @@ export type BoardState =
 export type ColumnAction =
   | {
     type: "COLUMN/ADD";
-    payload: { id: string; title: string; order: string };
+    payload: { id: string; title: string; order: string; icon: string | null };
   }
   | { type: "COLUMN/DELETE"; payload: { columnId: string } }
   | {
@@ -124,6 +128,11 @@ export type ColumnAction =
     payload: { columnId: string; beforeColumnId: string | null };
   }
   | { type: "COLUMN/SET_INPUT"; payload: { value: string } }
+  | { type: "COLUMN/SET_ICON"; payload: { icon: string | null } }
+  | {
+    type: "COLUMN/SET_COLUMN_ICON";
+    payload: { columnId: string; icon: string | null };
+  }
   | { type: "COLUMN/SET_DRAGGED_INDEX"; payload: { index: number | null } }
   | {
     type: "COLUMN/RENAME_START";
@@ -131,7 +140,9 @@ export type ColumnAction =
   }
   | { type: "COLUMN/RENAME_CHANGE"; payload: { name: string } }
   | { type: "COLUMN/RENAME_SAVE"; payload: { columnId: string } }
-  | { type: "COLUMN/RENAME_CANCEL" };
+  | { type: "COLUMN/RENAME_CANCEL" }
+  | { type: "COLUMN/TOGGLE_PIN"; payload: { columnId: string } }
+  | { type: "COLUMN/TOGGLE_ICON_IN_BOARD_MENU"; payload: { columnId: string } };
 
 export type RowAction =
   | {

@@ -28,11 +28,21 @@ export const mockRow: Row = {
   color: "#ff6b6b",
   order: "a0",
 };
-export const mockColumn: Column = { id: "col-1", title: "To Do", order: "a0" };
+export const mockColumn: Column = {
+  id: "col-1",
+  title: "To Do",
+  order: "a0",
+  pinned: false,
+  icon: null,
+  iconInBoardMenu: false,
+};
 export const secondColumn: Column = {
   id: "col-2",
   title: "In Progress",
   order: "a1",
+  pinned: false,
+  icon: null,
+  iconInBoardMenu: false,
 };
 export const secondRow: Row = {
   id: "row-2",

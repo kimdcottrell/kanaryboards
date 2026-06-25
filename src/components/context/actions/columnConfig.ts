@@ -10,7 +10,8 @@ import { DragEvent, KeyboardEvent } from "react";
 
 export function useColumnConfigActions() {
   const dispatch = useBoardDispatch();
-  const { defaultColumnInput, draggedDefaultIndex } = useColumnConfigState();
+  const { defaultColumnInput, defaultColumnIcon, draggedDefaultIndex } =
+    useColumnConfigState();
   const { columns } = useBoardDataState();
 
   const addColumn = useCallback((title: string) => {
@@ -21,9 +22,10 @@ export function useColumnConfigActions() {
         id: createId(),
         title,
         order: generateKeyBetween(lastCol?.order ?? null, null),
+        icon: defaultColumnIcon,
       },
     });
-  }, [columns, dispatch]);
+  }, [columns, defaultColumnIcon, dispatch]);
 
   const handleDefaultColumnInputKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -38,13 +40,15 @@ export function useColumnConfigActions() {
               id: createId(),
               title,
               order: generateKeyBetween(lastCol?.order ?? null, null),
+              icon: defaultColumnIcon,
             },
           });
           dispatch({ type: "COLUMN/SET_INPUT", payload: { value: "" } });
+          dispatch({ type: "COLUMN/SET_ICON", payload: { icon: null } });
         }
       }
     },
-    [defaultColumnInput, columns, dispatch],
+    [defaultColumnInput, defaultColumnIcon, columns, dispatch],
   );
 
   const handleDefaultColumnDrop = useCallback(
@@ -70,6 +74,10 @@ export function useColumnConfigActions() {
   const dispatchOnly = useMemo(() => ({
     setDefaultColumnInput: (value: string) =>
       dispatch({ type: "COLUMN/SET_INPUT", payload: { value } }),
+    setDefaultColumnIcon: (icon: string | null) =>
+      dispatch({ type: "COLUMN/SET_ICON", payload: { icon } }),
+    setColumnIcon: (columnId: string, icon: string | null) =>
+      dispatch({ type: "COLUMN/SET_COLUMN_ICON", payload: { columnId, icon } }),
     setDraggedDefaultIndex: (index: number | null) =>
       dispatch({ type: "COLUMN/SET_DRAGGED_INDEX", payload: { index } }),
     reorderColumn: (columnId: string, beforeColumnId: string | null) =>
@@ -79,6 +87,13 @@ export function useColumnConfigActions() {
       }),
     deleteColumn: (columnId: string) =>
       dispatch({ type: "COLUMN/DELETE", payload: { columnId } }),
+    togglePinColumn: (columnId: string) =>
+      dispatch({ type: "COLUMN/TOGGLE_PIN", payload: { columnId } }),
+    toggleIconInBoardMenu: (columnId: string) =>
+      dispatch({
+        type: "COLUMN/TOGGLE_ICON_IN_BOARD_MENU",
+        payload: { columnId },
+      }),
     handleDefaultColumnDragStart: (index: number) => (event: DragEvent) => {
       dispatch({ type: "COLUMN/SET_DRAGGED_INDEX", payload: { index } });
       event.dataTransfer!.effectAllowed = "move";

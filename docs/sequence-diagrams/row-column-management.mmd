@@ -6,6 +6,7 @@ sequenceDiagram
     participant Config as BoardConfigModal<br/>(BoardConfigModal.tsx +<br/>config/board/*Section.tsx)
     participant Row as RowSection<br/>(RowSection.tsx)
     participant Cell as ColumnCard<br/>(ColumnCard.tsx)
+    participant BoardMenu as BoardView<br/>(BoardView.tsx, #board-menu)
     participant Actions as action hooks<br/>(actions/boardConfig.ts,<br/>row*.ts, column*.ts)
     participant Reducer as reducers<br/>(board.ts, rows.ts, columns.ts, taskAi.ts)
     participant Ctx as BoardContext<br/>(BoardConfig/BoardData/RowForm/<br/>RowEdit/ColumnEdit/ColumnConfig)
@@ -123,14 +124,27 @@ sequenceDiagram
     Reducer-->>Ctx: defaultColumnInput = value
     Ctx-->>Config: BoardConfiguration re-renders<br/>(ColumnConfigContext: defaultColumnInput changed)
 
-    Actions->>Ctx: dispatch(COLUMN/ADD, {id, title, order})
+    Note over Config: Pick column icon (AsyncCreatableSelect, searches the<br/>full hugeicons set via lazy-loaded @iconify/json data,<br/>src/lib/icons.ts. Icons render as inline SVG, src/components/Icon.tsx)
+    User->>Config: type in icon search box
+    Config->>Config: searchHugeicons(input)<br/>(src/lib/icons.ts, lazy dynamic import on first use)
+    User->>Config: select an icon option
+    Config->>Actions: setDefaultColumnIcon(icon)<br/>(actions/columnConfig.ts)
+    Actions->>Ctx: dispatch(COLUMN/SET_ICON, {icon})
+    Ctx->>Reducer: columns.setIcon
+    Reducer-->>Ctx: defaultColumnIcon = icon
+    Ctx-->>Config: BoardConfiguration re-renders<br/>(ColumnConfigContext: defaultColumnIcon changed)
+
+    Actions->>Ctx: dispatch(COLUMN/ADD, {id, title, order, icon: defaultColumnIcon})
     Ctx->>Reducer: columns.add(state, payload)
     Reducer-->>Ctx: columns = [...columns, newColumn]
     Actions->>Ctx: dispatch(COLUMN/SET_INPUT, {value: ""})
     Ctx->>Reducer: columns.setInput
     Reducer-->>Ctx: defaultColumnInput = ""
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: columns changed)<br/>-> column settings badge list shows new column,<br/>input clears
-    Ctx-->>Cell: every RowSection mounts a new ColumnCard<br/>(BoardData: columns changed)
+    Actions->>Ctx: dispatch(COLUMN/SET_ICON, {icon: null})
+    Ctx->>Reducer: columns.setIcon
+    Reducer-->>Ctx: defaultColumnIcon = null
+    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: columns changed)<br/>-> column settings badge list shows new column<br/>(with icon, if chosen), input + icon select clear
+    Ctx-->>Cell: every RowSection mounts a new ColumnCard<br/>(BoardData: columns changed)<br/>-> shows column icon, if set
 
     Note over User,AI: Rename column (per ColumnCard, double-click)
     User->>Cell: double-click column title
@@ -158,6 +172,24 @@ sequenceDiagram
     Reducer-->>Ctx: columns filtered. tasks for that column removed.<br/>clears any open modal/edit state referencing it
     Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: columns changed)<br/>-> column settings badge list loses the column
     Ctx-->>Cell: the corresponding ColumnCard instance in<br/>every RowSection unmounts<br/>(BoardData: columns/tasks changed)
+
+    Note over User,AI: Pin/unpin column (ColumnSettingsSection)
+    User->>Config: click pin icon on column badge
+    Config->>Actions: togglePinColumn(columnId)<br/>(actions/columnConfig.ts)
+    Actions->>Ctx: dispatch(COLUMN/TOGGLE_PIN, {columnId})
+    Ctx->>Reducer: columns.togglePin(state, payload)
+    Reducer-->>Ctx: columns[columnId].pinned = !pinned
+    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: column.pinned changed)<br/>-> pin icon toggles filled/outline
+    Ctx-->>BoardMenu: BoardView re-renders<br/>(BoardData: columns changed)<br/>-> #board-menu adds/removes that column's<br/>title+count item (always shown when pinned,<br/>regardless of iconInBoardMenu)
+
+    Note over User,AI: Toggle "Display on shortcut menu" (per-column card,<br/>only shown once a column is pinned. Controls only<br/>whether that column's icon renders in the menu item -<br/>the item itself stays/goes based on pinned alone)
+    User->>Config: check/uncheck "Display on shortcut menu"
+    Config->>Actions: toggleIconInBoardMenu(columnId)<br/>(actions/columnConfig.ts)
+    Actions->>Ctx: dispatch(COLUMN/TOGGLE_ICON_IN_BOARD_MENU, {columnId})
+    Ctx->>Reducer: columns.toggleIconInBoardMenu(state, payload)
+    Reducer-->>Ctx: columns[columnId].iconInBoardMenu = !iconInBoardMenu
+    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: column.iconInBoardMenu changed)<br/>-> checkbox toggles
+    Ctx-->>BoardMenu: BoardView re-renders<br/>(BoardData: columns changed)<br/>-> that column's menu item shows/hides its icon<br/>(title+count badge unaffected)
 
     Note over User,AI: Reorder column (drag, ColumnSettingsSection column badges)
     User->>Config: dragstart on column badge

@@ -26,8 +26,22 @@ const boardId = "test-board-001";
 const sampleBoard: PersistedBoard = {
   rows: [{ id: "row-1", title: "Feature", color: "#ff6b6b", order: "a0" }],
   columns: [
-    { id: "col-1", title: "To Do", order: "a0" },
-    { id: "col-2", title: "Done", order: "a1" },
+    {
+      id: "col-1",
+      title: "To Do",
+      order: "a0",
+      pinned: false,
+      icon: null,
+      iconInBoardMenu: false,
+    },
+    {
+      id: "col-2",
+      title: "Done",
+      order: "a1",
+      pinned: false,
+      icon: null,
+      iconInBoardMenu: false,
+    },
   ],
   tasks: [
     {

@@ -1,4 +1,5 @@
 import TaskCard from "./TaskCard.tsx";
+import Icon from "./Icon.tsx";
 import {
   useColumnEditActions,
   useColumnEditState,

@@ -1,33 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import BoardConfigModal from "./BoardConfigModal.tsx";
+import BoardMenu from "./BoardMenu.tsx";
 import RowBoard from "./RowBoard.tsx";
 import TaskCreateModal from "./TaskCreateModal.tsx";
 import TaskEditModal from "./TaskEditModal.tsx";
-import {
-  useBoardConfigActions,
-  useBoardDataState,
-  useTaskActions,
-} from "./context/hooks.ts";
+import { useBoardDataState, useTaskActions } from "./context/hooks.ts";
 
 export default function BoardView() {
   const navigate = useNavigate();
   const { taskId } = useParams();
-  const { tasks, columns, boardLoaded } = useBoardDataState();
+  const { tasks, boardLoaded } = useBoardDataState();
   const { startEditTask } = useTaskActions();
-  const { openBoardConfigModal } = useBoardConfigActions();
   const syncedTaskId = useRef<string | undefined>(undefined);
-
-  const inProgressColumnIds = new Set(
-    columns.filter((c) => c.title === "In Progress").map((c) => c.id),
-  );
-  const inProgressCount =
-    tasks.filter((t) => inProgressColumnIds.has(t.colId)).length;
-
-  const reviewColumnIds = new Set(
-    columns.filter((c) => c.title === "Review").map((c) => c.id),
-  );
-  const reviewCount = tasks.filter((t) => reviewColumnIds.has(t.colId)).length;
 
   // Reflect board-load state onto the root element so e2e tests can gate input
   // interaction on hydration completing — an in-flight BOARD/LOAD re-render
@@ -40,7 +25,7 @@ export default function BoardView() {
 
   useEffect(() => {
     const onScroll = () => {
-      setIsSticky(globalThis.scrollY > 12);
+      setIsSticky(globalThis.scrollY > 8);
     };
 
     globalThis.addEventListener("scroll", onScroll);
@@ -64,41 +49,7 @@ export default function BoardView() {
 
   return (
     <>
-      <ul
-        id="board-menu"
-        className={`menu
-          ${isSticky ? "fixed top-0" : "absolute top-3"}
-          left-1/2 -translate-x-1/2
-          z-100 bg-base-100
-          lg:menu-horizontal rounded-box
-          w-fit
-        `}
-      >
-        <li>
-          <a>
-            <span className="iconify hugeicons--task-01"></span>
-            In Progress
-            <span className="badge badge-sm font-roboto-slab font-semibold badge-info">
-              {inProgressCount}
-            </span>
-          </a>
-        </li>
-        <li>
-          <a>
-            <span className="iconify hugeicons--arrow-up-narrow-wide"></span>
-            Review
-            <span className="badge badge-sm font-roboto-slab font-semibold badge-success">
-              {reviewCount}
-            </span>
-          </a>
-        </li>
-        <li>
-          <a id="board-config-collapse-toggle" onClick={openBoardConfigModal}>
-            <span className="iconify hugeicons--settings-01"></span>
-            Board Config
-          </a>
-        </li>
-      </ul>
+      <BoardMenu isSticky={isSticky} />
 
       <BoardConfigModal data-testid="board-configuration" />
       <RowBoard data-testid="row-board" />

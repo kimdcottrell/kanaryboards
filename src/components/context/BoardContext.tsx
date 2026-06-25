@@ -328,9 +328,14 @@ export function BoardProvider(
   const columnConfigState = useMemo(
     () => ({
       defaultColumnInput: state.defaultColumnInput,
+      defaultColumnIcon: state.defaultColumnIcon,
       draggedDefaultIndex: state.draggedDefaultIndex,
     }),
-    [state.defaultColumnInput, state.draggedDefaultIndex],
+    [
+      state.defaultColumnInput,
+      state.defaultColumnIcon,
+      state.draggedDefaultIndex,
+    ],
   );
 
   const boardConfigState = useMemo(
