@@ -127,10 +127,12 @@ describe("TaskCard — URL navigation", () => {
     expect(mockNavigate).toHaveBeenCalledWith(`/dashboard/task/${urlTask.id}`);
   });
 
-  test("clicking the edit (pencil) button also navigates to /dashboard/task/:id", () => {
+  test("clicking the edit (pencil) icon also navigates to /dashboard/task/:id", () => {
     const { container } = render(<TaskCard {...cardProps} />);
-    const btn = container.querySelector("button") as HTMLButtonElement;
-    fireEvent.click(btn);
+    const icon = container.querySelector(
+      ".hugeicons--edit-03",
+    ) as HTMLElement;
+    fireEvent.click(icon);
     expect(mockNavigate).toHaveBeenCalledWith(`/dashboard/task/${urlTask.id}`);
   });
 

@@ -1,4 +1,4 @@
-import Icon from "./Icon.tsx";
+import DynamicIcon from "./DynamicIcon.tsx";
 import { useBoardConfigActions, useBoardDataState } from "./context/hooks.ts";
 
 export default function BoardMenu(
@@ -16,7 +16,9 @@ export default function BoardMenu(
         ${
         isPreview
           ? "relative"
-          : `${isSticky ? "fixed top-0" : "absolute top-2"} left-1/2 -translate-x-1/2`
+          : `${
+            isSticky ? "fixed top-0" : "absolute top-2"
+          } left-1/2 -translate-x-1/2`
       }
         z-100 bg-base-100
         lg:menu-horizontal rounded-box
@@ -27,7 +29,7 @@ export default function BoardMenu(
         <li key={column.id}>
           <a>
             {column.iconInBoardMenu && column.icon && (
-              <Icon name={column.icon} className="h-4 w-4" />
+              <DynamicIcon name={column.icon} className="h-4 w-4" />
             )}
             {column.title}
             <span className="badge badge-sm font-roboto-slab font-semibold badge-info">
@@ -37,7 +39,10 @@ export default function BoardMenu(
         </li>
       ))}
       <li>
-        <a id="board-config-collapse-toggle" onClick={openBoardConfigModal}>
+        <a
+          id={isPreview ? undefined : "board-config-collapse-toggle"}
+          onClick={openBoardConfigModal}
+        >
           <span className="iconify hugeicons--settings-01"></span>
           Board Config
         </a>

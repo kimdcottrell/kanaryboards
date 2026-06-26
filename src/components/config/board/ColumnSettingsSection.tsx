@@ -1,7 +1,7 @@
 import { useState } from "react";
 import AsyncCreatableSelect from "react-select/async-creatable";
 import BoardMenu from "../../BoardMenu.tsx";
-import Icon from "../../Icon.tsx";
+import DynamicIcon from "../../DynamicIcon.tsx";
 import { searchHugeicons } from "@lib/icons.ts";
 import {
   useBoardDataState,
@@ -34,13 +34,23 @@ export default function ColumnSettingsSection() {
       id="board-config-column-settings"
       className="mt-6 bg-base-200 p-5"
     >
-      <div className="mb-6 sm:items-center sm:justify-between">
+      <div className="mb-6 sm:items-center sm:justify-between space-y-3">
         <h3 className="text-lg font-semibold">
           Column settings
         </h3>
         <p className="text-sm">
           Manage the columns set used across projects. Drag cards to reorder,
           pin to the board shortcut menu, or add a new default column.
+        </p>
+        <p className="text-sm">
+          Icons are generated from Iconify's{" "}
+          <a
+            href="https://icon-sets.iconify.design/hugeicons/"
+            target="_blank"
+          >
+            HugeIcons
+          </a>{" "}
+          library.
         </p>
       </div>
       {columns.some((column) => column.pinned) && (
@@ -144,16 +154,6 @@ export default function ColumnSettingsSection() {
                   <h4>Column icon</h4>
 
                   <div className="space-y-3">
-                    <p>
-                      Icons are generated from Iconify's{" "}
-                      <a
-                        href="https://icon-sets.iconify.design/hugeicons/"
-                        target="_blank"
-                      >
-                        HugeIcons
-                      </a>{" "}
-                      library.
-                    </p>
                     <AsyncCreatableSelect
                       className="textarea-md"
                       value={column.icon ? { value: column.icon } : null}
@@ -162,12 +162,15 @@ export default function ColumnSettingsSection() {
                       isSearchable
                       isClearable
                       cacheOptions
-                      defaultOptions={false}
+                      defaultOptions
                       loadOptions={(input) => searchHugeicons(input)}
                       placeholder="Start typing a hugeicon name..."
                       formatOptionLabel={(option) => (
                         <div className="flex items-center gap-2">
-                          <Icon name={option.value} className="h-6 w-6" />
+                          <DynamicIcon
+                            name={option.value}
+                            className="h-6 w-6"
+                          />
                           <span>{option.value}</span>
                         </div>
                       )}
@@ -211,7 +214,7 @@ export default function ColumnSettingsSection() {
                       </span>{" "}
                       Delete the column
                     </summary>
-                    <div className="collapse-content text-sm space-y-3">
+                    <div className="collapse-content text-sm space-y-3 font-bold">
                       <p>This change CANNOT be undone.</p>
                       <p>The following tasks will be deleted if you proceed:</p>
                       <button

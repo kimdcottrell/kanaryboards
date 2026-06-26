@@ -23,7 +23,14 @@ function stateWithCell(): BoardState {
     ...createInitialState(),
     rows: [{ id: "row-1", title: "Row A", color: "#000", order: "a0" }],
     columns: [
-      { id: "col-1", title: "To Do", order: "a0", pinned: false, icon: null, iconInBoardMenu: false },
+      {
+        id: "col-1",
+        title: "To Do",
+        order: "a0",
+        pinned: false,
+        icon: null,
+        iconInBoardMenu: false,
+      },
     ],
     tasks: [task("t1", "a0"), task("t2", "a1"), task("t3", "a2")],
   };
@@ -111,8 +118,22 @@ function stateWithTwoColumns(): BoardState {
     ...createInitialState(),
     rows: [{ id: "row-1", title: "Row A", color: "#000", order: "a0" }],
     columns: [
-      { id: "col-1", title: "To Do", order: "a0", pinned: false, icon: null, iconInBoardMenu: false },
-      { id: "col-2", title: "Done", order: "a1", pinned: false, icon: null, iconInBoardMenu: false },
+      {
+        id: "col-1",
+        title: "To Do",
+        order: "a0",
+        pinned: false,
+        icon: null,
+        iconInBoardMenu: false,
+      },
+      {
+        id: "col-2",
+        title: "Done",
+        order: "a1",
+        pinned: false,
+        icon: null,
+        iconInBoardMenu: false,
+      },
     ],
     tasks: [
       { ...task("dragged", "a0"), colId: "col-1" },
@@ -190,8 +211,22 @@ function stateWithTwoRows(): BoardState {
       { id: "row-2", title: "Row B", color: "#111", order: "a1" },
     ],
     columns: [
-      { id: "col-1", title: "To Do", order: "a0", pinned: false, icon: null, iconInBoardMenu: false },
-      { id: "col-2", title: "Done", order: "a1", pinned: false, icon: null, iconInBoardMenu: false },
+      {
+        id: "col-1",
+        title: "To Do",
+        order: "a0",
+        pinned: false,
+        icon: null,
+        iconInBoardMenu: false,
+      },
+      {
+        id: "col-2",
+        title: "Done",
+        order: "a1",
+        pinned: false,
+        icon: null,
+        iconInBoardMenu: false,
+      },
     ],
     tasks: [
       { ...task("dragged", "a0"), rowId: "row-1", colId: "col-1" },

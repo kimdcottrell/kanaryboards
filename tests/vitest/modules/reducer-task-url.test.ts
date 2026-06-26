@@ -15,8 +15,22 @@ function stateWithTask(task: Task): BoardState {
       { id: "row-2", title: "Row B", color: "#ccc", order: "a1" },
     ],
     columns: [
-      { id: "col-1", title: "To Do", order: "a0", pinned: false, icon: null, iconInBoardMenu: false },
-      { id: "col-2", title: "Done", order: "a1", pinned: false, icon: null, iconInBoardMenu: false },
+      {
+        id: "col-1",
+        title: "To Do",
+        order: "a0",
+        pinned: false,
+        icon: null,
+        iconInBoardMenu: false,
+      },
+      {
+        id: "col-2",
+        title: "Done",
+        order: "a1",
+        pinned: false,
+        icon: null,
+        iconInBoardMenu: false,
+      },
     ],
     tasks: [task],
   };

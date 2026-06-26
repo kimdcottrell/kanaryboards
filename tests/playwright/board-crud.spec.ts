@@ -105,8 +105,12 @@ test.describe("Board CRUD", () => {
 
     test("deletes a default column from every row", async ({ page }) => {
       const columnSettings = page.locator("#board-config-column-settings");
-      const doneBadge = columnSettings.locator(".join", { hasText: "Done" });
-      await doneBadge.locator("button:has(.basil--cross-outline)").click();
+      const doneCard = columnSettings.locator(".card").filter({
+        has: page.getByRole("heading", { name: "Done", exact: true }),
+      });
+      await doneCard.locator("summary").click();
+      await doneCard.getByRole("button", { name: "Destroy all Done columns" })
+        .click();
 
       await expect(columnSettings.getByText("Done", { exact: true }))
         .toHaveCount(0);

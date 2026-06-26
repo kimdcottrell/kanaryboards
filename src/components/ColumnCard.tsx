@@ -1,5 +1,4 @@
 import TaskCard from "./TaskCard.tsx";
-import Icon from "./Icon.tsx";
 import {
   useColumnEditActions,
   useColumnEditState,
@@ -84,7 +83,7 @@ export default function ColumnCard({ column, row }) {
                 onDoubleClick={() => editColumnTitle(column, row)}
                 title="Double-click to edit"
               >
-                {column.title}
+                <span>{column.title}</span>
                 <div className="ml-3 badge badge-sm badge-base-100 opacity-80">
                   {cellTasks.length}
                 </div>
