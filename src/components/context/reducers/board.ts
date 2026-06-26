@@ -69,6 +69,7 @@ export function reset(): BoardState {
       pinned: title === "In Progress" || title === "Review",
       icon: null,
       iconInBoardMenu: title === "In Progress" || title === "Review",
+      iconNearColumnTitle: false,
     })),
     rows: [{
       id: createId(),

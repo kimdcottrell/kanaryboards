@@ -55,6 +55,9 @@ export function boardReducer(
     case "COLUMN/TOGGLE_ICON_IN_BOARD_MENU":
       return columns.toggleIconInBoardMenu(state, action.payload);
 
+    case "COLUMN/TOGGLE_ICON_NEAR_COLUMN_TITLE":
+      return columns.toggleIconNearColumnTitle(state, action.payload);
+
     // ── ROWS ──────────────────────────────────────────────────────────────────
 
     case "ROW/ADD":

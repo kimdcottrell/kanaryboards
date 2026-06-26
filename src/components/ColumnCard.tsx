@@ -1,4 +1,5 @@
 import TaskCard from "./TaskCard.tsx";
+import DynamicIcon from "./DynamicIcon.tsx";
 import {
   useColumnEditActions,
   useColumnEditState,
@@ -79,10 +80,13 @@ export default function ColumnCard({ column, row }) {
             )
             : (
               <h4
-                className="text-xl font-semibold cursor-text font-roboto-slab"
-                onDoubleClick={() => editColumnTitle(column, row)}
+                className="text-xl font-semibold cursor-text font-roboto-slab flex items-center gap-2"
+                onDoubleClick={() => editColumnTitle(column, row.id)}
                 title="Double-click to edit"
               >
+                {column.iconNearColumnTitle && column.icon && (
+                  <DynamicIcon name={column.icon} className="h-5 w-5" />
+                )}
                 <span>{column.title}</span>
                 <div className="ml-3 badge badge-sm badge-base-100 opacity-80">
                   {cellTasks.length}

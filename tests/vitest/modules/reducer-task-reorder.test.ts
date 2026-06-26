@@ -30,6 +30,7 @@ function stateWithCell(): BoardState {
         pinned: false,
         icon: null,
         iconInBoardMenu: false,
+        iconNearColumnTitle: false,
       },
     ],
     tasks: [task("t1", "a0"), task("t2", "a1"), task("t3", "a2")],
@@ -125,6 +126,7 @@ function stateWithTwoColumns(): BoardState {
         pinned: false,
         icon: null,
         iconInBoardMenu: false,
+        iconNearColumnTitle: false,
       },
       {
         id: "col-2",
@@ -133,6 +135,7 @@ function stateWithTwoColumns(): BoardState {
         pinned: false,
         icon: null,
         iconInBoardMenu: false,
+        iconNearColumnTitle: false,
       },
     ],
     tasks: [
@@ -218,6 +221,7 @@ function stateWithTwoRows(): BoardState {
         pinned: false,
         icon: null,
         iconInBoardMenu: false,
+        iconNearColumnTitle: false,
       },
       {
         id: "col-2",
@@ -226,6 +230,7 @@ function stateWithTwoRows(): BoardState {
         pinned: false,
         icon: null,
         iconInBoardMenu: false,
+        iconNearColumnTitle: false,
       },
     ],
     tasks: [

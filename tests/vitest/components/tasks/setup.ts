@@ -35,6 +35,7 @@ export const mockColumn: Column = {
   pinned: false,
   icon: null,
   iconInBoardMenu: false,
+  iconNearColumnTitle: false,
 };
 export const secondColumn: Column = {
   id: "col-2",
@@ -43,6 +44,7 @@ export const secondColumn: Column = {
   pinned: false,
   icon: null,
   iconInBoardMenu: false,
+  iconNearColumnTitle: false,
 };
 export const secondRow: Row = {
   id: "row-2",

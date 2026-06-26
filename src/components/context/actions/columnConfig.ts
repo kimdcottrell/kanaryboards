@@ -60,9 +60,13 @@ export function useColumnConfigActions() {
       if (!Number.isNaN(fromIndex) && columns[fromIndex]) {
         const draggedId = columns[fromIndex].id;
         if (draggedId !== targetColumnId) {
+          const targetIndex = columns.findIndex((c) => c.id === targetColumnId);
+          const beforeColumnId = fromIndex < targetIndex
+            ? columns[targetIndex + 1]?.id ?? null
+            : targetColumnId;
           dispatch({
             type: "COLUMN/REORDER",
-            payload: { columnId: draggedId, beforeColumnId: targetColumnId },
+            payload: { columnId: draggedId, beforeColumnId },
           });
         }
       }
@@ -92,6 +96,11 @@ export function useColumnConfigActions() {
     toggleIconInBoardMenu: (columnId: string) =>
       dispatch({
         type: "COLUMN/TOGGLE_ICON_IN_BOARD_MENU",
+        payload: { columnId },
+      }),
+    toggleIconNearColumnTitle: (columnId: string) =>
+      dispatch({
+        type: "COLUMN/TOGGLE_ICON_NEAR_COLUMN_TITLE",
         payload: { columnId },
       }),
     handleDefaultColumnDragStart: (index: number) => (event: DragEvent) => {

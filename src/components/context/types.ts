@@ -19,6 +19,7 @@ export interface Column {
   pinned: boolean;
   icon: string | null;
   iconInBoardMenu: boolean;
+  iconNearColumnTitle: boolean;
 }
 
 export interface Task {
@@ -136,13 +137,17 @@ export type ColumnAction =
   | { type: "COLUMN/SET_DRAGGED_INDEX"; payload: { index: number | null } }
   | {
     type: "COLUMN/RENAME_START";
-    payload: { columnId: string; rowId: string; currentName: string };
+    payload: { columnId: string; rowId: string | null; currentName: string };
   }
   | { type: "COLUMN/RENAME_CHANGE"; payload: { name: string } }
   | { type: "COLUMN/RENAME_SAVE"; payload: { columnId: string } }
   | { type: "COLUMN/RENAME_CANCEL" }
   | { type: "COLUMN/TOGGLE_PIN"; payload: { columnId: string } }
-  | { type: "COLUMN/TOGGLE_ICON_IN_BOARD_MENU"; payload: { columnId: string } };
+  | { type: "COLUMN/TOGGLE_ICON_IN_BOARD_MENU"; payload: { columnId: string } }
+  | {
+    type: "COLUMN/TOGGLE_ICON_NEAR_COLUMN_TITLE";
+    payload: { columnId: string };
+  };
 
 export type RowAction =
   | {

@@ -33,6 +33,7 @@ const sampleBoard: PersistedBoard = {
       pinned: false,
       icon: null,
       iconInBoardMenu: false,
+      iconNearColumnTitle: false,
     },
     {
       id: "col-2",
@@ -41,6 +42,7 @@ const sampleBoard: PersistedBoard = {
       pinned: false,
       icon: null,
       iconInBoardMenu: false,
+      iconNearColumnTitle: false,
     },
   ],
   tasks: [

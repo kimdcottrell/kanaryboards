@@ -22,6 +22,7 @@ function stateWithTask(task: Task): BoardState {
         pinned: false,
         icon: null,
         iconInBoardMenu: false,
+        iconNearColumnTitle: false,
       },
       {
         id: "col-2",
@@ -30,6 +31,7 @@ function stateWithTask(task: Task): BoardState {
         pinned: false,
         icon: null,
         iconInBoardMenu: false,
+        iconNearColumnTitle: false,
       },
     ],
     tasks: [task],

@@ -18,6 +18,7 @@ export const createDemoBoard = () => {
     pinned: title === "In Progress" || title === "Review",
     icon: null,
     iconInBoardMenu: title === "In Progress" || title === "Review",
+    iconNearColumnTitle: false,
   }));
   const todoColId = columns[0].id;
   const inProgressColId = columns[1].id;

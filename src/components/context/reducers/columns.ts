@@ -9,7 +9,12 @@ export function add(
     ...state,
     columns: [
       ...state.columns,
-      { ...payload, pinned: false, iconInBoardMenu: false },
+      {
+        ...payload,
+        pinned: false,
+        iconInBoardMenu: false,
+        iconNearColumnTitle: false,
+      },
     ],
   };
 }
@@ -38,6 +43,23 @@ export function toggleIconInBoardMenu(
     columns: state.columns.map((c) =>
       c.id === payload.columnId
         ? { ...c, iconInBoardMenu: !c.iconInBoardMenu }
+        : c
+    ),
+  };
+}
+
+export function toggleIconNearColumnTitle(
+  state: BoardState,
+  payload: Extract<
+    ColumnAction,
+    { type: "COLUMN/TOGGLE_ICON_NEAR_COLUMN_TITLE" }
+  >["payload"],
+): BoardState {
+  return {
+    ...state,
+    columns: state.columns.map((c) =>
+      c.id === payload.columnId
+        ? { ...c, iconNearColumnTitle: !c.iconNearColumnTitle }
         : c
     ),
   };
