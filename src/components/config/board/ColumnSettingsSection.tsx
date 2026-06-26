@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { ReactNode } from "react";
 import AsyncCreatableSelect from "react-select/async-creatable";
 import BoardMenu from "../../BoardMenu.tsx";
 import DynamicIcon from "../../DynamicIcon.tsx";
@@ -75,6 +76,7 @@ export default function ColumnSettingsSection() {
           const dropFromLeft = draggedDefaultIndex !== null &&
             draggedDefaultIndex < index;
           const pinBlocked = !column.pinned && pinnedCount >= 3;
+          const fauxFlex1: ReactNode[] = [];
           return (
             <div
               key={column.id}
@@ -106,7 +108,7 @@ export default function ColumnSettingsSection() {
                   style={{ right: "-0.30rem" }}
                 />
               )}
-              <div className="w-xs h-full shrink-0 flex-col card card-border card-md bg-base-300 border-base-content/50 cursor-grab">
+              <div className="w-xs h-full shrink-0 card card-border card-md bg-base-300 border-base-content/50 cursor-grab">
                 <div className="card-body">
                   <h2 className="card-title">
                     <span className="group inline-flex w-fit cursor-text items-center gap-2">
@@ -175,36 +177,45 @@ export default function ColumnSettingsSection() {
                         </div>
                       )}
                     />
-                    {column.pinned && (
-                      <label
-                        key={`${column.id}-enable-shortcut-menu`}
-                        className="flex items-center gap-1 text-sm"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={column.iconInBoardMenu}
-                          onChange={() => toggleIconInBoardMenu(column.id)}
-                          className="checkbox checkbox-primary checkbox-sm"
-                        />
-                        Display on shortcut menu
-                      </label>
-                    )}
+                    {column.pinned
+                      ? (
+                        <label
+                          key={`${column.id}-enable-shortcut-menu`}
+                          className="flex items-center gap-1 text-sm"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={column.iconInBoardMenu}
+                            onChange={() => toggleIconInBoardMenu(column.id)}
+                            className="checkbox checkbox-primary checkbox-sm"
+                          />
+                          Display on shortcut menu
+                        </label>
+                      )
+                      : (fauxFlex1.push(
+                        <div
+                          key={`${column.id}-faux-flex-1`}
+                          className="h-5 p-2"
+                        >
+                        </div>,
+                      ),
+                        null)}
                     <label
                       key={`${column.id}-display-in-row`}
                       className="flex items-center gap-1 text-sm"
                     >
                       <input
                         type="checkbox"
-                        checked={false}
                         className="checkbox checkbox-primary checkbox-sm"
                       />
                       Display in row column near title
                     </label>
+
+                    {fauxFlex1}
                   </div>
-                  <div className="flex-1" />
                   <details
                     tabIndex={0}
-                    className="collapse mt-6 collapse-arrow bg-error/10 border-error border-1"
+                    className="collapse mt-6 collapse-arrow bg-error/10 border-error border-1 cursor-default"
                   >
                     <summary className="collapse-title flex items-center font-semibold text-error">
                       <span
@@ -216,7 +227,49 @@ export default function ColumnSettingsSection() {
                     </summary>
                     <div className="collapse-content text-sm space-y-3 font-bold">
                       <p>This change CANNOT be undone.</p>
-                      <p>The following tasks will be deleted if you proceed:</p>
+                      <p>
+                        The following{" "}
+                        <span className="badge badge-error badge-soft">
+                          12
+                        </span>{" "}
+                        tasks will be deleted if you proceed:
+                      </p>
+                      <ul className="menu-config bg-base-200 rounded w-full font-normal">
+                        <li className="menu-title font-bold font-varela-round text-error">
+                          Row A
+                        </li>
+                        <li>
+                          <span>Item 1</span>
+                        </li>
+                        <li>
+                          <span>Item 1</span>
+                        </li>
+                        <li>
+                          <span>Item 1</span>
+                        </li>
+                      </ul>
+                      <ul className="menu-config bg-base-200 rounded w-full font-normal">
+                        <li className="menu-title font-bold font-varela-round text-error">
+                          Row B
+                        </li>
+                        <li>
+                          <span>Item 1</span>
+                        </li>
+                        <li>
+                          <span>Item 1</span>
+                        </li>
+                      </ul>
+                      <ul className="menu-config bg-base-200 rounded w-full font-normal">
+                        <li className="menu-title font-bold font-varela-round text-error">
+                          Row C
+                        </li>
+                        <li>
+                          <span>Item 1</span>
+                        </li>
+                        <li>
+                          <span>Item 1</span>
+                        </li>
+                      </ul>
                       <button
                         type="button"
                         onClick={(event) => {

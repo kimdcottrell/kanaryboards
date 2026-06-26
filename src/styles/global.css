@@ -111,6 +111,16 @@
 }
 
 @layer utilities {
+  .menu-config {
+    display: flex;
+    flex-flow: column wrap;
+    padding: calc(0.5rem);
+    font-size: 0.875rem;
+
+    li {
+      padding: 2px;
+    }
+  }
   .fake-cursor {
     transition: opacity 0.1s;
   }
