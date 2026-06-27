@@ -10,7 +10,7 @@ import {
 import { useRenderCount } from "@lib/use-render-count.ts";
 import { beforeIdFromOrderedList, useDropTarget } from "@lib/drag.ts";
 
-export default function ColumnCard({ column, row }) {
+export default function ColumnCard({ column, row, headerLabel }) {
   const tasksByCell = useTasksByCell();
   const { draggedTask } = useDragState();
   const { editingColumnId, editingColumnRowId, editingColumnName } =
@@ -59,7 +59,16 @@ export default function ColumnCard({ column, row }) {
     >
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
-          {editingColumnId === column.id && editingColumnRowId === row.id
+          {headerLabel !== undefined
+            ? (
+              <h4 className="text-xl font-semibold font-roboto-slab flex items-center gap-2">
+                <span>{headerLabel}</span>
+                <div className="ml-3 badge badge-sm badge-base-100 opacity-80">
+                  {cellTasks.length}
+                </div>
+              </h4>
+            )
+            : editingColumnId === column.id && editingColumnRowId === row.id
             ? (
               <input
                 className="w-full border border-base-300 px-2 py-1 text-xl font-semibold outline-none focus:border-base-content/40"

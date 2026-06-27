@@ -35,6 +35,7 @@ export const createInitialState = (): BoardState => {
     draggedTask: null,
     boardConfigModalOpen: false,
     boardConfigScrollTarget: null,
+    selectedColumnIds: [],
   };
 };
 

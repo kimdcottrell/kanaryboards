@@ -6,6 +6,7 @@ import * as columns from "./reducers/columns.ts";
 import * as rows from "./reducers/rows.ts";
 import * as taskAi from "./reducers/taskAi.ts";
 import * as tasks from "./reducers/tasks.ts";
+import * as view from "./reducers/view.ts";
 
 export { createInitialState } from "./reducers/board.ts";
 
@@ -212,6 +213,11 @@ export function boardReducer(
 
     case "BOARD/RESET":
       return board.reset();
+
+    // ── VIEW ──────────────────────────────────────────────────────────────────
+
+    case "VIEW/TOGGLE_COLUMN_FILTER":
+      return view.toggleColumnFilter(state, action.payload);
 
     default:
       return state;

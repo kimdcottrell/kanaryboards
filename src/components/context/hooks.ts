@@ -7,6 +7,7 @@ export {
   useChecklistAIState,
   useColumnConfigState,
   useColumnEditState,
+  useColumnFilterState,
   useDragState,
   useRowEditState,
   useRowFormState,
@@ -26,3 +27,4 @@ export { handleChecklistKeyDown } from "./actions/shared.ts";
 export { useTaskActions } from "./actions/task.ts";
 export { useTaskCreateActions } from "./actions/taskCreate.ts";
 export { useTaskEditActions } from "./actions/taskEdit.ts";
+export { useColumnFilterActions } from "./actions/view.ts";

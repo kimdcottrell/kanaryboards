@@ -6,11 +6,12 @@ sequenceDiagram
     participant BoardMenu as BoardMenu<br/>(BoardMenu.tsx, #board-menu)
     participant Config as BoardConfigModal<br/>(BoardConfigModal.tsx +<br/>config/board/*Section.tsx)
     participant RowModal as CreateRowModal<br/>(config/board/CreateRowModal.tsx +<br/>CreateRowSection.tsx)
+    participant Board as RowBoard<br/>(RowBoard.tsx)
     participant Row as RowSection<br/>(RowSection.tsx)
     participant Cell as ColumnCard<br/>(ColumnCard.tsx)
-    participant Actions as action hooks<br/>(actions/boardConfig.ts,<br/>row*.ts, column*.ts)
-    participant Reducer as reducers<br/>(board.ts, rows.ts, columns.ts, taskAi.ts)
-    participant Ctx as BoardContext<br/>(BoardConfig/BoardData/RowForm/<br/>RowEdit/ColumnEdit/ColumnConfig)
+    participant Actions as action hooks<br/>(actions/boardConfig.ts,<br/>row*.ts, column*.ts, view.ts)
+    participant Reducer as reducers<br/>(board.ts, rows.ts, columns.ts, taskAi.ts, view.ts)
+    participant Ctx as BoardContext<br/>(BoardConfig/BoardData/RowForm/<br/>RowEdit/ColumnEdit/ColumnConfig/ColumnFilter)
     participant AI as /api/generate-tasks<br/>(Google GenAI)
 
     Note over User,AI: Open board configuration modal<br/>(gear icon, or "Add new column to all rows" menu item)
@@ -204,6 +205,26 @@ sequenceDiagram
     Reducer-->>Ctx: columns[columnId].pinned = !pinned
     Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: column.pinned changed)<br/>-> pin icon toggles filled/outline
     Ctx-->>BoardMenu: BoardView re-renders<br/>(BoardData: columns changed)<br/>-> #board-menu adds/removes that column's<br/>title+count item (always shown when pinned,<br/>regardless of iconInBoardMenu)
+    Note over Reducer: Unpinning also prunes the column from<br/>selectedColumnIds (columns.togglePin), so the<br/>view filter never references a non-menu column.
+
+    Note over User,AI: Filter board by pinned column (BoardMenu view filter)
+    User->>BoardMenu: click a pinned column item
+    BoardMenu->>Actions: toggleColumnFilter(columnId)<br/>(actions/view.ts)
+    Actions->>Ctx: dispatch(VIEW/TOGGLE_COLUMN_FILTER, {columnId})
+    Ctx->>Reducer: view.toggleColumnFilter(state, payload)
+    Reducer-->>Ctx: selectedColumnIds toggles the id<br/>(add if absent, remove if present)
+    Ctx-->>BoardMenu: BoardMenu re-renders<br/>(ColumnFilterContext: selectedColumnIds changed)<br/>-> selected items get the active background<br/>(bg-base-content/10, matching hover)
+    Ctx-->>Board: RowBoard re-renders<br/>(ColumnFilterContext: selectedColumnIds changed)
+    alt 0 selected
+        Board->>Row: render every RowSection with all columns
+    else >=2 selected
+        Board->>Row: render every RowSection;<br/>RowSection filters columns to selectedColumnIds
+        Row->>Cell: ColumnCards only for selected columns
+    else exactly 1 selected
+        Board->>Board: render CondensedColumnBoard<br/>(CondensedColumnBoard.tsx)<br/>-> single section titled with the column;<br/>each row pivots into a horizontal ColumnCard<br/>(column fixed, headerLabel = row.title)
+        Note over Cell: open/edit (TASK/OPEN_EDIT_MODAL) and drag<br/>reuse existing ColumnCard logic; dragging a task<br/>to another project column dispatches<br/>TASK/DROP_ON_CELL {toRowId, toColId: this column}
+    end
+    Note over Reducer: COLUMN/DELETE also prunes selectedColumnIds<br/>(columns.remove). selectedColumnIds is ephemeral —<br/>excluded from the autosave snapshot.
 
     Note over User,AI: Toggle "Display on shortcut menu" (per-column card,<br/>only shown once a column is pinned. Controls only<br/>whether that column's icon renders in the menu item -<br/>the item itself stays/goes based on pinned alone)
     User->>Config: check/uncheck "Display on shortcut menu"

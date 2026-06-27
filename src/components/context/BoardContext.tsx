@@ -15,6 +15,7 @@ import type {
   ChecklistAIState,
   ColumnConfigState,
   ColumnEditState,
+  ColumnFilterState,
   DragState,
   RowEditState,
   RowFormState,
@@ -138,6 +139,15 @@ const DragContext = createContext<DragState | null>(null);
 export function useDragState(): DragState {
   const v = useContext(DragContext);
   if (!v) throw new Error("useDragState must be used within a BoardProvider");
+  return v;
+}
+
+const ColumnFilterContext = createContext<ColumnFilterState | null>(null);
+export function useColumnFilterState(): ColumnFilterState {
+  const v = useContext(ColumnFilterContext);
+  if (!v) {
+    throw new Error("useColumnFilterState must be used within a BoardProvider");
+  }
   return v;
 }
 
@@ -387,6 +397,11 @@ export function BoardProvider(
     [state.draggedTask],
   );
 
+  const columnFilterState = useMemo(
+    () => ({ selectedColumnIds: state.selectedColumnIds }),
+    [state.selectedColumnIds],
+  );
+
   const tasksByCell = useMemo(
     () => computeTasksByCell(state.tasks),
     [state.tasks],
@@ -410,9 +425,15 @@ export function BoardProvider(
                         <TaskEditContext.Provider value={taskEditState}>
                           <ChecklistAIContext.Provider value={checklistAIState}>
                             <DragContext.Provider value={dragState}>
-                              <TasksByCellContext.Provider value={tasksByCell}>
-                                {children}
-                              </TasksByCellContext.Provider>
+                              <ColumnFilterContext.Provider
+                                value={columnFilterState}
+                              >
+                                <TasksByCellContext.Provider
+                                  value={tasksByCell}
+                                >
+                                  {children}
+                                </TasksByCellContext.Provider>
+                              </ColumnFilterContext.Provider>
                             </DragContext.Provider>
                           </ChecklistAIContext.Provider>
                         </TaskEditContext.Provider>

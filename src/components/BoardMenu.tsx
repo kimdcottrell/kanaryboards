@@ -2,6 +2,8 @@ import DynamicIcon from "./DynamicIcon.tsx";
 import {
   useBoardConfigActions,
   useBoardDataState,
+  useColumnFilterActions,
+  useColumnFilterState,
   useRowFormActions,
   useTaskActions,
 } from "./context/hooks.ts";
@@ -15,6 +17,8 @@ export default function BoardMenu(
   const { openBoardConfigModal } = useBoardConfigActions();
   const { openCreateRowModal } = useRowFormActions();
   const { openTaskForm } = useTaskActions();
+  const { selectedColumnIds } = useColumnFilterState();
+  const { toggleColumnFilter } = useColumnFilterActions();
 
   const pinnedColumns = columns.filter((c) => c.pinned);
 
@@ -45,7 +49,12 @@ export default function BoardMenu(
     >
       {pinnedColumns.map((column) => (
         <li key={column.id}>
-          <a onClick={handleClick()}>
+          <a
+            className={selectedColumnIds.includes(column.id)
+              ? "bg-base-content/10"
+              : undefined}
+            onClick={handleClick(() => toggleColumnFilter(column.id))}
+          >
             {column.iconInBoardMenu && column.icon && (
               <DynamicIcon name={column.icon} className="h-4 w-4" />
             )}

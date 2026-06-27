@@ -4,6 +4,7 @@ import CloseButton from "./buttons/CloseButton.tsx";
 import {
   useBoardDataState,
   useBoardMeta,
+  useColumnFilterState,
   useRowActions,
   useRowEditActions,
   useRowEditState,
@@ -13,6 +14,10 @@ import { useRenderCount } from "@lib/use-render-count.ts";
 export default function RowSection({ row }) {
   const [collapsed, setCollapsed] = useState(false);
   const { columns } = useBoardDataState();
+  const { selectedColumnIds } = useColumnFilterState();
+  const visibleColumns = selectedColumnIds.length
+    ? columns.filter((c) => selectedColumnIds.includes(c.id))
+    : columns;
   const { boardId } = useBoardMeta();
   const { editingRowId, editingRowName } = useRowEditState();
   const { setEditingRowName, editRowTitle, saveRowTitle } = useRowEditActions();
@@ -103,7 +108,7 @@ export default function RowSection({ row }) {
         {!collapsed && (
           <div id={`row-columns-${row.id}`} className="pb-4">
             <div className="flex gap-3">
-              {columns.map((column) => (
+              {visibleColumns.map((column) => (
                 <ColumnCard
                   key={column.id}
                   column={column}

@@ -23,11 +23,17 @@ export function togglePin(
   state: BoardState,
   payload: Extract<ColumnAction, { type: "COLUMN/TOGGLE_PIN" }>["payload"],
 ): BoardState {
+  const wasPinned = state.columns.find((c) => c.id === payload.columnId)?.pinned;
   return {
     ...state,
     columns: state.columns.map((c) =>
       c.id === payload.columnId ? { ...c, pinned: !c.pinned } : c
     ),
+    // Unpinning removes the column from the menu, so drop it from the view
+    // filter to avoid a stuck filtered state with no item to toggle off.
+    selectedColumnIds: wasPinned
+      ? state.selectedColumnIds.filter((id) => id !== payload.columnId)
+      : state.selectedColumnIds,
   };
 }
 
@@ -74,6 +80,7 @@ export function remove(
     ...state,
     columns: state.columns.filter((c) => c.id !== columnId),
     tasks: state.tasks.filter((t) => t.colId !== columnId),
+    selectedColumnIds: state.selectedColumnIds.filter((id) => id !== columnId),
   };
   if (state.taskCreateModalOpen && state.taskDraft.colId === columnId) {
     next = { ...next, taskCreateModalOpen: false };

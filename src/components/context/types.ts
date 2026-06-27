@@ -109,6 +109,12 @@ export interface DragState {
   draggedTask: Task | null;
 }
 
+// Ephemeral view filter: which pinned columns are selected from the BoardMenu.
+// Empty = show all columns. Not persisted (excluded from the autosave snapshot).
+export interface ColumnFilterState {
+  selectedColumnIds: string[];
+}
+
 export type BoardState =
   & BoardData
   & RowFormState
@@ -119,7 +125,8 @@ export type BoardState =
   & TaskCreateState
   & TaskEditState
   & ChecklistAIState
-  & DragState;
+  & DragState
+  & ColumnFilterState;
 
 // ── BOARD ACTIONS ──────────────────────────────────────────────────────────────
 
@@ -265,6 +272,9 @@ export type BoardConfigAction =
   | { type: "BOARD_CONFIG/OPEN_MODAL"; payload?: { scrollTarget?: string } }
   | { type: "BOARD_CONFIG/CLOSE_MODAL" };
 
+export type ViewAction =
+  | { type: "VIEW/TOGGLE_COLUMN_FILTER"; payload: { columnId: string } };
+
 export type BoardLifecycleAction =
   | { type: "BOARD/RESET" }
   | {
@@ -284,4 +294,5 @@ export type BoardAction =
   | ChecklistAIAction
   | TaskAIAction
   | BoardConfigAction
-  | BoardLifecycleAction;
+  | BoardLifecycleAction
+  | ViewAction;
