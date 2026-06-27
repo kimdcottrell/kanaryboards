@@ -7,10 +7,19 @@ import {
   useTaskActions,
   useTasksByCell,
 } from "./context/hooks.ts";
+
 import { useRenderCount } from "@lib/use-render-count.ts";
 import { beforeIdFromOrderedList, useDropTarget } from "@lib/drag.ts";
 
-export default function ColumnCard({ column, row, headerLabel }) {
+import type { Column, Row } from "./context/types.ts";
+
+export default function ColumnCard(
+  { column, row, headerLabel }: {
+    column: Column;
+    row: Row;
+    headerLabel?: string;
+  },
+) {
   const tasksByCell = useTasksByCell();
   const { draggedTask } = useDragState();
   const { editingColumnId, editingColumnRowId, editingColumnName } =

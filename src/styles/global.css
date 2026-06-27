@@ -48,15 +48,15 @@
   --color-primary-content: var(--catppuccin-color-base);
   --color-secondary: var(--catppuccin-color-lavender);
   --color-secondary-content: var(--catppuccin-color-base);
-  --color-accent: var(--catppuccin-color-pink);
+  --color-accent: var(--catppuccin-color-pink-400);
   --color-accent-content: var(--catppuccin-color-base);
   --color-neutral: var(--catppuccin-color-surface1);
   --color-neutral-content: var(--catppuccin-color-text);
   --color-info: var(--catppuccin-color-sky);
   --color-info-content: var(--catppuccin-color-base);
-  --color-success: var(--catppuccin-color-green);
+  --color-success: var(--catppuccin-color-green-300);
   --color-success-content: var(--catppuccin-color-base);
-  --color-warning: var(--catppuccin-color-peach);
+  --color-warning: var(--catppuccin-color-peach-600);
   --color-warning-content: var(--catppuccin-color-base);
   --color-error: var(--catppuccin-color-red-600);
   --color-error-content: var(--catppuccin-color-base);
@@ -111,6 +111,23 @@
 }
 
 @layer utilities {
+  .drawer-side {
+    ul {
+      li {
+        button {
+          @apply grid grid-cols-[1.5rem_1fr] items-center gap-1;
+        }
+
+        .iconify {
+          @apply justify-self-center text-xl;
+        }
+
+        span:not(.iconify) {
+          @apply leading-loose;
+        }
+      }
+    }
+  }
   .menu-config {
     display: flex;
     flex-flow: column wrap;

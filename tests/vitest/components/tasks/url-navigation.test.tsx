@@ -20,6 +20,8 @@ vi.mock("react-router-dom", async (importOriginal) => {
 vi.mock("@components/context/hooks.ts", () => ({
   useTaskActions: vi.fn(),
   useRowFormActions: vi.fn(),
+  useColumnFilterState: vi.fn(),
+  useColumnFilterActions: vi.fn(),
   useBoardDataState: vi.fn(),
   useBoardConfigActions: vi.fn(),
   useTaskEditState: vi.fn(),
@@ -51,6 +53,8 @@ import {
   useBoardRefs,
   useChecklistAIActions,
   useChecklistAIState,
+  useColumnFilterActions,
+  useColumnFilterState,
   useRowFormActions,
   useTaskActions,
   useTaskEditActions,
@@ -80,6 +84,10 @@ beforeEach(() => {
   mockNavigate.mockClear();
   delete mockParams.taskId;
   vi.mocked(useTaskActions).mockReturnValue(makeTaskActions());
+  vi.mocked(useColumnFilterState).mockReturnValue({ selectedColumnIds: [] });
+  vi.mocked(useColumnFilterActions).mockReturnValue({
+    toggleColumnFilter: vi.fn(),
+  });
   vi.mocked(useRowFormActions).mockReturnValue({
     setNewRowName: vi.fn(),
     setNewRowPrompt: vi.fn(),

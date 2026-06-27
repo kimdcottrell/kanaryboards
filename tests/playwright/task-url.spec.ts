@@ -46,12 +46,15 @@ test.describe("Task URL", () => {
     await page.locator("dialog").getByRole("button", { name: "Create task" })
       .click();
 
-    // Task card is visible and URL is still /dashboard
-    await expect(page.getByText("My URL Test Task")).toBeVisible();
+    // Task card is visible and URL is still /dashboard. Use the heading role to
+    // disambiguate from the column-settings delete preview, which also lists the
+    // task title as a <span>.
+    await expect(page.getByRole("heading", { name: "My URL Test Task" }))
+      .toBeVisible();
     expect(new URL(page.url()).pathname).toBe("/dashboard");
 
     // Click the task title to open the edit modal
-    await page.getByText("My URL Test Task").click();
+    await page.getByRole("heading", { name: "My URL Test Task" }).click();
 
     // URL is now /dashboard/task/:id
     await expect(page).toHaveURL(/\/dashboard\/task\/.+/);

@@ -22,9 +22,31 @@ const BOARD_STATE = {
     },
   ],
   columns: [
-    { id: "col-e2e-1", title: "To Do", order: "a0" },
-    { id: "col-e2e-2", title: "In Progress", order: "a1" },
-    { id: "col-e2e-3", title: "Done", order: "a2" },
+    {
+      id: "col-e2e-1",
+      title: "To Do",
+      order: "a0",
+      pinned: false,
+      iconInBoardMenu: false,
+      iconNearColumnTitle: false,
+    },
+    {
+      id: "col-e2e-2",
+      title: "In Progress",
+      order: "a1",
+      pinned: false,
+      icon: "tick-01",
+      iconInBoardMenu: false,
+      iconNearColumnTitle: false,
+    },
+    {
+      id: "col-e2e-3",
+      title: "Done",
+      order: "a2",
+      pinned: false,
+      iconInBoardMenu: false,
+      iconNearColumnTitle: false,
+    },
   ],
   tasks: [
     {
@@ -73,6 +95,9 @@ test.describe("Board CRUD", () => {
       document.querySelector("dialog.modal-open .modal-backdrop")
         ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
+    // Wait for the modal to actually close so its backdrop no longer intercepts
+    // pointer events on the board behind it before the test interacts with it.
+    await expect(page.locator("dialog.modal-open")).toHaveCount(0);
   }
 
   test.describe("column management", () => {
@@ -81,16 +106,27 @@ test.describe("Board CRUD", () => {
       await expect(page.locator("#board-config-column-settings"))
         .toBeVisible();
     });
-    test("adds a new default column to every row", async ({ page }) => {
+    test("adds a new column via the create-column form", async ({ page }) => {
       const columnSettings = page.locator("#board-config-column-settings");
-      const input = columnSettings.getByPlaceholder("Add new column");
-      // The Enter handler reads the column title from React state, so commit the
-      // value (retrying if an early re-render clobbers it) before the keypress.
-      await fillStable(input, "Backlog");
-      await input.press("Enter");
+      const createColumn = page.locator("#create-new-column");
 
-      await expect(columnSettings.getByText("Backlog", { exact: true }))
-        .toBeVisible();
+      // The submit handler reads the name from React state, so commit the value
+      // (retrying if an early re-render clobbers it) before submitting.
+      await fillStable(createColumn.locator("input[type='text']"), "Backlog");
+      // Place "Backlog" to the right of "Done"; the two selects are direction
+      // then reference column.
+      const selects = createColumn.locator("select");
+      await selects.nth(0).selectOption({ label: "Right" });
+      await selects.nth(1).selectOption({ label: "Done" });
+      await createColumn.getByRole("button", { name: "Add Column" }).click();
+
+      // Scope to the column card's heading — "Backlog" also appears as an
+      // <option> in the "Of column" select.
+      await expect(
+        columnSettings.locator("div[draggable='true']").filter({
+          has: page.getByRole("heading", { name: "Backlog", exact: true }),
+        }),
+      ).toBeVisible();
       await expect(
         page.locator("#row-columns-row-e2e-1").getByText("Backlog", {
           exact: true,
@@ -103,14 +139,18 @@ test.describe("Board CRUD", () => {
       ).toBeVisible();
     });
 
-    test("deletes a default column from every row", async ({ page }) => {
+    test("deletes a column and its tasks from the config", async ({ page }) => {
       const columnSettings = page.locator("#board-config-column-settings");
-      const doneCard = columnSettings.locator(".card").filter({
+      // Filter by the card heading, not text: every card's body contains
+      // "...undone", which a case-insensitive hasText:"Done" would match.
+      const doneCard = columnSettings.locator("div[draggable='true']").filter({
         has: page.getByRole("heading", { name: "Done", exact: true }),
       });
+      // Expand the card's "Delete the column" disclosure, then destroy it.
       await doneCard.locator("summary").click();
-      await doneCard.getByRole("button", { name: "Destroy all Done columns" })
-        .click();
+      await doneCard.getByRole("button", {
+        name: "Destroy column and all tasks",
+      }).click();
 
       await expect(columnSettings.getByText("Done", { exact: true }))
         .toHaveCount(0);
@@ -123,13 +163,19 @@ test.describe("Board CRUD", () => {
 
     test("renames a column inline and reflects the change everywhere", async ({ page }) => {
       await closeBoardConfigModal(page);
-      const todoHeading = page.locator("#row-columns-row-e2e-1").getByText(
-        "To Do",
-        { exact: true },
-      );
-      await todoHeading.dblclick();
-
+      // Double-click the column header itself (the <h4> carries the handler; its
+      // title sits in a child <span>, so target the heading, not the text node).
+      const todoHeading = page.locator("#row-columns-row-e2e-1 h4").filter({
+        hasText: "To Do",
+      });
       const input = page.locator("#row-columns-row-e2e-1 input[type='text']");
+      // The first double-click right after the config modal closes can be
+      // dropped while React settles the close re-render, so retry the
+      // double-click until inline edit mode actually engages.
+      await expect(async () => {
+        await todoHeading.dblclick();
+        await expect(input).toBeVisible({ timeout: 1000 });
+      }).toPass();
       await input.fill("Backlog");
       await input.press("Enter");
 
@@ -145,14 +191,17 @@ test.describe("Board CRUD", () => {
       ).toBeVisible();
 
       await openBoardConfigModal(page);
+      // Scope to the column card heading — "Backlog" also appears as an
+      // <option> in the "Of column" select.
       await expect(
-        page.locator("#board-config-column-settings").getByText("Backlog", {
-          exact: true,
-        }),
+        page.locator("#board-config-column-settings div[draggable='true']")
+          .filter({
+            has: page.getByRole("heading", { name: "Backlog", exact: true }),
+          }),
       ).toBeVisible();
     });
 
-    test("dragging a column badge updates drag/hover visuals and reorders columns", async ({ page }) => {
+    test("reordering a column card updates drag visuals and order", async ({ page }) => {
       const columnSettings = page.locator("#board-config-column-settings");
       const badges = columnSettings.locator("div[draggable='true']");
 
@@ -195,7 +244,7 @@ test.describe("Board CRUD", () => {
       }, dataTransfer);
 
       // Hovering "Done" while "To Do" is dragged shows a drop indicator on it.
-      await expect(badges.nth(2).locator("span.bg-secondary")).toBeVisible();
+      await expect(badges.nth(2).locator("span.bg-accent")).toBeVisible();
 
       await page.evaluate((dataTransfer) => {
         const badges = document.querySelectorAll(
@@ -213,14 +262,69 @@ test.describe("Board CRUD", () => {
         fire(badges[0], "dragend");
       }, dataTransfer);
 
-      // "To Do" is reordered to sit before "Done": In Progress, To Do, Done.
+      // Dropping onto the last column ("Done") places "To Do" after it, so the
+      // order becomes In Progress, Done, To Do.
       await expect(badges.nth(0)).toContainText("In Progress");
-      await expect(badges.nth(1)).toContainText("To Do");
-      await expect(badges.nth(2)).toContainText("Done");
+      await expect(badges.nth(1)).toContainText("Done");
+      await expect(badges.nth(2)).toContainText("To Do");
 
       // Drag visuals reset once dragging ends.
-      await expect(badges.nth(1)).toHaveCSS("opacity", "1");
-      await expect(columnSettings.locator("span.bg-secondary")).toHaveCount(0);
+      await expect(badges.nth(2)).toHaveCSS("opacity", "1");
+      await expect(columnSettings.locator("span.bg-accent")).toHaveCount(0);
+    });
+
+    test("pins a column to the board shortcut menu", async ({ page }) => {
+      const columnSettings = page.locator("#board-config-column-settings");
+      const inProgressCard = columnSettings.locator("div[draggable='true']")
+        .filter({
+          has: page.getByRole("heading", { name: "In Progress", exact: true }),
+        });
+      // The shortcut-menu link wraps the title plus a task-count badge, so match
+      // the link by substring rather than an exact text node.
+      const menuLink = page.locator("#board-menu a").filter({
+        hasText: "In Progress",
+      });
+
+      // Seeded columns start unpinned and absent from the shortcut menu.
+      await expect(menuLink).toHaveCount(0);
+
+      await inProgressCard.getByRole("button", {
+        name: "Pin column to board menu",
+      }).click();
+
+      // The pin toggles to an unpin control and the column joins the menu.
+      await expect(
+        inProgressCard.getByRole("button", {
+          name: "Unpin column from board menu",
+        }),
+      ).toBeVisible();
+      await expect(menuLink).toBeVisible();
+    });
+
+    test("toggles displaying a column icon", async ({ page }) => {
+      const columnSettings = page.locator("#board-config-column-settings");
+      const inProgressCard = columnSettings.locator("div[draggable='true']")
+        .filter({
+          has: page.getByRole("heading", { name: "In Progress", exact: true }),
+        });
+      // col-e2e-2 is seeded with an icon but iconNearColumnTitle: false, so the
+      // icon stays hidden until the checkbox is enabled.
+      const checkbox = inProgressCard.locator("label", {
+        hasText: "Display icon near column title",
+      }).locator("input[type='checkbox']");
+
+      await expect(checkbox).not.toBeChecked();
+      const inProgressHeader = page.locator("#row-columns-row-e2e-1 h4").filter({
+        hasText: "In Progress",
+      });
+      await expect(inProgressHeader.locator("svg")).toHaveCount(0);
+
+      await checkbox.click();
+
+      await expect(checkbox).toBeChecked();
+      // DynamicIcon resolves the hugeicon asynchronously; Playwright auto-waits
+      // for the rendered <svg> to appear next to the column title.
+      await expect(inProgressHeader.locator("svg")).toBeVisible();
     });
   });
 
@@ -340,10 +444,10 @@ test.describe("Board CRUD", () => {
         page.getByRole("textbox", { name: "Title" }),
         "Write detailed specs",
       );
-      await page.locator("#edit-column-select-task-e2e-1").selectOption(
+      await page.locator("#column-select-task-e2e-1").selectOption(
         "col-e2e-2",
       );
-      await page.locator("#edit-row-select-task-e2e-1").selectOption(
+      await page.locator("#row-select-task-e2e-1").selectOption(
         "row-e2e-2",
       );
       await page.locator("dialog").getByRole("button", { name: "Save" })

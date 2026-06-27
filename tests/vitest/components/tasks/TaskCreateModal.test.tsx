@@ -150,10 +150,10 @@ describe("TaskCreateModal", () => {
     );
     const { container } = render(<TaskCreateModal />);
     const status = container.querySelector<HTMLSelectElement>(
-      "#create-column-select",
+      "#column-select-new",
     );
     const row = container.querySelector<HTMLSelectElement>(
-      "#create-row-select",
+      "#row-select-new",
     );
     expect(status?.required).toBe(true);
     expect(row?.required).toBe(true);
@@ -168,11 +168,11 @@ describe("TaskCreateModal", () => {
     );
     const { container } = render(<TaskCreateModal />);
     expect(
-      container.querySelector<HTMLSelectElement>("#create-column-select")
+      container.querySelector<HTMLSelectElement>("#column-select-new")
         ?.value,
     ).toBe("");
     expect(
-      container.querySelector<HTMLSelectElement>("#create-row-select")?.value,
+      container.querySelector<HTMLSelectElement>("#row-select-new")?.value,
     ).toBe("");
   });
 });

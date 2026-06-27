@@ -21,8 +21,8 @@ test.describe("Board menu — add dropdown", () => {
 
     await expect(page.getByRole("heading", { name: "Add task" })).toBeVisible();
 
-    const statusSelect = page.locator("#create-column-select");
-    const rowSelect = page.locator("#create-row-select");
+    const statusSelect = page.locator("#column-select-new");
+    const rowSelect = page.locator("#row-select-new");
     await expect(statusSelect).toBeVisible();
     await expect(rowSelect).toBeVisible();
     // No default cell when opened from the global menu.
