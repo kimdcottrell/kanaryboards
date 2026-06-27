@@ -217,9 +217,7 @@ export default function TaskForm({
               </option>
             ))}
           </select>
-          {requireRowColumn && (
-            <span className="validator-hint">Required</span>
-          )}
+          {requireRowColumn && <span className="validator-hint">Required</span>}
         </fieldset>
         <fieldset className="fieldset">
           <label
@@ -245,9 +243,7 @@ export default function TaskForm({
               </option>
             ))}
           </select>
-          {requireRowColumn && (
-            <span className="validator-hint">Required</span>
-          )}
+          {requireRowColumn && <span className="validator-hint">Required</span>}
         </fieldset>
       </div>
       <div className="grid grid-cols-2 gap-4 items-start">

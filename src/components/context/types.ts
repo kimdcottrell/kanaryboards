@@ -272,8 +272,10 @@ export type BoardConfigAction =
   | { type: "BOARD_CONFIG/OPEN_MODAL"; payload?: { scrollTarget?: string } }
   | { type: "BOARD_CONFIG/CLOSE_MODAL" };
 
-export type ViewAction =
-  | { type: "VIEW/TOGGLE_COLUMN_FILTER"; payload: { columnId: string } };
+export type ViewAction = {
+  type: "VIEW/TOGGLE_COLUMN_FILTER";
+  payload: { columnId: string };
+};
 
 export type BoardLifecycleAction =
   | { type: "BOARD/RESET" }

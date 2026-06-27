@@ -23,7 +23,8 @@ export function togglePin(
   state: BoardState,
   payload: Extract<ColumnAction, { type: "COLUMN/TOGGLE_PIN" }>["payload"],
 ): BoardState {
-  const wasPinned = state.columns.find((c) => c.id === payload.columnId)?.pinned;
+  const wasPinned = state.columns.find((c) => c.id === payload.columnId)
+    ?.pinned;
   return {
     ...state,
     columns: state.columns.map((c) =>

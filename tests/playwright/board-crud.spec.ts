@@ -314,9 +314,11 @@ test.describe("Board CRUD", () => {
       }).locator("input[type='checkbox']");
 
       await expect(checkbox).not.toBeChecked();
-      const inProgressHeader = page.locator("#row-columns-row-e2e-1 h4").filter({
-        hasText: "In Progress",
-      });
+      const inProgressHeader = page.locator("#row-columns-row-e2e-1 h4").filter(
+        {
+          hasText: "In Progress",
+        },
+      );
       await expect(inProgressHeader.locator("svg")).toHaveCount(0);
 
       await checkbox.click();
