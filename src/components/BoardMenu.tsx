@@ -1,17 +1,24 @@
 import DynamicIcon from "./DynamicIcon.tsx";
-import { useBoardConfigActions, useBoardDataState } from "./context/hooks.ts";
+import {
+  useBoardConfigActions,
+  useBoardDataState,
+  useRowFormActions,
+  useTaskActions,
+} from "./context/hooks.ts";
 
 export default function BoardMenu(
   { isSticky, isPreview }: { isSticky?: boolean; isPreview?: boolean },
 ) {
   const { tasks, columns } = useBoardDataState();
   const { openBoardConfigModal } = useBoardConfigActions();
+  const { openCreateRowModal } = useRowFormActions();
+  const { openTaskForm } = useTaskActions();
 
   const pinnedColumns = columns.filter((c) => c.pinned);
 
   return (
     <ul
-      id="board-menu"
+      id={isPreview ? undefined : "board-menu"}
       className={`menu
         ${
         isPreview
@@ -22,7 +29,8 @@ export default function BoardMenu(
       }
         z-100 bg-base-100
         lg:menu-horizontal rounded-box
-        w-fit
+        justify-center
+        flex
       `}
     >
       {pinnedColumns.map((column) => (
@@ -39,12 +47,40 @@ export default function BoardMenu(
         </li>
       ))}
       <li>
+        <details>
+          <summary>
+            <span className="iconify hugeicons--dashboard-square-add text-xl">
+            </span>
+          </summary>
+          <ul className="w-max">
+            <li>
+              <a onClick={() => openTaskForm("", "")}>
+                <span className="iconify hugeicons--add-square"></span>Create
+                new task
+              </a>
+            </li>
+            <li>
+              <a onClick={openCreateRowModal}>
+                <span className="iconify hugeicons--row-insert"></span>Add new
+                project row
+              </a>
+            </li>
+            <li>
+              <a onClick={() => openBoardConfigModal("create-new-column")}>
+                <span className="iconify hugeicons--column-insert"></span>Add
+                new column to all rows
+              </a>
+            </li>
+          </ul>
+        </details>
+      </li>
+
+      <li>
         <a
           id={isPreview ? undefined : "board-config-collapse-toggle"}
-          onClick={openBoardConfigModal}
+          onClick={() => openBoardConfigModal()}
         >
-          <span className="iconify hugeicons--settings-01"></span>
-          Board Config
+          <span className="iconify hugeicons--settings-01 text-xl"></span>
         </a>
       </li>
     </ul>

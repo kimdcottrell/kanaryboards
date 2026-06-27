@@ -1,5 +1,5 @@
+import { useEffect } from "react";
 import Modal from "./Modal.tsx";
-import CreateRowSection from "./config/board/CreateRowSection.tsx";
 import ColumnSettingsSection from "./config/board/ColumnSettingsSection.tsx";
 import RowSettingsSection from "./config/board/RowSettingsSection.tsx";
 import DangerZoneSection from "./config/board/DangerZoneSection.tsx";
@@ -7,9 +7,24 @@ import { useBoardConfigActions, useBoardConfigState } from "./context/hooks.ts";
 import { useRenderCount } from "@lib/use-render-count.ts";
 
 export default function BoardConfigModal() {
-  const { boardConfigModalOpen } = useBoardConfigState();
+  const { boardConfigModalOpen, boardConfigScrollTarget } =
+    useBoardConfigState();
   const { closeBoardConfigModal } = useBoardConfigActions();
   const renderCount = useRenderCount();
+
+  // When opened with a scroll target (e.g. "Add new column to all rows" jumps to
+  // #create-new-column), scroll it into view. The modal is a DaisyUI <dialog>
+  // whose children are always mounted; defer one frame so the now-visible dialog
+  // is laid out before scrolling. The target only changes on dispatch and is
+  // cleared on close, so this fires once per open.
+  useEffect(() => {
+    if (!boardConfigModalOpen || !boardConfigScrollTarget) return;
+    requestAnimationFrame(() => {
+      document.getElementById(boardConfigScrollTarget)?.scrollIntoView({
+        block: "start",
+      });
+    });
+  }, [boardConfigModalOpen, boardConfigScrollTarget]);
 
   return (
     <Modal open={boardConfigModalOpen} onClose={closeBoardConfigModal}>
@@ -21,7 +36,6 @@ export default function BoardConfigModal() {
           Add rows and columns, then place tasks into each column. Each task can
           include a title, description, and optional checklist.
         </p>
-        <CreateRowSection />
         <ColumnSettingsSection />
         <RowSettingsSection />
         <DangerZoneSection />

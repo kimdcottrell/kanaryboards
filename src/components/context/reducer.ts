@@ -96,6 +96,12 @@ export function boardReducer(
     case "ROW/RESET_FORM":
       return rows.resetForm(state);
 
+    case "ROW/OPEN_CREATE_MODAL":
+      return rows.openRowCreateModal(state);
+
+    case "ROW/CLOSE_CREATE_MODAL":
+      return rows.closeRowCreateModal(state);
+
     // ── TASKS ─────────────────────────────────────────────────────────────────
 
     case "TASK/CREATE":
@@ -194,7 +200,7 @@ export function boardReducer(
     // ── BOARD CONFIG ──────────────────────────────────────────────────────────
 
     case "BOARD_CONFIG/OPEN_MODAL":
-      return board.openConfigModal(state);
+      return board.openConfigModal(state, action.payload);
 
     case "BOARD_CONFIG/CLOSE_MODAL":
       return board.closeConfigModal(state);

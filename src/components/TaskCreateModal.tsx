@@ -2,6 +2,7 @@ import Modal from "./Modal.tsx";
 import TaskForm from "./TaskForm.tsx";
 import {
   handleChecklistKeyDown,
+  useBoardDataState,
   useBoardRefs,
   useChecklistAIActions,
   useChecklistAIState,
@@ -11,6 +12,7 @@ import {
 } from "./context/hooks.ts";
 
 export default function TaskCreateModal() {
+  const { columns, rows } = useBoardDataState();
   const { taskCreateModalOpen, taskDraft } = useTaskCreateState();
   const {
     setTaskDraft,
@@ -61,7 +63,58 @@ export default function TaskCreateModal() {
           generateChecklistItems={generateChecklistItems}
           applyChecklist={applyChecklistPreviewToDraft}
           clearChecklistPreview={clearChecklistPreview}
-        />
+        >
+          <div className="grid grid-cols-2 gap-4 items-start">
+            <fieldset className="fieldset">
+              <label className="fieldset-legend" htmlFor="create-column-select">
+                Status
+              </label>
+              <select
+                id="create-column-select"
+                className="select select-bordered validator w-full"
+                value={taskDraft.colId}
+                onChange={(e) =>
+                  setTaskDraft({
+                    ...taskDraft,
+                    colId: e.currentTarget.value,
+                  })}
+                required
+              >
+                <option value="">Select a status</option>
+                {columns.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.title}
+                  </option>
+                ))}
+              </select>
+              <span className="validator-hint">Required</span>
+            </fieldset>
+            <fieldset className="fieldset">
+              <label className="fieldset-legend" htmlFor="create-row-select">
+                Row
+              </label>
+              <select
+                id="create-row-select"
+                className="select select-bordered validator w-full"
+                value={taskDraft.rowId}
+                onChange={(e) =>
+                  setTaskDraft({
+                    ...taskDraft,
+                    rowId: e.currentTarget.value,
+                  })}
+                required
+              >
+                <option value="">Select a row</option>
+                {rows.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.title}
+                  </option>
+                ))}
+              </select>
+              <span className="validator-hint">Required</span>
+            </fieldset>
+          </div>
+        </TaskForm>
       )}
     </Modal>
   );

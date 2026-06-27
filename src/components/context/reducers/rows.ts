@@ -145,3 +145,11 @@ export function resetForm(state: BoardState): BoardState {
     newRowFormKey: state.newRowFormKey + 1,
   };
 }
+
+export function openRowCreateModal(state: BoardState): BoardState {
+  return { ...state, createRowModalOpen: true };
+}
+
+export function closeRowCreateModal(state: BoardState): BoardState {
+  return { ...state, createRowModalOpen: false };
+}

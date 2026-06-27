@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 import type { Page } from "@playwright/test";
-import { expect, testNoClerk as test } from "./fixtures.ts";
+import { expect, openCreateRowModal, testNoClerk as test } from "./fixtures.ts";
 
 /**
  * Verifies improved rendering: modal-only state (ChecklistAIState,
@@ -125,8 +125,8 @@ test.describe("Render isolation (individual components render on use, instead of
     expect(await shellRenderCounts(page)).toEqual(before);
   });
 
-  test("typing a new row name in board configuration does not re-render row sections, column cards, or task cards", async ({ page }) => {
-    await page.locator("#board-config-collapse-toggle").click();
+  test("typing a new row name in the create-row modal does not re-render row sections, column cards, or task cards", async ({ page }) => {
+    await openCreateRowModal(page);
     const before = await shellRenderCounts(page);
     expect(before.row).not.toBeNull();
 

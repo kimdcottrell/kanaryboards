@@ -42,13 +42,15 @@ export interface BoardData {
   boardLoaded: boolean;
 }
 
-// "Create a new row" form, including AI task generation (CreateRowSection).
+// "Create a new row" form, including AI task generation (CreateRowSection),
+// and the dedicated modal it lives in (CreateRowModal).
 export interface RowFormState {
   newRowName: string;
   newRowPrompt: string;
   newRowFormKey: number;
   isGeneratingTasks: boolean;
   taskGenerationStatus: string;
+  createRowModalOpen: boolean;
 }
 
 // Inline row title editing (RowSection).
@@ -71,9 +73,12 @@ export interface ColumnConfigState {
   draggedDefaultIndex: number | null;
 }
 
-// Board configuration modal (BoardConfigModal).
+// Board configuration modal (BoardConfigModal). boardConfigScrollTarget is the
+// id of an element to scroll into view after the modal opens (e.g. opening it
+// from "Add new column to all rows" jumps to #create-new-column); null = top.
 export interface BoardConfigState {
   boardConfigModalOpen: boolean;
+  boardConfigScrollTarget: string | null;
 }
 
 // Task creation modal (TaskCreateModal).
@@ -164,7 +169,9 @@ export type RowAction =
   | { type: "ROW/RENAME"; payload: { rowId: string; name: string } }
   | { type: "ROW/SET_NEW_NAME"; payload: { name: string } }
   | { type: "ROW/SET_NEW_PROMPT"; payload: { prompt: string } }
-  | { type: "ROW/RESET_FORM" };
+  | { type: "ROW/RESET_FORM" }
+  | { type: "ROW/OPEN_CREATE_MODAL" }
+  | { type: "ROW/CLOSE_CREATE_MODAL" };
 
 export type TaskAction =
   | { type: "TASK/CREATE"; payload: { task: Task } }
@@ -255,7 +262,7 @@ export type TaskAIAction =
   | { type: "TASK_AI/GENERATE_FAILURE"; payload: { error: string } };
 
 export type BoardConfigAction =
-  | { type: "BOARD_CONFIG/OPEN_MODAL" }
+  | { type: "BOARD_CONFIG/OPEN_MODAL"; payload?: { scrollTarget?: string } }
   | { type: "BOARD_CONFIG/CLOSE_MODAL" };
 
 export type BoardLifecycleAction =

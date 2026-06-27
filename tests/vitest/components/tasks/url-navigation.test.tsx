@@ -19,6 +19,7 @@ vi.mock("react-router-dom", async (importOriginal) => {
 
 vi.mock("@components/context/hooks.ts", () => ({
   useTaskActions: vi.fn(),
+  useRowFormActions: vi.fn(),
   useBoardDataState: vi.fn(),
   useBoardConfigActions: vi.fn(),
   useTaskEditState: vi.fn(),
@@ -31,6 +32,9 @@ vi.mock("@components/context/hooks.ts", () => ({
 
 // Stub heavy child components used by BoardView that aren't under test here
 vi.mock("@components/BoardConfigModal.tsx", () => ({ default: () => null }));
+vi.mock("@components/config/board/CreateRowModal.tsx", () => ({
+  default: () => null,
+}));
 vi.mock("@components/RowBoard.tsx", () => ({ default: () => null }));
 vi.mock("@components/TaskCreateModal.tsx", () => ({ default: () => null }));
 // TaskEditModal is NOT mocked — it is rendered directly in tests below
@@ -47,6 +51,7 @@ import {
   useBoardRefs,
   useChecklistAIActions,
   useChecklistAIState,
+  useRowFormActions,
   useTaskActions,
   useTaskEditActions,
   useTaskEditState,
@@ -75,6 +80,14 @@ beforeEach(() => {
   mockNavigate.mockClear();
   delete mockParams.taskId;
   vi.mocked(useTaskActions).mockReturnValue(makeTaskActions());
+  vi.mocked(useRowFormActions).mockReturnValue({
+    setNewRowName: vi.fn(),
+    setNewRowPrompt: vi.fn(),
+    openCreateRowModal: vi.fn(),
+    closeCreateRowModal: vi.fn(),
+    addRow: vi.fn(),
+    generateTasksForRow: vi.fn(),
+  });
   vi.mocked(useBoardDataState).mockReturnValue(makeBoardDataState());
   vi.mocked(useBoardConfigActions).mockReturnValue({
     openBoardConfigModal: vi.fn(),

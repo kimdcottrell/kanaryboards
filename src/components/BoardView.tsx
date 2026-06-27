@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import BoardConfigModal from "./BoardConfigModal.tsx";
 import BoardMenu from "./BoardMenu.tsx";
+import CreateRowModal from "./config/board/CreateRowModal.tsx";
 import RowBoard from "./RowBoard.tsx";
 import TaskCreateModal from "./TaskCreateModal.tsx";
 import TaskEditModal from "./TaskEditModal.tsx";
@@ -52,6 +53,7 @@ export default function BoardView() {
       <BoardMenu isSticky={isSticky} />
 
       <BoardConfigModal data-testid="board-configuration" />
+      <CreateRowModal data-testid="create-row-modal" />
       <RowBoard data-testid="row-board" />
       <TaskCreateModal data-testid="task-create-modal" />
       <TaskEditModal data-testid="task-edit-modal" />

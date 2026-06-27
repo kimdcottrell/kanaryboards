@@ -18,7 +18,7 @@ export default function CreateRowSection() {
       <h3 className="text-lg font-semibold">Create a new row</h3>
       <form
         key={newRowFormKey}
-        className="space-y-4 mt-4"
+        className="space-y-3 mt-4"
         onSubmit={addRow}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

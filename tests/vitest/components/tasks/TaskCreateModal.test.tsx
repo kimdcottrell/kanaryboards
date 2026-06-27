@@ -2,6 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
+  makeBoardDataState,
   makeBoardRefs,
   makeChecklistAIActions,
   makeChecklistAIState,
@@ -12,6 +13,7 @@ import {
 } from "./setup.ts";
 
 vi.mock("@components/context/hooks.ts", () => ({
+  useBoardDataState: vi.fn(),
   useTaskCreateState: vi.fn(),
   useTaskCreateActions: vi.fn(),
   useTaskActions: vi.fn(),
@@ -30,6 +32,7 @@ vi.mock("@lyfie/luthor", () => ({
 }));
 
 import {
+  useBoardDataState,
   useBoardRefs,
   useChecklistAIActions,
   useChecklistAIState,
@@ -40,6 +43,7 @@ import {
 import TaskCreateModal from "@components/TaskCreateModal.tsx";
 
 beforeEach(() => {
+  vi.mocked(useBoardDataState).mockReturnValue(makeBoardDataState());
   vi.mocked(useTaskCreateState).mockReturnValue(makeTaskCreateState());
   vi.mocked(useTaskCreateActions).mockReturnValue(makeTaskCreateActions());
   vi.mocked(useTaskActions).mockReturnValue(makeTaskActions());
@@ -135,5 +139,40 @@ describe("TaskCreateModal", () => {
     expect(
       screen.queryByRole("button", { name: "Delete", hidden: true }),
     ).toBeNull();
+  });
+
+  test("renders required Status and Row selects", () => {
+    vi.mocked(useTaskCreateState).mockReturnValue(
+      makeTaskCreateState({
+        taskCreateModalOpen: true,
+        taskDraft: mockTaskDraft,
+      }),
+    );
+    const { container } = render(<TaskCreateModal />);
+    const status = container.querySelector<HTMLSelectElement>(
+      "#create-column-select",
+    );
+    const row = container.querySelector<HTMLSelectElement>(
+      "#create-row-select",
+    );
+    expect(status?.required).toBe(true);
+    expect(row?.required).toBe(true);
+  });
+
+  test("Status and Row selects are empty when opened with a blank draft", () => {
+    vi.mocked(useTaskCreateState).mockReturnValue(
+      makeTaskCreateState({
+        taskCreateModalOpen: true,
+        taskDraft: { ...mockTaskDraft, rowId: "", colId: "" },
+      }),
+    );
+    const { container } = render(<TaskCreateModal />);
+    expect(
+      container.querySelector<HTMLSelectElement>("#create-column-select")
+        ?.value,
+    ).toBe("");
+    expect(
+      container.querySelector<HTMLSelectElement>("#create-row-select")?.value,
+    ).toBe("");
   });
 });

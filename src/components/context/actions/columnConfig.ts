@@ -6,12 +6,11 @@ import {
 } from "../BoardContext.tsx";
 import { createId } from "../constants.ts";
 import { generateKeyBetween } from "fractional-indexing";
-import { DragEvent, KeyboardEvent } from "react";
+import { DragEvent } from "react";
 
 export function useColumnConfigActions() {
   const dispatch = useBoardDispatch();
-  const { defaultColumnInput, defaultColumnIcon, draggedDefaultIndex } =
-    useColumnConfigState();
+  const { defaultColumnIcon, draggedDefaultIndex } = useColumnConfigState();
   const { columns } = useBoardDataState();
 
   const addColumn = useCallback((title: string) => {
@@ -26,30 +25,6 @@ export function useColumnConfigActions() {
       },
     });
   }, [columns, defaultColumnIcon, dispatch]);
-
-  const handleDefaultColumnInputKeyDown = useCallback(
-    (event: KeyboardEvent) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        const title = defaultColumnInput.trim();
-        if (title) {
-          const lastCol = columns[columns.length - 1];
-          dispatch({
-            type: "COLUMN/ADD",
-            payload: {
-              id: createId(),
-              title,
-              order: generateKeyBetween(lastCol?.order ?? null, null),
-              icon: defaultColumnIcon,
-            },
-          });
-          dispatch({ type: "COLUMN/SET_INPUT", payload: { value: "" } });
-          dispatch({ type: "COLUMN/SET_ICON", payload: { icon: null } });
-        }
-      }
-    },
-    [defaultColumnInput, defaultColumnIcon, columns, dispatch],
-  );
 
   const handleDefaultColumnDrop = useCallback(
     (targetColumnId: string) => (event: DragEvent) => {
@@ -116,7 +91,6 @@ export function useColumnConfigActions() {
   return {
     ...dispatchOnly,
     addColumn,
-    handleDefaultColumnInputKeyDown,
     handleDefaultColumnDrop,
   };
 }

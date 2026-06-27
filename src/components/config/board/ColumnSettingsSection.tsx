@@ -22,7 +22,6 @@ export default function ColumnSettingsSection() {
     setDefaultColumnInput,
     setColumnIcon,
     setDraggedDefaultIndex,
-    handleDefaultColumnInputKeyDown,
     handleDefaultColumnDragStart,
     handleDefaultColumnDragOver,
     handleDefaultColumnDrop,
@@ -40,30 +39,73 @@ export default function ColumnSettingsSection() {
   return (
     <div
       id="board-config-column-settings"
-      className="mt-6 bg-base-200 p-5"
+      className="mt-6 bg-base-200 p-5 space-y-3"
     >
-      <div className="mb-6 sm:items-center sm:justify-between space-y-3">
+      <div className="mb-6 sm:items-center sm:justify-between">
         <h3 className="text-lg font-semibold">
           Column settings
         </h3>
-        <p className="text-sm">
-          Manage the columns set used across projects. Drag cards to reorder,
-          pin to the board shortcut menu, or add a new default column.
-        </p>
-        <p className="text-sm">
-          Icons are generated from Iconify's{" "}
-          <a
-            href="https://icon-sets.iconify.design/hugeicons/"
-            target="_blank"
-          >
-            HugeIcons
-          </a>{" "}
-          library.
-        </p>
+      </div>
+      <hr className="opacity-50" />
+
+      <div id="create-new-column space-y-3">
+        <h4 className="text-md font-semibold">
+          Create a new column
+        </h4>
+        <section className="flex flex-row">
+          <fieldset className="fieldset flex-1">
+            <legend className="fieldset-legend">Create a new column</legend>
+            <input
+              className="input"
+              type="text"
+              value={defaultColumnInput}
+              onChange={(e) => setDefaultColumnInput(e.currentTarget.value)}
+              placeholder="Add new column"
+            />
+          </fieldset>
+
+          <fieldset className="fieldset flex-1">
+            <legend className="fieldset-legend">To the left or right of</legend>
+            <select className="select">
+              <option disabled selected>Pick a direction</option>
+              <option>Left</option>
+              <option>Right</option>
+            </select>
+          </fieldset>
+          <fieldset className="fieldset flex-1">
+            <legend className="fieldset-legend">Column name</legend>
+            <select className="select">
+              <option disabled selected>Pick a column</option>
+              <option>Chrome</option>
+              <option>FireFox</option>
+              <option>Safari</option>
+            </select>
+          </fieldset>
+        </section>
+        <button className="btn btn-secondary mt-6 mb-3" type="submit">
+          Add Column
+        </button>
       </div>
       {columns.some((column) => column.pinned) && (
         <>
           <hr className="opacity-50" />
+          <h4 className="text-md font-semibold">
+            Manage existing columns
+          </h4>
+          <p className="text-sm">
+            Manage the columns set used across projects. Drag cards to reorder,
+            pin to the board shortcut menu, or add a new default column.
+          </p>
+          <p className="text-sm">
+            Icons are generated from Iconify's{" "}
+            <a
+              href="https://icon-sets.iconify.design/hugeicons/"
+              target="_blank"
+            >
+              HugeIcons
+            </a>{" "}
+            library.
+          </p>
           <div className="mt-6 h-12 flex items-center justify-center">
             <div className="indicator">
               <span className="indicator-item badge badge-warning text-xl p-3 rounded-xs badge-sm z-101">
@@ -378,42 +420,6 @@ export default function ColumnSettingsSection() {
           </div>
         )}
       </div>
-
-      <section className="flex flex-row">
-        <fieldset className="fieldset flex-1">
-          <legend className="fieldset-legend">Create a new column</legend>
-          <input
-            className="input input-primary"
-            type="text"
-            value={defaultColumnInput}
-            onChange={(e) => setDefaultColumnInput(e.currentTarget.value)}
-            onKeyDown={handleDefaultColumnInputKeyDown}
-            placeholder="Add new column"
-          />
-          <p className="label">Hit enter to create</p>
-        </fieldset>
-
-        <fieldset className="fieldset flex-1">
-          <legend className="fieldset-legend">To the left or right of</legend>
-          <select className="select">
-            <option disabled selected>Pick a direction</option>
-            <option>Chrome</option>
-            <option>FireFox</option>
-            <option>Safari</option>
-          </select>
-          <span className="label">Optional</span>
-        </fieldset>
-        <fieldset className="fieldset flex-1">
-          <legend className="fieldset-legend">Column name</legend>
-          <select className="select">
-            <option disabled selected>Pick a column</option>
-            <option>Chrome</option>
-            <option>FireFox</option>
-            <option>Safari</option>
-          </select>
-          <span className="label">Optional</span>
-        </fieldset>
-      </section>
     </div>
   );
 }

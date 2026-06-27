@@ -298,6 +298,7 @@ export function BoardProvider(
       newRowFormKey: state.newRowFormKey,
       isGeneratingTasks: state.isGeneratingTasks,
       taskGenerationStatus: state.taskGenerationStatus,
+      createRowModalOpen: state.createRowModalOpen,
     }),
     [
       state.newRowName,
@@ -305,6 +306,7 @@ export function BoardProvider(
       state.newRowFormKey,
       state.isGeneratingTasks,
       state.taskGenerationStatus,
+      state.createRowModalOpen,
     ],
   );
 
@@ -339,8 +341,11 @@ export function BoardProvider(
   );
 
   const boardConfigState = useMemo(
-    () => ({ boardConfigModalOpen: state.boardConfigModalOpen }),
-    [state.boardConfigModalOpen],
+    () => ({
+      boardConfigModalOpen: state.boardConfigModalOpen,
+      boardConfigScrollTarget: state.boardConfigScrollTarget,
+    }),
+    [state.boardConfigModalOpen, state.boardConfigScrollTarget],
   );
 
   const taskCreateState = useMemo(

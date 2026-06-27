@@ -1,5 +1,5 @@
 import { clerk } from "@clerk/testing/playwright";
-import { expect, test } from "./fixtures.ts";
+import { expect, openCreateRowModal, test } from "./fixtures.ts";
 
 const E2E_EMAIL = process.env.E2E_CLERK_USER_EMAIL ?? "";
 
@@ -30,21 +30,18 @@ test.describe("Board persistence across sign-in", () => {
     const rowName = `E2E Row ${crypto.randomUUID()}`;
     const taskName = `E2E Task ${crypto.randomUUID()}`;
 
-    // Add a new row via the board configuration panel
-    await page.locator("#board-config-collapse-toggle").click();
+    // Add a new row via the board "+" menu (CreateRowModal)
+    await openCreateRowModal(page);
     const createRow = page.locator("#board-config-create-new-row");
-    await expect(createRow).toBeVisible();
     await createRow
       .getByPlaceholder(
         "A project name, a category for large project tasks, etc.",
       )
       .fill(rowName);
     await createRow.getByRole("button", { name: "Add Row" }).click();
-    await expect(
-      page.locator("#board-config-row-display-settings").getByText(rowName),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: rowName })).toBeVisible();
 
-    // Close the board configuration modal so its backdrop no longer
+    // Close the create-row modal so its backdrop no longer
     // intercepts pointer events on the board behind it. The close button and
     // backdrop both sit under the fixed navbar in places Playwright's
     // hit-testing considers the click target, so dispatch the backdrop's

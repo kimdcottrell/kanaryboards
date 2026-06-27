@@ -3,44 +3,62 @@ title: Row & Column Management
 ---
 sequenceDiagram
     actor User
+    participant BoardMenu as BoardMenu<br/>(BoardMenu.tsx, #board-menu)
     participant Config as BoardConfigModal<br/>(BoardConfigModal.tsx +<br/>config/board/*Section.tsx)
+    participant RowModal as CreateRowModal<br/>(config/board/CreateRowModal.tsx +<br/>CreateRowSection.tsx)
     participant Row as RowSection<br/>(RowSection.tsx)
     participant Cell as ColumnCard<br/>(ColumnCard.tsx)
-    participant BoardMenu as BoardView<br/>(BoardView.tsx, #board-menu)
     participant Actions as action hooks<br/>(actions/boardConfig.ts,<br/>row*.ts, column*.ts)
     participant Reducer as reducers<br/>(board.ts, rows.ts, columns.ts, taskAi.ts)
     participant Ctx as BoardContext<br/>(BoardConfig/BoardData/RowForm/<br/>RowEdit/ColumnEdit/ColumnConfig)
     participant AI as /api/generate-tasks<br/>(Google GenAI)
 
-    Note over User,AI: Open board configuration modal
-    User->>Config: click "Board Configuration" button<br/>(#board-config-collapse-toggle, BoardView.tsx)
-    Config->>Actions: openBoardConfigModal()<br/>(actions/boardConfig.ts)
-    Actions->>Ctx: dispatch(BOARD_CONFIG/OPEN_MODAL)
+    Note over User,AI: Open board configuration modal<br/>(gear icon, or "Add new column to all rows" menu item)
+    alt gear icon
+        User->>BoardMenu: click gear (#board-config-collapse-toggle)
+        BoardMenu->>Actions: openBoardConfigModal()<br/>(actions/boardConfig.ts)
+    else "Add new column to all rows" menu item
+        User->>BoardMenu: click "Add new column to all rows"
+        BoardMenu->>Actions: openBoardConfigModal("create-new-column")
+    end
+    Actions->>Ctx: dispatch(BOARD_CONFIG/OPEN_MODAL, {scrollTarget?})
     Ctx->>Reducer: board.openConfigModal
-    Reducer-->>Ctx: boardConfigModalOpen = true
+    Reducer-->>Ctx: boardConfigModalOpen = true<br/>boardConfigScrollTarget = scrollTarget ?? null
     Ctx-->>Config: BoardConfigModal re-renders<br/>(BoardConfigContext: boardConfigModalOpen=true)<br/>-> modal opens, sections below become visible
+    opt boardConfigScrollTarget set
+        Config->>Config: useEffect[open, scrollTarget]<br/>-> requestAnimationFrame<br/>-> getElementById(scrollTarget).scrollIntoView({block:"start"})<br/>(scrolls to #create-new-column in ColumnSettingsSection)
+    end
 
-    Note over User,AI: Add row with AI task generation<br/>(CreateRowSection, inside BoardConfigModal)
-    User->>Config: type row name + AI prompt
-    Config->>Actions: setNewRowName / setNewRowPrompt<br/>(actions/rowForm.ts)
+    Note over User,AI: Open / close the Add-row modal (CreateRowModal)
+    User->>BoardMenu: click "Add new project row"
+    BoardMenu->>Actions: openCreateRowModal()<br/>(actions/rowForm.ts)
+    Actions->>Ctx: dispatch(ROW/OPEN_CREATE_MODAL)
+    Ctx->>Reducer: rows.openRowCreateModal
+    Reducer-->>Ctx: createRowModalOpen = true
+    Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: createRowModalOpen=true)<br/>-> modal opens, CreateRowSection visible
+    Note over RowModal: Close (X / backdrop) -> closeCreateRowModal()<br/>-> ROW/CLOSE_CREATE_MODAL -> rows.closeRowCreateModal<br/>-> createRowModalOpen=false
+
+    Note over User,AI: Add row with AI task generation<br/>(CreateRowSection, inside CreateRowModal)
+    User->>RowModal: type row name + AI prompt
+    RowModal->>Actions: setNewRowName / setNewRowPrompt<br/>(actions/rowForm.ts)
     Actions->>Ctx: dispatch(ROW/SET_NEW_NAME | ROW/SET_NEW_PROMPT)
     Ctx->>Reducer: rows.setNewName / setNewPrompt
     Reducer-->>Ctx: newRowName / newRowPrompt updated
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(RowFormContext: newRowName/newRowPrompt changed)
+    Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: newRowName/newRowPrompt changed)
 
-    User->>Config: submit "Add row" form
-    Config->>Actions: addRow(event)<br/>(actions/rowForm.ts)
+    User->>RowModal: submit "Add row" form
+    RowModal->>Actions: addRow(event)<br/>(actions/rowForm.ts)
     Actions->>Ctx: dispatch(ROW/ADD, {id, title, color: blue, order})
     Ctx->>Reducer: rows.add(state, payload)
     Reducer-->>Ctx: rows = [...rows, newRow]
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: rows changed)<br/>-> row settings list shows new row
+    Ctx-->>Config: BoardConfigModal re-renders<br/>(BoardData: rows changed)<br/>-> row settings list shows new row
     Ctx-->>Row: RowBoard mounts a new RowSection<br/>(BoardData: rows changed)
 
     alt newRowPrompt is non-empty
         Actions->>Ctx: dispatch(TASK_AI/GENERATE_START)
         Ctx->>Reducer: taskAi.generateStart
         Reducer-->>Ctx: isGeneratingTasks = true<br/>taskGenerationStatus = "Generating tasks..."
-        Ctx-->>Config: BoardConfiguration re-renders<br/>(RowFormContext: isGeneratingTasks=true)<br/>-> shows status banner, disables inputs
+        Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: isGeneratingTasks=true)<br/>-> shows status banner, disables inputs
 
         Actions->>AI: fetchGeneratedItems(prompt, 10)<br/>(actions/shared.ts)<br/>POST /api/generate-tasks
         AI-->>Actions: {response: string[]} (task titles)
@@ -55,14 +73,22 @@ sequenceDiagram
             Ctx->>Reducer: taskAi.generateFailure
             Reducer-->>Ctx: isGeneratingTasks=false<br/>taskGenerationStatus=error<br/>newRowName="", newRowPrompt="", newRowFormKey++
         end
-        Ctx-->>Config: BoardConfiguration re-renders<br/>(RowFormContext: isGeneratingTasks=false)<br/>-> form resets, "Add Row" button reappears
+        Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: isGeneratingTasks=false)<br/>-> form resets, "Add Row" button reappears<br/>(modal stays open)
         Ctx-->>Cell: ColumnCard (Todo column, new row)<br/>re-renders (TasksByCellContext changed)<br/>-> new TaskCards mount
     else newRowPrompt empty
         Actions->>Ctx: dispatch(ROW/RESET_FORM)
         Ctx->>Reducer: rows.resetForm
         Reducer-->>Ctx: newRowName="", newRowPrompt="", newRowFormKey++
-        Ctx-->>Config: BoardConfiguration re-renders<br/>(RowFormContext: form fields reset)
+        Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: form fields reset)
     end
+
+    Note over User,AI: Create task from board menu (TaskCreateModal)
+    User->>BoardMenu: click "Create new task"
+    BoardMenu->>Actions: openTaskForm("", "")<br/>(actions/task.ts)
+    Actions->>Ctx: dispatch(TASK/OPEN_CREATE_MODAL, {rowId:"", colId:""})
+    Ctx->>Reducer: tasks.openCreateModal
+    Reducer-->>Ctx: taskCreateModalOpen=true<br/>taskDraft=emptyTaskDraft("", "")
+    Note over BoardMenu: TaskCreateModal opens with empty, required<br/>Status (colId) + Row (rowId) selects.<br/>createTask gates on form checkValidity() -> submit blocked<br/>until both are chosen, so no orphan (rowId/colId="") task.
 
     Note over User,AI: Rename row (RowSection)
     User->>Row: double-click row title

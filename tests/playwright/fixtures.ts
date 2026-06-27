@@ -1,5 +1,10 @@
 import { setupClerkTestingToken } from "@clerk/testing/playwright";
-import { expect, type Locator, test as base } from "@playwright/test";
+import {
+  expect,
+  type Locator,
+  type Page,
+  test as base,
+} from "@playwright/test";
 
 // Fills a React-controlled input and waits until the value actually commits.
 // The board mounts via client:only, so shortly after an input becomes
@@ -25,6 +30,18 @@ export async function fillStable(
     await locator.fill(value);
     await expect(locator).toHaveValue(value);
   }).toPass({ timeout: isWebkit ? 20000 : 10000 });
+}
+
+// Opens the board "+" dropdown in #board-menu and clicks "Add new project row",
+// which opens CreateRowModal (the create-row form now lives there, not in the
+// board-config gear modal). Gates on hydration so the menu click is stable.
+export async function openCreateRowModal(page: Page): Promise<void> {
+  await page.locator("html[data-board-loaded='true']").waitFor({
+    state: "attached",
+  });
+  await page.locator("#board-menu summary").first().click();
+  await page.locator("#board-menu").getByText("Add new project row").click();
+  await expect(page.locator("#board-config-create-new-row")).toBeVisible();
 }
 
 // Derive the Clerk Frontend API URL from the publishable key as a fallback.

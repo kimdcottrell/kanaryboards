@@ -11,6 +11,7 @@ export const createInitialState = (): BoardState => {
     newRowName: "",
     newRowPrompt: "",
     newRowFormKey: 0,
+    createRowModalOpen: false,
     editingRowId: null,
     editingRowName: "",
     editingColumnId: null,
@@ -33,15 +34,27 @@ export const createInitialState = (): BoardState => {
     draggedDefaultIndex: null,
     draggedTask: null,
     boardConfigModalOpen: false,
+    boardConfigScrollTarget: null,
   };
 };
 
-export function openConfigModal(state: BoardState): BoardState {
-  return { ...state, boardConfigModalOpen: true };
+export function openConfigModal(
+  state: BoardState,
+  payload?: { scrollTarget?: string },
+): BoardState {
+  return {
+    ...state,
+    boardConfigModalOpen: true,
+    boardConfigScrollTarget: payload?.scrollTarget ?? null,
+  };
 }
 
 export function closeConfigModal(state: BoardState): BoardState {
-  return { ...state, boardConfigModalOpen: false };
+  return {
+    ...state,
+    boardConfigModalOpen: false,
+    boardConfigScrollTarget: null,
+  };
 }
 
 export function load(

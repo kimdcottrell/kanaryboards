@@ -84,6 +84,8 @@ export function useRowFormActions() {
       dispatch({ type: "ROW/SET_NEW_NAME", payload: { name } }),
     setNewRowPrompt: (prompt: string) =>
       dispatch({ type: "ROW/SET_NEW_PROMPT", payload: { prompt } }),
+    openCreateRowModal: () => dispatch({ type: "ROW/OPEN_CREATE_MODAL" }),
+    closeCreateRowModal: () => dispatch({ type: "ROW/CLOSE_CREATE_MODAL" }),
   }), [dispatch]);
 
   return { ...setters, addRow, generateTasksForRow };
