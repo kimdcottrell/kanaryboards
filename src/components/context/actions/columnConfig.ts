@@ -10,21 +10,38 @@ import { DragEvent } from "react";
 
 export function useColumnConfigActions() {
   const dispatch = useBoardDispatch();
-  const { defaultColumnIcon, draggedDefaultIndex } = useColumnConfigState();
+  const { defaultColumnInput, draggedDefaultIndex } = useColumnConfigState();
   const { columns } = useBoardDataState();
 
-  const addColumn = useCallback((title: string) => {
-    const lastCol = columns[columns.length - 1];
-    dispatch({
-      type: "COLUMN/ADD",
-      payload: {
-        id: createId(),
-        title,
-        order: generateKeyBetween(lastCol?.order ?? null, null),
-        icon: defaultColumnIcon,
-      },
-    });
-  }, [columns, defaultColumnIcon, dispatch]);
+  const addColumn = useCallback(
+    (direction: "left" | "right", referenceColumnId: string) => {
+      const title = defaultColumnInput.trim();
+      const refIdx = columns.findIndex((c) => c.id === referenceColumnId);
+      if (!title || !direction || refIdx === -1) return;
+
+      const id = createId();
+      const lastCol = columns[columns.length - 1];
+      dispatch({
+        type: "COLUMN/ADD",
+        payload: {
+          id,
+          title,
+          order: generateKeyBetween(lastCol?.order ?? null, null),
+          icon: null,
+        },
+      });
+
+      const beforeColumnId = direction === "left"
+        ? referenceColumnId
+        : columns[refIdx + 1]?.id ?? null;
+      dispatch({
+        type: "COLUMN/REORDER",
+        payload: { columnId: id, beforeColumnId },
+      });
+      dispatch({ type: "COLUMN/SET_INPUT", payload: { value: "" } });
+    },
+    [defaultColumnInput, columns, dispatch],
+  );
 
   const handleDefaultColumnDrop = useCallback(
     (targetColumnId: string) => (event: DragEvent) => {

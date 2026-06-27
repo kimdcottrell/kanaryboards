@@ -77,58 +77,9 @@ export default function TaskEditModal() {
             generateChecklistItems={generateChecklistItems}
             applyChecklist={applyChecklistPreview}
             clearChecklistPreview={clearChecklistPreview}
-          >
-            <div className="grid grid-cols-2 gap-4 items-start">
-              <fieldset className="fieldset">
-                <label
-                  className="fieldset-legend"
-                  htmlFor={`edit-column-select-${editTaskDraft.id}`}
-                >
-                  Status
-                </label>
-                <select
-                  id={`edit-column-select-${editTaskDraft.id}`}
-                  className="select select-bordered w-full"
-                  value={editTaskDraft.colId}
-                  onChange={(e) =>
-                    setEditTaskDraft({
-                      ...editTaskDraft,
-                      colId: e.currentTarget.value,
-                    })}
-                >
-                  {columns.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.title}
-                    </option>
-                  ))}
-                </select>
-              </fieldset>
-              <fieldset className="fieldset">
-                <label
-                  className="fieldset-legend"
-                  htmlFor={`edit-row-select-${editTaskDraft.id}`}
-                >
-                  Row
-                </label>
-                <select
-                  id={`edit-row-select-${editTaskDraft.id}`}
-                  className="select select-bordered w-full"
-                  value={editTaskDraft.rowId}
-                  onChange={(e) =>
-                    setEditTaskDraft({
-                      ...editTaskDraft,
-                      rowId: e.currentTarget.value,
-                    })}
-                >
-                  {rows.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.title}
-                    </option>
-                  ))}
-                </select>
-              </fieldset>
-            </div>
-          </TaskForm>
+            columns={columns}
+            rows={rows}
+          />
         )
         : <p className="mt-4 text-sm">Loading task...</p>}
     </Modal>

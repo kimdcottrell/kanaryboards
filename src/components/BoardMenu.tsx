@@ -6,6 +6,8 @@ import {
   useTaskActions,
 } from "./context/hooks.ts";
 
+import type { MouseEvent } from "react";
+
 export default function BoardMenu(
   { isSticky, isPreview }: { isSticky?: boolean; isPreview?: boolean },
 ) {
@@ -15,6 +17,14 @@ export default function BoardMenu(
   const { openTaskForm } = useTaskActions();
 
   const pinnedColumns = columns.filter((c) => c.pinned);
+
+  const handleClick = (action?: () => void) => (e: MouseEvent) => {
+    if (isPreview) {
+      e.preventDefault();
+      return;
+    }
+    action?.();
+  };
 
   return (
     <ul
@@ -35,7 +45,7 @@ export default function BoardMenu(
     >
       {pinnedColumns.map((column) => (
         <li key={column.id}>
-          <a>
+          <a onClick={handleClick()}>
             {column.iconInBoardMenu && column.icon && (
               <DynamicIcon name={column.icon} className="h-4 w-4" />
             )}
@@ -48,25 +58,29 @@ export default function BoardMenu(
       ))}
       <li>
         <details>
-          <summary>
+          <summary onClick={handleClick()}>
             <span className="iconify hugeicons--dashboard-square-add text-xl">
             </span>
           </summary>
           <ul className="w-max">
             <li>
-              <a onClick={() => openTaskForm("", "")}>
+              <a onClick={handleClick(() => openTaskForm("", ""))}>
                 <span className="iconify hugeicons--add-square"></span>Create
                 new task
               </a>
             </li>
             <li>
-              <a onClick={openCreateRowModal}>
+              <a onClick={handleClick(openCreateRowModal)}>
                 <span className="iconify hugeicons--row-insert"></span>Add new
                 project row
               </a>
             </li>
             <li>
-              <a onClick={() => openBoardConfigModal("create-new-column")}>
+              <a
+                onClick={handleClick(() =>
+                  openBoardConfigModal("create-new-column")
+                )}
+              >
                 <span className="iconify hugeicons--column-insert"></span>Add
                 new column to all rows
               </a>
@@ -78,7 +92,7 @@ export default function BoardMenu(
       <li>
         <a
           id={isPreview ? undefined : "board-config-collapse-toggle"}
-          onClick={() => openBoardConfigModal()}
+          onClick={handleClick(() => openBoardConfigModal())}
         >
           <span className="iconify hugeicons--settings-01 text-xl"></span>
         </a>

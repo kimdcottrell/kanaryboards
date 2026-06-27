@@ -142,35 +142,32 @@ sequenceDiagram
     Ctx-->>Row: that RowSection re-renders<br/>(BoardData: row.color changed)<br/>-> background color-mix updates
     Ctx-->>Cell: every ColumnCard in that row re-renders<br/>(BoardData: row.color changed)<br/>-> background/border + add-task button tint update
 
-    Note over User,AI: Add column (ColumnSettingsSection)
-    User->>Config: type column name, press Enter<br/>(defaultColumnInput)
-    Config->>Actions: setDefaultColumnInput(value) /<br/>handleDefaultColumnInputKeyDown<br/>(actions/columnConfig.ts)
+    Note over User,AI: Add column (ColumnSettingsSection, "Create a new column" form)
+    User->>Config: type column name<br/>(defaultColumnInput)
+    Config->>Actions: setDefaultColumnInput(value)<br/>(actions/columnConfig.ts)
     Actions->>Ctx: dispatch(COLUMN/SET_INPUT, {value})
     Ctx->>Reducer: columns.setInput
     Reducer-->>Ctx: defaultColumnInput = value
     Ctx-->>Config: BoardConfiguration re-renders<br/>(ColumnConfigContext: defaultColumnInput changed)
 
-    Note over Config: Pick column icon (AsyncCreatableSelect, searches the<br/>full hugeicons set via lazy-loaded @iconify/json data,<br/>src/lib/icons.ts. Icons render as inline SVG, src/components/Icon.tsx)
-    User->>Config: type in icon search box
-    Config->>Config: searchHugeicons(input)<br/>(src/lib/icons.ts, lazy dynamic import on first use)
-    User->>Config: select an icon option
-    Config->>Actions: setDefaultColumnIcon(icon)<br/>(actions/columnConfig.ts)
-    Actions->>Ctx: dispatch(COLUMN/SET_ICON, {icon})
-    Ctx->>Reducer: columns.setIcon
-    Reducer-->>Ctx: defaultColumnIcon = icon
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(ColumnConfigContext: defaultColumnIcon changed)
+    User->>Config: pick direction (left/right) +<br/>reference column from the two selects
+    Note over Config: direction + referenceColumnId are local<br/>component useState — no dispatch
 
-    Actions->>Ctx: dispatch(COLUMN/ADD, {id, title, order, icon: defaultColumnIcon})
+    User->>Config: click "Add Column" (form submit)
+    Note over Config: native form validation (required name + both selects)<br/>blocks submit until all fields are filled
+    Config->>Actions: addColumn(direction, referenceColumnId)<br/>(actions/columnConfig.ts)
+    Actions->>Ctx: dispatch(COLUMN/ADD, {id, title, order: end, icon: null})
     Ctx->>Reducer: columns.add(state, payload)
     Reducer-->>Ctx: columns = [...columns, newColumn]
+    Actions->>Ctx: dispatch(COLUMN/REORDER, {columnId: id,<br/>beforeColumnId: left ? referenceId : column after reference})
+    Ctx->>Reducer: columns.reorder
+    Reducer-->>Ctx: new column spliced to chosen array index,<br/>order regenerated via generateKeyBetween(prev, next)
     Actions->>Ctx: dispatch(COLUMN/SET_INPUT, {value: ""})
     Ctx->>Reducer: columns.setInput
     Reducer-->>Ctx: defaultColumnInput = ""
-    Actions->>Ctx: dispatch(COLUMN/SET_ICON, {icon: null})
-    Ctx->>Reducer: columns.setIcon
-    Reducer-->>Ctx: defaultColumnIcon = null
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: columns changed)<br/>-> column settings badge list shows new column<br/>(with icon, if chosen), input + icon select clear
-    Ctx-->>Cell: every RowSection mounts a new ColumnCard<br/>(BoardData: columns changed)<br/>-> shows column icon, if set
+    Config->>Config: reset local direction + referenceColumnId to ""
+    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: columns changed)<br/>-> reference select lists the new column, name input clears
+    Ctx-->>Cell: every RowSection mounts a new ColumnCard<br/>(BoardData: columns changed)<br/>-> appears to the left/right of the reference column
 
     Note over User,AI: Rename column (per ColumnCard, double-click)
     User->>Cell: double-click column title
