@@ -8,6 +8,8 @@ import {
   useTaskActions,
 } from "./context/hooks.ts";
 
+import { useEffect, useRef } from "react";
+
 import type { MouseEvent } from "react";
 
 export default function BoardMenu(
@@ -21,6 +23,19 @@ export default function BoardMenu(
   const { toggleColumnFilter } = useColumnFilterActions();
 
   const pinnedColumns = columns.filter((c) => c.pinned);
+
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: globalThis.MouseEvent) => {
+      const details = detailsRef.current;
+      if (details?.open && !details.contains(e.target as Node)) {
+        details.open = false;
+      }
+    };
+    document.addEventListener("click", handleOutsideClick);
+    return () => document.removeEventListener("click", handleOutsideClick);
+  }, []);
 
   const handleClick = (action?: () => void) => (e: MouseEvent) => {
     if (isPreview) {
@@ -66,7 +81,7 @@ export default function BoardMenu(
         </li>
       ))}
       <li>
-        <details>
+        <details ref={detailsRef}>
           <summary onClick={handleClick()}>
             <span className="iconify hugeicons--dashboard-square-add text-xl">
             </span>

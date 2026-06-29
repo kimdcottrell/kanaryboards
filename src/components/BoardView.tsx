@@ -10,10 +10,11 @@ import { useBoardDataState, useTaskActions } from "./context/hooks.ts";
 
 export default function BoardView() {
   const navigate = useNavigate();
-  const { taskId } = useParams();
-  const { tasks, boardLoaded } = useBoardDataState();
+  const { taskId, rowId } = useParams();
+  const { rows, tasks, boardLoaded } = useBoardDataState();
   const { startEditTask } = useTaskActions();
   const syncedTaskId = useRef<string | undefined>(undefined);
+  const syncedRowId = useRef<string | undefined>(undefined);
 
   // Reflect board-load state onto the root element so e2e tests can gate input
   // interaction on hydration completing — an in-flight BOARD/LOAD re-render
@@ -48,8 +49,43 @@ export default function BoardView() {
     }
   }, [boardLoaded, taskId, tasks]);
 
+  useEffect(() => {
+    if (!boardLoaded || !rowId) {
+      syncedRowId.current = undefined;
+      return;
+    }
+    if (syncedRowId.current === rowId) return;
+    const row = rows.find((r) => r.id === rowId);
+    if (row) {
+      requestAnimationFrame(() => {
+        document.getElementById(`row-section-${rowId}`)?.scrollIntoView({
+          block: "start",
+        });
+      });
+      syncedRowId.current = rowId;
+    } else {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [boardLoaded, rowId, rows]);
+
+  // Until the board data has loaded, keep showing the same loading state the
+  // SPA.astro fallback slot renders. This bridges the gap between the React
+  // island mounting and the async BOARD/LOAD dispatch, so the fallback reveals
+  // an identical spinner instead of an empty board shell flashing through.
+  if (!boardLoaded) {
+    return (
+      <div
+        key="board-loading"
+        className="flex min-h-[60vh] flex-col items-center justify-center gap-4"
+      >
+        <h2 className="text-xl font-semibold">Task dashboard is loading...</h2>
+        <span className="loading loading-spinner loading-xl"></span>
+      </div>
+    );
+  }
+
   return (
-    <>
+    <div key="board-loaded" className="animate-fade-in">
       <BoardMenu isSticky={isSticky} />
 
       <BoardConfigModal data-testid="board-configuration" />
@@ -57,6 +93,6 @@ export default function BoardView() {
       <RowBoard data-testid="row-board" />
       <TaskCreateModal data-testid="task-create-modal" />
       <TaskEditModal data-testid="task-edit-modal" />
-    </>
+    </div>
   );
 }

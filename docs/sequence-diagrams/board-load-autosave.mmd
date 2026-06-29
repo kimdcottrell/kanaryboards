@@ -12,7 +12,8 @@ sequenceDiagram
     participant LS@{ "type" : "database" } as localStorage
 
     Note over User,LS: Initial mount
-    User->>Router: navigate to "/dashboard"
+    User->>Router: navigate to "/dashboard"<br/>(or deep-link "/dashboard/row/:rowId"<br/>from the drawer's project-row list)
+    Note over User,Router: On the dashboard, drawer row clicks (the data-board-link anchors)<br/>are intercepted by BoardController and routed via router.navigate<br/>client-side, so there is no reload and no BOARD/LOAD. This reaches the<br/>rowId param scroll step below. Off the SPA it is a full page load.
     Router->>Provider: render BoardProvider<br/>useReducer(boardReducer, createInitialState)
     Provider->>View: initial render, boardLoaded = false
 
@@ -74,6 +75,9 @@ sequenceDiagram
     Reducer-->>Provider: rows/columns sorted by order (byOrder)<br/>tasks set, boardLoaded = true
     Provider->>View: BoardView, RowBoard, BoardConfigModal<br/>all re-render (BoardDataContext: rows/columns/<br/>tasks/boardLoaded changed)<br/>-> RowBoard mounts one RowSection per row,<br/>BoardConfigModal's sections render row/column settings
     Provider->>Provider: document.documentElement.dataset.boardLoaded = "true"<br/>(BoardView.tsx, for e2e hydration gating)
+    opt rowId param present (entered via "/dashboard/row/:rowId")
+        View->>View: BoardView finds row by id, then<br/>requestAnimationFrame -> document.getElementById<br/>("row-section-{rowId}").scrollIntoView({block:"start"})<br/>(unknown id -> navigate("/dashboard", replace))
+    end
 
     Note over User,LS: Autosave (on every state.{rows,columns,tasks} change)
     Note over Provider: useEffect deps: [rows, columns, tasks, boardLoaded]<br/>guarded by boardLoaded === true

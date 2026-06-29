@@ -9,7 +9,7 @@ import clerk from "@clerk/astro";
 export default defineConfig({
   adapter: deno(),
   integrations: [
-    clerk(),
+    clerk({ prefetchUI: false }),
     react(),
   ],
 

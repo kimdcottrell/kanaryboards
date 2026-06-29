@@ -39,7 +39,15 @@ const unauthorized = Astro.url.searchParams.get("unauthorized") === "1";
     client:only="react"
     boardId={boardId}
     isAuthenticated={isAuthenticated}
-  />
+  >
+    <div
+      slot="fallback"
+      class="flex min-h-[60vh] flex-col items-center justify-center gap-4"
+    >
+      <h2 class="text-xl font-semibold">Task dashboard is loading...</h2>
+      <span class="loading loading-spinner loading-xl"></span>
+    </div>
+  </BoardController>
 </Dashboard>
 
 <script>

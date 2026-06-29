@@ -17,6 +17,7 @@
 @theme {
   --animate-wiggle: wiggle 1s ease-in-out infinite;
   --animate-blink: blink 2s step-end infinite;
+  --animate-fade-in: fade-in 0.5s ease-out;
   --font-cherry-bomb-one: "Cherry Bomb One", system-ui;
   --font-roboto-slab: "Roboto Slab", serif;
   --font-varela-round: "Varela Round", sans-serif;
@@ -107,6 +108,15 @@
 @keyframes blink {
   50% {
     opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 

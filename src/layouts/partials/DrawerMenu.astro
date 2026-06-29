@@ -1,3 +1,20 @@
+---
+import { getBoard } from "@lib/kv.ts";
+import { byOrder } from "@components/context/ordering.ts";
+
+const { userId } = Astro.locals.auth();
+const isAuthenticated = !!userId;
+const boardId = Astro.locals.boardId;
+
+let rows: { id: string; title: string }[] = [];
+if (isAuthenticated && boardId) {
+  const board = await getBoard(boardId);
+  rows = [...(board?.rows ?? [])]
+    .sort(byOrder)
+    .map((r) => ({ id: r.id, title: r.title }));
+}
+---
+
 <input id="drawer-menu" type="checkbox" class="drawer-toggle" />
 <div class="drawer-side z-99 is-drawer-close:overflow-visible">
     <label for="drawer-menu" aria-label="close sidebar" class="drawer-overlay"
@@ -31,12 +48,18 @@
                         ></span>
                         <span class="is-drawer-close:hidden">Dashboard</span>
                     </button>
-                    <ul>
-                        <li><a>Item 1</a></li>
-                        <li><a>Item 2</a></li>
-                        <li><a>Item 3</a></li>
-                    </ul>
                 </a>
+                <ul id="drawer-row-list" data-authenticated={String(isAuthenticated)}>
+                    {
+                        rows.map((row) => (
+                            <li>
+                                <a href={`/dashboard/row/${row.id}`} data-board-link>
+                                    {row.title}
+                                </a>
+                            </li>
+                        ))
+                    }
+                </ul>
             </li>
             <li>
                 <a href="/blog">
@@ -53,3 +76,26 @@
         </ul>
     </div>
 </div>
+
+<script>
+    import { byOrder } from "@components/context/ordering.ts";
+    const list = document.getElementById("drawer-row-list");
+    if (list && list.dataset.authenticated !== "true") {
+        try {
+            const board = JSON.parse(
+                localStorage.getItem("kanby-v0-1-0") ?? "null",
+            );
+            for (const row of [...(board?.rows ?? [])].sort(byOrder)) {
+                const li = document.createElement("li");
+                const a = document.createElement("a");
+                a.href = `/dashboard/row/${row.id}`;
+                a.dataset.boardLink = "";
+                a.textContent = row.title;
+                li.appendChild(a);
+                list.appendChild(li);
+            }
+        } catch {
+            /* no/invalid local board */
+        }
+    }
+</script>

@@ -10,4 +10,8 @@ export const router = createBrowserRouter([
     path: "/dashboard/task/:taskId",
     Component: BoardView,
   },
+  {
+    path: "/dashboard/row/:rowId",
+    Component: BoardView,
+  },
 ]);

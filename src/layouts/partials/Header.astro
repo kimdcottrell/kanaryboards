@@ -1,5 +1,5 @@
 ---
-import { Show, UserButton, SignInButton } from "@clerk/astro/components";
+import LoginControls from "@components/auth/LoginControls";
 
 import ThemeProvider from "@components/theme/ThemeProvider";
 import ThemeToggle from "@components/theme/ThemeToggle";
@@ -30,18 +30,7 @@ import ThemeToggle from "@components/theme/ThemeToggle";
                 <ThemeProvider>
                     <ThemeToggle client:only="react" />
                 </ThemeProvider>
-                <Show when="signed-out">
-                    <SignInButton asChild mode="modal">
-                        <button class="btn btn-warning">
-                            <span class="iconify basil--login-solid text-xl"
-                            ></span>
-                            Sign In
-                        </button>
-                    </SignInButton>
-                </Show>
-                <Show when="signed-in">
-                    <UserButton />
-                </Show>
+                <LoginControls client:idle />
             </div>
         </div>
     </div>
