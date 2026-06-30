@@ -23,6 +23,7 @@ test.describe("Board menu — add dropdown", () => {
 
     const statusSelect = page.locator("#column-select-new");
     const rowSelect = page.locator("#row-select-new");
+
     await expect(statusSelect).toBeVisible();
     await expect(rowSelect).toBeVisible();
     // No default cell when opened from the global menu.
