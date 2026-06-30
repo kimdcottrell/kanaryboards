@@ -65,7 +65,13 @@ describe("LoginControls", () => {
     );
 
     for (
-      const name of ["ClerkLoading", "ClerkLoaded", "Show", "SignInButton", "UserButton"]
+      const name of [
+        "ClerkLoading",
+        "ClerkLoaded",
+        "Show",
+        "SignInButton",
+        "UserButton",
+      ]
     ) {
       expect(typeof real[name]).toBe("function");
     }

@@ -89,102 +89,114 @@ async function openDrawer(page: Page): Promise<void> {
  * these checks only navigate and assert.
  */
 function drawerNavChecks(t: typeof test | typeof testNoClerk) {
-  t("drawer link scrolls the page down to the intended row", async ({ page }) => {
-    await page.setViewportSize({ width: 1024, height: 600 });
-    await page.goto("/dashboard");
-    await page.locator(DASHBOARD_READY).waitFor({ state: "attached" });
+  t(
+    "drawer link scrolls the page down to the intended row",
+    async ({ page }) => {
+      await page.setViewportSize({ width: 1024, height: 600 });
+      await page.goto("/dashboard");
+      await page.locator(DASHBOARD_READY).waitFor({ state: "attached" });
 
-    // The last row starts below the fold.
-    const lastRow = page.locator("#row-section-row-e2e-8");
-    expect(await page.evaluate(() => globalThis.scrollY)).toBe(0);
-    await expect(lastRow).not.toBeInViewport();
+      // The last row starts below the fold.
+      const lastRow = page.locator("#row-section-row-e2e-8");
+      expect(await page.evaluate(() => globalThis.scrollY)).toBe(0);
+      await expect(lastRow).not.toBeInViewport();
 
-    await openDrawer(page);
-    const link = rowLink(page, "row-e2e-8");
-    await expect(link).toBeVisible();
-    await link.click();
+      await openDrawer(page);
+      const link = rowLink(page, "row-e2e-8");
+      await expect(link).toBeVisible();
+      await link.click();
 
-    await expect(lastRow).toBeInViewport();
-    expect(await page.evaluate(() => globalThis.scrollY)).toBeGreaterThan(0);
-  });
+      await expect(lastRow).toBeInViewport();
+      expect(await page.evaluate(() => globalThis.scrollY)).toBeGreaterThan(0);
+    },
+  );
 
-  t("clicking a drawer link on the dashboard does not fully reload the page", async ({ page }) => {
-    await page.goto("/dashboard");
-    await page.locator(DASHBOARD_READY).waitFor({ state: "attached" });
+  t(
+    "clicking a drawer link on the dashboard does not fully reload the page",
+    async ({ page }) => {
+      await page.goto("/dashboard");
+      await page.locator(DASHBOARD_READY).waitFor({ state: "attached" });
 
-    // A full document reload wipes the JS context; a client-side React Router
-    // navigation preserves it. This sentinel is our reload detector.
-    await page.evaluate(() => {
-      (globalThis as Record<string, unknown>).__noReload = true;
-    });
+      // A full document reload wipes the JS context; a client-side React Router
+      // navigation preserves it. This sentinel is our reload detector.
+      await page.evaluate(() => {
+        (globalThis as Record<string, unknown>).__noReload = true;
+      });
 
-    await openDrawer(page);
-    const link = rowLink(page, "row-e2e-2");
-    await expect(link).toBeVisible();
-    await link.click();
+      await openDrawer(page);
+      const link = rowLink(page, "row-e2e-2");
+      await expect(link).toBeVisible();
+      await link.click();
 
-    await expect(page).toHaveURL(/\/dashboard\/row\/row-e2e-2$/);
-    expect(
-      await page.evaluate(() =>
-        (globalThis as Record<string, unknown>).__noReload
-      ),
-    ).toBe(true);
-    await expect(page.locator("#row-section-row-e2e-2")).toBeInViewport();
-  });
+      await expect(page).toHaveURL(/\/dashboard\/row\/row-e2e-2$/);
+      expect(
+        await page.evaluate(() =>
+          (globalThis as Record<string, unknown>).__noReload
+        ),
+      ).toBe(true);
+      await expect(page.locator("#row-section-row-e2e-2")).toBeInViewport();
+    },
+  );
 
-  t("clicking a drawer link from outside the dashboard shows the loading screen, then the row", async ({ page }) => {
-    // "/" is the only page outside the SPA that renders the drawer.
-    await page.goto("/");
-    // Open the drawer, then confirm the row link is there before clicking
-    // (guest: populated by the DrawerMenu client script from localStorage;
-    // authenticated: server-rendered into the HTML).
-    await openDrawer(page);
-    await expect(rowLink(page, "row-e2e-2")).toBeVisible();
+  t(
+    "clicking a drawer link from outside the dashboard shows the loading screen, then the row",
+    async ({ page }) => {
+      // "/" is the only page outside the SPA that renders the drawer.
+      await page.goto("/");
+      // Open the drawer, then confirm the row link is there before clicking
+      // (guest: populated by the DrawerMenu client script from localStorage;
+      // authenticated: server-rendered into the HTML).
+      await openDrawer(page);
+      await expect(rowLink(page, "row-e2e-2")).toBeVisible();
 
-    // Sentinel proves the click triggers a *full* navigation (new JS context).
-    await page.evaluate(() => {
-      (globalThis as Record<string, unknown>).__sentinel = true;
-    });
+      // Sentinel proves the click triggers a *full* navigation (new JS context).
+      await page.evaluate(() => {
+        (globalThis as Record<string, unknown>).__sentinel = true;
+      });
 
-    // Deterministically prove the loading screen is *served*: for client:only,
-    // Astro renders the slot="fallback" markup into the destination's HTML.
-    let loadingHtmlServed = false;
-    await page.route("**/dashboard/row/*", async (route: Route) => {
-      if (route.request().resourceType() !== "document") {
+      // Deterministically prove the loading screen is *served*: for client:only,
+      // Astro renders the slot="fallback" markup into the destination's HTML.
+      let loadingHtmlServed = false;
+      await page.route("**/dashboard/row/*", async (route: Route) => {
+        if (route.request().resourceType() !== "document") {
+          await route.continue();
+          return;
+        }
+        const res = await route.fetch();
+        const body = await res.text();
+        if (body.includes("Task dashboard is loading...")) {
+          loadingHtmlServed = true;
+        }
+        await route.fulfill({ response: res });
+      });
+
+      // Slow the destination's JS modules so the (server-rendered) loading screen
+      // stays painted long enough to assert it's visible before hydration swaps it.
+      await page.route(/\.(?:m?js|tsx?|jsx)(?:\?|$)/, async (route: Route) => {
+        await new Promise((r) => setTimeout(r, 400));
         await route.continue();
-        return;
-      }
-      const res = await route.fetch();
-      const body = await res.text();
-      if (body.includes("Task dashboard is loading...")) loadingHtmlServed = true;
-      await route.fulfill({ response: res });
-    });
+      });
 
-    // Slow the destination's JS modules so the (server-rendered) loading screen
-    // stays painted long enough to assert it's visible before hydration swaps it.
-    await page.route(/\.(?:m?js|tsx?|jsx)(?:\?|$)/, async (route: Route) => {
-      await new Promise((r) => setTimeout(r, 400));
-      await route.continue();
-    });
+      await rowLink(page, "row-e2e-2").click();
 
-    await rowLink(page, "row-e2e-2").click();
+      await expect(page).toHaveURL(/\/dashboard\/row\/row-e2e-2$/);
+      await expect(page.getByText("Task dashboard is loading..."))
+        .toBeVisible();
+      expect(loadingHtmlServed).toBe(true);
 
-    await expect(page).toHaveURL(/\/dashboard\/row\/row-e2e-2$/);
-    await expect(page.getByText("Task dashboard is loading...")).toBeVisible();
-    expect(loadingHtmlServed).toBe(true);
+      // The row appears once the SPA hydrates and the board loads.
+      const row = page.locator("#row-section-row-e2e-2");
+      await expect(row).toBeVisible({ timeout: 15_000 });
+      await expect(row).toBeInViewport();
 
-    // The row appears once the SPA hydrates and the board loads.
-    const row = page.locator("#row-section-row-e2e-2");
-    await expect(row).toBeVisible({ timeout: 15_000 });
-    await expect(row).toBeInViewport();
-
-    // It was a full navigation, not client-side: the homepage sentinel is gone.
-    expect(
-      await page.evaluate(() =>
-        (globalThis as Record<string, unknown>).__sentinel
-      ),
-    ).toBeUndefined();
-  });
+      // It was a full navigation, not client-side: the homepage sentinel is gone.
+      expect(
+        await page.evaluate(() =>
+          (globalThis as Record<string, unknown>).__sentinel
+        ),
+      ).toBeUndefined();
+    },
+  );
 }
 
 testNoClerk.describe("Drawer row navigation (guest)", () => {
