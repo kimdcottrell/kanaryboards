@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Cherry+Bomb+One&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Roboto+Slab:wght@100..900&family=Varela+Round&display=swap");
 @import "tailwindcss";
 @import "@catppuccin/tailwindcss/mocha.css";
 
@@ -15,16 +16,12 @@
 
 @theme {
   --animate-wiggle: wiggle 1s ease-in-out infinite;
+  --animate-blink: blink 2s step-end infinite;
+  --animate-fade-in: fade-in 0.5s ease-out;
   --font-cherry-bomb-one: "Cherry Bomb One", system-ui;
-}
-
-@keyframes wiggle {
-  0%, 100% {
-    transform: rotate(-1deg);
-  }
-  50% {
-    transform: rotate(1deg);
-  }
+  --font-roboto-slab: "Roboto Slab", serif;
+  --font-varela-round: "Varela Round", sans-serif;
+  --font-inter: "Inter", sans-serif;
 }
 
 [data-theme] {
@@ -52,15 +49,15 @@
   --color-primary-content: var(--catppuccin-color-base);
   --color-secondary: var(--catppuccin-color-lavender);
   --color-secondary-content: var(--catppuccin-color-base);
-  --color-accent: var(--catppuccin-color-pink);
+  --color-accent: var(--catppuccin-color-pink-400);
   --color-accent-content: var(--catppuccin-color-base);
   --color-neutral: var(--catppuccin-color-surface1);
   --color-neutral-content: var(--catppuccin-color-text);
   --color-info: var(--catppuccin-color-sky);
   --color-info-content: var(--catppuccin-color-base);
-  --color-success: var(--catppuccin-color-green);
+  --color-success: var(--catppuccin-color-green-300);
   --color-success-content: var(--catppuccin-color-base);
-  --color-warning: var(--catppuccin-color-peach);
+  --color-warning: var(--catppuccin-color-peach-600);
   --color-warning-content: var(--catppuccin-color-base);
   --color-error: var(--catppuccin-color-red-600);
   --color-error-content: var(--catppuccin-color-base);
@@ -108,7 +105,85 @@
   --color-row-grey: var(--catppuccin-color-overlay2);
 }
 
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @layer utilities {
+  #drawer-row-list a {
+    max-width: 210px;
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .drawer-side {
+    ul {
+      li {
+        button {
+          @apply grid grid-cols-[1.5rem_1fr] items-center gap-1;
+        }
+
+        .iconify {
+          @apply justify-self-center text-xl;
+        }
+
+        span:not(.iconify) {
+          @apply leading-loose;
+        }
+      }
+    }
+  }
+  .menu-config {
+    display: flex;
+    flex-flow: column wrap;
+    padding: calc(0.5rem);
+    font-size: 0.875rem;
+
+    li {
+      padding: 2px;
+    }
+  }
+  .fake-cursor {
+    transition: opacity 0.1s;
+  }
+  input:not(:placeholder-shown) ~ .fake-cursor,
+  input:focus ~ .fake-cursor {
+    opacity: 0;
+  }
+
+  body {
+    font-family: var(--font-inter);
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: normal;
+  }
+
+  h1, h2, h3, h4, h5 {
+    font-family: var(--font-varela-round);
+    font-weight: 400;
+    font-style: normal;
+  }
+
+  .display-table {
+    display: table;
+  }
+
+  .btn {
+    font-family: var(--font-varela-round);
+  }
+
   .font-logo {
     font-family:
       var(--font-cherry-bomb-one), cursive;

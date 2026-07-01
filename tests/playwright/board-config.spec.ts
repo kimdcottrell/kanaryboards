@@ -1,4 +1,9 @@
-import { expect, fillStable, testNoClerk as test } from "./fixtures.ts";
+import {
+  expect,
+  fillStable,
+  openCreateRowModal,
+  testNoClerk as test,
+} from "./fixtures.ts";
 
 const MOCK_TASKS_RESPONSE = {
   response: [
@@ -16,7 +21,8 @@ const MOCK_TASKS_RESPONSE = {
 };
 
 /**
- * BoardConfiguration.tsx — #board-config-create-new-row section.
+ * CreateRowModal.tsx — #board-config-create-new-row section (opened from the
+ * board "+" menu via "Add new project row", no longer the gear/config modal).
  * Contains a form with:
  *   - Row name input (required, no id, identified by placeholder)
  *   - AI prompt input (#newRowPrompt, optional)
@@ -31,9 +37,8 @@ const MOCK_TASKS_RESPONSE = {
 test.describe("Board Configuration — Create New Row section", () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => localStorage.clear());
-    await page.goto("/");
-    await page.locator("#board-config-collapse-toggle").click();
-    await expect(page.locator("#board-config-create-new-row")).toBeVisible();
+    await page.goto("/dashboard");
+    await openCreateRowModal(page);
   });
 
   test.describe("form visibility", () => {
@@ -78,10 +83,10 @@ test.describe("Board Configuration — Create New Row section", () => {
       await fillStable(nameInput, "My New Row");
       await section.getByRole("button", { name: "Add Row" }).click();
 
+      // The row-settings list lives in the (closed) gear modal, so verify the
+      // new row appears on the board itself instead.
       await expect(
-        page.locator("#board-config-row-display-settings").getByText(
-          "My New Row",
-        ),
+        page.getByRole("heading", { name: "My New Row" }),
       ).toBeVisible();
     });
 
@@ -138,7 +143,7 @@ test.describe("Board Configuration — Create New Row section", () => {
       resolveRoute();
     });
 
-    test("adds the new row to row settings after AI generation completes", async ({ page }) => {
+    test("adds the new row to the board after AI generation completes", async ({ page }) => {
       await page.route("/api/generate-tasks", (route) =>
         route.fulfill({
           status: 200,
@@ -155,10 +160,9 @@ test.describe("Board Configuration — Create New Row section", () => {
       await fillStable(promptInput, "Steps to make a pizza");
       await section.getByRole("button", { name: "Add Row" }).click();
 
+      // Row-settings list is in the closed gear modal — verify on the board.
       await expect(
-        page.locator("#board-config-row-display-settings").getByText(
-          "Pizza Making",
-        ),
+        page.getByRole("heading", { name: "Pizza Making" }),
       ).toBeVisible();
     });
 
@@ -179,15 +183,18 @@ test.describe("Board Configuration — Create New Row section", () => {
       await fillStable(promptInput, "Steps to make a pizza");
       await section.getByRole("button", { name: "Add Row" }).click();
 
-      await expect(page.getByText("Prepare pizza dough")).toBeVisible({
-        timeout: 10000,
-      });
-      await expect(page.getByText("Bake pizza")).toBeVisible({
-        timeout: 10000,
-      });
-      await expect(page.getByText("Slice and serve")).toBeVisible({
-        timeout: 10000,
-      });
+      // Target the board task-card headings — task titles also appear (as
+      // <span>s) in ColumnSettingsSection's column-deletion preview, which is
+      // always mounted, so a bare getByText would be ambiguous.
+      await expect(
+        page.getByRole("heading", { name: "Prepare pizza dough" }),
+      ).toBeVisible({ timeout: 10000 });
+      await expect(
+        page.getByRole("heading", { name: "Bake pizza" }),
+      ).toBeVisible({ timeout: 10000 });
+      await expect(
+        page.getByRole("heading", { name: "Slice and serve" }),
+      ).toBeVisible({ timeout: 10000 });
     });
 
     test("restores Add Row button after AI generation completes", async ({ page }) => {

@@ -135,7 +135,7 @@ export function ChecklistGenerationCollapse({
     generateChecklistItems(taskDraft);
   }
 
-  const [collapseOpen, setCollapseOpen] = useState(false);
+  const [collapseOpen, setCollapseOpen] = useState(true);
 
   return (
     <div
@@ -194,7 +194,7 @@ export function ChecklistGenerationCollapse({
             onClick={applyChecklist}
             disabled={checklistPreview.length === 0}
           >
-            <span className="iconify hugeicons--arrow-left-big text-lg">
+            <span className="iconify hugeicons--arrow-down-big md:hugeicons--arrow-left-big text-lg">
             </span>
             Copy checklist items to task
           </button>

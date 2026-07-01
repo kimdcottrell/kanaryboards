@@ -6,6 +6,7 @@ import * as columns from "./reducers/columns.ts";
 import * as rows from "./reducers/rows.ts";
 import * as taskAi from "./reducers/taskAi.ts";
 import * as tasks from "./reducers/tasks.ts";
+import * as view from "./reducers/view.ts";
 
 export { createInitialState } from "./reducers/board.ts";
 
@@ -28,6 +29,12 @@ export function boardReducer(
     case "COLUMN/SET_INPUT":
       return columns.setInput(state, action.payload);
 
+    case "COLUMN/SET_ICON":
+      return columns.setIcon(state, action.payload);
+
+    case "COLUMN/SET_COLUMN_ICON":
+      return columns.setColumnIcon(state, action.payload);
+
     case "COLUMN/SET_DRAGGED_INDEX":
       return columns.setDraggedIndex(state, action.payload);
 
@@ -42,6 +49,18 @@ export function boardReducer(
 
     case "COLUMN/RENAME_CANCEL":
       return columns.renameCancel(state);
+
+    case "COLUMN/TOGGLE_PIN_SHORTCUT":
+      return columns.togglePinShortcut(state, action.payload);
+
+    case "COLUMN/TOGGLE_PIN_DOCK":
+      return columns.togglePinDock(state, action.payload);
+
+    case "COLUMN/TOGGLE_ICON_IN_BOARD_MENU":
+      return columns.toggleIconInBoardMenu(state, action.payload);
+
+    case "COLUMN/TOGGLE_ICON_NEAR_COLUMN_TITLE":
+      return columns.toggleIconNearColumnTitle(state, action.payload);
 
     // ── ROWS ──────────────────────────────────────────────────────────────────
 
@@ -80,6 +99,12 @@ export function boardReducer(
 
     case "ROW/RESET_FORM":
       return rows.resetForm(state);
+
+    case "ROW/OPEN_CREATE_MODAL":
+      return rows.openRowCreateModal(state);
+
+    case "ROW/CLOSE_CREATE_MODAL":
+      return rows.closeRowCreateModal(state);
 
     // ── TASKS ─────────────────────────────────────────────────────────────────
 
@@ -176,6 +201,14 @@ export function boardReducer(
     case "TASK_AI/GENERATE_FAILURE":
       return taskAi.generateFailure(state, action.payload);
 
+    // ── BOARD CONFIG ──────────────────────────────────────────────────────────
+
+    case "BOARD_CONFIG/OPEN_MODAL":
+      return board.openConfigModal(state, action.payload);
+
+    case "BOARD_CONFIG/CLOSE_MODAL":
+      return board.closeConfigModal(state);
+
     // ── BOARD ─────────────────────────────────────────────────────────────────
 
     case "BOARD/LOAD":
@@ -183,6 +216,11 @@ export function boardReducer(
 
     case "BOARD/RESET":
       return board.reset();
+
+    // ── VIEW ──────────────────────────────────────────────────────────────────
+
+    case "VIEW/TOGGLE_COLUMN_FILTER":
+      return view.toggleColumnFilter(state, action.payload);
 
     default:
       return state;

@@ -16,6 +16,11 @@ export interface Column {
   id: string;
   title: string;
   order: string;
+  pinnedToShortcut: boolean;
+  pinnedToDock: boolean;
+  icon: string | null;
+  iconInBoardMenu: boolean;
+  iconNearColumnTitle: boolean;
 }
 
 export interface Task {
@@ -38,13 +43,15 @@ export interface BoardData {
   boardLoaded: boolean;
 }
 
-// "Create a new row" form, including AI task generation (BoardConfiguration).
+// "Create a new row" form, including AI task generation (CreateRowSection),
+// and the dedicated modal it lives in (CreateRowModal).
 export interface RowFormState {
   newRowName: string;
   newRowPrompt: string;
   newRowFormKey: number;
   isGeneratingTasks: boolean;
   taskGenerationStatus: string;
+  createRowModalOpen: boolean;
 }
 
 // Inline row title editing (RowSection).
@@ -60,10 +67,19 @@ export interface ColumnEditState {
   editingColumnName: string;
 }
 
-// Default-column management: input field and drag reordering (BoardConfiguration).
+// Default-column management: input field and drag reordering (ColumnSettingsSection).
 export interface ColumnConfigState {
   defaultColumnInput: string;
+  defaultColumnIcon: string | null;
   draggedDefaultIndex: number | null;
+}
+
+// Board configuration modal (BoardConfigModal). boardConfigScrollTarget is the
+// id of an element to scroll into view after the modal opens (e.g. opening it
+// from "Add new column to all rows" jumps to #create-new-column); null = top.
+export interface BoardConfigState {
+  boardConfigModalOpen: boolean;
+  boardConfigScrollTarget: string | null;
 }
 
 // Task creation modal (TaskCreateModal).
@@ -94,23 +110,31 @@ export interface DragState {
   draggedTask: Task | null;
 }
 
+// Ephemeral view filter: which pinned columns are selected from the BoardMenu.
+// Empty = show all columns. Not persisted (excluded from the autosave snapshot).
+export interface ColumnFilterState {
+  selectedColumnIds: string[];
+}
+
 export type BoardState =
   & BoardData
   & RowFormState
   & RowEditState
   & ColumnEditState
   & ColumnConfigState
+  & BoardConfigState
   & TaskCreateState
   & TaskEditState
   & ChecklistAIState
-  & DragState;
+  & DragState
+  & ColumnFilterState;
 
 // ── BOARD ACTIONS ──────────────────────────────────────────────────────────────
 
 export type ColumnAction =
   | {
     type: "COLUMN/ADD";
-    payload: { id: string; title: string; order: string };
+    payload: { id: string; title: string; order: string; icon: string | null };
   }
   | { type: "COLUMN/DELETE"; payload: { columnId: string } }
   | {
@@ -118,14 +142,26 @@ export type ColumnAction =
     payload: { columnId: string; beforeColumnId: string | null };
   }
   | { type: "COLUMN/SET_INPUT"; payload: { value: string } }
+  | { type: "COLUMN/SET_ICON"; payload: { icon: string | null } }
+  | {
+    type: "COLUMN/SET_COLUMN_ICON";
+    payload: { columnId: string; icon: string | null };
+  }
   | { type: "COLUMN/SET_DRAGGED_INDEX"; payload: { index: number | null } }
   | {
     type: "COLUMN/RENAME_START";
-    payload: { columnId: string; rowId: string; currentName: string };
+    payload: { columnId: string; rowId: string | null; currentName: string };
   }
   | { type: "COLUMN/RENAME_CHANGE"; payload: { name: string } }
   | { type: "COLUMN/RENAME_SAVE"; payload: { columnId: string } }
-  | { type: "COLUMN/RENAME_CANCEL" };
+  | { type: "COLUMN/RENAME_CANCEL" }
+  | { type: "COLUMN/TOGGLE_PIN_SHORTCUT"; payload: { columnId: string } }
+  | { type: "COLUMN/TOGGLE_PIN_DOCK"; payload: { columnId: string } }
+  | { type: "COLUMN/TOGGLE_ICON_IN_BOARD_MENU"; payload: { columnId: string } }
+  | {
+    type: "COLUMN/TOGGLE_ICON_NEAR_COLUMN_TITLE";
+    payload: { columnId: string };
+  };
 
 export type RowAction =
   | {
@@ -142,7 +178,9 @@ export type RowAction =
   | { type: "ROW/RENAME"; payload: { rowId: string; name: string } }
   | { type: "ROW/SET_NEW_NAME"; payload: { name: string } }
   | { type: "ROW/SET_NEW_PROMPT"; payload: { prompt: string } }
-  | { type: "ROW/RESET_FORM" };
+  | { type: "ROW/RESET_FORM" }
+  | { type: "ROW/OPEN_CREATE_MODAL" }
+  | { type: "ROW/CLOSE_CREATE_MODAL" };
 
 export type TaskAction =
   | { type: "TASK/CREATE"; payload: { task: Task } }
@@ -232,6 +270,15 @@ export type TaskAIAction =
   | { type: "TASK_AI/GENERATE_SUCCESS"; payload: { tasks: Task[] } }
   | { type: "TASK_AI/GENERATE_FAILURE"; payload: { error: string } };
 
+export type BoardConfigAction =
+  | { type: "BOARD_CONFIG/OPEN_MODAL"; payload?: { scrollTarget?: string } }
+  | { type: "BOARD_CONFIG/CLOSE_MODAL" };
+
+export type ViewAction = {
+  type: "VIEW/TOGGLE_COLUMN_FILTER";
+  payload: { columnId: string };
+};
+
 export type BoardLifecycleAction =
   | { type: "BOARD/RESET" }
   | {
@@ -250,4 +297,6 @@ export type BoardAction =
   | ChecklistAction
   | ChecklistAIAction
   | TaskAIAction
-  | BoardLifecycleAction;
+  | BoardConfigAction
+  | BoardLifecycleAction
+  | ViewAction;

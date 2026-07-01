@@ -1,0 +1,25 @@
+// Vendored from https://github.com/googleapis/js-genai/blob/84e795cf4add4ca9dffe47828d6528e19d684d54/src/gaos/models/interactions/model.ts
+// Converted from a union type to a runtime array so tests can check membership.
+export const KNOWN_MODELS = [
+  "gemini-2.5-computer-use-preview-10-2025",
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-image",
+  "gemini-2.5-flash-lite",
+  "gemini-2.5-flash-lite-preview-09-2025",
+  "gemini-2.5-flash-native-audio-preview-12-2025",
+  "gemini-2.5-flash-preview-09-2025",
+  "gemini-2.5-flash-preview-tts",
+  "gemini-2.5-pro",
+  "gemini-2.5-pro-preview-tts",
+  "gemini-3-flash-preview",
+  "gemini-3-pro-image-preview",
+  "gemini-3-pro-preview",
+  "gemini-3.1-pro-preview",
+  "gemini-3.1-flash-image-preview",
+  "gemini-3.1-flash-lite",
+  "gemini-3.1-flash-lite-preview",
+  "gemini-3.1-flash-tts-preview",
+  "gemini-3.5-flash",
+  "lyria-3-clip-preview",
+  "lyria-3-pro-preview",
+] as const;

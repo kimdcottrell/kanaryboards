@@ -6,43 +6,39 @@ import {
 } from "../BoardContext.tsx";
 import { createId } from "../constants.ts";
 import { generateKeyBetween } from "fractional-indexing";
-import { DragEvent, KeyboardEvent } from "react";
+import { DragEvent } from "react";
 
 export function useColumnConfigActions() {
   const dispatch = useBoardDispatch();
   const { defaultColumnInput, draggedDefaultIndex } = useColumnConfigState();
   const { columns } = useBoardDataState();
 
-  const addColumn = useCallback((title: string) => {
-    const lastCol = columns[columns.length - 1];
-    dispatch({
-      type: "COLUMN/ADD",
-      payload: {
-        id: createId(),
-        title,
-        order: generateKeyBetween(lastCol?.order ?? null, null),
-      },
-    });
-  }, [columns, dispatch]);
+  const addColumn = useCallback(
+    (direction: "left" | "right", referenceColumnId: string) => {
+      const title = defaultColumnInput.trim();
+      const refIdx = columns.findIndex((c) => c.id === referenceColumnId);
+      if (!title || !direction || refIdx === -1) return;
 
-  const handleDefaultColumnInputKeyDown = useCallback(
-    (event: KeyboardEvent) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        const title = defaultColumnInput.trim();
-        if (title) {
-          const lastCol = columns[columns.length - 1];
-          dispatch({
-            type: "COLUMN/ADD",
-            payload: {
-              id: createId(),
-              title,
-              order: generateKeyBetween(lastCol?.order ?? null, null),
-            },
-          });
-          dispatch({ type: "COLUMN/SET_INPUT", payload: { value: "" } });
-        }
-      }
+      const id = createId();
+      const lastCol = columns[columns.length - 1];
+      dispatch({
+        type: "COLUMN/ADD",
+        payload: {
+          id,
+          title,
+          order: generateKeyBetween(lastCol?.order ?? null, null),
+          icon: null,
+        },
+      });
+
+      const beforeColumnId = direction === "left"
+        ? referenceColumnId
+        : columns[refIdx + 1]?.id ?? null;
+      dispatch({
+        type: "COLUMN/REORDER",
+        payload: { columnId: id, beforeColumnId },
+      });
+      dispatch({ type: "COLUMN/SET_INPUT", payload: { value: "" } });
     },
     [defaultColumnInput, columns, dispatch],
   );
@@ -56,9 +52,13 @@ export function useColumnConfigActions() {
       if (!Number.isNaN(fromIndex) && columns[fromIndex]) {
         const draggedId = columns[fromIndex].id;
         if (draggedId !== targetColumnId) {
+          const targetIndex = columns.findIndex((c) => c.id === targetColumnId);
+          const beforeColumnId = fromIndex < targetIndex
+            ? columns[targetIndex + 1]?.id ?? null
+            : targetColumnId;
           dispatch({
             type: "COLUMN/REORDER",
-            payload: { columnId: draggedId, beforeColumnId: targetColumnId },
+            payload: { columnId: draggedId, beforeColumnId },
           });
         }
       }
@@ -70,6 +70,10 @@ export function useColumnConfigActions() {
   const dispatchOnly = useMemo(() => ({
     setDefaultColumnInput: (value: string) =>
       dispatch({ type: "COLUMN/SET_INPUT", payload: { value } }),
+    setDefaultColumnIcon: (icon: string | null) =>
+      dispatch({ type: "COLUMN/SET_ICON", payload: { icon } }),
+    setColumnIcon: (columnId: string, icon: string | null) =>
+      dispatch({ type: "COLUMN/SET_COLUMN_ICON", payload: { columnId, icon } }),
     setDraggedDefaultIndex: (index: number | null) =>
       dispatch({ type: "COLUMN/SET_DRAGGED_INDEX", payload: { index } }),
     reorderColumn: (columnId: string, beforeColumnId: string | null) =>
@@ -79,6 +83,20 @@ export function useColumnConfigActions() {
       }),
     deleteColumn: (columnId: string) =>
       dispatch({ type: "COLUMN/DELETE", payload: { columnId } }),
+    togglePinShortcut: (columnId: string) =>
+      dispatch({ type: "COLUMN/TOGGLE_PIN_SHORTCUT", payload: { columnId } }),
+    togglePinDock: (columnId: string) =>
+      dispatch({ type: "COLUMN/TOGGLE_PIN_DOCK", payload: { columnId } }),
+    toggleIconInBoardMenu: (columnId: string) =>
+      dispatch({
+        type: "COLUMN/TOGGLE_ICON_IN_BOARD_MENU",
+        payload: { columnId },
+      }),
+    toggleIconNearColumnTitle: (columnId: string) =>
+      dispatch({
+        type: "COLUMN/TOGGLE_ICON_NEAR_COLUMN_TITLE",
+        payload: { columnId },
+      }),
     handleDefaultColumnDragStart: (index: number) => (event: DragEvent) => {
       dispatch({ type: "COLUMN/SET_DRAGGED_INDEX", payload: { index } });
       event.dataTransfer!.effectAllowed = "move";
@@ -92,7 +110,6 @@ export function useColumnConfigActions() {
   return {
     ...dispatchOnly,
     addColumn,
-    handleDefaultColumnInputKeyDown,
     handleDefaultColumnDrop,
   };
 }

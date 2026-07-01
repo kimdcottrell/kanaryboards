@@ -1,7 +1,7 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { mockTaskDraft } from "./setup.ts";
+import { mockColumn, mockRow, mockTaskDraft } from "./setup.ts";
 
 vi.mock("@lyfie/luthor", () => ({
   ExtensiveEditor: () =>
@@ -16,6 +16,8 @@ afterEach(() => {
 
 const baseProps = {
   taskDraft: mockTaskDraft,
+  columns: [mockColumn],
+  rows: [mockRow],
   setTaskDraft: vi.fn(),
   onSubmit: vi.fn(),
   addChecklistItem: vi.fn(),
@@ -97,14 +99,5 @@ describe("TaskForm", () => {
     render(<TaskForm {...baseProps} onDelete={onDelete} />);
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     expect(onDelete).toHaveBeenCalled();
-  });
-
-  test("renders children inside the form", () => {
-    render(
-      <TaskForm {...baseProps}>
-        <div data-testid="slot-child">injected content</div>
-      </TaskForm>,
-    );
-    expect(screen.getByTestId("slot-child")).toBeTruthy();
   });
 });

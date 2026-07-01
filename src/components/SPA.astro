@@ -1,5 +1,5 @@
 ---
-import BaseLayout from "@layouts/BaseLayout.astro";
+import Dashboard from "@layouts/Dashboard.astro";
 import BoardController from "@components/BoardController";
 
 const boardId = Astro.locals.boardId;
@@ -8,7 +8,7 @@ const isAuthenticated = !!userId;
 const unauthorized = Astro.url.searchParams.get("unauthorized") === "1";
 ---
 
-<BaseLayout>
+<Dashboard>
   {
     unauthorized && (
       <div
@@ -39,8 +39,16 @@ const unauthorized = Astro.url.searchParams.get("unauthorized") === "1";
     client:only="react"
     boardId={boardId}
     isAuthenticated={isAuthenticated}
-  />
-</BaseLayout>
+  >
+    <div
+      slot="fallback"
+      class="flex min-h-[60vh] flex-col items-center justify-center gap-4"
+    >
+      <h2 class="text-xl font-semibold">Task dashboard is loading...</h2>
+      <span class="loading loading-spinner loading-xl"></span>
+    </div>
+  </BoardController>
+</Dashboard>
 
 <script>
   document

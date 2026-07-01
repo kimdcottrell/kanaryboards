@@ -11,6 +11,7 @@ export const createInitialState = (): BoardState => {
     newRowName: "",
     newRowPrompt: "",
     newRowFormKey: 0,
+    createRowModalOpen: false,
     editingRowId: null,
     editingRowName: "",
     editingColumnId: null,
@@ -29,10 +30,33 @@ export const createInitialState = (): BoardState => {
     isGeneratingTasks: false,
     taskGenerationStatus: "",
     defaultColumnInput: "",
+    defaultColumnIcon: null,
     draggedDefaultIndex: null,
     draggedTask: null,
+    boardConfigModalOpen: false,
+    boardConfigScrollTarget: null,
+    selectedColumnIds: [],
   };
 };
+
+export function openConfigModal(
+  state: BoardState,
+  payload?: { scrollTarget?: string },
+): BoardState {
+  return {
+    ...state,
+    boardConfigModalOpen: true,
+    boardConfigScrollTarget: payload?.scrollTarget ?? null,
+  };
+}
+
+export function closeConfigModal(state: BoardState): BoardState {
+  return {
+    ...state,
+    boardConfigModalOpen: false,
+    boardConfigScrollTarget: null,
+  };
+}
 
 export function load(
   state: BoardState,
@@ -49,13 +73,18 @@ export function load(
 }
 
 export function reset(): BoardState {
-  const columnOrders = generateNKeysBetween(null, null, 3);
+  const columnOrders = generateNKeysBetween(null, null, 4);
   return {
     ...createInitialState(),
-    columns: ["To Do", "In Progress", "Done"].map((title, i) => ({
+    columns: ["To Do", "In Progress", "Review", "Done"].map((title, i) => ({
       id: createId(),
       title,
       order: columnOrders[i],
+      pinnedToShortcut: title === "In Progress" || title === "Review",
+      pinnedToDock: title === "In Progress",
+      icon: null,
+      iconInBoardMenu: title === "In Progress" || title === "Review",
+      iconNearColumnTitle: false,
     })),
     rows: [{
       id: createId(),

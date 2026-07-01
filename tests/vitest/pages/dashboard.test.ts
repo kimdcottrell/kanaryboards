@@ -1,16 +1,16 @@
 // @vitest-environment node
 import { createTestContainer } from "../setup.ts";
 import { beforeAll, describe, expect, test } from "vitest";
-import IndexPage from "@pages/index.astro";
+import DashboardPage from "@pages/dashboard/index.astro";
 import { JSDOM } from "jsdom";
 
-describe("Astro components loaded in on the index page", () => {
+describe("Astro components loaded in on the dashboard page", () => {
   let container: Awaited<ReturnType<typeof createTestContainer>>;
   let result: string;
 
   beforeAll(async () => {
     container = await createTestContainer();
-    result = await container.renderToString(IndexPage, {
+    result = await container.renderToString(DashboardPage, {
       locals: {
         boardId: "test-board-id",
         auth: () => ({ userId: null }),
