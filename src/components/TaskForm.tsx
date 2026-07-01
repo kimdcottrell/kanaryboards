@@ -246,7 +246,7 @@ export default function TaskForm({
           {requireRowColumn && <span className="validator-hint">Required</span>}
         </fieldset>
       </div>
-      <div className="grid grid-cols-2 gap-4 items-start">
+      <div className="grid md:grid-cols-2 gap-4 items-start">
         <ChecklistSection
           checklist={taskDraft.checklist}
           addChecklistItem={addChecklistItem}
@@ -256,17 +256,19 @@ export default function TaskForm({
           handleChecklistKeyDown={handleChecklistKeyDown}
           setChecklistInputRef={setChecklistInputRef}
         />
-        <ChecklistGenerationCollapse
-          taskDraft={taskDraft}
-          checklistPrompt={checklistPrompt}
-          checklistPreview={checklistPreview}
-          isGeneratingChecklist={isGeneratingChecklist}
-          checklistModalError={checklistModalError}
-          setChecklistPrompt={setChecklistPrompt}
-          generateChecklistItems={generateChecklistItems}
-          applyChecklist={applyChecklist}
-          clearChecklistPreview={clearChecklistPreview}
-        />
+        <div className="order-first md:order-0">
+          <ChecklistGenerationCollapse
+            taskDraft={taskDraft}
+            checklistPrompt={checklistPrompt}
+            checklistPreview={checklistPreview}
+            isGeneratingChecklist={isGeneratingChecklist}
+            checklistModalError={checklistModalError}
+            setChecklistPrompt={setChecklistPrompt}
+            generateChecklistItems={generateChecklistItems}
+            applyChecklist={applyChecklist}
+            clearChecklistPreview={clearChecklistPreview}
+          />
+        </div>
       </div>
       <div
         className={`flex gap-2 ${onDelete ? "justify-between" : "justify-end"}`}
