@@ -25,18 +25,18 @@ export default function RowSection({ row }) {
   const renderCount = useRenderCount();
 
   return (
-    <>
+    <div className="relative w-full">
       <div className="absolute z-0 min-h-3/12 w-full bg-linear-to-br/oklch from-ctp-flamingo-100/50 dark:from-ctp-lavender-950 mask-b-from-base-100 to-base-100">
       </div>
       <section
         id={`row-section-${row.id}`}
         data-render-count={renderCount}
-        className="space-y-6 p-5 relative"
+        className="space-y-6 p-5 relative w-full"
         style={{
           backgroundColor: `color-mix(in srgb, ${row.color} 10%, transparent)`,
         }}
       >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-row items-center justify-between gap-4">
           <div>
             {editingRowId === row.id
               ? (
@@ -106,7 +106,7 @@ export default function RowSection({ row }) {
         </div>
 
         {!collapsed && (
-          <div id={`row-columns-${row.id}`} className="pb-4">
+          <div id={`row-columns-${row.id}`} className="pb-4 overflow-x-scroll">
             <div className="flex gap-3">
               {visibleColumns.map((column) => (
                 <ColumnCard
@@ -119,6 +119,6 @@ export default function RowSection({ row }) {
           </div>
         )}
       </section>
-    </>
+    </div>
   );
 }

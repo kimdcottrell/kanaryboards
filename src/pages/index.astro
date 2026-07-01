@@ -6,24 +6,24 @@ import DemoBoardController from "@components/DemoBoardController";
 <BaseLayout>
   <section id="hero" class="relative lg:h-screen lg:overflow-hidden">
     <div
-      class="min-h-screen lg:h-full bg-linear-to-br/oklch from-ctp-flamingo-100/50 dark:from-ctp-lavender-950 mask-b-from-base-100 to-base-100"
+      class="min-h-screen h-full bg-linear-to-br/oklch from-ctp-flamingo-100/50 dark:from-ctp-lavender-950 mask-b-from-base-100 to-base-100"
     >
     </div>
-    <div class="hero min-h-screen lg:h-full top-0 absolute z-10">
-      <div class="hero-content flex-col lg:flex-row">
-        <div class="text-center lg:text-left">
+    <div class="hero min-h-screen h-full top-0 absolute z-10">
+      <div class="hero-content">
+        <div class="text-center md:text-left">
           <h1
-            class="text-7xl font-semibold bg-clip-text text-transparent bg-linear-to-r from-accent to-secondary"
+            class="text-6xl lg:text-7xl font-semibold bg-clip-text text-transparent bg-linear-to-r from-accent to-secondary"
           >
             Discover what can be with <span class="font-logo font-normal"
               >Kanby</span
             >.
           </h1>
           <p class="py-6">
-            <span class="text-2xl">
+            <span class="text-lg md:text-2xl">
               Whether you're
-              <span class="text-rotate">
-                <span>
+              <span class="text-rotate block md:inline-block md:text-2xl">
+                <span class="justify-items-center md:justify-items-start">
                   <span class="bg-primary text-primary-content px-2">
                     planning a project
                   </span>
@@ -38,13 +38,15 @@ import DemoBoardController from "@components/DemoBoardController";
                   </span>
                 </span>
               </span>
-              <br />
-              Kanby is the tool you need to stay organized and focused.
+              <br class="hidden md:block" />
+              <span class="block mx-auto max-w-[80%] md:mx-0 md:max-w-full">
+                Kanby is the tool you need to stay organized and focused.
+              </span>
             </span>
           </p>
           <div
             role="alert"
-            class="mb-6 alert alert-soft border-1 border-info/50 alert-info alert-vertical sm:alert-horizontal w-fit"
+            class="mb-6 alert alert-soft border-1 border-info/50 alert-info alert-vertical md:alert-horizontal w-fit mx-auto md:mx-0"
           >
             <span class="iconify hugeicons--chat text-xl"></span>
             <div>
@@ -56,10 +58,9 @@ import DemoBoardController from "@components/DemoBoardController";
               </div>
             </div>
           </div>
-          <div class="join">
+          <div class="join join-vertical gap-3 md:gap-0 md:join-horizontal">
             <label
-              style="border-radius: 0"
-              class="input input-lg input-warning join-item rounded-l!"
+              class="input input-lg input-warning join-item md:rounded-none md:rounded-l!"
             >
               <span class="iconify hugeicons--ai-magic"></span>
               <span class="relative grow">
@@ -77,15 +78,16 @@ import DemoBoardController from "@components/DemoBoardController";
               </span>
             </label>
             <button
-              style="border-radius: 0"
-              class="rounded-r! btn btn-lg btn-warning self-end inline-flex items-center gap-2 shadow-none"
+              class="md:rounded-none! md:rounded-r! btn btn-lg btn-warning md:self-end inline-flex items-center gap-2 shadow-none"
             >
               <span class="iconify hugeicons--rocket-01 text-xl"></span>
               Get Started
             </button>
           </div>
         </div>
-        <div class="card bg-base-100 w-full max-w-sm shrink-0 shadow-2xl">
+        <div
+          class="card hidden md:block bg-base-100 w-full max-w-sm lg:shrink-0 shadow-2xl"
+        >
           <div class="card-body">
             <ul class="timeline timeline-vertical">
               <li>
@@ -163,11 +165,11 @@ import DemoBoardController from "@components/DemoBoardController";
       </div>
     </div>
   </section>
-  <section id="demo" class="py-20 bg-base-200">
-    <div class="text-center mb-10">
+  <section id="demo" class="bg-base-200">
+    <div class="text-center px-3 py-20">
       <h2 class="text-4xl font-semibold">Try it right here</h2>
-      <p class="py-2">
-        This is a live, fully interactive board — drag cards, edit titles, check
+      <p class="mt-6">
+        This is a live, fully interactive board - drag cards, edit titles, check
         off items. Nothing here is saved.
       </p>
     </div>

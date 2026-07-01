@@ -29,6 +29,7 @@ vi.mock("@components/context/hooks.ts", () => ({
   useBoardRefs: vi.fn(),
   useChecklistAIState: vi.fn(),
   useChecklistAIActions: vi.fn(),
+  useSharedMenuActions: vi.fn(),
   handleChecklistKeyDown: vi.fn(),
 }));
 
@@ -56,6 +57,7 @@ import {
   useColumnFilterActions,
   useColumnFilterState,
   useRowFormActions,
+  useSharedMenuActions,
   useTaskActions,
   useTaskEditActions,
   useTaskEditState,
@@ -68,6 +70,7 @@ import {
   makeBoardRefs,
   makeChecklistAIActions,
   makeChecklistAIState,
+  makeSharedMenuActions,
   makeTaskActions,
   makeTaskEditActions,
   makeTaskEditState,
@@ -106,6 +109,7 @@ beforeEach(() => {
   vi.mocked(useBoardRefs).mockReturnValue(makeBoardRefs());
   vi.mocked(useChecklistAIState).mockReturnValue(makeChecklistAIState());
   vi.mocked(useChecklistAIActions).mockReturnValue(makeChecklistAIActions());
+  vi.mocked(useSharedMenuActions).mockReturnValue(makeSharedMenuActions());
 });
 
 afterEach(() => {

@@ -26,7 +26,8 @@ const BOARD_STATE = {
       id: "col-e2e-1",
       title: "To Do",
       order: "a0",
-      pinned: false,
+      pinnedToShortcut: false,
+      pinnedToDock: false,
       iconInBoardMenu: false,
       iconNearColumnTitle: false,
     },
@@ -34,7 +35,8 @@ const BOARD_STATE = {
       id: "col-e2e-2",
       title: "In Progress",
       order: "a1",
-      pinned: false,
+      pinnedToShortcut: false,
+      pinnedToDock: false,
       icon: "tick-01",
       iconInBoardMenu: false,
       iconNearColumnTitle: false,
@@ -43,7 +45,8 @@ const BOARD_STATE = {
       id: "col-e2e-3",
       title: "Done",
       order: "a2",
-      pinned: false,
+      pinnedToShortcut: false,
+      pinnedToDock: false,
       iconInBoardMenu: false,
       iconNearColumnTitle: false,
     },
@@ -289,13 +292,13 @@ test.describe("Board CRUD", () => {
       await expect(menuLink).toHaveCount(0);
 
       await inProgressCard.getByRole("button", {
-        name: "Pin column to board menu",
+        name: "Pin column to shortcut menu",
       }).click();
 
       // The pin toggles to an unpin control and the column joins the menu.
       await expect(
         inProgressCard.getByRole("button", {
-          name: "Unpin column from board menu",
+          name: "Unpin column from shortcut menu",
         }),
       ).toBeVisible();
       await expect(menuLink).toBeVisible();

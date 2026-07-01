@@ -50,8 +50,11 @@ export function boardReducer(
     case "COLUMN/RENAME_CANCEL":
       return columns.renameCancel(state);
 
-    case "COLUMN/TOGGLE_PIN":
-      return columns.togglePin(state, action.payload);
+    case "COLUMN/TOGGLE_PIN_SHORTCUT":
+      return columns.togglePinShortcut(state, action.payload);
+
+    case "COLUMN/TOGGLE_PIN_DOCK":
+      return columns.togglePinDock(state, action.payload);
 
     case "COLUMN/TOGGLE_ICON_IN_BOARD_MENU":
       return columns.toggleIconInBoardMenu(state, action.payload);

@@ -3,7 +3,7 @@ title: Row & Column Management
 ---
 sequenceDiagram
     actor User
-    participant BoardMenu as BoardMenu<br/>(BoardMenu.tsx, #board-menu)
+    participant BoardMenu as BoardMenu / BoardDock<br/>(BoardMenu.tsx #board-menu = lg+,<br/>BoardDock.tsx dock = below lg)
     participant Config as BoardConfigModal<br/>(BoardConfigModal.tsx +<br/>config/board/*Section.tsx)
     participant RowModal as CreateRowModal<br/>(config/board/CreateRowModal.tsx +<br/>CreateRowSection.tsx)
     participant Board as RowBoard<br/>(RowBoard.tsx)
@@ -197,23 +197,32 @@ sequenceDiagram
     Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: columns changed)<br/>-> column settings badge list loses the column
     Ctx-->>Cell: the corresponding ColumnCard instance in<br/>every RowSection unmounts<br/>(BoardData: columns/tasks changed)
 
-    Note over User,AI: Pin/unpin column (ColumnSettingsSection)
-    User->>Config: click pin icon on column badge
-    Config->>Actions: togglePinColumn(columnId)<br/>(actions/columnConfig.ts)
-    Actions->>Ctx: dispatch(COLUMN/TOGGLE_PIN, {columnId})
-    Ctx->>Reducer: columns.togglePin(state, payload)
-    Reducer-->>Ctx: columns[columnId].pinned = !pinned
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: column.pinned changed)<br/>-> pin icon toggles filled/outline
-    Ctx-->>BoardMenu: BoardView re-renders<br/>(BoardData: columns changed)<br/>-> #board-menu adds/removes that column's<br/>title+count item (always shown when pinned,<br/>regardless of iconInBoardMenu)
-    Note over Reducer: Unpinning also prunes the column from<br/>selectedColumnIds (columns.togglePin), so the<br/>view filter never references a non-menu column.
+    Note over User,AI: Pin/unpin column — two independent menus:<br/>Shortcut Menu (#board-menu, lg+, max 3) and<br/>Dock Menu (BoardDock, below lg, max 1).<br/>Each has its own pin button in ColumnSettingsSection.
+    alt Shortcut Menu pin
+        User->>Config: click Shortcut Menu pin icon
+        Config->>Actions: togglePinShortcut(columnId)<br/>(actions/columnConfig.ts)
+        Actions->>Ctx: dispatch(COLUMN/TOGGLE_PIN_SHORTCUT, {columnId})
+        Ctx->>Reducer: columns.togglePinShortcut(state, payload)
+        Reducer-->>Ctx: columns[columnId].pinnedToShortcut = !pinnedToShortcut
+        Ctx-->>BoardMenu: BoardView re-renders<br/>(BoardData: columns changed)<br/>-> #board-menu adds/removes that column's<br/>title+count item (lg+ only)
+    else Dock Menu pin (max 1)
+        User->>Config: click Dock Menu pin icon
+        Config->>Actions: togglePinDock(columnId)<br/>(actions/columnConfig.ts)
+        Actions->>Ctx: dispatch(COLUMN/TOGGLE_PIN_DOCK, {columnId})
+        Ctx->>Reducer: columns.togglePinDock(state, payload)
+        Reducer-->>Ctx: columns[columnId].pinnedToDock = !pinnedToDock
+        Ctx-->>BoardMenu: BoardView re-renders<br/>(BoardData: columns changed)<br/>-> BoardDock shows/clears its single<br/>dock-pinned column item (below lg only)
+    end
+    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: column pin flags changed)<br/>-> pin icons + N/3 and N/1 counters update
+    Note over Reducer: Unpinning from either menu prunes the column<br/>from selectedColumnIds only if it is no longer pinned<br/>to the other menu, so the view filter never references<br/>a column absent from both menus.
 
-    Note over User,AI: Filter board by pinned column (BoardMenu view filter)
-    User->>BoardMenu: click a pinned column item
+    Note over User,AI: Filter board by pinned column<br/>(shared view filter — Shortcut Menu item or Dock Menu item)
+    User->>BoardMenu: click a pinned column item<br/>(#board-menu at lg+, or dock below lg)
     BoardMenu->>Actions: toggleColumnFilter(columnId)<br/>(actions/view.ts)
     Actions->>Ctx: dispatch(VIEW/TOGGLE_COLUMN_FILTER, {columnId})
     Ctx->>Reducer: view.toggleColumnFilter(state, payload)
     Reducer-->>Ctx: selectedColumnIds toggles the id<br/>(add if absent, remove if present)
-    Ctx-->>BoardMenu: BoardMenu re-renders<br/>(ColumnFilterContext: selectedColumnIds changed)<br/>-> selected items get the active background<br/>(bg-base-content/10, matching hover)
+    Ctx-->>BoardMenu: BoardMenu + BoardDock re-render<br/>(ColumnFilterContext: selectedColumnIds changed)<br/>-> selected items get the active state<br/>(bg-base-content/10 in menu, dock-active in dock)
     Ctx-->>Board: RowBoard re-renders<br/>(ColumnFilterContext: selectedColumnIds changed)
     alt 0 selected
         Board->>Row: render every RowSection with all columns
@@ -233,7 +242,7 @@ sequenceDiagram
     Ctx->>Reducer: columns.toggleIconInBoardMenu(state, payload)
     Reducer-->>Ctx: columns[columnId].iconInBoardMenu = !iconInBoardMenu
     Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: column.iconInBoardMenu changed)<br/>-> checkbox toggles
-    Ctx-->>BoardMenu: BoardView re-renders<br/>(BoardData: columns changed)<br/>-> that column's menu item shows/hides its icon<br/>(title+count badge unaffected)
+    Ctx-->>BoardMenu: BoardView re-renders<br/>(BoardData: columns changed)<br/>-> that column's item shows/hides its icon in<br/>#board-menu and (if dock-pinned) BoardDock<br/>(title+count badge unaffected)
 
     Note over User,AI: Reorder column (drag, ColumnSettingsSection column badges)
     User->>Config: dragstart on column badge

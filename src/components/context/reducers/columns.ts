@@ -11,7 +11,8 @@ export function add(
       ...state.columns,
       {
         ...payload,
-        pinned: false,
+        pinnedToShortcut: false,
+        pinnedToDock: false,
         iconInBoardMenu: false,
         iconNearColumnTitle: false,
       },
@@ -19,20 +20,45 @@ export function add(
   };
 }
 
-export function togglePin(
+export function togglePinShortcut(
   state: BoardState,
-  payload: Extract<ColumnAction, { type: "COLUMN/TOGGLE_PIN" }>["payload"],
+  payload: Extract<
+    ColumnAction,
+    { type: "COLUMN/TOGGLE_PIN_SHORTCUT" }
+  >["payload"],
 ): BoardState {
-  const wasPinned = state.columns.find((c) => c.id === payload.columnId)
-    ?.pinned;
+  const target = state.columns.find((c) => c.id === payload.columnId);
+  // Unpinning removes the column from the shortcut menu. Drop it from the view
+  // filter to avoid a stuck filtered state with no item to toggle off, unless
+  // it's still reachable via the dock menu.
+  const wentUnreachable = target?.pinnedToShortcut && !target.pinnedToDock;
   return {
     ...state,
     columns: state.columns.map((c) =>
-      c.id === payload.columnId ? { ...c, pinned: !c.pinned } : c
+      c.id === payload.columnId
+        ? { ...c, pinnedToShortcut: !c.pinnedToShortcut }
+        : c
     ),
-    // Unpinning removes the column from the menu, so drop it from the view
-    // filter to avoid a stuck filtered state with no item to toggle off.
-    selectedColumnIds: wasPinned
+    selectedColumnIds: wentUnreachable
+      ? state.selectedColumnIds.filter((id) => id !== payload.columnId)
+      : state.selectedColumnIds,
+  };
+}
+
+export function togglePinDock(
+  state: BoardState,
+  payload: Extract<ColumnAction, { type: "COLUMN/TOGGLE_PIN_DOCK" }>["payload"],
+): BoardState {
+  const target = state.columns.find((c) => c.id === payload.columnId);
+  // Unpinning removes the column from the dock menu. Drop it from the view
+  // filter unless it's still reachable via the shortcut menu.
+  const wentUnreachable = target?.pinnedToDock && !target.pinnedToShortcut;
+  return {
+    ...state,
+    columns: state.columns.map((c) =>
+      c.id === payload.columnId ? { ...c, pinnedToDock: !c.pinnedToDock } : c
+    ),
+    selectedColumnIds: wentUnreachable
       ? state.selectedColumnIds.filter((id) => id !== payload.columnId)
       : state.selectedColumnIds,
   };

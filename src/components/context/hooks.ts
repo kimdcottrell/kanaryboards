@@ -15,6 +15,7 @@ export {
   useTaskEditState,
   useTasksByCell,
 } from "./BoardContext.tsx";
+export { useSharedMenuActions } from "./actions/shortcutAndDockMenus.ts";
 export { useBoardConfigActions } from "./actions/boardConfig.ts";
 export { useBoardLifecycleActions } from "./actions/boardLifecycle.ts";
 export { useChecklistAIActions } from "./actions/checklistAi.ts";

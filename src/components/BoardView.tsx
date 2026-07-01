@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import BoardConfigModal from "./BoardConfigModal.tsx";
+import BoardDock from "./BoardDock.tsx";
 import BoardMenu from "./BoardMenu.tsx";
 import CreateRowModal from "./config/board/CreateRowModal.tsx";
 import RowBoard from "./RowBoard.tsx";
@@ -87,6 +88,7 @@ export default function BoardView() {
   return (
     <div key="board-loaded" className="animate-fade-in">
       <BoardMenu isSticky={isSticky} />
+      <BoardDock />
 
       <BoardConfigModal data-testid="board-configuration" />
       <CreateRowModal data-testid="create-row-modal" />

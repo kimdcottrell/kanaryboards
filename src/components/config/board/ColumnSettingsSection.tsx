@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import AsyncCreatableSelect from "react-select/async-creatable";
 import BoardMenu from "../../BoardMenu.tsx";
+import BoardDock from "../../BoardDock.tsx";
 import DynamicIcon from "../../DynamicIcon.tsx";
 import { searchHugeicons } from "@lib/icons.ts";
 import {
@@ -28,17 +29,24 @@ export default function ColumnSettingsSection() {
     addColumn,
     reorderColumn,
     deleteColumn,
-    togglePinColumn,
+    togglePinShortcut,
+    togglePinDock,
     toggleIconInBoardMenu,
     toggleIconNearColumnTitle,
   } = useColumnConfigActions();
 
   const [dragHoverIndex, setDragHoverIndex] = useState<number | null>(null);
+  const [pinNotice, setPinNotice] = useState<
+    { colId: string; type: "shortcut" | "dock" } | null
+  >(null);
   const [direction, setDirection] = useState<"" | "left" | "right">("");
   const [referenceColumnId, setReferenceColumnId] = useState("");
   const [createColumnFormKey, setCreateColumnFormKey] = useState(0);
 
-  const pinnedCount = columns.filter((column) => column.pinned).length;
+  const shortcutCount =
+    columns.filter((column) => column.pinnedToShortcut).length;
+  const dockCount = columns.filter((column) => column.pinnedToDock).length;
+  const dockPinnedTitle = columns.find((column) => column.pinnedToDock)?.title;
 
   return (
     <div
@@ -123,12 +131,14 @@ export default function ColumnSettingsSection() {
         </form>
       </div>
       <div className="bg-base-content/10 p-3 rounded">
-        {columns.some((column) => column.pinned) && (
+        {columns.some((column) =>
+          column.pinnedToShortcut || column.pinnedToDock
+        ) && (
           <>
             <h4 className="text-md font-semibold">
               Manage existing columns
             </h4>
-            <p className="text-sm">
+            <p className="text-sm py-3">
               Manage the columns set used across projects. Drag cards to
               reorder, pin to the board shortcut menu, or add a new default
               column.
@@ -143,13 +153,25 @@ export default function ColumnSettingsSection() {
               </a>{" "}
               library.
             </p>
-            <div className="mt-6 h-12 flex items-center justify-center">
-              <div className="indicator">
-                <span className="indicator-item badge badge-warning text-xl p-3 rounded-xs badge-sm z-101">
-                  Preview
-                </span>
-                <BoardMenu isPreview />
-              </div>
+            <div className="mt-6 flex flex-col items-center gap-10 py-4">
+              {columns.some((column) => column.pinnedToShortcut) && (
+                <div className="indicator">
+                  <span className="indicator-item badge badge-warning text-xl p-3 rounded-xs badge-sm z-101">
+                    Shortcut Menu Preview
+                  </span>
+                  <BoardMenu isPreview />
+                </div>
+              )}
+              {columns.some((column) => column.pinnedToDock) && (
+                <div className="max-w-sm w-full">
+                  <div className="indicator w-full">
+                    <span className="indicator-item badge badge-warning text-xl p-3 rounded-xs badge-sm z-101">
+                      Dock Menu Preview
+                    </span>
+                    <BoardDock isPreview />
+                  </div>
+                </div>
+              )}
             </div>
           </>
         )}
@@ -178,7 +200,9 @@ export default function ColumnSettingsSection() {
               draggedDefaultIndex !== index;
             const dropFromLeft = draggedDefaultIndex !== null &&
               draggedDefaultIndex < index;
-            const pinBlocked = !column.pinned && pinnedCount >= 3;
+            const shortcutPinBlocked = !column.pinnedToShortcut &&
+              shortcutCount >= 3;
+            const dockPinBlocked = !column.pinnedToDock && dockCount >= 1;
             const fauxFlex1: ReactNode[] = [];
             const columnTasks = tasks.filter((task) =>
               task.colId === column.id
@@ -263,40 +287,110 @@ export default function ColumnSettingsSection() {
                         )}
                     </h2>
                     <hr className="my-3" />
-                    <h4>Pin to board shortcut menu</h4>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={pinBlocked ? "tooltip tooltip-error" : ""}
-                        data-tip={pinBlocked
-                          ? "You can only pin 3 columns. Unpin one to proceed."
-                          : undefined}
-                      >
-                        <button
-                          type="button"
-                          disabled={pinBlocked}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            if (!pinBlocked) togglePinColumn(column.id);
-                          }}
-                          aria-label={column.pinned
-                            ? "Unpin column from board menu"
-                            : "Pin column to board menu"}
-                          className={`shadow-none w-fit py-2 px-1 btn btn-sm btn-secondary dark:btn-border-secondary light:text-secondary-content hover:bg-secondary/80 dark:text-base-100 hover:text-secondary-content! ${
-                            column.pinned
-                              ? "bg-secondary text-secondary-content!"
-                              : "bg-secondary/20 text-secondary!"
-                          }`}
-                        >
-                          <span className="iconify hugeicons--pin text-2xl font-bold">
-                          </span>
-                        </button>
-                      </div>
-                      <section className="total-pinned">
-                        <div className="inline-block badge badge-lg text-base-100 bg-base-content/60">
-                          {pinnedCount}/3
+                    <h3 className="font-semibold">
+                      Pin to board menus
+                    </h3>
+                    <div className="flex gap-4">
+                      <div className="flex flex-col gap-2">
+                        <h4>Shortcut Menu</h4>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              if (shortcutPinBlocked) {
+                                setPinNotice({
+                                  colId: column.id,
+                                  type: "shortcut",
+                                });
+                              } else {
+                                setPinNotice(null);
+                                togglePinShortcut(column.id);
+                              }
+                            }}
+                            aria-label={column.pinnedToShortcut
+                              ? "Unpin column from shortcut menu"
+                              : "Pin column to shortcut menu"}
+                            className={`shadow-none w-fit py-2 px-1 btn btn-sm btn-secondary dark:btn-border-secondary light:text-secondary-content hover:bg-secondary/80 dark:text-base-100 hover:text-secondary-content! ${
+                              column.pinnedToShortcut
+                                ? "bg-secondary text-secondary-content!"
+                                : "bg-secondary/20 text-secondary!"
+                            }`}
+                          >
+                            <span className="iconify hugeicons--pin text-2xl font-bold">
+                            </span>
+                          </button>
+                          <section className="total-pinned">
+                            <div className="inline-block badge badge-lg text-base-100 bg-base-content/60">
+                              {shortcutCount}/3
+                            </div>
+                          </section>
                         </div>
-                      </section>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <h4>Dock Menu</h4>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              if (dockPinBlocked) {
+                                setPinNotice({
+                                  colId: column.id,
+                                  type: "dock",
+                                });
+                              } else {
+                                setPinNotice(null);
+                                togglePinDock(column.id);
+                              }
+                            }}
+                            aria-label={column.pinnedToDock
+                              ? "Unpin column from dock menu"
+                              : "Pin column to dock menu"}
+                            className={`shadow-none w-fit py-2 px-1 btn btn-sm btn-secondary dark:btn-border-secondary light:text-secondary-content hover:bg-secondary/80 dark:text-base-100 hover:text-secondary-content! ${
+                              column.pinnedToDock
+                                ? "bg-secondary text-secondary-content!"
+                                : "bg-secondary/20 text-secondary!"
+                            }`}
+                          >
+                            <span className="iconify hugeicons--pin text-2xl font-bold">
+                            </span>
+                          </button>
+                          <section className="total-pinned">
+                            <div className="inline-block badge badge-lg text-base-100 bg-base-content/60">
+                              {dockCount}/1
+                            </div>
+                          </section>
+                        </div>
+                      </div>
                     </div>
+                    {dockPinBlocked &&
+                      pinNotice?.colId === column.id &&
+                      pinNotice.type === "dock" && (
+                      <div
+                        role="alert"
+                        className="alert alert-warning alert-soft block"
+                      >
+                        <span className="font-semibold pr-1">
+                          Dock Menu notice:
+                        </span>
+                        You can only pin 1 column to the dock. Unpin{" "}
+                        "{dockPinnedTitle}" to proceed.
+                      </div>
+                    )}
+                    {shortcutPinBlocked &&
+                      pinNotice?.colId === column.id &&
+                      pinNotice.type === "shortcut" && (
+                      <div
+                        role="alert"
+                        className="alert alert-warning alert-soft block"
+                      >
+                        <span className="font-semibold pr-1">
+                          Shortcut Menu notice:
+                        </span>
+                        You can only pin 3 columns. Unpin one to proceed.
+                      </div>
+                    )}
                     <hr className="my-3" />
                     <h4>Column icon</h4>
 
@@ -341,7 +435,7 @@ export default function ColumnSettingsSection() {
                           </div>
                         )}
                       />
-                      {column.pinned
+                      {column.pinnedToShortcut
                         ? (
                           <label
                             key={`${column.id}-enable-shortcut-menu`}

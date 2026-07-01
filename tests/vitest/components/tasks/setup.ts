@@ -5,6 +5,7 @@ import type {
   useBoardRefs,
   useChecklistAIActions,
   useChecklistAIState,
+  useSharedMenuActions,
   useTaskActions,
   useTaskCreateActions,
   useTaskCreateState,
@@ -21,6 +22,7 @@ type TaskEditState = ReturnType<typeof useTaskEditState>;
 type TaskEditActions = ReturnType<typeof useTaskEditActions>;
 type BoardDataState = ReturnType<typeof useBoardDataState>;
 type TaskActions = ReturnType<typeof useTaskActions>;
+type SharedMenuActions = ReturnType<typeof useSharedMenuActions>;
 
 export const mockRow: Row = {
   id: "row-1",
@@ -32,7 +34,8 @@ export const mockColumn: Column = {
   id: "col-1",
   title: "To Do",
   order: "a0",
-  pinned: false,
+  pinnedToShortcut: false,
+  pinnedToDock: false,
   icon: null,
   iconInBoardMenu: false,
   iconNearColumnTitle: false,
@@ -41,7 +44,8 @@ export const secondColumn: Column = {
   id: "col-2",
   title: "In Progress",
   order: "a1",
-  pinned: false,
+  pinnedToShortcut: false,
+  pinnedToDock: false,
   icon: null,
   iconInBoardMenu: false,
   iconNearColumnTitle: false,
@@ -185,6 +189,22 @@ export function makeTaskActions(
     handleTaskDragEnd: vi.fn(),
     handleTaskDragStart: vi.fn(() => vi.fn()),
     handleColumnDrop: vi.fn(() => vi.fn()),
+    ...overrides,
+  };
+}
+
+export function makeSharedMenuActions(
+  overrides: Partial<SharedMenuActions> = {},
+): SharedMenuActions {
+  return {
+    tasks: [mockTask],
+    columns: [mockColumn],
+    selectedColumnIds: [],
+    toggleColumnFilter: vi.fn(),
+    openSettings: vi.fn(),
+    detailsRef: { current: null },
+    handleClick: () => () => {},
+    addActions: [],
     ...overrides,
   };
 }

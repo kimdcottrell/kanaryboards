@@ -83,8 +83,10 @@ export function useColumnConfigActions() {
       }),
     deleteColumn: (columnId: string) =>
       dispatch({ type: "COLUMN/DELETE", payload: { columnId } }),
-    togglePinColumn: (columnId: string) =>
-      dispatch({ type: "COLUMN/TOGGLE_PIN", payload: { columnId } }),
+    togglePinShortcut: (columnId: string) =>
+      dispatch({ type: "COLUMN/TOGGLE_PIN_SHORTCUT", payload: { columnId } }),
+    togglePinDock: (columnId: string) =>
+      dispatch({ type: "COLUMN/TOGGLE_PIN_DOCK", payload: { columnId } }),
     toggleIconInBoardMenu: (columnId: string) =>
       dispatch({
         type: "COLUMN/TOGGLE_ICON_IN_BOARD_MENU",

@@ -16,7 +16,8 @@ export interface Column {
   id: string;
   title: string;
   order: string;
-  pinned: boolean;
+  pinnedToShortcut: boolean;
+  pinnedToDock: boolean;
   icon: string | null;
   iconInBoardMenu: boolean;
   iconNearColumnTitle: boolean;
@@ -154,7 +155,8 @@ export type ColumnAction =
   | { type: "COLUMN/RENAME_CHANGE"; payload: { name: string } }
   | { type: "COLUMN/RENAME_SAVE"; payload: { columnId: string } }
   | { type: "COLUMN/RENAME_CANCEL" }
-  | { type: "COLUMN/TOGGLE_PIN"; payload: { columnId: string } }
+  | { type: "COLUMN/TOGGLE_PIN_SHORTCUT"; payload: { columnId: string } }
+  | { type: "COLUMN/TOGGLE_PIN_DOCK"; payload: { columnId: string } }
   | { type: "COLUMN/TOGGLE_ICON_IN_BOARD_MENU"; payload: { columnId: string } }
   | {
     type: "COLUMN/TOGGLE_ICON_NEAR_COLUMN_TITLE";
