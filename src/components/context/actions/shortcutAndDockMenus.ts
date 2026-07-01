@@ -15,7 +15,7 @@ import { useColumnFilterActions } from "./view.ts";
  * differs, so that stays in each component.
  */
 export function useSharedMenuActions(isPreview?: boolean) {
-  const { tasks, columns } = useBoardDataState();
+  const { rows, tasks, columns } = useBoardDataState();
   const { openBoardConfigModal } = useBoardConfigActions();
   const { openCreateRowModal } = useRowFormActions();
   const { openTaskForm } = useTaskActions();
@@ -23,12 +23,15 @@ export function useSharedMenuActions(isPreview?: boolean) {
   const { toggleColumnFilter } = useColumnFilterActions();
 
   const detailsRef = useRef<HTMLDetailsElement>(null);
+  const rowsDetailsRef = useRef<HTMLDetailsElement>(null);
 
   useEffect(() => {
     const handleOutsideClick = (e: globalThis.MouseEvent) => {
-      const details = detailsRef.current;
-      if (details?.open && !details.contains(e.target as Node)) {
-        details.open = false;
+      for (const ref of [detailsRef, rowsDetailsRef]) {
+        const details = ref.current;
+        if (details?.open && !details.contains(e.target as Node)) {
+          details.open = false;
+        }
       }
     };
     document.addEventListener("click", handleOutsideClick);
@@ -62,12 +65,14 @@ export function useSharedMenuActions(isPreview?: boolean) {
   ];
 
   return {
+    rows,
     tasks,
     columns,
     selectedColumnIds,
     toggleColumnFilter,
     openSettings: () => openBoardConfigModal(),
     detailsRef,
+    rowsDetailsRef,
     handleClick,
     addActions,
   };

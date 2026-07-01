@@ -13,7 +13,9 @@ test.describe("Board menu — add dropdown", () => {
     await page.locator("html[data-board-loaded='true']").waitFor({
       state: "attached",
     });
-    await page.locator("#board-menu summary").first().click();
+    await page.locator(
+      "#board-menu summary:has(.hugeicons--dashboard-square-add)",
+    ).click();
   });
 
   test('"Create new task" opens the task modal with empty required Status/Row selects', async ({ page }) => {

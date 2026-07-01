@@ -197,12 +197,14 @@ export function makeSharedMenuActions(
   overrides: Partial<SharedMenuActions> = {},
 ): SharedMenuActions {
   return {
+    rows: [mockRow],
     tasks: [mockTask],
     columns: [mockColumn],
     selectedColumnIds: [],
     toggleColumnFilter: vi.fn(),
     openSettings: vi.fn(),
     detailsRef: { current: null },
+    rowsDetailsRef: { current: null },
     handleClick: () => () => {},
     addActions: [],
     ...overrides,

@@ -121,6 +121,13 @@
 }
 
 @layer utilities {
+  #drawer-row-list a {
+    max-width: 210px;
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
   .drawer-side {
     ul {
       li {

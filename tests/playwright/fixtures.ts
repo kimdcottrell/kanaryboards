@@ -39,7 +39,9 @@ export async function openCreateRowModal(page: Page): Promise<void> {
   await page.locator("html[data-board-loaded='true']").waitFor({
     state: "attached",
   });
-  await page.locator("#board-menu summary").first().click();
+  await page.locator(
+    "#board-menu summary:has(.hugeicons--dashboard-square-add)",
+  ).click();
   await page.locator("#board-menu").getByText("Add new project row").click();
   await expect(page.locator("#board-config-create-new-row")).toBeVisible();
 }

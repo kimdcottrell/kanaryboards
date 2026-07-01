@@ -8,10 +8,10 @@ const boardId = Astro.locals.boardId;
 
 let rows: { id: string; title: string }[] = [];
 if (isAuthenticated && boardId) {
-  const board = await getBoard(boardId);
-  rows = [...(board?.rows ?? [])]
-    .sort(byOrder)
-    .map((r) => ({ id: r.id, title: r.title }));
+    const board = await getBoard(boardId);
+    rows = [...(board?.rows ?? [])]
+        .sort(byOrder)
+        .map((r) => ({ id: r.id, title: r.title }));
 }
 ---
 
@@ -44,16 +44,22 @@ if (isAuthenticated && boardId) {
                     >
                         <!-- Settings icon -->
                         <span
-                            class="iconify hugeicons--dashboard-square-01 text-xl"
+                            class="iconify hugeicons--left-to-right-list-dash text-xl"
                         ></span>
                         <span class="is-drawer-close:hidden">Dashboard</span>
                     </button>
                 </a>
-                <ul id="drawer-row-list" data-authenticated={String(isAuthenticated)}>
+                <ul
+                    id="drawer-row-list"
+                    data-authenticated={String(isAuthenticated)}
+                >
                     {
                         rows.map((row) => (
                             <li>
-                                <a href={`/dashboard/row/${row.id}`} data-board-link>
+                                <a
+                                    href={`/dashboard/row/${row.id}`}
+                                    data-board-link
+                                >
                                     {row.title}
                                 </a>
                             </li>

@@ -8,12 +8,12 @@ export default function CondensedColumnBoard(
   { column, rows }: { column: Column; rows: Row[] },
 ) {
   return (
-    <>
+    <div className="relative w-max min-w-full">
       <div className="absolute z-0 min-h-3/12 w-full bg-linear-to-br/oklch from-ctp-flamingo-100/50 dark:from-ctp-lavender-950 mask-b-from-base-100 to-base-100">
       </div>
       <section
         id="condensed-column-board"
-        className="space-y-6 p-5 relative"
+        className="space-y-6 p-5 relative w-max min-w-full"
         style={{
           backgroundColor:
             "color-mix(in srgb, var(--color-row-grey) 10%, transparent)",
@@ -35,6 +35,6 @@ export default function CondensedColumnBoard(
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }

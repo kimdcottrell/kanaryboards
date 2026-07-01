@@ -1,21 +1,25 @@
 import DynamicIcon from "./DynamicIcon.tsx";
 import { useSharedMenuActions } from "./context/hooks.ts";
+import { byOrder } from "./context/ordering.ts";
 
 export default function BoardMenu(
   { isSticky, isPreview }: { isSticky?: boolean; isPreview?: boolean },
 ) {
   const {
+    rows,
     tasks,
     columns,
     selectedColumnIds,
     toggleColumnFilter,
     openSettings,
     detailsRef,
+    rowsDetailsRef,
     handleClick,
     addActions,
   } = useSharedMenuActions(isPreview);
 
   const pinnedColumns = columns.filter((c) => c.pinnedToShortcut);
+  const sortedRows = [...rows].sort(byOrder);
 
   return (
     <ul
@@ -23,7 +27,7 @@ export default function BoardMenu(
       className={`menu
         ${
         isPreview
-          ? "relative"
+          ? "relative w-max flex-nowrap"
           : `max-lg:hidden ${
             isSticky ? "fixed top-0" : "absolute top-2"
           } left-1/2 -translate-x-1/2`
@@ -34,6 +38,23 @@ export default function BoardMenu(
         flex
       `}
     >
+      <li>
+        <details ref={rowsDetailsRef}>
+          <summary onClick={handleClick()}>
+            <span className="iconify hugeicons--left-to-right-list-dash text-xl">
+            </span>
+          </summary>
+          <ul className="w-max" data-drawer-row-list-mirror>
+            {sortedRows.map((row) => (
+              <li key={row.id}>
+                <a href={`/dashboard/row/${row.id}`} data-board-link>
+                  {row.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </details>
+      </li>
       {pinnedColumns.map((column) => (
         <li key={column.id}>
           <a
