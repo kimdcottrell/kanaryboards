@@ -148,13 +148,7 @@ export function ChecklistGenerationCollapse({
         id="checklist-gen-collapse-toggle"
         type="button"
         className="collapse-title font-semibold text-sm py-3 w-full text-left"
-        onClick={() => {
-          const opening = !collapseOpen;
-          setCollapseOpen(opening);
-          if (opening && !checklistPrompt.trim() && taskDraft?.title) {
-            setChecklistPrompt(taskDraft.title);
-          }
-        }}
+        onClick={() => setCollapseOpen(!collapseOpen)}
       >
         Generate checklist items with AI
       </button>

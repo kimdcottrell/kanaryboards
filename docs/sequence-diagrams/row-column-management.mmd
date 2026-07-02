@@ -4,7 +4,7 @@ title: Row & Column Management
 sequenceDiagram
     actor User
     participant BoardMenu as BoardMenu / BoardDock<br/>(BoardMenu.tsx #board-menu = lg+,<br/>BoardDock.tsx dock = below lg)
-    participant Config as BoardConfigModal<br/>(BoardConfigModal.tsx +<br/>config/board/*Section.tsx)
+    participant Config as BoardConfigModal<br/>(BoardConfigModal.tsx +<br/>config/board/*Section.tsx.<br/>Column drag-to-reorder scaffolding lives in<br/>config/board/ColumnReorderList.tsx, shared with<br/>the homepage DemoExperience demo)
     participant RowModal as CreateRowModal<br/>(config/board/CreateRowModal.tsx +<br/>CreateRowSection.tsx)
     participant Board as RowBoard<br/>(RowBoard.tsx)
     participant Row as RowSection<br/>(RowSection.tsx)
@@ -244,7 +244,7 @@ sequenceDiagram
     Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: column.iconInBoardMenu changed)<br/>-> checkbox toggles
     Ctx-->>BoardMenu: BoardView re-renders<br/>(BoardData: columns changed)<br/>-> that column's item shows/hides its icon in<br/>#board-menu and (if dock-pinned) BoardDock<br/>(title+count badge unaffected)
 
-    Note over User,AI: Reorder column (drag, ColumnSettingsSection column badges)
+    Note over User,AI: Reorder column (drag, ColumnSettingsSection column badges.<br/>Drag scaffolding + drop zones live in the shared<br/>ColumnReorderList.tsx; same dispatches whether rendered<br/>by ColumnSettingsSection or the homepage DemoExperience)
     User->>Config: dragstart on column badge
     Config->>Actions: handleDefaultColumnDragStart(index)<br/>(actions/columnConfig.ts)
     Actions->>Ctx: dispatch(COLUMN/SET_DRAGGED_INDEX, {index})

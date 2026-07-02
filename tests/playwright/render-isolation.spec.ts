@@ -84,16 +84,14 @@ test.describe("Render isolation (individual components render on use, instead of
     }).click();
     await expect(page.getByRole("heading", { name: "Edit task" }))
       .toBeVisible();
-    await page.locator("#checklist-gen-collapse-toggle").click();
+    // The AI checklist collapse is open by default (see
+    // ChecklistGenerationCollapse) — wait for its content to finish laying out
+    // before interacting with the prompt input.
     await waitForChecklistCollapseOpen(page);
 
-    // Opening the collapse auto-populates the prompt from the task title
-    // (see ChecklistGenerationCollapse) — wait for that dispatch to settle
-    // before snapshotting render counts, so it doesn't race with our fill.
     const prompt = page.locator(
       "#checklist-gen-collapse-content input[type='text']",
     );
-    await expect(prompt).toHaveValue("Write specs");
 
     const before = await shellRenderCounts(page);
     expect(before.row).not.toBeNull();
@@ -110,7 +108,9 @@ test.describe("Render isolation (individual components render on use, instead of
     ).click();
     await expect(page.getByRole("heading", { name: "Add task" }))
       .toBeVisible();
-    await page.locator("#checklist-gen-collapse-toggle").click();
+    // The AI checklist collapse is open by default (see
+    // ChecklistGenerationCollapse) — wait for its content to finish laying out
+    // before interacting with the prompt input.
     await waitForChecklistCollapseOpen(page);
 
     const before = await shellRenderCounts(page);

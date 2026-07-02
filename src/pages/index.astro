@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "@layouts/BaseLayout.astro";
-import DemoBoardController from "@components/DemoBoardController";
+import DemoExperience from "@components/DemoExperience";
 ---
 
 <BaseLayout>
@@ -78,7 +78,7 @@ import DemoBoardController from "@components/DemoBoardController";
               </span>
             </label>
             <button
-              class="md:rounded-none! md:rounded-r! btn btn-lg btn-warning md:self-end inline-flex items-center gap-2 shadow-none"
+              class="md:rounded-none! md:rounded-r! btn btn-lg btn-warning font-roboto-slab! font-normal text-xl md:self-end inline-flex items-center gap-2 shadow-none"
             >
               <span class="iconify hugeicons--rocket-01 text-xl"></span>
               Get Started
@@ -165,16 +165,5 @@ import DemoBoardController from "@components/DemoBoardController";
       </div>
     </div>
   </section>
-  <section id="demo" class="bg-base-200">
-    <div class="text-center px-3 py-20">
-      <h2 class="text-4xl font-semibold">Try it right here</h2>
-      <p class="mt-6">
-        This is a live, fully interactive board - drag cards, edit titles, check
-        off items. Nothing here is saved.
-      </p>
-    </div>
-    <div class="min-w-100 bg-base-100 rounded shadow-xl">
-      <DemoBoardController client:only="react" />
-    </div>
-  </section>
+  <DemoExperience client:only="react" />
 </BaseLayout>
