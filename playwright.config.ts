@@ -31,6 +31,9 @@ export default defineConfig({
     video: "retain-on-failure",
     baseURL: process.env.BASE_URL ?? "https://kanary.local.dev",
     ignoreHTTPSErrors: true,
+    extraHTTPHeaders: {
+      "x-playwright-test": "true",
+    },
   },
   projects: [
     {

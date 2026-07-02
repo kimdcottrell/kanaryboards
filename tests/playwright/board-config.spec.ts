@@ -38,7 +38,12 @@ const MOCK_TASKS_RESPONSE = {
 // would duplicate the modal's copy. Seed one row so only the modal form renders.
 const SEED_BOARD = {
   rows: [
-    { id: "row-seed", title: "Seed Project", color: "var(--color-row-blue)", order: "a0" },
+    {
+      id: "row-seed",
+      title: "Seed Project",
+      color: "var(--color-row-blue)",
+      order: "a0",
+    },
   ],
   columns: [
     { id: "col-todo", title: "To Do", order: "a0" },

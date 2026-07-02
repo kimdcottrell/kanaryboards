@@ -11,6 +11,7 @@ interface Props {
 
 const { title = "Kanby", description } = Astro.props;
 const googleTag = import.meta.env.GOOGLE_TAG;
+const isPlaywright = Astro.request.headers.get("x-playwright-test") === "true";
 ---
 
 <meta charset="UTF-8" />
@@ -22,5 +23,5 @@ const googleTag = import.meta.env.GOOGLE_TAG;
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 {description && <meta name="description" content={description} />}
-{googleTag && <GoogleAnalytics tag={googleTag} />}
+{googleTag && !isPlaywright && <GoogleAnalytics tag={googleTag} />}
 <link rel="icon" type="image/x-icon" href="/favicon.ico" />
