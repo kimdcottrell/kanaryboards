@@ -20,7 +20,7 @@ vi.mock("@clerk/astro/react", () => ({
     React.createElement("div", { "data-testid": "user-button" }),
 }));
 
-import LoginControls from "@components/auth/LoginControls.tsx";
+import LoginControls from "@components/LoginControls.tsx";
 
 afterEach(() => {
   clerk.isLoaded = false;

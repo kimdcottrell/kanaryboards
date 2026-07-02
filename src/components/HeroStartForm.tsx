@@ -12,7 +12,7 @@ import {
   fetchGeneratedItems,
 } from "./context/actions/shared.ts";
 import { generateKeyBetween } from "fractional-indexing";
-import GeneratingTasksAlert from "./GeneratingTasksAlert.tsx";
+import GeneratingTasksAlert from "./shared/GeneratingTasksAlert.tsx";
 import type { Column, Row, Task } from "./context/types.ts";
 
 type Board = { rows: Row[]; columns: Column[]; tasks: Task[] };

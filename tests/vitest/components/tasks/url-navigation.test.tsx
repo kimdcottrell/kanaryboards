@@ -34,7 +34,9 @@ vi.mock("@components/context/hooks.ts", () => ({
 }));
 
 // Stub heavy child components used by BoardView that aren't under test here
-vi.mock("@components/BoardConfigModal.tsx", () => ({ default: () => null }));
+vi.mock("@components/config/board/BoardConfigModal.tsx", () => ({
+  default: () => null,
+}));
 vi.mock("@components/config/board/CreateRowModal.tsx", () => ({
   default: () => null,
 }));

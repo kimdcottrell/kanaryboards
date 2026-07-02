@@ -1,4 +1,4 @@
-import CloseButton from "./buttons/CloseButton.tsx";
+import CloseButton from "./CloseButton.tsx";
 
 export default function Modal({ open, onClose, children }) {
   return (

@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import CloseButton from "./buttons/CloseButton.tsx";
+import CloseButton from "./shared/CloseButton.tsx";
 import { beforeIdFromOrderedList, useDropTarget } from "@lib/drag.ts";
 
 export default function ChecklistSection({

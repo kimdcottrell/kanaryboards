@@ -1,9 +1,9 @@
 import { useEffect } from "react";
-import Modal from "./Modal.tsx";
-import ColumnSettingsSection from "./config/board/ColumnSettingsSection.tsx";
-import RowSettingsSection from "./config/board/RowSettingsSection.tsx";
-import DangerZoneSection from "./config/board/DangerZoneSection.tsx";
-import { useBoardConfigActions, useBoardConfigState } from "./context/hooks.ts";
+import Modal from "../../shared/Modal.tsx";
+import ColumnSettingsSection from "./ColumnSettingsSection.tsx";
+import RowSettingsSection from "./RowSettingsSection.tsx";
+import DangerZoneSection from "./DangerZoneSection.tsx";
+import { useBoardConfigActions, useBoardConfigState } from "../../context/hooks.ts";
 import { useRenderCount } from "@lib/use-render-count.ts";
 
 export default function BoardConfigModal() {

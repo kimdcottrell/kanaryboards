@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import RowBoard from "./RowBoard.tsx";
-import TaskCreateModal from "./TaskCreateModal.tsx";
-import TaskEditModal from "./TaskEditModal.tsx";
-import { useBoardDataState, useTaskActions } from "./context/hooks.ts";
+import RowBoard from "../RowBoard.tsx";
+import TaskCreateModal from "../TaskCreateModal.tsx";
+import TaskEditModal from "../TaskEditModal.tsx";
+import { useBoardDataState, useTaskActions } from "../context/hooks.ts";
 
 export default function DemoBoardView() {
   const navigate = useNavigate();

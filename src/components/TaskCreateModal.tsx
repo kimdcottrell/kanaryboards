@@ -1,4 +1,4 @@
-import Modal from "./Modal.tsx";
+import Modal from "./shared/Modal.tsx";
 import TaskForm from "./TaskForm.tsx";
 import {
   handleChecklistKeyDown,

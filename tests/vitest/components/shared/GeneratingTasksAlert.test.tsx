@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
-import GeneratingTasksAlert from "@components/GeneratingTasksAlert.tsx";
+import GeneratingTasksAlert from "@components/shared/GeneratingTasksAlert.tsx";
 
 describe("GeneratingTasksAlert", () => {
   test("renders the provided status text", () => {

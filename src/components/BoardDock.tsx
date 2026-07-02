@@ -1,4 +1,4 @@
-import DynamicIcon from "./DynamicIcon.tsx";
+import DynamicIcon from "./shared/DynamicIcon.tsx";
 import { useSharedMenuActions } from "./context/hooks.ts";
 
 export default function BoardDock({ isPreview }: { isPreview?: boolean }) {

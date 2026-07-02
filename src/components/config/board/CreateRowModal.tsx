@@ -1,4 +1,4 @@
-import Modal from "../../Modal.tsx";
+import Modal from "../../shared/Modal.tsx";
 import CreateRowSection from "./CreateRowSection.tsx";
 import { useRowFormActions, useRowFormState } from "../../context/hooks.ts";
 

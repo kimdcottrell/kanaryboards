@@ -1,4 +1,4 @@
-import ColumnReorderList from "./config/board/ColumnReorderList.tsx";
+import ColumnReorderList from "../shared/ColumnReorderList.tsx";
 
 export default function DemoColumnSettings() {
   return (

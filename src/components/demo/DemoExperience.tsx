@@ -1,7 +1,7 @@
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
-import { BoardProvider } from "./context/BoardContext.tsx";
+import { BoardProvider } from "../context/BoardContext.tsx";
 import DemoBoardView from "./DemoBoardView.tsx";
-import RowSettingsSection from "./config/board/RowSettingsSection.tsx";
+import RowSettingsSection from "../config/board/RowSettingsSection.tsx";
 import DemoColumnSettings from "./DemoColumnSettings.tsx";
 
 const demoRouter = createMemoryRouter(

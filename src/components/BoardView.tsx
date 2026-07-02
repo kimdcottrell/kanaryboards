@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import BoardConfigModal from "./BoardConfigModal.tsx";
+import BoardConfigModal from "./config/board/BoardConfigModal.tsx";
 import BoardDock from "./BoardDock.tsx";
 import BoardMenu from "./BoardMenu.tsx";
 import CreateRowModal from "./config/board/CreateRowModal.tsx";

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import ColumnCard from "./ColumnCard.tsx";
-import CloseButton from "./buttons/CloseButton.tsx";
+import CloseButton from "./shared/CloseButton.tsx";
 import {
   useBoardDataState,
   useBoardMeta,

@@ -1,5 +1,5 @@
 import TaskCard from "./TaskCard.tsx";
-import DynamicIcon from "./DynamicIcon.tsx";
+import DynamicIcon from "./shared/DynamicIcon.tsx";
 import {
   useColumnEditActions,
   useColumnEditState,

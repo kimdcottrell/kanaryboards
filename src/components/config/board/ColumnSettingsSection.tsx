@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import AsyncCreatableSelect from "react-select/async-creatable";
 import BoardMenu from "../../BoardMenu.tsx";
 import BoardDock from "../../BoardDock.tsx";
-import DynamicIcon from "../../DynamicIcon.tsx";
-import ColumnReorderList from "./ColumnReorderList.tsx";
+import DynamicIcon from "../../shared/DynamicIcon.tsx";
+import ColumnReorderList from "../../shared/ColumnReorderList.tsx";
 import { searchHugeicons } from "@lib/icons.ts";
 import {
   useBoardDataState,
