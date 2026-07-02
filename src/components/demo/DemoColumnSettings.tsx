@@ -13,7 +13,7 @@ export default function DemoColumnSettings() {
       </div>
       <ColumnReorderList
         renderCard={(column) => (
-          <div className="h-full shrink-0 card card-xs bg-secondary/75 border-b-2 border-r-2 border-base-content/25 cursor-grab">
+          <div className="h-full shrink-0 card card-xs bg-ctp-sky-600 dark:bg-ctp-sapphire-200 border-b-2 border-r-2 border-base-content/25 cursor-grab">
             <div className="card-body">
               <h2 className="card-title text-base text-primary-content">
                 {column.title}

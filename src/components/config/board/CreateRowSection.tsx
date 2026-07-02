@@ -13,7 +13,7 @@ export default function CreateRowSection() {
 
   return (
     <div
-      id="board-config-create-new-row"
+      data-testid="create-new-row"
       className=" bg-base-200 mt-6 p-5"
     >
       <h3 className="text-lg font-semibold">Create a new row</h3>

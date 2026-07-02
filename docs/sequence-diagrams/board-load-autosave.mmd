@@ -73,7 +73,7 @@ sequenceDiagram
     Note right of Provider: There is now enough data to start to initialize the app.<br />All logic above is just bootstrapping to get to this point, where we have rows/columns/tasks data.
 
     Reducer-->>Provider: rows/columns sorted by order (byOrder)<br/>tasks set, boardLoaded = true
-    Provider->>View: BoardView, RowBoard, BoardConfigModal<br/>all re-render (BoardDataContext: rows/columns/<br/>tasks/boardLoaded changed)<br/>-> RowBoard mounts one RowSection per row,<br/>BoardConfigModal's sections render row/column settings
+    Provider->>View: BoardView, RowBoard, BoardConfigModal<br/>all re-render (BoardDataContext: rows/columns/<br/>tasks/boardLoaded changed)<br/>-> RowBoard mounts one RowSection per row<br/>(or, when rows is empty e.g. after BOARD/RESET,<br/>the empty state: prompt + inline CreateRowSection),<br/>BoardConfigModal's sections render row/column settings
     Provider->>Provider: document.documentElement.dataset.boardLoaded = "true"<br/>(BoardView.tsx, for e2e hydration gating)
     opt rowId param present (entered via "/dashboard/row/:rowId")
         View->>View: BoardView finds row by id, then<br/>requestAnimationFrame -> document.getElementById<br/>("row-section-{rowId}").scrollIntoView({block:"start"})<br/>(unknown id -> navigate("/dashboard", replace))

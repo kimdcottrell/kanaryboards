@@ -3,7 +3,7 @@ import { expect, testNoClerk as test } from "./fixtures.ts";
 const CLEAN_BOARD = {
   rows: [{
     id: "row-e2e-1",
-    title: "Sample Project",
+    title: "Test Project",
     color: "var(--color-row-blue)",
     order: "a0",
   }],
@@ -17,17 +17,11 @@ const CLEAN_BOARD = {
 
 test.describe("Task URL", () => {
   test.beforeEach(async ({ page }) => {
-    await page.route("/api/board", async (route) => {
-      if (route.request().method() === "GET") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(CLEAN_BOARD),
-        });
-      } else {
-        await route.continue();
-      }
-    });
+    // Unauthenticated: the board is read from localStorage, so seed it there
+    // (an empty board would render the create-row empty state, not a row).
+    await page.addInitScript((board) => {
+      localStorage.setItem("kanby-v0-1-0", JSON.stringify(board));
+    }, CLEAN_BOARD);
     await page.goto("/dashboard");
   });
 

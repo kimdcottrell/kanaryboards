@@ -1,6 +1,6 @@
 import type { BoardLifecycleAction, BoardState } from "../types.ts";
 import { createId, emptyTaskDraft } from "../constants.ts";
-import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
+import { generateNKeysBetween } from "fractional-indexing";
 
 export const createInitialState = (): BoardState => {
   return {
@@ -86,12 +86,7 @@ export function reset(): BoardState {
       iconInBoardMenu: title === "In Progress" || title === "Review",
       iconNearColumnTitle: false,
     })),
-    rows: [{
-      id: createId(),
-      title: "Sample Project",
-      color: "var(--color-row-blue)",
-      order: generateKeyBetween(null, null),
-    }],
+    rows: [],
     tasks: [],
     boardLoaded: true,
   };

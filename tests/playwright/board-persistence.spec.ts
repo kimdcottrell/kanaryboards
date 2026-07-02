@@ -32,7 +32,7 @@ test.describe("Board persistence across sign-in", () => {
 
     // Add a new row via the board "+" menu (CreateRowModal)
     await openCreateRowModal(page);
-    const createRow = page.locator("#board-config-create-new-row");
+    const createRow = page.locator("dialog [data-testid='create-new-row']");
     await createRow
       .getByPlaceholder(
         "A project name, a category for large project tasks, etc.",

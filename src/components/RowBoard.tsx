@@ -1,10 +1,31 @@
 import RowSection from "./RowSection.tsx";
 import CondensedColumnBoard from "./CondensedColumnBoard.tsx";
+import CreateRowSection from "./config/board/CreateRowSection.tsx";
 import { useBoardDataState, useColumnFilterState } from "./context/hooks.ts";
 
 export default function RowBoard() {
   const { rows, columns } = useBoardDataState();
   const { selectedColumnIds } = useColumnFilterState();
+
+  // No projects yet -> prompt the user to create their first row inline.
+  if (rows.length === 0) {
+    return (
+      <div className="z-1 relative h-screen flex flex-col items-center justify-center">
+        <div className="z-2 absolute w-full top-0 left-0 min-h-screen h-full bg-linear-to-br/oklch from-ctp-flamingo-100/50 dark:from-ctp-lavender-950 mask-b-from-base-100 to-base-100">
+        </div>
+        <div className="z-3 relative w-11/12 max-w-5xl space-y-6">
+          <h1 className="text-5xl text-base-content text-center font-roboto-slab">
+            Your dashboard is empty.
+          </h1>
+          <p className="text-xl text-base-content text-center">
+            Create your first project to get started.
+          </p>
+
+          <CreateRowSection />
+        </div>
+      </div>
+    );
+  }
 
   const selectedColumns = columns.filter((c) =>
     selectedColumnIds.includes(c.id)

@@ -31,9 +31,6 @@ export default function DemoExperience() {
 
           <p>
             Ready to build your own?{" "}
-            <span className="font-bold">No account needed!</span>
-          </p>
-          <p>
             <a href="/dashboard" className="link link-primary">
               Visit the dashboard
             </a>{" "}
@@ -44,7 +41,10 @@ export default function DemoExperience() {
           <RouterProvider router={demoRouter} />
         </div>
       </section>
-      <section id="customization" className="relative bg-success/20">
+      <section
+        id="customization"
+        className="relative bg-ctp-sapphire-400/15 dark:bg-secondary/20"
+      >
         <section className="z-3 relative">
           <div className="text-center mx-auto max-w-11/12 px-3 py-20 space-y-3">
             <h2 className="text-4xl font-semibold mb-8">
@@ -86,36 +86,36 @@ export default function DemoExperience() {
               </h3>
               <ul className="space-y-3">
                 <li className="flex items-start gap-3">
-                  <span className="iconify hugeicons--ai-magic text-2xl text-ctp-green-700" />
+                  <span className="iconify hugeicons--ai-magic text-2xl text-ctp-sky-700 dark:text-ctp-sapphire-600" />
                   <span>AI-assisted task and checklist generation</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="iconify hugeicons--dashboard-square-setting text-2xl text-ctp-green-700" />
+                  <span className="iconify hugeicons--dashboard-square-setting text-2xl text-ctp-sky-700 dark:text-ctp-sapphire-600" />
                   <span>
                     Flexible project rows and column management
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="iconify hugeicons--drag-drop text-2xl text-ctp-green-700" />
+                  <span className="iconify hugeicons--drag-drop text-2xl text-ctp-sky-700 dark:text-ctp-sapphire-600" />
                   <span>Drag-and-drop organization across the board</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="iconify hugeicons--paint-board text-2xl text-ctp-green-700" />
+                  <span className="iconify hugeicons--paint-board text-2xl text-ctp-sky-700 dark:text-ctp-sapphire-600" />
                   <span>Per-project color theming</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="iconify hugeicons--arrow-left-right text-2xl text-ctp-green-700" />
+                  <span className="iconify hugeicons--arrow-left-right text-2xl text-ctp-sky-700 dark:text-ctp-sapphire-600" />
                   <span>Custom column ordering</span>
                 </li>
 
                 <li className="flex items-start gap-3">
-                  <span className="iconify hugeicons--pin text-2xl text-ctp-green-700" />
+                  <span className="iconify hugeicons--pin text-2xl text-ctp-sky-700 dark:text-ctp-sapphire-600" />
                   <span>
                     Configure shortcut menus to fit your needs
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="iconify hugeicons--image-01 text-2xl text-ctp-green-700" />
+                  <span className="iconify hugeicons--image-01 text-2xl text-ctp-sky-700 dark:text-ctp-sapphire-600" />
                   <span>Custom column icons for faster recognition</span>
                 </li>
               </ul>

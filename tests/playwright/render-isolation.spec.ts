@@ -130,7 +130,7 @@ test.describe("Render isolation (individual components render on use, instead of
     const before = await shellRenderCounts(page);
     expect(before.row).not.toBeNull();
 
-    const rowNameInput = page.locator("#board-config-create-new-row")
+    const rowNameInput = page.locator("[data-testid='create-new-row']")
       .getByPlaceholder(
         "A project name, a category for large project tasks, etc.",
       );

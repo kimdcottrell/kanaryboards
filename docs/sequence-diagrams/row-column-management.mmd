@@ -30,6 +30,7 @@ sequenceDiagram
         Config->>Config: useEffect[open, scrollTarget]<br/>-> requestAnimationFrame<br/>-> getElementById(scrollTarget).scrollIntoView({block:"start"})<br/>(scrolls to #create-new-column in ColumnSettingsSection)
     end
 
+    Note over Board,RowModal: CreateRowSection also renders inline in RowBoard's<br/>empty state (rows.length === 0), not only inside CreateRowModal.
     Note over User,AI: Open / close the Add-row modal (CreateRowModal)
     User->>BoardMenu: click "Add new project row"
     BoardMenu->>Actions: openCreateRowModal()<br/>(actions/rowForm.ts)

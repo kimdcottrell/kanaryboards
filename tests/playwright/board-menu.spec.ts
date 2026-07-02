@@ -3,12 +3,28 @@ import { expect, testNoClerk as test } from "./fixtures.ts";
 /**
  * BoardMenu.tsx — the "+" dropdown (#board-menu) wires three items:
  *   - "Create new task"           -> TaskCreateModal (with required Status/Row selects)
- *   - "Add new project row"       -> CreateRowModal (#board-config-create-new-row)
+ *   - "Add new project row"       -> CreateRowModal ([data-testid='create-new-row'])
  *   - "Add new column to all rows"-> BoardConfigModal scrolled to #create-new-column
  */
+// A dashboard with no rows renders CreateRowSection inline (empty state), which
+// would duplicate the modal's copy. Seed one row so only the modal form renders.
+const SEED_BOARD = {
+  rows: [
+    { id: "row-seed", title: "Seed Project", color: "var(--color-row-blue)", order: "a0" },
+  ],
+  columns: [
+    { id: "col-todo", title: "To Do", order: "a0" },
+    { id: "col-prog", title: "In Progress", order: "a1" },
+    { id: "col-done", title: "Done", order: "a2" },
+  ],
+  tasks: [],
+};
+
 test.describe("Board menu — add dropdown", () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => localStorage.clear());
+    await page.addInitScript((board) => {
+      localStorage.setItem("kanby-v0-1-0", JSON.stringify(board));
+    }, SEED_BOARD);
     await page.goto("/dashboard");
     await page.locator("html[data-board-loaded='true']").waitFor({
       state: "attached",
@@ -38,7 +54,7 @@ test.describe("Board menu — add dropdown", () => {
 
   test('"Add new project row" opens the create-row modal', async ({ page }) => {
     await page.locator("#board-menu").getByText("Add new project row").click();
-    await expect(page.locator("#board-config-create-new-row")).toBeVisible();
+    await expect(page.locator("[data-testid='create-new-row']")).toBeVisible();
     await expect(page.getByText("Create a new row")).toBeVisible();
   });
 

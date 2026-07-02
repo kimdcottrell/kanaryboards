@@ -68,7 +68,9 @@ export async function openCreateRowModal(page: Page): Promise<void> {
     "#board-menu summary:has(.hugeicons--dashboard-square-add)",
   ).click();
   await page.locator("#board-menu").getByText("Add new project row").click();
-  await expect(page.locator("#board-config-create-new-row")).toBeVisible();
+  // Scope to the dialog: an empty board also renders an inline create-new-row.
+  await expect(page.locator("dialog [data-testid='create-new-row']"))
+    .toBeVisible();
 }
 
 // Derive the Clerk Frontend API URL from the publishable key as a fallback.
