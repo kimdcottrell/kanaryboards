@@ -23,6 +23,31 @@ export async function fillStable(
   await page.locator("html[data-board-loaded='true']").waitFor({
     state: "attached",
   });
+  await fillControlled(locator, value);
+}
+
+// Fills a React-controlled input without any board-loaded gate, retrying the
+// fill+assert until the value sticks. Use for islands that don't set the
+// board-loaded flag (e.g. the homepage HeroStartForm): the retry loop itself
+// gates on hydration, since the value only commits once React's onChange is
+// wired up.
+export async function fillControlled(
+  locator: Locator,
+  value: string,
+): Promise<void> {
+  const page = locator.page();
+  // A plain SSR input accepts .fill() and holds the value until React hydrates
+  // and clobbers it, so the fill can "succeed" before the onSubmit handler is
+  // wired — a subsequent click then does nothing. Gate on React having actually
+  // hydrated this element (it tags managed host nodes with a __reactFiber$ key)
+  // before filling.
+  await expect
+    .poll(() =>
+      locator.evaluate((el) =>
+        Object.keys(el).some((k) => k.startsWith("__reactFiber$"))
+      )
+    )
+    .toBe(true);
   // Webkit on CI is the slowest engine and loses the controlled-input commit
   // race most often — give its retry loop more room before failing.
   const isWebkit = page.context().browser()?.browserType().name() === "webkit";

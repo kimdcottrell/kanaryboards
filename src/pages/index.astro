@@ -1,6 +1,10 @@
 ---
 import BaseLayout from "@layouts/BaseLayout.astro";
 import DemoExperience from "@components/DemoExperience";
+import HeroStartForm from "@components/HeroStartForm";
+
+const { userId } = Astro.locals.auth();
+const isAuthenticated = !!userId;
 ---
 
 <BaseLayout>
@@ -58,32 +62,7 @@ import DemoExperience from "@components/DemoExperience";
               </div>
             </div>
           </div>
-          <div class="join join-vertical gap-3 md:gap-0 md:join-horizontal">
-            <label
-              class="input input-lg input-warning join-item md:rounded-none md:rounded-l!"
-            >
-              <span class="iconify hugeicons--ai-magic"></span>
-              <span class="relative grow">
-                <input
-                  type="text"
-                  class="w-full"
-                  required
-                  placeholder="What do you want to do?"
-                />
-                <span
-                  aria-hidden="true"
-                  class="fake-cursor animate-blink absolute left-0 top-1/2 -translate-y-1/2 pointer-events-none"
-                  >|</span
-                >
-              </span>
-            </label>
-            <button
-              class="md:rounded-none! md:rounded-r! btn btn-lg btn-warning font-roboto-slab! font-normal text-xl md:self-end inline-flex items-center gap-2 shadow-none"
-            >
-              <span class="iconify hugeicons--rocket-01 text-xl"></span>
-              Get Started
-            </button>
-          </div>
+          <HeroStartForm client:load isAuthenticated={isAuthenticated} />
         </div>
         <div
           class="card hidden md:block bg-base-100 w-full max-w-sm lg:shrink-0 shadow-2xl"

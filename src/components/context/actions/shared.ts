@@ -1,3 +1,26 @@
+import { createId } from "../constants.ts";
+import { findTodoColumnId } from "../selectors.ts";
+import { generateNKeysBetween } from "fractional-indexing";
+import type { Column, Task } from "../types.ts";
+
+export const buildTasksFromTitles = (
+  titles: string[],
+  rowId: string,
+  columns: Column[],
+): Task[] => {
+  const todoColId = findTodoColumnId(columns);
+  const orders = generateNKeysBetween(null, null, titles.length);
+  return titles.map((title, i) => ({
+    id: createId(),
+    rowId,
+    colId: todoColId,
+    order: orders[i],
+    title,
+    description: "",
+    checklist: [],
+  }));
+};
+
 export const fetchGeneratedItems = async (
   prompt: string,
   maxItems = 10,
