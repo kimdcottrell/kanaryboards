@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 import { clerk } from "@clerk/testing/playwright";
 import { type Page } from "@playwright/test";
-import { expect, test, testNoClerk } from "./fixtures.ts";
+import { expect, type SessionTest, test, testNoClerk } from "./fixtures.ts";
 
 /**
  * The drawer's project-row list (#drawer-row-list, rendered by
@@ -67,7 +67,7 @@ function rowOptions(page: Page, listSelector: string) {
 // Shared assertion for both session types: each describe's beforeEach seeds the
 // same board (localStorage for guests, KV for authenticated), so the drawer and
 // the BoardMenu mirror must end up listing the identical set of rows.
-function mirrorMatchesDrawer(t: typeof test | typeof testNoClerk) {
+function mirrorMatchesDrawer(t: SessionTest) {
   t(
     "the BoardMenu row menu mirrors the drawer's row list",
     async ({ page }) => {

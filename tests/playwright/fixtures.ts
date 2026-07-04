@@ -95,6 +95,27 @@ export const test = base.extend<{ clerkSetup: void }>({
   ],
 });
 
-// Use for tests that don't need Clerk authentication — avoids per-test Clerk API calls.
-export const testNoClerk = base;
+// Use for tests that don't need Clerk authentication. Still injects the Clerk
+// testing token (without signing in) so the guest /dashboard skips Clerk's
+// dev-browser handshake. Without it, a fresh context has no Clerk cookies, so
+// the handshake (dev-browser-missing) redirects/reloads /dashboard repeatedly,
+// remounting the board island and resetting boardLoaded — which makes the
+// html[data-board-loaded='true'] gate flaky and can exceed the test timeout.
+// `test` and `testNoClerk` are distinct TestType extensions, so a union of the
+// two isn't callable (their signatures differ). Shared, session-agnostic checks
+// that accept either flavor should type their parameter as this common base.
+export type SessionTest = typeof base;
+
+export const testNoClerk = base.extend<{ clerkTestingToken: void }>({
+  clerkTestingToken: [
+    async ({ page }, use) => {
+      await setupClerkTestingToken({
+        page,
+        options: { frontendApiUrl: process.env.CLERK_FAPI ?? fapiFromKey },
+      });
+      await use();
+    },
+    { auto: true },
+  ],
+});
 export { expect };

@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 import { clerk } from "@clerk/testing/playwright";
 import { type Page, type Route } from "@playwright/test";
-import { expect, test, testNoClerk } from "./fixtures.ts";
+import { expect, type SessionTest, test, testNoClerk } from "./fixtures.ts";
 
 /**
  * Seeded board with enough rows that the last one sits well below the fold, so
@@ -91,7 +91,7 @@ async function openDrawer(page: Page): Promise<void> {
  * seeding the board (localStorage for guests, KV for authenticated users) —
  * these checks only navigate and assert.
  */
-function drawerNavChecks(t: typeof test | typeof testNoClerk) {
+function drawerNavChecks(t: SessionTest) {
   t(
     "drawer link scrolls the page down to the intended row",
     async ({ page }) => {

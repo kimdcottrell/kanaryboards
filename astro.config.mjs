@@ -1,5 +1,5 @@
 // @ts-check
-import { defineConfig } from "astro/config";
+import { defineConfig, fontProviders } from "astro/config";
 import deno from "@deno/astro-adapter";
 import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
@@ -15,6 +15,31 @@ export default defineConfig({
 
   output: "server",
 
+  fonts: [{
+    provider: fontProviders.google(),
+    name: "Cherry Bomb One",
+    cssVariable: "--font-cherry-bomb-one",
+    weights: ["400"],
+    styles: ["normal"],
+  }, {
+    provider: fontProviders.google(),
+    name: "Roboto Slab",
+    cssVariable: "--font-roboto-slab",
+    weights: ["100 900"],
+    styles: ["normal", "italic"],
+  }, {
+    provider: fontProviders.google(),
+    name: "Nunito",
+    cssVariable: "--font-nunito",
+    weights: ["200 1000"],
+  }, {
+    provider: fontProviders.google(),
+    name: "Inter",
+    cssVariable: "--font-inter",
+    weights: ["100 900"],
+    styles: ["normal", "italic"],
+    variationSettings: "'opsz' auto",
+  }],
   site: "https://kanby.ai",
 
   server: {

@@ -46,10 +46,10 @@ export default function ColumnSettingsSection() {
   return (
     <div
       id="board-config-column-settings"
-      className="mt-6 bg-base-200 p-5 space-y-3"
+      className="mt-6 bg-base-200 p-2 md:p-3 space-y-3"
     >
-      <div className="mb-6 sm:items-center sm:justify-between">
-        <h3 className="text-lg font-semibold">
+      <div className="mb-3 sm:items-center sm:justify-between">
+        <h3 className="text-lg font-semibold mb-3">
           Column settings
         </h3>
       </div>
@@ -72,10 +72,13 @@ export default function ColumnSettingsSection() {
             setCreateColumnFormKey((k) => k + 1);
           }}
         >
-          <section className="justify-items-center md:flex md:flex-row">
-            <fieldset className="fieldset flex-1">
-              <legend className="fieldset-legend">New column name</legend>
+          <section className="justify-items-center md:flex md:flex-row gap-3">
+            <fieldset className="w-full md:w-auto fieldset flex-1">
+              <label htmlFor="new-column-name" className="fieldset-legend">
+                New column name
+              </label>
               <input
+                id="new-column-name"
                 className="input validator"
                 type="text"
                 value={defaultColumnInput}
@@ -85,11 +88,12 @@ export default function ColumnSettingsSection() {
               <p className="validator-hint">Required</p>
             </fieldset>
 
-            <fieldset className="fieldset flex-1">
-              <legend className="fieldset-legend">
+            <fieldset className="w-full md:w-auto fieldset flex-1">
+              <label htmlFor="new-column-direction" className="fieldset-legend">
                 To the left or right of
-              </legend>
+              </label>
               <select
+                id="new-column-direction"
                 className="select validator"
                 value={direction}
                 onChange={(e) =>
@@ -102,9 +106,15 @@ export default function ColumnSettingsSection() {
               </select>
               <p className="validator-hint">Required</p>
             </fieldset>
-            <fieldset className="fieldset flex-1">
-              <legend className="fieldset-legend">Of column</legend>
+            <fieldset className="w-full md:w-auto fieldset flex-1">
+              <label
+                htmlFor="new-column-reference-column"
+                className="fieldset-legend"
+              >
+                Of column
+              </label>
               <select
+                id="new-column-reference-column"
                 className="select validator"
                 value={referenceColumnId}
                 onChange={(e) => setReferenceColumnId(e.currentTarget.value)}
@@ -148,7 +158,7 @@ export default function ColumnSettingsSection() {
               </a>{" "}
               library.
             </p>
-            <div className="mt-6 p-6 space-y-6 rounded bg-base-content/5">
+            <div className="p-2 mt-6 md:p-3 space-y-6 rounded bg-base-content/5">
               <div className="text-center space-y-1">
                 <h5 className="text-lg font-semibold">Live preview</h5>
                 <p className="text-sm text-base-content/70">
@@ -189,7 +199,7 @@ export default function ColumnSettingsSection() {
             </div>
           </>
         )}
-        <div className="mt-6 p-6 space-y-2 rounded bg-base-content/5">
+        <div className="p-2 mt-6 md:p-3 space-y-2 rounded bg-base-content/5">
           <div className="text-center space-y-1">
             <h5 className="text-lg font-semibold">Column configuration</h5>
             <p className="text-sm text-base-content/70">
@@ -215,7 +225,7 @@ export default function ColumnSettingsSection() {
                 .filter(({ tasks }) => tasks.length > 0);
               return (
                 <div className="w-xs h-full shrink-0 card card-md bg-base-200 border-b-2 border-r-2 border-base-content/25 cursor-grab">
-                  <div className="card-body">
+                  <div className="card-body p-3 md:p-4">
                     <h2 className="card-title">
                       {editingColumnId === column.id
                         ? (
@@ -255,7 +265,7 @@ export default function ColumnSettingsSection() {
                           </span>
                         )}
                     </h2>
-                    <hr className="my-3" />
+                    <hr className="my-2" />
                     <h3 className="font-semibold">
                       Pin to board menus
                     </h3>
@@ -338,7 +348,7 @@ export default function ColumnSettingsSection() {
                       pinNotice.type === "dock" && (
                       <div
                         role="alert"
-                        className="alert alert-warning alert-soft block"
+                        className="alert alert-warning alert-soft border-1 border-solid block"
                       >
                         <span className="font-semibold pr-1">
                           Dock Menu notice:
@@ -352,7 +362,7 @@ export default function ColumnSettingsSection() {
                       pinNotice.type === "shortcut" && (
                       <div
                         role="alert"
-                        className="alert alert-warning alert-soft block"
+                        className="alert alert-warning alert-soft border-1 border-solid block"
                       >
                         <span className="font-semibold pr-1">
                           Shortcut Menu notice:
@@ -360,7 +370,7 @@ export default function ColumnSettingsSection() {
                         You can only pin 3 columns. Unpin one to proceed.
                       </div>
                     )}
-                    <hr className="my-3" />
+                    <hr className="my-2" />
                     <h4>Column icon</h4>
 
                     <div className="space-y-3">
@@ -468,7 +478,7 @@ export default function ColumnSettingsSection() {
                             key={row.id}
                             className="menu-config space-y-2 bg-base-200 rounded w-full font-normal"
                           >
-                            <li className="menu-title font-bold font-varela-round text-error">
+                            <li className="menu-title font-bold font-nunito text-error">
                               {row.title}
                             </li>
                             {tasks.map((task) => (

@@ -54,7 +54,7 @@ export default function BoardDock({ isPreview }: { isPreview?: boolean }) {
           </span>
           <span className="dock-label">Add</span>
         </summary>
-        <ul className="dropdown-content menu w-max bg-base-100 rounded-box shadow-sm mb-2">
+        <ul className="dropdown-content menu w-max max-w-[calc(100vw-1rem)] left-1/2 -translate-x-1/2 bg-base-100 rounded-box shadow-sm mb-2">
           {addActions.map((action) => (
             <li key={action.label}>
               <a onClick={handleClick(action.run)}>

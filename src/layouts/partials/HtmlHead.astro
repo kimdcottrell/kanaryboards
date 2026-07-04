@@ -2,6 +2,8 @@
 import "@styles/global.css";
 import "@lyfie/luthor/styles.css";
 
+import { Font } from "astro:assets";
+
 import GoogleAnalytics from "@components/seo/GoogleAnalytics.astro";
 
 interface Props {
@@ -20,8 +22,10 @@ const isPlaywright = Astro.request.headers.get("x-playwright-test") === "true";
     content="viewport-fit=cover, width=device-width, initial-scale=1.0"
 />
 <title>{title}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<Font cssVariable="--font-cherry-bomb-one" />
+<Font cssVariable="--font-roboto-slab" />
+<Font cssVariable="--font-nunito" />
+<Font cssVariable="--font-inter" />
 {description && <meta name="description" content={description} />}
 {googleTag && !isPlaywright && <GoogleAnalytics tag={googleTag} />}
 <link rel="icon" type="image/x-icon" href="/favicon.ico" />

@@ -25,8 +25,8 @@ export default function RowSection({ row }) {
   const renderCount = useRenderCount();
 
   return (
-    <div className="relative w-full">
-      <div className="absolute z-0 min-h-3/12 w-full bg-linear-to-br/oklch from-ctp-flamingo-100/50 dark:from-ctp-lavender-950 mask-b-from-base-100 to-base-100">
+    <div className="relative w-full overflow-hidden">
+      <div className="absolute z-0 min-h-[calc(100vh-50%)] w-full bg-linear-to-br/oklch from-ctp-flamingo-100/50 dark:from-ctp-lavender-950 mask-b-from-base-100 to-base-100 ">
       </div>
       <section
         id={`row-section-${row.id}`}

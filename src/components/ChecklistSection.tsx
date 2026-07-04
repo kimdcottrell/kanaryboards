@@ -26,7 +26,7 @@ export default function ChecklistSection({
 
   return (
     <div className="space-y-3 rounded bg-base-content/10 p-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="overflow-hidden flex items-center justify-between gap-3">
         <p className="text-sm font-semibold">
           Checklist items
         </p>

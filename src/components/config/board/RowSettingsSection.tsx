@@ -28,11 +28,11 @@ export default function RowSettingsSection() {
   return (
     <div
       id="board-config-row-display-settings"
-      className="mt-6 bg-base-200 p-5"
+      className="mt-6 bg-base-200 p-2 md:p-3"
     >
       <div className="mb-4 items-baseline justify-between">
         <div>
-          <h3 className="text-lg font-semibold">
+          <h3 className="text-lg font-semibold mb-3">
             Row settings
           </h3>
           <p className="text-sm">

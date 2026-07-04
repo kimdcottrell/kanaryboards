@@ -33,7 +33,7 @@ export default function BoardConfigModal() {
     <Modal open={boardConfigModalOpen} onClose={closeBoardConfigModal}>
       <div id="board-config" data-render-count={renderCount}>
         <h2 className="text-3xl font-semibold">
-          Board Configuration
+          Board Config<span className="hidden md:inline">uration</span>
         </h2>
         <p className="mt-3">
           Add rows and columns, then place tasks into each column. Each task can

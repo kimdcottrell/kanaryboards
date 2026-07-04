@@ -14,12 +14,12 @@ export default function CreateRowSection() {
   return (
     <div
       data-testid="create-new-row"
-      className=" bg-base-200 mt-6 p-5"
+      className=" bg-base-200 mt-6 p-2 md:p-3"
     >
-      <h3 className="text-lg font-semibold">Create a new row</h3>
+      <h3 className="text-lg font-semibold mb-3">Create a new row</h3>
       <form
         key={newRowFormKey}
-        className="space-y-3 mt-4"
+        className="space-y-3 mt-3"
         onSubmit={addRow}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
