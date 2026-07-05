@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@plugin "tailwindcss/typography";
+@plugin "@tailwindcss/typography";
 @import "@catppuccin/tailwindcss/mocha.css";
 
 @plugin "daisyui" {
@@ -10,8 +10,10 @@
   prefixes: basil, hugeicons, mingcute;
 }
 
-@custom-variant light (&:where([data-theme=kanary-day], [data-theme=kanary-day] *));
-@custom-variant dark (&:where([data-theme=kanary-night], [data-theme=kanary-night] *));
+@custom-variant light (&:where([data-theme=kanary-day], [data-theme=kanary-day]
+  *));
+@custom-variant dark (&:where([data-theme=kanary-night],
+  [data-theme=kanary-night] *));
 
 @theme {
   --animate-wiggle: wiggle 1s ease-in-out infinite;
@@ -123,6 +125,9 @@
 }
 
 @layer utilities {
+  .page-home #header-nav {
+    @apply absolute top-0 left-0 w-full;
+  }
   #drawer-row-list a {
     max-width: 210px;
     display: block;
@@ -172,7 +177,11 @@
     font-style: normal;
   }
 
-  h1, h2, h3, h4, h5 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
     font-family: var(--font-nunito);
     font-weight: 400;
     font-style: normal;
@@ -190,7 +199,9 @@
     font-family:
       var(--font-cherry-bomb-one), cursive;
   }
-  .list li, input, .btn {
+  .list li,
+  input,
+  .btn {
     @apply rounded-sm;
   }
   .list li {

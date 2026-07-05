@@ -12,30 +12,41 @@ const hasConsent = Boolean(Astro.cookies.get(CONSENT_COOKIE)?.value);
     role="region"
     aria-label="Cookie consent"
     hidden={hasConsent}
-    class="fixed inset-x-0 bottom-0 z-40 border-t border-base-300 bg-base-100 shadow-lg"
+    class="fixed w-sm right-0 bottom-0 z-999 border-t-2 border-l-2 border-solid border-primary/50 bg-base-100"
 >
-    <div
-        class="mx-auto flex max-w-4xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
-    >
-        <p class="text-sm text-base-content">
-            We use cookies to run this site and, with your OK, to understand how
-            it's used. Choose what you'd like to allow.
+    <div class="p-3">
+        <p class="text-sm text-base-content mb-6">
+            We use cookies to keep the site running and, with your permission,
+            to measure how it's used. You can change this anytime via Cookie
+            settings in the footer.
         </p>
-        <div class="flex flex-wrap gap-2">
-            <button type="button" data-action="customize" class="btn btn-ghost btn-sm">
-                Customize
-            </button>
-            <button type="button" data-action="necessary" class="btn btn-ghost btn-sm">
+        <div class="join">
+            <button
+                type="button"
+                data-action="necessary"
+                class="join-item btn btn-primary btn-soft btn-sm"
+            >
                 Necessary only
             </button>
-            <button type="button" data-action="all" class="btn btn-primary btn-sm">
+            <button
+                type="button"
+                data-action="customize"
+                class="join-item btn btn-primary btn-soft btn-sm"
+            >
+                Customize
+            </button>
+            <button
+                type="button"
+                data-action="all"
+                class="join-item btn btn-primary btn-sm"
+            >
                 Accept all
             </button>
         </div>
     </div>
 </div>
 
-<div
+<dialog
     data-policystack-prefs
     class="modal"
     role="dialog"
@@ -44,24 +55,25 @@ const hasConsent = Boolean(Astro.cookies.get(CONSENT_COOKIE)?.value);
 >
     <div class="modal-box">
         <h3 class="text-lg font-semibold">Cookie preferences</h3>
-        <p class="mt-1 text-sm text-base-content/70">
-            Essential cookies are always on. Turn the rest on or off, then save.
+        <p class="mt-1 text-sm text-base-content">
+            Choose which categories of cookies to allow. Essential cookies are
+            always on.
         </p>
         <div class="mt-4 flex flex-col gap-3">
             {
                 categories.map((c) => (
-                    <label class="flex items-start justify-between gap-4 rounded-md border border-base-300 px-4 py-3">
+                    <label class="flex items-start justify-between gap-4 rounded-md px-4 py-3 bg-base-content/5">
                         <span class="flex flex-col">
                             <span class="text-sm font-medium">{c.label}</span>
                             {c.description && (
-                                <span class="text-xs text-base-content/60">
+                                <span class="text-xs text-base-content">
                                     {c.description}
                                 </span>
                             )}
                         </span>
                         <input
                             type="checkbox"
-                            class="checkbox checkbox-sm mt-1"
+                            class="checkbox checkbox-secondary checkbox-sm mt-1"
                             data-category={c.key}
                             checked={c.locked === true}
                             disabled={c.locked}
@@ -71,10 +83,18 @@ const hasConsent = Boolean(Astro.cookies.get(CONSENT_COOKIE)?.value);
             }
         </div>
         <div class="modal-action">
-            <button type="button" data-action="cancel" class="btn btn-ghost btn-sm">
+            <button
+                type="button"
+                data-action="cancel"
+                class="btn btn-soft btn-primary btn-sm"
+            >
                 Cancel
             </button>
-            <button type="button" data-action="save" class="btn btn-primary btn-sm">
+            <button
+                type="button"
+                data-action="save"
+                class="btn btn-primary btn-sm"
+            >
                 Save preferences
             </button>
         </div>
@@ -85,7 +105,7 @@ const hasConsent = Boolean(Astro.cookies.get(CONSENT_COOKIE)?.value);
         class="modal-backdrop"
         aria-label="Close cookie preferences">close</button
     >
-</div>
+</dialog>
 
 <script>
     import { createConsentStore } from "@policystack/core/consent";
@@ -168,7 +188,5 @@ const hasConsent = Boolean(Astro.cookies.get(CONSENT_COOKIE)?.value);
         .addEventListener("click", () => store.save());
 
     // Footer "Cookie settings" (and any other trigger) reopens the banner.
-    window.addEventListener("policystack:open", () =>
-        store.setRoute("cookie"),
-    );
+    window.addEventListener("policystack:open", () => store.setRoute("cookie"));
 </script>

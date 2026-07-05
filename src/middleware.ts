@@ -5,6 +5,38 @@ import { getBoardIdForUser, setBoardIdForUser } from "@lib/kv.ts";
 
 const isProtectedRoute = createRouteMatcher(["/api/board(.*)"]);
 
+const logErrorAndRedirectOnNonSuccess = defineMiddleware(
+  async ({ locals, request }, next) => {
+    const { url } = request;
+    const { pathname, search } = new URL(url);
+    const timestamp = new Date().toISOString();
+
+    const response = await next();
+    if (!response.ok) {
+      locals.timestamp = timestamp;
+      locals.statusText = response.statusText || "statusText not provided";
+      locals.status = response.status;
+
+      const logData = {
+        dt: timestamp,
+        level: "warn",
+        message: locals.statusText,
+        request: {
+          path: `${pathname}${search}`,
+          status: locals.status,
+          method: request.method,
+          headers: Object.fromEntries([...request.headers]),
+        },
+      };
+      console.warn(JSON.stringify(logData));
+
+      return await next("/error");
+    }
+
+    return response;
+  },
+);
+
 export const protectedRequestMiddleware = clerkMiddleware(
   async (auth, context, next) => {
     const { isAuthenticated, userId } = auth();
@@ -58,4 +90,8 @@ const boardMiddleware = defineMiddleware((context, next) => {
   return next();
 });
 
-export const onRequest = sequence(protectedRequestMiddleware, boardMiddleware);
+export const onRequest = sequence(
+  logErrorAndRedirectOnNonSuccess,
+  protectedRequestMiddleware,
+  boardMiddleware,
+);

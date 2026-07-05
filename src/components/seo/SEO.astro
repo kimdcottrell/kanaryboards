@@ -2,16 +2,19 @@
 import BasicTags from "./partials/Basic.astro";
 import ArticleTags from "./partials/Article.astro";
 import TwitterCardTags from "./partials/Twitter.astro";
-import type { CollectionEntry } from 'astro:content';
+import type { SeoMetadata } from "@src/content.config";
 
 export interface Props {
-    // we need the type set to the most detailed possible option
-    seo?: CollectionEntry<'news'>;
+  seo?: SeoMetadata;
 }
+
+const { seo } = Astro.props;
 ---
 
-<BasicTags {...Astro.props.seo} />
-{ Astro.props.seo.type === 'article' && 
-    <ArticleTags {...Astro.props.seo} />
-    <TwitterCardTags {...Astro.props.seo} />
-}
+{seo && (
+  <>
+    <BasicTags {...seo} />
+    <TwitterCardTags {...seo} />
+    {seo.metadata?.article && <ArticleTags {...seo} />}
+  </>
+)}

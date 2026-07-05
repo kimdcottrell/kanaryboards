@@ -9,12 +9,11 @@ export const categories: Category[] = [
     key: "essential",
     label: "Essential",
     locked: true,
-    description:
-      "Required for the site to work — sign-in, your board, and remembering this choice.",
+    description: "Required for the site to work.",
   },
   {
     key: "analytics",
     label: "Analytics",
-    description: "Google Analytics — helps us understand how Kanby is used.",
+    description: "Helps us understand how the site is used.",
   },
 ];

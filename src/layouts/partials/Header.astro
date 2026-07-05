@@ -5,33 +5,35 @@ import ThemeProvider from "@components/theme/ThemeProvider";
 import ThemeToggle from "@components/theme/ThemeToggle";
 ---
 
-<nav class="navbar grid bg-base-200 shadow-sm z-25">
-    <div class="w-11/12 mx-auto flex items-center justify-between">
-        <div class="flex items-center">
-            <label
-                for="drawer-menu"
-                class="btn btn-square btn-ghost drawer-button"
-            >
-                <span class="iconify hugeicons--menu-01 text-xl"></span>
-            </label>
-            <a href="/" class="flex items-center text-xl font-bold">
-                <span
-                    class="iconify mingcute--bird-fill text-5xl text-(--color-ctp-yellow-400)"
-                ></span>
-                <h1
-                    class="text-3xl font-normal font-logo bg-clip-text text-transparent bg-linear-to-r from-accent to-secondary"
+<section id="header-nav">
+    <nav class="navbar grid bg-base-200 shadow-sm z-25">
+        <div class="w-11/12 mx-auto flex items-center justify-between">
+            <div class="flex items-center">
+                <label
+                    for="drawer-menu"
+                    class="btn btn-square btn-ghost drawer-button"
                 >
-                    Kanby
-                </h1>
-            </a>
-        </div>
-        <div class="flex-none">
-            <div id="login-controls" class="flex items-center gap-4">
-                <ThemeProvider>
-                    <ThemeToggle client:only="react" />
-                </ThemeProvider>
-                <LoginControls client:idle />
+                    <span class="iconify hugeicons--menu-01 text-xl"></span>
+                </label>
+                <a href="/" class="flex items-center text-xl font-bold">
+                    <span
+                        class="iconify mingcute--bird-fill text-5xl text-(--color-ctp-yellow-400)"
+                    ></span>
+                    <h1
+                        class="text-3xl font-normal font-logo bg-clip-text text-transparent bg-linear-to-r from-accent to-secondary"
+                    >
+                        Kanby
+                    </h1>
+                </a>
+            </div>
+            <div class="flex-none">
+                <div id="login-controls" class="flex items-center gap-4">
+                    <ThemeProvider>
+                        <ThemeToggle client:only="react" />
+                    </ThemeProvider>
+                    <LoginControls client:idle />
+                </div>
             </div>
         </div>
-    </div>
-</nav>
+    </nav>
+</section>

@@ -1,12 +1,10 @@
 ---
-import { type Image } from '../types';
-import { SITENAME } from "astro:env/client";
-import { favicon } from '@public/favicon.svg' 
+import type { ImageMetadata } from "astro";
 import { init } from "zod-empty";
 import  { z } from 'astro:content';
 
 // allow for blank values that can be replaced
-import { anyPageSchema, type AnyPageMetadata } from "@src/content.config";
+import { anyPageSchema, type AnyPageMetadata, SITENAME } from "@src/content.config";
 
 const defaults: AnyPageMetadata = init(anyPageSchema)
 const { ...props } = Astro.props as AnyPageMetadata;
@@ -23,25 +21,14 @@ try {
   }
 }
 
-const firstImage: Image = images[0];
-
-// recommended content setting from https://developer.mozilla.org/en-US/docs/Web/HTML/Viewport_meta_tag
-// device-width = the physical size of the device screen in CSS pixels
-//                and establishes the vw unit
-// initial-scale = Controls the zoom level when the page is first loaded
-const viewPort = "width=device-width, initial-scale=1"
+const firstImage: Pick<ImageMetadata, "src"> & { alt?: string | null } =
+  images[0];
 ---
 
 <meta name="creator" property="og:site_name" content={SITENAME} />
 
 <title>{title} | {SITENAME}</title>
 <meta property="og:title" content={title} />
-
-<link rel="icon" href={favicon} type="image/x-icon" />
-
-<meta name="viewport" content={viewPort} />
-
-<meta charset="UTF-8" />
 
 <meta property="og:type" content={type} />
 {firstImage.src && <meta name="og:image" content={firstImage.src} /> }

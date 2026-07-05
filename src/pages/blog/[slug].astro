@@ -17,12 +17,18 @@ const { slug } = Astro.params;
 
 const entry = await getEntry("blog", slug);
 
-const { Content } = await render(entry);
+if (!entry) {
+  Astro.response.status = 404;
+  Astro.response.statusText = "This article does not exist.";
+}
+
+const { Content } = entry ? await render(entry) : { Content: null };
 ---
 
-<Layout seo={entry.data}>
-  <pre>{JSON.stringify(entry)}</pre>
-  <Prose>
-    <Content />
-  </Prose>
+<Layout seo={entry?.data}>
+  {Content && (
+    <div class="prose">
+      <Content />
+    </div>
+  )}
 </Layout>

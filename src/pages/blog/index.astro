@@ -1,8 +1,25 @@
-const entry = await getEntry("blog", slug);
+---
+import Layout from "@layouts/BaseLayout.astro";
+import { getProtectedCollection } from "@src/utils";
 
-console.log("entry")
-// example of bubbling errors thru request chain
-if (!entry) {
-    Astro.response.status = 405;
-    Astro.response.statusText = "This article does not exist.";
-}
+export const prerender = true;
+
+const posts = await getProtectedCollection("blog");
+
+let seo = {
+    title: "Blog",
+    description: "All blog posts.",
+};
+---
+
+<Layout seo={seo}>
+    <ul>
+        {
+            posts.map((post) => (
+                <li>
+                    <a href={`/blog/${post.id}`}>{post.data.title}</a>
+                </li>
+            ))
+        }
+    </ul>
+</Layout>

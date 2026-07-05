@@ -7,21 +7,18 @@ import {
   isEmpty,
   type Article,
   type Image,
-  type NewsArticle,
-  type NewsCollectionMetadata,
+  type SeoMetadata,
 } from "@src/content.config";
 import { init } from "zod-empty";
 
 const defaults = init(articleSchema);
 
 // check that all passed in props are of a type that is used by this component, and comform to the types defined for eah k->v pair
-const { ...props } = Astro.props as NewsCollectionMetadata;
+const { ...props } = Astro.props as SeoMetadata;
 // check to see if the overrides found are of a type that is used by this component
 const overrides = props.metadata?.article as Article;
-// Article and NewsArticle are almost identical, but NewsArticle defines what types must be required for this component.
 // let us merge everything and see if the result conforms to the proper type.
-const merged = { ...defaults, ...props, ...overrides } as NewsArticle &
-  Pick<Article, "section">;
+const merged = { ...defaults, ...props, ...overrides } as Article;
 
 const {
   title,
@@ -38,7 +35,7 @@ let schemaDotOrg = {
   "@context": "https://schema.org",
   "@type": "NewsArticle",
   headline: title,
-  image: images.map((img: Image) => img.src),
+  image: images?.map((img: Image) => img.src) ?? [],
   datePublished: publishedTime,
   author: [
     {

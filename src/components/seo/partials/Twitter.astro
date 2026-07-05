@@ -2,7 +2,7 @@
 // kind of janky but we need the types in this file.
 // they're not auto generated in .astro/types.d.s by astro sync.
 // that means that they're inaccessable via astro:content
-import { twitterCardSchema, type NewsCollectionMetadata, type Image, type TwitterCard } from "@src/content.config";
+import { twitterCardSchema, type SeoMetadata, type Image, type TwitterCard } from "@src/content.config";
 import { init } from "zod-empty";
 
 // since twitter is an optional part of the metadata,
@@ -10,13 +10,13 @@ import { init } from "zod-empty";
 // so we must set them overselves
 const defaults: TwitterCard = init(twitterCardSchema)
 
-const { ...props } = Astro.props as NewsCollectionMetadata;
+const { ...props } = Astro.props as SeoMetadata;
 const overrides = props.metadata?.twitter as Partial<TwitterCard>;
 
 const merged = { ...props, ...defaults, ...overrides };
 
 const { card, site, title, images, description, creator } = merged;
-const firstImage: Image = images[0];
+const firstImage: Image | undefined = images?.[0];
 ---
 
 <meta name="twitter:card" content={card} />

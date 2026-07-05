@@ -1,11 +1,12 @@
-import { defineCollection, z } from "astro:content";
-import { DEFAULT_SITE_IMAGE, SITENAME } from "astro:env/client";
+import { defineCollection } from "astro:content";
+import { z } from "astro/zod";
 import { glob } from "astro/loaders";
 import dayjs from "dayjs";
+import siteDefaultImage from "./images/site-default.png";
 
 // this exists thanks to zod not having a great way to fetch defaults.
 // we want to prevent content from getting displayed if it's empty while keeping sane syntax
-export function isEmpty(e: any): boolean {
+export function isEmpty(e): boolean {
   switch (true) {
     case e === "":
       // console.debug('isEmpty: empty because of "" check')
@@ -55,7 +56,13 @@ const _image = z.object({
 
 export type Image = z.infer<typeof _image>;
 
-const _author = z.string().default(SITENAME);
+const _author = z.string().default("Kanby Team").transform((value) =>
+  value.trim()
+);
+
+export const SITENAME = "Kanby";
+const DEFAULT_SITE_IMAGE = new URL(siteDefaultImage.src, "https://kanby.ai")
+  .href;
 
 // seo metadata that can be applied to most components
 const _minimumComponentSchema = z.object({
@@ -63,7 +70,7 @@ const _minimumComponentSchema = z.object({
   description: z.string().min(1),
   images: z.array(_image).default([{
     src: DEFAULT_SITE_IMAGE,
-    alt: SITENAME,
+    alt: "Kanby",
   }]),
 });
 
@@ -86,7 +93,7 @@ export const twitterCardSchema = z.object({
 
 export type TwitterCard = z.infer<typeof twitterCardSchema>;
 
-const _newsSchema = z.object({
+const _blogSchema = z.object({
   publishedTime: _datelikeToDate,
   modifiedTime: _datelikeToDate.optional().nullable(),
   expirationTime: _datelikeToDate.optional().nullable(),
@@ -95,11 +102,11 @@ const _newsSchema = z.object({
 })
   .merge(_minimumComponentSchema);
 
-export const articleSchema = _newsSchema.partial().extend({
+export const articleSchema = _blogSchema.partial().extend({
   section: z.string().optional().default("Politics"),
 });
 
-export type NewsArticle = z.infer<typeof _newsSchema>;
+export type blogArticle = z.infer<typeof _blogSchema>;
 export type Article = z.infer<typeof articleSchema>;
 
 // set things up this way so you can easily override seo defaults via the frontmatter
@@ -117,24 +124,31 @@ export type FrontmatterMetadataSchema = z.infer<
   typeof frontmatterMetadataSchema
 >;
 
+// shared prop shape for the `seo` prop passed to BaseLayout/HtmlHead/SEO —
+// Partial<AnyPageMetadata> because callers may pass plain {title, description}
+// literals without images/type, not just full collection entry data.
+export type SeoMetadata = Partial<AnyPageMetadata> & {
+  metadata?: FrontmatterMetadataSchema;
+};
+
 // article-specific seo metadata
-export const newsCollectionSchema = z.object({
+export const blogCollectionSchema = z.object({
   draft: z.boolean().default(true),
   type: z.string().default("article"),
   metadata: frontmatterMetadataSchema.optional(),
 })
   // add in the fields that enable seo metadata anywhere on the website
   .merge(_minimumComponentSchema)
-  // add in the fields that are required by news articles
-  .merge(_newsSchema);
+  // add in the fields that are required by blog articles
+  .merge(_blogSchema);
 
-export type NewsCollectionMetadata = z.infer<typeof newsCollectionSchema>;
+export type BlogCollectionMetadata = z.infer<typeof blogCollectionSchema>;
 
-const newsCollection = defineCollection({
-  loader: glob({ pattern: ["*.md", "*.mdx"], base: "./www/src/data/news" }),
-  schema: newsCollectionSchema,
+const blogCollection = defineCollection({
+  loader: glob({ pattern: ["*.md", "*.mdx"], base: "./src/data/blog" }),
+  schema: blogCollectionSchema,
 });
 
 export const collections = {
-  news: newsCollection,
+  blog: blogCollection,
 };
