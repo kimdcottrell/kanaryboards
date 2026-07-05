@@ -1,0 +1,28 @@
+---
+import { getEntry, render } from "astro:content";
+import Layout from "@layouts/BaseLayout.astro";
+import { getProtectedCollection } from "@src/utils";
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  const posts = await getProtectedCollection("blog");
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+const { slug } = Astro.params;
+
+const entry = await getEntry("blog", slug);
+
+const { Content } = await render(entry);
+---
+
+<Layout seo={entry.data}>
+  <pre>{JSON.stringify(entry)}</pre>
+  <Prose>
+    <Content />
+  </Prose>
+</Layout>

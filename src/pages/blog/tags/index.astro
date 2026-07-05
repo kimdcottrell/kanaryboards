@@ -1,0 +1,50 @@
+---
+import Layout from "@layouts/BaseLayout.astro";
+import { getProtectedCollection, getTagsFromCollection } from "@src/utils";
+
+export const prerender = true;
+
+const allPosts = await getProtectedCollection("blog");
+const tags = getTagsFromCollection(allPosts);
+
+// Example: Construct a canonical URL using your production domain
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+// Example: Construct a URL for SEO meta tags using your current domain
+const socialImageURL = new URL("/images/preview.png", Astro.url);
+
+let seo = {
+    title: "Archive of all Tags",
+    description: "Tag archive.",
+};
+---
+
+<Layout seo={seo}>
+    <div class="tags">
+        {
+            tags.map((tag) => (
+                <p class="tag">
+                    <a href={`/blog/tags/${tag}`}>{tag}</a>
+                </p>
+            ))
+        }
+    </div>
+</Layout>
+<style>
+    a {
+        color: #00539f;
+    }
+
+    .tags {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .tag {
+        margin: 0.25em;
+        border: dotted 1px #a1a1a1;
+        border-radius: 0.5em;
+        padding: 0.5em 1em;
+        font-size: 1.15em;
+        background-color: #f8fcfd;
+    }
+</style>

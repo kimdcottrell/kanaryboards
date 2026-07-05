@@ -1,0 +1,17 @@
+---
+import BasicTags from "./partials/Basic.astro";
+import ArticleTags from "./partials/Article.astro";
+import TwitterCardTags from "./partials/Twitter.astro";
+import type { CollectionEntry } from 'astro:content';
+
+export interface Props {
+    // we need the type set to the most detailed possible option
+    seo?: CollectionEntry<'news'>;
+}
+---
+
+<BasicTags {...Astro.props.seo} />
+{ Astro.props.seo.type === 'article' && 
+    <ArticleTags {...Astro.props.seo} />
+    <TwitterCardTags {...Astro.props.seo} />
+}

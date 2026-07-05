@@ -1,10 +1,40 @@
 import { setupClerkTestingToken } from "@clerk/testing/playwright";
 import {
+  type BrowserContext,
   expect,
   type Locator,
   type Page,
   test as base,
 } from "@playwright/test";
+import { CONSENT_COOKIE } from "../../src/lib/consent.ts";
+
+// A pre-decided "necessary only" consent record, base64url-encoded exactly as
+// @policystack/core's cookieAdapter does (dist/consent/storage/cookie.js `encode`).
+// Seeding it hides the cookie banner so its fixed bottom bar can't overlap
+// controls in unrelated specs. cookie-consent.spec.ts clears it to test the banner.
+const consentedRecord = {
+  schemaVersion: 1,
+  decisions: { essential: true, analytics: false },
+  policyVersion: "",
+  decidedAt: "2026-01-01T00:00:00.000Z",
+  jurisdiction: null,
+  locale: "en",
+  source: "banner",
+};
+const consentCookieValue = btoa(JSON.stringify(consentedRecord))
+  .replace(/\+/g, "-")
+  .replace(/\//g, "_")
+  .replace(/=+$/, "");
+
+async function seedConsentCookie(
+  context: BrowserContext,
+  baseURL: string | undefined,
+): Promise<void> {
+  if (!baseURL) return;
+  await context.addCookies([
+    { name: CONSENT_COOKIE, value: consentCookieValue, url: baseURL },
+  ]);
+}
 
 // Fills a React-controlled input and waits until the value actually commits.
 // The board mounts via client:only, so shortly after an input becomes
@@ -84,11 +114,12 @@ const fapiFromKey = atob(pk.split("_")[2] ?? "").replace(/\$$/, "");
 // test signature. Registers Clerk FAPI route interception + retry-on-429 logic.
 export const test = base.extend<{ clerkSetup: void }>({
   clerkSetup: [
-    async ({ page }, use) => {
+    async ({ page, baseURL }, use) => {
       await setupClerkTestingToken({
         page,
         options: { frontendApiUrl: process.env.CLERK_FAPI ?? fapiFromKey },
       });
+      await seedConsentCookie(page.context(), baseURL);
       await use();
     },
     { auto: true },
@@ -108,11 +139,12 @@ export type SessionTest = typeof base;
 
 export const testNoClerk = base.extend<{ clerkTestingToken: void }>({
   clerkTestingToken: [
-    async ({ page }, use) => {
+    async ({ page, baseURL }, use) => {
       await setupClerkTestingToken({
         page,
         options: { frontendApiUrl: process.env.CLERK_FAPI ?? fapiFromKey },
       });
+      await seedConsentCookie(page.context(), baseURL);
       await use();
     },
     { auto: true },

@@ -1,0 +1,49 @@
+---
+// works for urls like /tags/huzzah and /tags/learning-in-public
+import Layout from "@layouts/BaseLayout.astro";
+import { getProtectedCollection, getTagsFromCollection } from "@src/utils";
+
+// with `output: 'server'` configured
+export const prerender = true;
+
+export async function getStaticPaths() {
+    const allPosts = await getProtectedCollection("blog");
+    const uniqueTags = getTagsFromCollection(allPosts);
+
+    return uniqueTags.map((tag) => {
+        const filteredPosts = allPosts.filter((post: any) =>
+            post.data.tags?.includes(tag),
+        );
+
+        return {
+            params: { tag },
+            props: { posts: filteredPosts },
+        };
+    });
+}
+
+const { tag } = Astro.params;
+const { posts } = Astro.props;
+const filteredPosts = posts.filter((post: any) =>
+    post.data.tags?.includes(tag),
+);
+
+let seo = {
+    title: `Articles that contain tag ${tag}`,
+    description: `Tag archive for ${tag}.`,
+};
+---
+
+<Layout seo={seo}>
+    <h1>here</h1>
+    <p>Posts tagged with {tag}</p>
+    <ul>
+        {
+            filteredPosts.map((post) => (
+                <li>
+                    <a href={`/blog/${post.id}`}>{post.data.title}</a>
+                </li>
+            ))
+        }
+    </ul>
+</Layout>

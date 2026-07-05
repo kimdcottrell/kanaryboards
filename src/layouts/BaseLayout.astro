@@ -5,6 +5,7 @@ import Header from "./partials/Header.astro";
 import DrawerMenu from "./partials/DrawerMenu.astro";
 
 import Footer from "./partials/Footer.astro";
+import CookieBanner from "@components/CookieBanner.astro";
 ---
 
 <html lang="en">
@@ -20,5 +21,6 @@ import Footer from "./partials/Footer.astro";
       <slot />
       <Footer />
     </main>
+    <CookieBanner />
   </body>
 </html>

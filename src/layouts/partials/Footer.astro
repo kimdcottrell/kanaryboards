@@ -21,6 +21,9 @@
             <a class="link link-hover">Terms of use</a>
             <a class="link link-hover">Privacy policy</a>
             <a class="link link-hover">Cookie policy</a>
+            <a class="link link-hover cursor-pointer" data-open-cookie-settings>
+                Cookie settings
+            </a>
         </nav>
     </div>
 </footer>
@@ -52,3 +55,11 @@
         </nav>
     </div>
 </footer>
+
+<script>
+    document
+        .querySelector("[data-open-cookie-settings]")
+        ?.addEventListener("click", () =>
+            window.dispatchEvent(new Event("policystack:open")),
+        );
+</script>

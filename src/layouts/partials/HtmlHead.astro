@@ -5,6 +5,7 @@ import "@lyfie/luthor/styles.css";
 import { Font } from "astro:assets";
 
 import GoogleAnalytics from "@components/seo/GoogleAnalytics.astro";
+import { CONSENT_COOKIE, hasAnalyticsConsent } from "@lib/consent.ts";
 
 interface Props {
     title?: string;
@@ -14,6 +15,9 @@ interface Props {
 const { title = "Kanby", description } = Astro.props;
 const googleTag = import.meta.env.GOOGLE_TAG;
 const isPlaywright = Astro.request.headers.get("x-playwright-test") === "true";
+const analyticsConsent = hasAnalyticsConsent(
+    Astro.cookies.get(CONSENT_COOKIE)?.value,
+);
 ---
 
 <meta charset="UTF-8" />
@@ -27,5 +31,9 @@ const isPlaywright = Astro.request.headers.get("x-playwright-test") === "true";
 <Font cssVariable="--font-nunito" />
 <Font cssVariable="--font-inter" />
 {description && <meta name="description" content={description} />}
-{googleTag && !isPlaywright && <GoogleAnalytics tag={googleTag} />}
+{
+    googleTag && !isPlaywright && (
+        <GoogleAnalytics tag={googleTag} analyticsConsent={analyticsConsent} />
+    )
+}
 <link rel="icon" type="image/x-icon" href="/favicon.ico" />

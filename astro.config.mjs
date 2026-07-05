@@ -38,7 +38,6 @@ export default defineConfig({
     cssVariable: "--font-inter",
     weights: ["100 900"],
     styles: ["normal", "italic"],
-    variationSettings: "'opsz' auto",
   }],
   site: "https://kanby.ai",
 
