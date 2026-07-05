@@ -2,6 +2,7 @@
 **/node_modules/*
 **/.astro/*
 worker-configuration.d.ts
+src/deno.d.ts
 deno.lock
 **/dist/*
 HELP.md

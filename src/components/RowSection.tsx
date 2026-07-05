@@ -10,8 +10,9 @@ import {
   useRowEditState,
 } from "./context/hooks.ts";
 import { useRenderCount } from "@lib/use-render-count.ts";
+import type { Row } from "./context/types.ts";
 
-export default function RowSection({ row }) {
+export default function RowSection({ row }: { row: Row }) {
   const [collapsed, setCollapsed] = useState(false);
   const { columns } = useBoardDataState();
   const { selectedColumnIds } = useColumnFilterState();

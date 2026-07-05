@@ -12,7 +12,10 @@ const logErrorAndRedirectOnNonSuccess = defineMiddleware(
     const timestamp = new Date().toISOString();
 
     const response = await next();
-    if (!response.ok) {
+    // API routes return their own JSON status/error directly to the caller;
+    // rerouting them to the HTML /error page (which renders at 200) breaks
+    // callers that check res.ok/res.status, e.g. BoardContext's /api/board fetch.
+    if (response.status >= 400 && !pathname.startsWith("/api/")) {
       locals.timestamp = timestamp;
       locals.statusText = response.statusText || "statusText not provided";
       locals.status = response.status;

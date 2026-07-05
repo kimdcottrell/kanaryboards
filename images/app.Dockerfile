@@ -25,6 +25,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         openssh-client \
         ca-certificates \
         jq \
+        procps \
         aggregate \
         vim \
         zsh \

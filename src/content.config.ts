@@ -6,7 +6,7 @@ import siteDefaultImage from "./images/site-default.png";
 
 // this exists thanks to zod not having a great way to fetch defaults.
 // we want to prevent content from getting displayed if it's empty while keeping sane syntax
-export function isEmpty(e): boolean {
+export function isEmpty(e: unknown): boolean {
   switch (true) {
     case e === "":
       // console.debug('isEmpty: empty because of "" check')

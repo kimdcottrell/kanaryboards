@@ -23,6 +23,7 @@ const baseProps = {
   addChecklistItem: vi.fn(),
   updateChecklistItem: vi.fn(),
   deleteChecklistItem: vi.fn(),
+  reorderChecklistItem: vi.fn(),
   handleChecklistKeyDown: vi.fn(),
   setChecklistInputRef: vi.fn(),
   checklistPrompt: "",

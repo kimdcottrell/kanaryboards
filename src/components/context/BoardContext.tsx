@@ -183,31 +183,49 @@ export function BoardProvider(
   // boardId === "demo" (landing-page demo): always seed from createDemoBoard(), skip storage entirely.
   useEffect(() => {
     async function load() {
-      if (boardId === "demo") {
-        dispatch({ type: "BOARD/LOAD", payload: createDemoBoard() });
-        return;
-      }
-      if (isAuthenticated) {
-        const res = await fetch("/api/board");
-        // Non-404 errors are unexpected — bail out and leave the board unloaded.
-        if (!res.ok && res.status !== 404) return;
-        const hasRemoteData = res.ok;
-        const remote = hasRemoteData ? await res.json() : null;
+      try {
+        if (boardId === "demo") {
+          dispatch({ type: "BOARD/LOAD", payload: createDemoBoard() });
+          return;
+        }
+        if (isAuthenticated) {
+          const res = await fetch("/api/board");
+          // Non-404 errors are unexpected — bail out and leave the board unloaded.
+          if (!res.ok && res.status !== 404) return;
+          const hasRemoteData = res.ok;
+          const remote = hasRemoteData ? await res.json() : null;
 
-        // Migrate full board from localStorage if the server has no data yet.
-        if (!hasRemoteData) {
+          // Migrate full board from localStorage if the server has no data yet.
+          if (!hasRemoteData) {
+            const stored = globalThis.localStorage?.getItem(STORAGE_KEY);
+            if (stored) {
+              try {
+                const local = JSON.parse(stored);
+                const putRes = await fetch("/api/board", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(local),
+                });
+                if (putRes.ok) {
+                  globalThis.localStorage?.removeItem(STORAGE_KEY);
+                }
+                dispatch({ type: "BOARD/LOAD", payload: local });
+                return;
+              } catch {
+                // ignore malformed localStorage
+              }
+            }
+            dispatch({ type: "BOARD/RESET" });
+            return;
+          }
+
+          dispatch({ type: "BOARD/LOAD", payload: remote });
+        } else {
+          // Unauthenticated: board lives in localStorage only, no KV interaction.
           const stored = globalThis.localStorage?.getItem(STORAGE_KEY);
           if (stored) {
             try {
               const local = JSON.parse(stored);
-              const putRes = await fetch("/api/board", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(local),
-              });
-              if (putRes.ok) {
-                globalThis.localStorage?.removeItem(STORAGE_KEY);
-              }
               dispatch({ type: "BOARD/LOAD", payload: local });
               return;
             } catch {
@@ -215,22 +233,11 @@ export function BoardProvider(
             }
           }
           dispatch({ type: "BOARD/RESET" });
-          return;
         }
-
-        dispatch({ type: "BOARD/LOAD", payload: remote });
-      } else {
-        // Unauthenticated: board lives in localStorage only, no KV interaction.
-        const stored = globalThis.localStorage?.getItem(STORAGE_KEY);
-        if (stored) {
-          try {
-            const local = JSON.parse(stored);
-            dispatch({ type: "BOARD/LOAD", payload: local });
-            return;
-          } catch {
-            // ignore malformed localStorage
-          }
-        }
+      } catch (error) {
+        // Whatever failed (fetch rejection, res.json() on a non-JSON body,
+        // etc.), don't leave boardLoaded stuck false with no visible error.
+        console.error("Failed to load board:", error);
         dispatch({ type: "BOARD/RESET" });
       }
     }

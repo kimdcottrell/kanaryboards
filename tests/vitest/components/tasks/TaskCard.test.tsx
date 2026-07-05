@@ -51,8 +51,8 @@ describe("TaskCard", () => {
     const task = {
       ...mockTask,
       checklist: [
-        { id: "i1", text: "Step one", checked: false },
-        { id: "i2", text: "Step two", checked: true },
+        { id: "i1", text: "Step one", checked: false, order: "a0" },
+        { id: "i2", text: "Step two", checked: true, order: "a1" },
       ],
     };
     render(<TaskCard {...defaultProps} task={task} />);
@@ -65,8 +65,8 @@ describe("TaskCard", () => {
     const task = {
       ...mockTask,
       checklist: [
-        { id: "i1", text: "Done item", checked: true },
-        { id: "i2", text: "Pending item", checked: false },
+        { id: "i1", text: "Done item", checked: true, order: "a0" },
+        { id: "i2", text: "Pending item", checked: false, order: "a1" },
       ],
     };
     const { container } = render(<TaskCard {...defaultProps} task={task} />);
@@ -109,7 +109,7 @@ describe("TaskCard", () => {
   test("calls toggleTaskChecklist with task and item ids when checkbox changes", () => {
     const task = {
       ...mockTask,
-      checklist: [{ id: "i1", text: "A step", checked: false }],
+      checklist: [{ id: "i1", text: "A step", checked: false, order: "a0" }],
     };
     render(<TaskCard {...defaultProps} task={task} />);
     fireEvent.click(screen.getByRole("checkbox"));

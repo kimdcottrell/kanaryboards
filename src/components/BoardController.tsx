@@ -3,7 +3,9 @@ import { RouterProvider } from "react-router-dom";
 import { BoardProvider } from "./context/BoardContext.tsx";
 import { router } from "@lib/spa-router.ts";
 
-export default function BoardController({ boardId, isAuthenticated }) {
+export default function BoardController(
+  { boardId, isAuthenticated }: { boardId: string; isAuthenticated: boolean },
+) {
   // Route drawer row links (marked data-board-link) through React Router so
   // navigating to a row on the dashboard doesn't trigger a full page reload.
   // The drawer lives outside this island, so we delegate from document.

@@ -1,6 +1,8 @@
 import { useId, useState } from "react";
 import CloseButton from "./shared/CloseButton.tsx";
 import { beforeIdFromOrderedList, useDropTarget } from "@lib/drag.ts";
+import type { ChecklistAIState, ChecklistItem, Task } from "./context/types.ts";
+import type { DragEvent } from "react";
 
 export default function ChecklistSection({
   checklist,
@@ -10,11 +12,27 @@ export default function ChecklistSection({
   reorderChecklistItem,
   handleChecklistKeyDown,
   setChecklistInputRef,
+}: {
+  checklist: ChecklistItem[];
+  addChecklistItem: (focusNew?: boolean, insertBeforeIndex?: number) => void;
+  updateChecklistItem: (
+    id: string,
+    field: string,
+    value: string | boolean,
+  ) => void;
+  deleteChecklistItem: (id: string) => void;
+  reorderChecklistItem: (itemId: string, beforeItemId: string | null) => void;
+  handleChecklistKeyDown: (
+    event: KeyboardEvent,
+    index: number,
+    addItemFn: (focusNew: boolean, insertBeforeIndex?: number) => void,
+  ) => void;
+  setChecklistInputRef: (id: string, el: HTMLInputElement | null) => void;
 }) {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const { dropTarget, handleDragOver } = useDropTarget(!!draggedId);
 
-  const handleDrop = (e) => {
+  const handleDrop = (e: DragEvent) => {
     e.preventDefault();
     const target = dropTarget;
     const moved = draggedId;
@@ -93,7 +111,7 @@ export default function ChecklistSection({
                 )}
               onKeyDown={(e) =>
                 handleChecklistKeyDown(
-                  e,
+                  e.nativeEvent,
                   index,
                   addChecklistItem,
                 )}
@@ -122,7 +140,21 @@ export function ChecklistGenerationCollapse({
   generateChecklistItems,
   applyChecklist,
   clearChecklistPreview,
-}) {
+}:
+  & Pick<
+    ChecklistAIState,
+    | "checklistPrompt"
+    | "checklistPreview"
+    | "isGeneratingChecklist"
+    | "checklistModalError"
+  >
+  & {
+    taskDraft: Task;
+    setChecklistPrompt: (prompt: string) => void;
+    generateChecklistItems: (task?: Task) => void;
+    applyChecklist: () => void;
+    clearChecklistPreview: () => void;
+  }) {
   const [showError, setShowError] = useState(false);
   const promptId = useId();
 

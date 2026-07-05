@@ -1,6 +1,13 @@
+import type { ReactNode } from "react";
 import CloseButton from "./CloseButton.tsx";
 
-export default function Modal({ open, onClose, children }) {
+export default function Modal(
+  { open, onClose, children }: {
+    open: boolean;
+    onClose: () => void;
+    children: ReactNode;
+  },
+) {
   return (
     <dialog className={`modal${open ? " modal-open" : ""}`}>
       <div className="p-2 md:p-6 sm:min-w-[98%] md:min-w-[85%] max-h-11/12 modal-box relative text-left">

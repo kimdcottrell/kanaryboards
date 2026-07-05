@@ -1,15 +1,16 @@
 import { useState } from "react";
 import { useBoardDataState, useRowActions } from "../../context/hooks.ts";
 import { rowColorOptions } from "../../context/constants.ts";
+import type { Row } from "../../context/types.ts";
 
 export default function RowSettingsSection() {
   const { rows } = useBoardDataState();
   const { updateRowColor, moveRowUp, moveRowDown, renameRow } = useRowActions();
 
-  const [editId, setEditId] = useState(null);
+  const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
 
-  const startRowEdit = (row) => {
+  const startRowEdit = (row: Row) => {
     setEditId(row.id);
     setEditName(row.title);
   };

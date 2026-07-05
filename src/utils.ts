@@ -1,7 +1,8 @@
-import { CollectionEntry, getCollection } from "astro:content";
+import { getCollection } from "astro:content";
+import type { CollectionEntry } from "astro:content";
 
 export async function getProtectedCollection(
-  key: string,
+  key: "blog",
   { requireTags = true } = {},
 ) {
   return await getCollection(key, ({ data }) => {
@@ -18,7 +19,7 @@ export async function getProtectedCollection(
   });
 }
 
-export function getTagsFromCollection(collection: CollectionEntry<string>[]) {
+export function getTagsFromCollection(collection: CollectionEntry<"blog">[]) {
   return [
     ...new Set(collection.map((post) => post.data.tags).flat()),
   ];

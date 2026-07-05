@@ -6,7 +6,7 @@ import {
 } from "../BoardContext.tsx";
 import { createId } from "../constants.ts";
 import { generateKeyBetween } from "fractional-indexing";
-import { DragEvent } from "react";
+import type { DragEvent } from "react";
 
 export function useColumnConfigActions() {
   const dispatch = useBoardDispatch();

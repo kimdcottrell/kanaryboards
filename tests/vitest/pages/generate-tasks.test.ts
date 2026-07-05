@@ -7,7 +7,9 @@ const mockGenerateContentStream = vi.hoisted(() => vi.fn());
 const mockModelsList = vi.hoisted(() => vi.fn());
 
 vi.mock("@google/genai", () => ({
-  GoogleGenAI: vi.fn().mockImplementation(function () {
+  GoogleGenAI: vi.fn().mockImplementation(function (
+    this: { models: unknown },
+  ) {
     this.models = {
       generateContentStream: mockGenerateContentStream,
       list: mockModelsList,

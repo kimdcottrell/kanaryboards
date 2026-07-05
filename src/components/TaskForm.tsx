@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import type { FormEvent } from "react";
 import { ExtensiveEditor } from "@lyfie/luthor";
 import type {
   CoreEditorMode,
@@ -96,7 +97,7 @@ interface TaskFormProps extends
     value: string | boolean,
   ) => void;
   deleteChecklistItem: (id: string) => void;
-  reorderChecklistItem?: (itemId: string, beforeItemId: string | null) => void;
+  reorderChecklistItem: (itemId: string, beforeItemId: string | null) => void;
   handleChecklistKeyDown: (
     event: KeyboardEvent,
     index: number,
@@ -139,13 +140,13 @@ export default function TaskForm({
   const submitButtonRef = useRef(null);
   const titleId = useId();
   const luthorTheme = useLuthorTheme();
-  function handleSubmit(e) {
-    const submitter = e.nativeEvent?.submitter;
+  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    const submitter = (e.nativeEvent as SubmitEvent)?.submitter;
     if (submitter && submitter !== submitButtonRef.current) {
       e.preventDefault();
       return;
     }
-    onSubmit(e, {
+    onSubmit(e.nativeEvent, {
       json: editorRef.current?.getJSON() ?? "",
       markdown: editorRef.current?.getMarkdown() ?? "",
       html: editorRef.current?.getHTML() ?? "",

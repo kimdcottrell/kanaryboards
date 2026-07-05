@@ -2,7 +2,7 @@
 import { experimental_AstroContainer as AstroContainer } from "astro/container";
 import { describe, expect, test } from "vitest";
 
-import GoogleAnalytics from "@components/seo/GoogleAnalytics.astro";
+import GoogleAnalytics from "@components/seo/partials/GoogleAnalytics.astro";
 
 describe("GoogleAnalytics", () => {
   test("renders with the required tag prop", async () => {

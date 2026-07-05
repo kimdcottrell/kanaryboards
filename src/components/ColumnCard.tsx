@@ -12,6 +12,7 @@ import { useRenderCount } from "@lib/use-render-count.ts";
 import { beforeIdFromOrderedList, useDropTarget } from "@lib/drag.ts";
 
 import type { Column, Row } from "./context/types.ts";
+import type { DragEvent } from "react";
 
 export default function ColumnCard(
   { column, row, headerLabel }: {
@@ -35,7 +36,7 @@ export default function ColumnCard(
   const cellKey = `${row.id}|${column.id}`;
   const cellTasks = tasksByCell[cellKey] || [];
 
-  const handleDrop = (e) => {
+  const handleDrop = (e: DragEvent) => {
     e.preventDefault();
     const target = dropTarget;
     if (!draggedTask) return;

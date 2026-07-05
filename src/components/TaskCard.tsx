@@ -2,6 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { useTaskActions } from "./context/hooks.ts";
 import { useRenderCount } from "@lib/use-render-count.ts";
 import { hasDescriptionContent } from "@lib/lexical-content.ts";
+import type { Row, Task } from "./context/types.ts";
+import type { DragEvent } from "react";
 
 export default function TaskCard({
   task,
@@ -10,6 +12,13 @@ export default function TaskCard({
   isDropBefore,
   isDropAfter,
   isDragging,
+}: {
+  task: Task;
+  row: Row;
+  onDragOver: (event: DragEvent) => void;
+  isDropBefore: boolean;
+  isDropAfter: boolean;
+  isDragging: boolean;
 }) {
   const navigate = useNavigate();
   const {
