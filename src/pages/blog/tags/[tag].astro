@@ -1,6 +1,7 @@
 ---
 // works for urls like /tags/huzzah and /tags/learning-in-public
 import Layout from "@layouts/BaseLayout.astro";
+import Prose from "@components/pages/Prose.astro";
 import { getProtectedCollection } from "@src/utils";
 
 const { tag } = Astro.params;
@@ -25,15 +26,17 @@ let seo = {
 ---
 
 <Layout seo={seo}>
-    <h1>here</h1>
-    <p>Posts tagged with {tag}</p>
-    <ul>
-        {
-            filteredPosts.map((post) => (
-                <li>
-                    <a href={`/blog/${post.id}`}>{post.data.title}</a>
-                </li>
-            ))
-        }
-    </ul>
+    <Prose>
+        <h1>here</h1>
+        <p>Posts tagged with {tag}</p>
+        <ul>
+            {
+                filteredPosts.map((post) => (
+                    <li>
+                        <a href={`/blog/${post.id}`}>{post.data.title}</a>
+                    </li>
+                ))
+            }
+        </ul>
+    </Prose>
 </Layout>

@@ -1,6 +1,7 @@
 ---
 import { render } from "astro:content";
 import Layout from "@layouts/BaseLayout.astro";
+import Prose from "@components/pages/Prose.astro";
 import { getProtectedCollection } from "@src/utils";
 
 const { slug } = Astro.params;
@@ -23,9 +24,9 @@ const { Content } = entry ? await render(entry) : { Content: null };
 <Layout seo={entry?.data}>
   {
     Content && (
-      <div class="prose">
+      <Prose>
         <Content />
-      </div>
+      </Prose>
     )
   }
 </Layout>

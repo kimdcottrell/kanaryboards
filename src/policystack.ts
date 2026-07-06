@@ -23,7 +23,9 @@ export default defineConfig({
 
   data: {
     collected: {
-      "Account Information": [...DataCategories.AccountInfo["Account Information"]],
+      "Account Information": [
+        ...DataCategories.AccountInfo["Account Information"],
+      ],
       "Usage Data": [...DataCategories.UsageData["Usage Data"]],
       "Board Content": [
         "Board titles",

@@ -1,5 +1,6 @@
 ---
 import Layout from "@layouts/BaseLayout.astro";
+import Prose from "@components/pages/Prose.astro";
 import { CookiePolicy } from "@policystack/react/policy";
 import config from "@src/policystack";
 
@@ -10,7 +11,7 @@ const seo = {
 ---
 
 <Layout seo={seo}>
-    <div class="prose mx-auto w-11/12 max-w-3xl py-12">
+    <Prose>
         <CookiePolicy client:load config={config} />
-    </div>
+    </Prose>
 </Layout>

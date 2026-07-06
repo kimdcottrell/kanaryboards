@@ -1,5 +1,6 @@
 ---
 import Layout from "@layouts/BaseLayout.astro";
+import Prose from "@components/pages/Prose.astro";
 import { getProtectedCollection, getTagsFromCollection } from "@src/utils";
 
 const isPlaywrightTest =
@@ -21,15 +22,17 @@ let seo = {
 ---
 
 <Layout seo={seo}>
-    <div class="tags">
-        {
-            tags.map((tag) => (
-                <p class="tag">
-                    <a href={`/blog/tags/${tag}`}>{tag}</a>
-                </p>
-            ))
-        }
-    </div>
+    <Prose>
+        <div class="tags">
+            {
+                tags.map((tag) => (
+                    <p class="tag">
+                        <a href={`/blog/tags/${tag}`}>{tag}</a>
+                    </p>
+                ))
+            }
+        </div>
+    </Prose>
 </Layout>
 <style>
     a {

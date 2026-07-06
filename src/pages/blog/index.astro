@@ -1,5 +1,6 @@
 ---
 import Layout from "@layouts/BaseLayout.astro";
+import Prose from "@components/pages/Prose.astro";
 import { getProtectedCollection } from "@src/utils";
 
 const isPlaywrightTest =
@@ -15,13 +16,15 @@ let seo = {
 ---
 
 <Layout seo={seo}>
-    <ul>
-        {
-            posts.map((post) => (
-                <li>
-                    <a href={`/blog/${post.id}`}>{post.data.title}</a>
-                </li>
-            ))
-        }
-    </ul>
+    <Prose>
+        <ul>
+            {
+                posts.map((post) => (
+                    <li>
+                        <a href={`/blog/${post.id}`}>{post.data.title}</a>
+                    </li>
+                ))
+            }
+        </ul>
+    </Prose>
 </Layout>

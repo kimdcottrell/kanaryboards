@@ -34,7 +34,10 @@ jobs:
       - name: Check code
         id: check
         continue-on-error: true
-        run: "deno check && deno task astro check"
+        run: | 
+          deno check
+          deno types > src/deno.d.ts
+          deno task astro check
 
       - name: Validate PolicyStack config
         id: policystack
