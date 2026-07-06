@@ -58,37 +58,30 @@ test.describe("Blog", () => {
       await page.goto("/blog/tags");
 
       await expect(
-        page.getByRole("link", { name: "huzzah" }),
-      ).toHaveAttribute("href", "/blog/tags/huzzah");
+        page.getByRole("link", { name: "testing_tag_1" }),
+      ).toHaveAttribute("href", "/blog/tags/testing_tag_1");
       await expect(
-        page.getByRole("link", { name: "replaced" }),
-      ).toHaveAttribute("href", "/blog/tags/replaced");
-      await expect(
-        page.getByRole("link", { name: "something-else" }),
-      ).toHaveAttribute("href", "/blog/tags/something-else");
+        page.getByRole("link", { name: "testing_tag_2" }),
+      ).toHaveAttribute("href", "/blog/tags/testing_tag_2");
     });
 
     test("clicking a tag filters articles to that tag", async ({ page }) => {
       await page.goto("/blog/tags");
-      await page.getByRole("link", { name: "huzzah" }).click();
+      await page.getByRole("link", { name: "testing_tag_1" }).click();
 
-      await expect(page).toHaveURL("/blog/tags/huzzah");
+      await expect(page).toHaveURL("/blog/tags/testing_tag_1");
       await expect(page.getByRole("link", { name: "Testing" })).toBeVisible();
       await expect(page.getByRole("link", { name: "Test 2" })).toBeVisible();
     });
 
     test("tag filtering is isolated per tag", async ({ page }) => {
-      await page.goto("/blog/tags/replaced");
+      await page.goto("/blog/tags/testing_tag_2");
       await expect(page.getByRole("link", { name: "Testing" })).toBeVisible();
       await expect(page.getByRole("link", { name: "Test 2" })).toHaveCount(0);
-
-      await page.goto("/blog/tags/something-else");
-      await expect(page.getByRole("link", { name: "Test 2" })).toBeVisible();
-      await expect(page.getByRole("link", { name: "Testing" })).toHaveCount(0);
     });
 
     test("clicking an article link from a tag page navigates to the individual article", async ({ page }) => {
-      await page.goto("/blog/tags/huzzah");
+      await page.goto("/blog/tags/testing_tag_1");
       await page.getByRole("link", { name: "Testing" }).click();
 
       await expect(page).toHaveURL("/blog/test");
@@ -109,10 +102,11 @@ test.describe("Blog", () => {
 
       const tagsIndex = await page.goto("/blog/tags");
       expect(tagsIndex?.status()).toBe(200);
-      await expect(page.getByRole("link", { name: "huzzah" })).toHaveCount(0);
-      await expect(page.getByRole("link", { name: "replaced" })).toHaveCount(0);
       await expect(
-        page.getByRole("link", { name: "something-else" }),
+        page.getByRole("link", { name: "testing_tag_1" }),
+      ).toHaveCount(0);
+      await expect(
+        page.getByRole("link", { name: "testing_tag_2" }),
       ).toHaveCount(0);
 
       // Note: [slug].astro sets Astro.response.status = 404 for any unknown

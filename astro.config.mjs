@@ -5,12 +5,20 @@ import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
 import clerk from "@clerk/astro";
 
+import sitemap from "@astrojs/sitemap";
+
 // https://astro.build/config
 export default defineConfig({
   adapter: deno(),
   integrations: [
     clerk({ prefetchUI: false }),
     react(),
+    sitemap({
+      // /blog/* routes are rendered on demand, so the sitemap integration
+      // can't discover them by crawling static build output; they publish
+      // their own sitemap fragment instead (see src/pages/sitemap-blog.xml.ts).
+      customSitemaps: ["https://kanby.ai/sitemap-blog.xml"],
+    }),
   ],
 
   output: "server",
@@ -39,6 +47,7 @@ export default defineConfig({
     weights: ["100 900"],
     styles: ["normal", "italic"],
   }],
+
   site: "https://kanby.ai",
 
   server: {
