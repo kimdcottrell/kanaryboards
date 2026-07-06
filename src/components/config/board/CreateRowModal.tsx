@@ -1,6 +1,9 @@
-import Modal from "../../shared/Modal.tsx";
+import Modal from "@components/shared/Modal.tsx";
 import CreateRowSection from "./CreateRowSection.tsx";
-import { useRowFormActions, useRowFormState } from "../../context/hooks.ts";
+import {
+  useRowFormActions,
+  useRowFormState,
+} from "@components/context/hooks.ts";
 
 export default function CreateRowModal() {
   const { createRowModalOpen } = useRowFormState();

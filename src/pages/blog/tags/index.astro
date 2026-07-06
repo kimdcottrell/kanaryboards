@@ -2,9 +2,11 @@
 import Layout from "@layouts/BaseLayout.astro";
 import { getProtectedCollection, getTagsFromCollection } from "@src/utils";
 
-export const prerender = true;
-
-const allPosts = await getProtectedCollection("blog");
+const isPlaywrightTest =
+    Astro.request.headers.get("x-playwright-test") === "true";
+const allPosts = await getProtectedCollection("blog", {
+    includeTestOnly: isPlaywrightTest,
+});
 const tags = getTagsFromCollection(allPosts);
 
 // Example: Construct a canonical URL using your production domain

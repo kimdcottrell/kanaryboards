@@ -2,9 +2,11 @@
 import Layout from "@layouts/BaseLayout.astro";
 import { getProtectedCollection } from "@src/utils";
 
-export const prerender = true;
-
-const posts = await getProtectedCollection("blog");
+const isPlaywrightTest =
+    Astro.request.headers.get("x-playwright-test") === "true";
+const posts = await getProtectedCollection("blog", {
+    includeTestOnly: isPlaywrightTest,
+});
 
 let seo = {
     title: "Blog",

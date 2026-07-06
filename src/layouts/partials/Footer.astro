@@ -1,30 +1,27 @@
+---
+import SubscribeForm from "@components/SubscribeForm.astro";
+---
+
 <footer class="bg-base-200 text-base-content p-10">
     <div
-        class="w-11/12 mx-auto footer sm:footer-horizontal text-neutral-content items-center pt-4"
+        class="w-11/12 mx-auto footer sm:footer-horizontal grid-cols-2 md:grid-cols-4 text-neutral-content items-start pt-4"
     >
-        <nav>
-            <h6 class="footer-title">Services</h6>
-            <a class="link link-hover">Branding</a>
-            <a class="link link-hover">Design</a>
-            <a class="link link-hover">Marketing</a>
-            <a class="link link-hover">Advertisement</a>
-        </nav>
         <nav>
             <h6 class="footer-title">Company</h6>
             <a class="link link-hover">About us</a>
             <a class="link link-hover">Contact</a>
-            <a class="link link-hover">Jobs</a>
-            <a class="link link-hover">Press kit</a>
         </nav>
         <nav>
             <h6 class="footer-title">Legal</h6>
-            <a class="link link-hover">Terms of use</a>
-            <a class="link link-hover">Privacy policy</a>
-            <a class="link link-hover">Cookie policy</a>
+            <a class="link link-hover" href="/privacy">Privacy policy</a>
+            <a class="link link-hover" href="/cookies">Cookie policy</a>
             <a class="link link-hover cursor-pointer" data-open-cookie-settings>
                 Cookie settings
             </a>
         </nav>
+        <!-- <div class="md:col-start-4">
+            <SubscribeForm />
+        </div> -->
     </div>
 </footer>
 <footer class="bg-base-200 text-base-content p-10">
@@ -34,32 +31,41 @@
         <aside class="grid-flow-col items-center">
             <span class="iconify hugeicons--copyright text-xl"></span>
             <p>
-                Copyright © {new Date().getFullYear()} Kanby LLC
+                {new Date().getFullYear()} Kanby LLC
             </p>
         </aside>
         <nav
             class="grid-flow-col gap-4 md:place-self-center md:justify-self-end"
         >
-            <a>
-                <span class="iconify hugeicons--threads text-xl"></span>
+            <a href="https://discord.com" target="_blank">
+                <span class="iconify hugeicons--discord text-xl"></span>
             </a>
-            <a>
+            <a href="https://bsky.app/profile/kanby.ai" target="_blank">
+                <span class="iconify hugeicons--bluesky text-xl"></span>
+            </a>
+            <a href="https://twitter.com/kanby_ai" target="_blank">
+                <span class="iconify hugeicons--twitter text-xl"></span>
+            </a>
+            <a href="https://www.youtube.com/@KanbyAI" target="_blank">
                 <span class="iconify hugeicons--youtube text-xl"></span>
             </a>
-            <a>
+            <a href="https://www.facebook.com/kanbyllc" target="_blank">
                 <span class="iconify hugeicons--facebook-02 text-xl"></span>
             </a>
-            <a>
+            <a href="https://www.instagram.com/kanbyai/" target="_blank">
                 <span class="iconify hugeicons--instagram text-xl"></span>
+            </a>
+            <a href="https://www.linkedin.com/company/kanbyai/" target="_blank">
+                <span class="iconify hugeicons--linkedin-02 text-xl"></span>
             </a>
         </nav>
     </div>
-</footer>
 
-<script>
-    document
-        .querySelector("[data-open-cookie-settings]")
-        ?.addEventListener("click", () =>
-            window.dispatchEvent(new Event("policystack:open")),
-        );
-</script>
+    <script>
+        document
+            .querySelector("[data-open-cookie-settings]")
+            ?.addEventListener("click", () =>
+                window.dispatchEvent(new Event("policystack:open")),
+            );
+    </script>
+</footer>

@@ -4,6 +4,7 @@
 worker-configuration.d.ts
 src/deno.d.ts
 deno.lock
+src/policystack.gen.ts
 **/dist/*
 HELP.md
 ./husky/_

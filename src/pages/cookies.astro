@@ -1,0 +1,16 @@
+---
+import Layout from "@layouts/BaseLayout.astro";
+import { CookiePolicy } from "@policystack/react/policy";
+import config from "@src/policystack";
+
+const seo = {
+    title: "Cookie Policy",
+    description: "How Kanby uses cookies and how to manage your preferences.",
+};
+---
+
+<Layout seo={seo}>
+    <div class="prose mx-auto w-11/12 max-w-3xl py-12">
+        <CookiePolicy client:load config={config} />
+    </div>
+</Layout>

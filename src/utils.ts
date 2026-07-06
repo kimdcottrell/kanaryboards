@@ -3,7 +3,7 @@ import type { CollectionEntry } from "astro:content";
 
 export async function getProtectedCollection(
   key: "blog",
-  { requireTags = true } = {},
+  { requireTags = true, includeTestOnly = false } = {},
 ) {
   return await getCollection(key, ({ data }) => {
     let returnable = true;
@@ -13,6 +13,9 @@ export async function getProtectedCollection(
       if (!data.tags) returnable = false;
     }
     if (import.meta.env.MODE === "production" && data.draft === true) {
+      returnable = false;
+    }
+    if (data.testOnly === true && !includeTestOnly) {
       returnable = false;
     }
     return returnable;

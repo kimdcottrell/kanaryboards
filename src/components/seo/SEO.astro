@@ -1,7 +1,6 @@
 ---
 import BasicTags from "./partials/Basic.astro";
 import ArticleTags from "./partials/Article.astro";
-import TwitterCardTags from "./partials/Twitter.astro";
 import type { SeoMetadata } from "@src/content.config";
 
 export interface Props {
@@ -11,10 +10,11 @@ export interface Props {
 const { seo } = Astro.props;
 ---
 
-{seo && (
-  <>
-    <BasicTags {...seo} />
-    <TwitterCardTags {...seo} />
-    {seo.metadata?.article && <ArticleTags {...seo} />}
-  </>
-)}
+{
+  seo && (
+    <>
+      <BasicTags {...seo} />
+      {seo.metadata?.article && <ArticleTags {...seo} />}
+    </>
+  )
+}

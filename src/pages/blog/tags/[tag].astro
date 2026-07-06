@@ -1,32 +1,22 @@
 ---
 // works for urls like /tags/huzzah and /tags/learning-in-public
 import Layout from "@layouts/BaseLayout.astro";
-import { getProtectedCollection, getTagsFromCollection } from "@src/utils";
-
-// with `output: 'server'` configured
-export const prerender = true;
-
-export async function getStaticPaths() {
-    const allPosts = await getProtectedCollection("blog");
-    const uniqueTags = getTagsFromCollection(allPosts);
-
-    return uniqueTags.map((tag) => {
-        const filteredPosts = allPosts.filter((post: any) =>
-            post.data.tags?.includes(tag),
-        );
-
-        return {
-            params: { tag },
-            props: { posts: filteredPosts },
-        };
-    });
-}
+import { getProtectedCollection } from "@src/utils";
 
 const { tag } = Astro.params;
-const { posts } = Astro.props;
-const filteredPosts = posts.filter((post: any) =>
-    post.data.tags?.includes(tag),
-);
+const isPlaywrightTest =
+    Astro.request.headers.get("x-playwright-test") === "true";
+const allPosts = await getProtectedCollection("blog", {
+    includeTestOnly: isPlaywrightTest,
+});
+const filteredPosts = tag
+    ? allPosts.filter((post) => post.data.tags?.includes(tag))
+    : [];
+
+if (filteredPosts.length === 0) {
+    Astro.response.status = 404;
+    Astro.response.statusText = "No posts found for this tag.";
+}
 
 let seo = {
     title: `Articles that contain tag ${tag}`,

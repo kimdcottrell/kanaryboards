@@ -1,5 +1,8 @@
-import { useRowFormActions, useRowFormState } from "../../context/hooks.ts";
-import GeneratingTasksAlert from "../../shared/GeneratingTasksAlert.tsx";
+import {
+  useRowFormActions,
+  useRowFormState,
+} from "@components/context/hooks.ts";
+import GeneratingTasksAlert from "@components/shared/GeneratingTasksAlert.tsx";
 
 export default function CreateRowSection() {
   const {

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useBoardDataState, useRowActions } from "../../context/hooks.ts";
-import { rowColorOptions } from "../../context/constants.ts";
-import type { Row } from "../../context/types.ts";
+import { useBoardDataState, useRowActions } from "@components/context/hooks.ts";
+import { rowColorOptions } from "@components/context/constants.ts";
+import type { Row } from "@components/context/types.ts";
 
 export default function RowSettingsSection() {
   const { rows } = useBoardDataState();

@@ -1,4 +1,4 @@
-import { useBoardLifecycleActions } from "../../context/hooks.ts";
+import { useBoardLifecycleActions } from "@components/context/hooks.ts";
 
 export default function DangerZoneSection() {
   const { confirmResetBoard } = useBoardLifecycleActions();

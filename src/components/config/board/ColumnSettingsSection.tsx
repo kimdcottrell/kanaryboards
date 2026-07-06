@@ -1,10 +1,10 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import AsyncCreatableSelect from "react-select/async-creatable";
-import BoardMenu from "../../BoardMenu.tsx";
-import BoardDock from "../../BoardDock.tsx";
-import DynamicIcon from "../../shared/DynamicIcon.tsx";
-import ColumnReorderList from "../../shared/ColumnReorderList.tsx";
+import BoardMenu from "@components/BoardMenu.tsx";
+import BoardDock from "@components/BoardDock.tsx";
+import DynamicIcon from "@components/shared/DynamicIcon.tsx";
+import ColumnReorderList from "@components/shared/ColumnReorderList.tsx";
 import { searchHugeicons } from "@lib/icons.ts";
 import {
   useBoardDataState,
@@ -12,7 +12,7 @@ import {
   useColumnConfigState,
   useColumnEditActions,
   useColumnEditState,
-} from "../../context/hooks.ts";
+} from "@components/context/hooks.ts";
 
 export default function ColumnSettingsSection() {
   const { columns, rows, tasks } = useBoardDataState();

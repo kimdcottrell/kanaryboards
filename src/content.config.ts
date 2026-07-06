@@ -134,6 +134,7 @@ export type SeoMetadata = Partial<AnyPageMetadata> & {
 // article-specific seo metadata
 export const blogCollectionSchema = z.object({
   draft: z.boolean().default(true),
+  testOnly: z.boolean().default(false),
   type: z.string().default("article"),
   metadata: frontmatterMetadataSchema.optional(),
 })

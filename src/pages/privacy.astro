@@ -1,0 +1,16 @@
+---
+import Layout from "@layouts/BaseLayout.astro";
+import { PrivacyPolicy } from "@policystack/react/policy";
+import config from "@src/policystack";
+
+const seo = {
+    title: "Privacy Policy",
+    description: "How Kanby collects, uses, and protects your data.",
+};
+---
+
+<Layout seo={seo}>
+    <div class="prose mx-auto w-11/12 max-w-3xl py-12">
+        <PrivacyPolicy client:load config={config} />
+    </div>
+</Layout>
