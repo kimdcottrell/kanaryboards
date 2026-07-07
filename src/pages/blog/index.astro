@@ -17,14 +17,18 @@ let seo = {
 
 <Layout seo={seo}>
     <Prose>
-        <ul>
-            {
-                posts.map((post) => (
-                    <li>
-                        <a href={`/blog/${post.id}`}>{post.data.title}</a>
-                    </li>
-                ))
-            }
-        </ul>
+        {
+            posts.length > 0 ? (
+                <ul>
+                    {posts.map((post) => (
+                        <li>
+                            <a href={`/blog/${post.id}`}>{post.data.title}</a>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p>No blog posts yet. Check back soon.</p>
+            )
+        }
     </Prose>
 </Layout>

@@ -23,15 +23,19 @@ let seo = {
 
 <Layout seo={seo}>
     <Prose>
-        <div class="tags">
-            {
-                tags.map((tag) => (
-                    <p class="tag">
-                        <a href={`/blog/tags/${tag}`}>{tag}</a>
-                    </p>
-                ))
-            }
-        </div>
+        {
+            tags.length > 0 ? (
+                <div class="tags">
+                    {tags.map((tag) => (
+                        <p class="tag">
+                            <a href={`/blog/tags/${tag}`}>{tag}</a>
+                        </p>
+                    ))}
+                </div>
+            ) : (
+                <p>No tags yet. Check back soon.</p>
+            )
+        }
     </Prose>
 </Layout>
 <style>

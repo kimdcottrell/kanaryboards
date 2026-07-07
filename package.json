@@ -14,9 +14,10 @@
     "@iconify/json": "2.2.493",
     "@iconify/tailwind4": "1.2.3",
     "@lyfie/luthor": "2.9.0",
+    "@policystack/cli": "1.0.1",
     "@policystack/core": "1.0.1",
-    "@policystack/react": "^1.0.1",
-    "@policystack/sdk": "^1.0.1",
+    "@policystack/react": "1.0.1",
+    "@policystack/sdk": "1.0.1",
     "@policystack/vite": "^1.0.1",
     "@tailwindcss/typography": "0.5.20",
     "@types/react": "19.2.17",
@@ -31,12 +32,12 @@
     "react-dom": "19.2.7",
     "react-router-dom": "7.18.1",
     "react-select": "5.10.2",
-    "resend": "^6.17.1",
+    "resend": "6.17.1",
     "tailwindcss": "4.3.2",
     "typescript": "6.0.3",
     "vitest": "4.1.9",
     "@jsr/std__uuid": "1.1.1",
-    "zod-empty": "^2.1.0"
+    "zod-empty": "2.1.0"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "2.1.195",

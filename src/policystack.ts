@@ -16,7 +16,7 @@ export default defineConfig({
     contact: { email: "privacy@kanby.ai", phone: "(571) 336-2406" },
   },
 
-  effectiveDate: "2026-07-06",
+  effectiveDate: "2026-07-07",
 
   // Opt-out posture, US-only text; add "eea"/"uk" if the user base expands there.
   jurisdictions: ["us", "us-ca"],
@@ -34,6 +34,7 @@ export default defineConfig({
         "Task descriptions",
         "Checklist items",
       ],
+      "Newsletter Subscription": ["Email address"],
     },
     context: {
       "Account Information": {
@@ -61,6 +62,14 @@ export default defineConfig({
           "You cannot create or use boards, rows, columns, or tasks without it.",
         ),
       },
+      "Newsletter Subscription": {
+        purpose: "Send the opt-in email newsletter about product updates",
+        lawfulBasis: LegalBases.Consent,
+        retention: "Until you unsubscribe",
+        provision: Voluntary(
+          "Subscribing is optional; declining does not affect your ability to use Kanby.",
+        ),
+      },
     },
   },
 
@@ -79,8 +88,14 @@ export default defineConfig({
     Providers.GoogleAnalytics,
     {
       name: "Google (Gemini API)",
-      purpose: "Powers AI-generated checklist suggestions",
+      purpose: "Powers AI-generated checklist and task suggestions",
       policyUrl: "https://policies.google.com/privacy",
+    },
+    {
+      name: "Mailchimp",
+      purpose:
+        "The system that manages email marketing, such as the newsletter. (user opt-in only) ",
+      policyUrl: "https://mailchimp.com/legal/",
     },
   ],
 });

@@ -59,7 +59,7 @@
   --color-neutral-content: var(--catppuccin-color-text);
   --color-info: var(--catppuccin-color-sky);
   --color-info-content: var(--catppuccin-color-base);
-  --color-success: var(--catppuccin-color-green-300);
+  --color-success: var(--catppuccin-color-green-500);
   --color-success-content: var(--catppuccin-color-base);
   --color-warning: var(--catppuccin-color-peach-600);
   --color-warning-content: var(--catppuccin-color-base);
@@ -125,7 +125,10 @@
 }
 
 @layer utilities {
-  .page-home #header-nav {
+  .footer div.mce_inline_error {
+    @apply hidden!;
+  }
+  .page-home #headauer-nav {
     @apply absolute top-0 left-0 w-full;
   }
   #drawer-row-list a {

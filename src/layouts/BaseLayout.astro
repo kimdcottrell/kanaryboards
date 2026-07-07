@@ -6,6 +6,7 @@ import DrawerMenu from "./partials/DrawerMenu.astro";
 
 import Footer from "./partials/Footer.astro";
 import CookieBanner from "@components/CookieBanner.astro";
+import ClerkSignUpTrigger from "@components/ClerkSignUpTrigger.astro";
 import type { SeoMetadata } from "@src/content.config";
 
 interface Props {
@@ -29,5 +30,6 @@ const pageClass = `page-${Astro.url.pathname === "/" ? "home" : Astro.url.pathna
       <Footer />
     </main>
     <CookieBanner />
+    <ClerkSignUpTrigger />
   </body>
 </html>
