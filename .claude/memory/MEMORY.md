@@ -16,3 +16,4 @@
 - [CI/CD workflows](project_cicd_workflows.md) — auto-create-pr (feature/bugfix branches) and e2e (Deno Deploy preview polling) workflows; required secrets
 - [Playwright collapse test patterns](feedback_playwright_collapse_patterns.md) — per-mechanism selectors/assertions for DaisyUI checkbox collapse, DaisyUI React-state collapse, and custom conditional-render collapse; ID naming convention
 - [Docker Compose filename](feedback_compose_filename.md) — this project uses compose.yaml (V2 preferred name), not docker-compose.yml; always check compose.yaml first
+- [Security response headers](project_security_headers.md) — all 6 security headers set in src/middleware.ts (prod-gated); CSP is Report-Only (flip CSP_REPORT_ONLY to enforce); why Astro-native security.csp was rejected (Deno adapter meta-only, Clerk unsafe-inline, GA dynamic hash)

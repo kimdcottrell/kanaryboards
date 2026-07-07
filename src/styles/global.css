@@ -128,7 +128,7 @@
   .footer div.mce_inline_error {
     @apply hidden!;
   }
-  .page-home #headauer-nav {
+  .page-home #header-nav {
     @apply absolute top-0 left-0 w-full;
   }
   #drawer-row-list a {

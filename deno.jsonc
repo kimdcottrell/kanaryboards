@@ -36,6 +36,10 @@
     "dev": "deno run --allow-all astro dev",
     "e2e-test": "deno task playwright test --project=chromium",
     "e2e-test:ui": "deno task playwright test --ui-port=8080 --ui-host=0.0.0.0",
+    // Local-only "malicious user" security-header suite. Builds on `playwright`
+    // (remote browser server + .env) but points at its own config, which forces
+    // a prod build + preview because the headers only exist in prod.
+    "e2e-security": "deno task playwright test --config=playwright.security.config.ts",
     "husky": "deno run --allow-all husky",
     "playwright": "START_DEV_SERVER=1 PW_TEST_CONNECT_WS_ENDPOINT='ws://playwright:3000' PW_DISABLE_TS_ESM=1 deno run --env-file=.env --allow-all ./node_modules/.bin/playwright",
     "preview": "deno run --allow-net --allow-read --allow-env ./dist/server/entry.mjs",
@@ -47,7 +51,7 @@
     "exclude": ["./tests/vitest/*", "./tests/playwright/*"]
   },
   "imports": {
-    // these are needed to get> around Deno Deploy problems thanks to @deno/astro-adapter
+    // these are needed to get around Deno Deploy problems thanks to @deno/astro-adapter
     "@std/http": "jsr:@std/http@^1.1.0",
     "@std/path": "jsr:@std/path@^1.1.4"
     // NOTE: package.json MUST exist for:
