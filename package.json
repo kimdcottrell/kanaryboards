@@ -6,9 +6,6 @@
   "dependencies": {
     "@astrojs/react": "5.0.7",
     "@astrojs/sitemap": "3.7.4",
-    "@clerk/astro": "3.4.9",
-    "@clerk/backend": "3.8.5",
-    "@clerk/testing": "2.2.0",
     "@clerk/astro": "3.4.12",
     "@clerk/backend": "3.11.0",
     "@clerk/testing": "2.2.3",
@@ -27,7 +24,6 @@
     "@types/react-dom": "19.2.3",
     "astro": "6.4.8",
     "astro-icon": "1.1.5",
-    "daisyui": "5.6.6",
     "dayjs": "1.11.21",
     "daisyui": "5.6.14",
     "fractional-indexing": "4.0.0",
@@ -39,9 +35,7 @@
     "resend": "6.17.1",
     "tailwindcss": "4.3.2",
     "typescript": "6.0.3",
-    "vitest": "4.1.9",
-    "@jsr/std__uuid": "1.1.1",
-    "zod-empty": "2.1.0"
+    "zod-empty": "2.1.0",
     "vitest": "4.1.10",
     "@jsr/std__uuid": "1.1.1"
   },
