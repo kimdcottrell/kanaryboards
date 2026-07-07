@@ -59,12 +59,12 @@ const CSP = [
   "frame-ancestors 'self'",
   "form-action 'self' https://kanby.us6.list-manage.com",
   "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://s3.amazonaws.com https://*.list-manage.com https://challenges.cloudflare.com https://*.clerk.accounts.dev https://clerk.kanby.ai",
-  "connect-src 'self' https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.clerk.accounts.dev https://clerk.kanby.ai",
+  "connect-src 'self' https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.clerk.accounts.dev https://clerk.kanby.ai https://clerk-telemetry.com",
   "img-src 'self' data: https://www.googletagmanager.com https://*.google-analytics.com https://img.clerk.com",
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
   "worker-src 'self' blob:",
-  "frame-src 'self' https://challenges.cloudflare.com",
+  "frame-src 'self' https://challenges.cloudflare.com https://*.clerk.accounts.dev https://clerk.kanby.ai",
 ].join("; ");
 
 // Start report-only: the browser logs violations but blocks nothing, so a

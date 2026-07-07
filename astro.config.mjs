@@ -11,7 +11,7 @@ import sitemap from "@astrojs/sitemap";
 export default defineConfig({
   adapter: deno(),
   integrations: [
-    clerk({ prefetchUI: false }),
+    clerk(),
     react(),
     sitemap({
       // /blog/* routes are rendered on demand, so the sitemap integration
