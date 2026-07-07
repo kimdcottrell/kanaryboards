@@ -1,11 +1,11 @@
 {
-  "name": "kanaryboards",
+  "name": "kanby",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "dependencies": {
     "@astrojs/react": "5.0.7",
-    "@astrojs/sitemap": "3.7.4",
+    "@astrojs/sitemap": "3.7.3",
     "@clerk/astro": "3.4.12",
     "@clerk/backend": "3.11.0",
     "@clerk/testing": "2.2.3",
@@ -18,7 +18,7 @@
     "@policystack/core": "1.0.1",
     "@policystack/react": "1.0.1",
     "@policystack/sdk": "1.0.1",
-    "@policystack/vite": "^1.0.1",
+    "@policystack/vite": "1.0.1",
     "@tailwindcss/typography": "0.5.20",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
