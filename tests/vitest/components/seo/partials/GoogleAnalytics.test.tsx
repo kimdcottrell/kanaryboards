@@ -27,4 +27,37 @@ describe("GoogleAnalytics", () => {
       container.renderToString(GoogleAnalytics, { props: {} }),
     ).rejects.toThrow("GoogleTag is missing");
   });
+
+  test("grants analytics_storage when analyticsConsent is true", async () => {
+    const container = await AstroContainer.create();
+    const testTag = "GT-TEST123";
+
+    const result = await container.renderToString(GoogleAnalytics, {
+      props: { tag: testTag, analyticsConsent: true },
+    });
+
+    expect(result).toContain('analytics_storage: "granted"');
+  });
+
+  test("denies analytics_storage when analyticsConsent is false", async () => {
+    const container = await AstroContainer.create();
+    const testTag = "GT-TEST123";
+
+    const result = await container.renderToString(GoogleAnalytics, {
+      props: { tag: testTag, analyticsConsent: false },
+    });
+
+    expect(result).toContain('analytics_storage: "denied"');
+  });
+
+  test("denies analytics_storage by default when analyticsConsent is omitted", async () => {
+    const container = await AstroContainer.create();
+    const testTag = "GT-TEST123";
+
+    const result = await container.renderToString(GoogleAnalytics, {
+      props: { tag: testTag },
+    });
+
+    expect(result).toContain('analytics_storage: "denied"');
+  });
 });

@@ -20,8 +20,12 @@ export default function DemoExperience() {
           <h2 className="text-4xl font-semibold mb-8">Try it right here</h2>
           <p>
             You're looking at a single, interactive project row from a Kanby
-            dashboard. A real dashboard can contain multiple project rows, each
-            with its own Kanban columns.
+            dashboard.
+          </p>
+
+          <p>
+            The only difference between it and a true Kanby dashboard is that an
+            actual dashboard can contain multiple rows, just like this.
           </p>
 
           <p>
