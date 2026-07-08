@@ -22,8 +22,14 @@ const normalizeTaskLines = (content: string) =>
     )
     .filter(Boolean);
 
-const apiKey = import.meta.env.GOOGLE_AI_STUDIO_KEY;
-export const apiModel = import.meta.env.GOOGLE_AI_STUDIO_MODEL ||
+// Read secrets at runtime via Deno.env.get(), NOT import.meta.env.
+// Astro/Vite statically inlines import.meta.env.* at build time, so on Deno
+// Deploy the value gets frozen in during the build — or baked as `undefined`
+// when the var isn't present in the build environment — and the production
+// runtime env var is ignored. Deno.env.get() is a true runtime lookup.
+// (import.meta.env.MODE below is fine: MODE is a build-time constant, not a secret.)
+const apiKey = Deno.env.get("GOOGLE_AI_STUDIO_KEY");
+export const apiModel = Deno.env.get("GOOGLE_AI_STUDIO_MODEL") ||
   "gemini-3.1-flash-lite";
 
 if (!apiKey) {
