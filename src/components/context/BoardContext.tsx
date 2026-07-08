@@ -158,8 +158,10 @@ export function useTasksByCell(): Record<string, Task[]> {
   return v;
 }
 
-const BoardMetaContext = createContext<{ boardId: string } | null>(null);
-export function useBoardMeta(): { boardId: string } {
+const BoardMetaContext = createContext<
+  { boardId: string | undefined } | null
+>(null);
+export function useBoardMeta(): { boardId: string | undefined } {
   const v = useContext(BoardMetaContext);
   if (!v) throw new Error("useBoardMeta must be used within a BoardProvider");
   return v;
@@ -168,7 +170,7 @@ export function useBoardMeta(): { boardId: string } {
 export function BoardProvider(
   { children, boardId, isAuthenticated = false }: {
     children: ReactNode;
-    boardId: string;
+    boardId: string | undefined;
     isAuthenticated?: boolean;
   },
 ) {

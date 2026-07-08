@@ -12,14 +12,16 @@ function jsonResponse(body: object, status: number): Response {
 }
 
 export const GET: APIRoute = async ({ locals }) => {
-  const boardId = locals.boardId;
+  // /api/board is gated to authenticated requests by protectedRequestMiddleware,
+  // which always assigns locals.boardId before this route runs.
+  const boardId = locals.boardId as string;
   const board = await getBoard(boardId);
   if (!board) return jsonResponse({ noData: true }, 404);
   return jsonResponse(board, 200);
 };
 
 export const PUT: APIRoute = async ({ request, locals }) => {
-  const boardId = locals.boardId;
+  const boardId = locals.boardId as string;
   let body: PersistedBoard;
   try {
     body = await request.json();
@@ -37,7 +39,7 @@ export const PUT: APIRoute = async ({ request, locals }) => {
 };
 
 export const DELETE: APIRoute = async ({ locals }) => {
-  const boardId = locals.boardId;
+  const boardId = locals.boardId as string;
   console.debug({
     method: "DELETE",
     boardId,

@@ -4,7 +4,10 @@ import { BoardProvider } from "./context/BoardContext.tsx";
 import { router } from "@lib/spa-router.ts";
 
 export default function BoardController(
-  { boardId, isAuthenticated }: { boardId: string; isAuthenticated: boolean },
+  { boardId, isAuthenticated }: {
+    boardId: string | undefined;
+    isAuthenticated: boolean;
+  },
 ) {
   // Route drawer row links (marked data-board-link) through React Router so
   // navigating to a row on the dashboard doesn't trigger a full page reload.

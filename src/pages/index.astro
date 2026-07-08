@@ -5,6 +5,17 @@ import HeroStartForm from "@components/HeroStartForm";
 
 const { userId } = Astro.locals.auth();
 const isAuthenticated = !!userId;
+
+// Anonymous homepage HTML is identical for every visitor (no per-user data
+// is rendered), so it's safe to let the edge cache it. Authenticated
+// responses carry personalized drawer data (DrawerMenu.astro) and must never
+// be cached.
+if (!isAuthenticated) {
+  Astro.response.headers.set(
+    "Cache-Control",
+    "public, s-maxage=300, stale-while-revalidate=600",
+  );
+}
 ---
 
 <BaseLayout>

@@ -13,7 +13,13 @@ export const protectedRequestMiddleware = clerkMiddleware(
       console.debug({
         event:
           `Unauthorized access to ${context.request.url} blocked and handled`,
-        ip: context.clientAddress,
+        // kanby.ai is proxied through Cloudflare, so the Deno adapter's
+        // clientAddress is Cloudflare's edge IP, not the visitor's. Cloudflare
+        // sets CF-Connecting-IP to the real client IP on every proxied
+        // request; fall back to clientAddress for non-proxied requests
+        // (local dev, direct .deno.net access).
+        ip: context.request.headers.get("CF-Connecting-IP") ??
+          context.clientAddress,
         method: context.request.method,
         url: context.request.url,
         headers: Object.fromEntries(context.request.headers),
@@ -59,8 +65,8 @@ const CSP = [
   "base-uri 'self'",
   "object-src 'none'",
   "frame-ancestors 'self'",
-  "form-action 'self' https://kanby.us6.list-manage.com",
-  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://s3.amazonaws.com https://*.list-manage.com https://challenges.cloudflare.com https://*.clerk.accounts.dev https://clerk.kanby.ai https://static.cloudflareinsights.com",
+  "form-action 'self' https://*.list-manage.com",
+  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://s3.amazonaws.com https://*.list-manage.com https://challenges.cloudflare.com https://*.clerk.accounts.dev https://clerk.kanby.ai https://static.cloudflareinsights.com https://ajax.cloudflare.com",
   "connect-src 'self' https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.clerk.accounts.dev https://clerk.kanby.ai https://clerk-telemetry.com https://cloudflareinsights.com",
   "img-src 'self' data: https://www.googletagmanager.com https://*.google-analytics.com https://img.clerk.com",
   "style-src 'self' 'unsafe-inline'",
@@ -99,21 +105,16 @@ const securityHeadersMiddleware = defineMiddleware(async (_context, next) => {
   return response;
 });
 
-const boardMiddleware = defineMiddleware((context, next) => {
+export const boardMiddleware = defineMiddleware((context, next) => {
   if (context.locals.boardId) return next();
 
-  // Unauthenticated: use a persistent cookie-based boardId
-  let boardId = context.cookies.get("boardId")?.value;
-  if (!boardId) {
-    boardId = createId();
-    context.cookies.set("boardId", boardId, {
-      path: "/",
-      sameSite: "lax",
-      httpOnly: false,
-      maxAge: 60 * 60 * 24 * 365,
-    });
-  }
-  context.locals.boardId = boardId;
+  // Unauthenticated: reuse a pre-existing boardId cookie if present, but never
+  // create one here. Setting a cookie would force a Set-Cookie on every
+  // anonymous response, which prevents the homepage from being cached at the
+  // edge. Anonymous board state lives in localStorage, not this cookie/KV, so
+  // leaving boardId unset for new anonymous visitors is safe.
+  const boardId = context.cookies.get("boardId")?.value;
+  if (boardId) context.locals.boardId = boardId;
   return next();
 });
 
