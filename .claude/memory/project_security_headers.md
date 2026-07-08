@@ -1,6 +1,6 @@
 ---
 name: project_security_headers
-description: Security HTTP headers (HSTS, CSP, X-Frame-Options, etc.) are set in src/middleware.ts, gated to prod; CSP starts Report-Only. Why Astro-native security.csp was rejected.
+description: Security HTTP headers (HSTS, CSP, X-Frame-Options, etc.) are set in src/middleware.ts, gated to prod; CSP starts Report-Only, is an ongoing WIP, and its Cloudflare-related source list was audited on 2026-07-08.
 metadata:
   type: project
 ---
@@ -12,3 +12,13 @@ All six security response headers (Strict-Transport-Security, Content-Security-P
 **Local "malicious user" e2e suite**: `tests/playwright/security-headers.spec.ts` + `playwright.security.config.ts`, run via `deno task e2e-security`. It attempts the attacks each header stops (clickjacking iframe, injected external script/img/object, `fetch()` exfiltration, `<base>` hijack, geolocation) and asserts XFO refusal / CSP `securitypolicyviolation` reports / Permissions-Policy denial, plus a header-value contract test and one test documenting that inline scripts still run under `'unsafe-inline'`. Gotchas baked into the setup: headers only exist in a prod build so the config's `webServer` forces `deno task build && deno task preview` (binds **8085**, not 4321); it's excluded from the normal suite via `testIgnore` in `playwright.config.ts` and self-skips unless `MODE==="development"`; CSP tests assert on the violation *report* (disposition report|enforce) so they survive the `CSP_REPORT_ONLY` flip; and because the browser runs in the remote `playwright` container, the config sets `connectOptions.exposeNetwork: "<loopback>"` so it can reach the runner's `localhost:8085`.
 
 **Why not Astro's `security.csp`** (it exists, added in Astro 6.0, and its `csp` runtime API works in middleware): the `@deno/astro-adapter` doesn't implement the Astro 6 `staticHeaders`/`cspDestination:'header'` feature, so Astro can only emit CSP as a `<meta>` tag — which silently ignores `frame-ancestors` (still need a real header). It's also hash-based and rejects `'unsafe-inline'` (incompatible with Clerk), and its `strict-dynamic` escape hatch is hash-only with no nonce API, so the GA inline script (hash changes per render because it interpolates the tag id + consent state) can't be pinned. See [[project_stack]].
+
+**This CSP is an ongoing pain point for the user** — expect repeat visits/iteration on it, not a one-and-done. As of 2026-07-08 it's still `CSP_REPORT_ONLY = true`.
+
+**Cloudflare CSP audit (2026-07-08)**: kanby.ai's DNS is proxied (orange-clouded) through Cloudflare. Reviewed Cloudflare's CSP compliance docs (`developers.cloudflare.com/fundamentals/reference/policies-compliances/content-security-policies/` + the linked Turnstile CSP reference + Bot/JS-Detections reference) to check whether the proxying itself demands CSP entries. Conclusion: **plain DNS/CDN proxying needs zero CSP changes** — Cloudflare states it doesn't modify CSP headers or inject content by default (exception: Zaraz, and even Zaraz claims to auto-manage CSP compatibility with no manual changes needed). Only opt-in Cloudflare *products* require CSP additions, and the existing policy already anticipates all of them:
+- Web Analytics (edge-auto-injected beacon for this zone): `static.cloudflareinsights.com` in script-src, `cloudflareinsights.com` in connect-src — present.
+- Rocket Loader: `ajax.cloudflare.com` in script-src — present, kept pre-emptively even though Rocket Loader is **not currently enabled**, so it's ready if the user flips it on later.
+- Turnstile (used via Clerk bot-protection): `challenges.cloudflare.com` in script-src + frame-src, `'self'` in connect-src (for pre-clearance cookie) — present.
+- Bot Products / JS Detections: served same-origin under `/cdn-cgi/challenge-platform/`, covered by the existing `'self'` — no addition needed.
+
+If Zaraz or Page Shield ("Client-side Security") ever get enabled in the Cloudflare dashboard, re-check — those zone-level toggles aren't visible from the repo and weren't confirmed on or off during this audit.

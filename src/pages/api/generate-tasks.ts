@@ -106,6 +106,14 @@ export const POST: APIRoute = async ({ request }: APIContext) => {
       message = (e as Error).message || message;
     }
 
+    console.error({
+      event: "generate-tasks: Google AI request failed",
+      model: apiModel,
+      maxTasks,
+      prompt: cleanedPrompt,
+      status,
+      message,
+    });
     return jsonResponse({ error: message }, status);
   }
 };
