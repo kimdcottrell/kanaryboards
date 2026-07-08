@@ -1,4 +1,7 @@
 ---
+layout: "@layouts/MarkdownPage.astro"
+title: "About Kanby"
+description: "The why and how of Kanby. Our mission statement. What we aim to achieve."
 ---
 # AI Should Be an Assistant, Not Your Replacement
 
