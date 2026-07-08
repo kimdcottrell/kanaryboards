@@ -1,0 +1,11 @@
+---
+# layout: ../layouts/MainLayout.astro
+# title: ''
+# publishedTime: 0
+# tags: 
+#     - ''
+# description: ''
+---
+# uh oh!
+
+This should throw an error.

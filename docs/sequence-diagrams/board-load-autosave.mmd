@@ -6,13 +6,14 @@ sequenceDiagram
     participant Router as spa-router<br/>(BoardController -> RouterProvider)
     participant Provider as BoardProvider<br/>(BoardContext.tsx)
     participant Reducer as board reducer<br/>(reducers/board.ts)
-    participant View as BoardView /<br/>RowBoard / BoardConfiguration
+    participant View as BoardView /<br/>RowBoard / BoardConfigModal
     participant API@{ "type" : "boundary" } as /api/board<br/>(pages/api/board.ts)
     participant KV@{ "type" : "database" } as Deno KV<br/>(lib/kv.ts)
     participant LS@{ "type" : "database" } as localStorage
 
     Note over User,LS: Initial mount
-    User->>Router: navigate to "/"
+    User->>Router: navigate to "/dashboard"<br/>(or deep-link "/dashboard/row/:rowId"<br/>from the drawer's project-row list)
+    Note over User,Router: On the dashboard, drawer row clicks (the data-board-link anchors)<br/>are intercepted by BoardController and routed via router.navigate<br/>client-side, so there is no reload and no BOARD/LOAD. This reaches the<br/>rowId param scroll step below. Off the SPA it is a full page load.
     Router->>Provider: render BoardProvider<br/>useReducer(boardReducer, createInitialState)
     Provider->>View: initial render, boardLoaded = false
 
@@ -72,8 +73,11 @@ sequenceDiagram
     Note right of Provider: There is now enough data to start to initialize the app.<br />All logic above is just bootstrapping to get to this point, where we have rows/columns/tasks data.
 
     Reducer-->>Provider: rows/columns sorted by order (byOrder)<br/>tasks set, boardLoaded = true
-    Provider->>View: BoardView, RowBoard, BoardConfiguration<br/>all re-render (BoardDataContext: rows/columns/<br/>tasks/boardLoaded changed)<br/>-> RowBoard mounts one RowSection per row,<br/>BoardConfiguration renders row/column settings
+    Provider->>View: BoardView, RowBoard, BoardConfigModal<br/>all re-render (BoardDataContext: rows/columns/<br/>tasks/boardLoaded changed)<br/>-> RowBoard mounts one RowSection per row<br/>(or, when rows is empty e.g. after BOARD/RESET,<br/>the empty state: prompt + inline CreateRowSection),<br/>BoardConfigModal's sections render row/column settings
     Provider->>Provider: document.documentElement.dataset.boardLoaded = "true"<br/>(BoardView.tsx, for e2e hydration gating)
+    opt rowId param present (entered via "/dashboard/row/:rowId")
+        View->>View: BoardView finds row by id, then<br/>requestAnimationFrame -> document.getElementById<br/>("row-section-{rowId}").scrollIntoView({block:"start"})<br/>(unknown id -> navigate("/dashboard", replace))
+    end
 
     Note over User,LS: Autosave (on every state.{rows,columns,tasks} change)
     Note over Provider: useEffect deps: [rows, columns, tasks, boardLoaded]<br/>guarded by boardLoaded === true

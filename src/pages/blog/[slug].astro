@@ -1,0 +1,32 @@
+---
+import { render } from "astro:content";
+import Layout from "@layouts/BaseLayout.astro";
+import Prose from "@components/pages/Prose.astro";
+import { getProtectedCollection } from "@src/utils";
+
+const { slug } = Astro.params;
+
+const isPlaywrightTest =
+  Astro.request.headers.get("x-playwright-test") === "true";
+const posts = await getProtectedCollection("blog", {
+  includeTestOnly: isPlaywrightTest,
+});
+const entry = posts.find((post) => post.id === slug);
+
+if (!entry) {
+  Astro.response.status = 404;
+  Astro.response.statusText = "This article does not exist.";
+}
+
+const { Content } = entry ? await render(entry) : { Content: null };
+---
+
+<Layout seo={entry?.data}>
+  {
+    Content && (
+      <Prose>
+        <Content />
+      </Prose>
+    )
+  }
+</Layout>

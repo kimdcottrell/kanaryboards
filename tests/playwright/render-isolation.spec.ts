@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 import type { Page } from "@playwright/test";
-import { expect, testNoClerk as test } from "./fixtures.ts";
+import { expect, openCreateRowModal, testNoClerk as test } from "./fixtures.ts";
 
 /**
  * Verifies improved rendering: modal-only state (ChecklistAIState,
@@ -40,7 +40,7 @@ test.describe("Render isolation (individual components render on use, instead of
     await page.addInitScript((board) => {
       localStorage.setItem("kanby-v0-1-0", JSON.stringify(board));
     }, BOARD_STATE);
-    await page.goto("/");
+    await page.goto("/dashboard");
     await expect(page.locator("#row-section-row-e2e-1")).toBeVisible();
   });
 
@@ -84,16 +84,14 @@ test.describe("Render isolation (individual components render on use, instead of
     }).click();
     await expect(page.getByRole("heading", { name: "Edit task" }))
       .toBeVisible();
-    await page.locator("#checklist-gen-collapse-toggle").click();
+    // The AI checklist collapse is open by default (see
+    // ChecklistGenerationCollapse) — wait for its content to finish laying out
+    // before interacting with the prompt input.
     await waitForChecklistCollapseOpen(page);
 
-    // Opening the collapse auto-populates the prompt from the task title
-    // (see ChecklistGenerationCollapse) — wait for that dispatch to settle
-    // before snapshotting render counts, so it doesn't race with our fill.
     const prompt = page.locator(
       "#checklist-gen-collapse-content input[type='text']",
     );
-    await expect(prompt).toHaveValue("Write specs");
 
     const before = await shellRenderCounts(page);
     expect(before.row).not.toBeNull();
@@ -106,11 +104,13 @@ test.describe("Render isolation (individual components render on use, instead of
 
   test("typing in the create-task checklist AI prompt does not re-render board-shell components", async ({ page }) => {
     await page.locator("#column-card-row-e2e-1-col-e2e-1").locator(
-      "button:has(.hugeicons--credit-card-add)",
+      "button:has(.hugeicons--add-01)",
     ).click();
     await expect(page.getByRole("heading", { name: "Add task" }))
       .toBeVisible();
-    await page.locator("#checklist-gen-collapse-toggle").click();
+    // The AI checklist collapse is open by default (see
+    // ChecklistGenerationCollapse) — wait for its content to finish laying out
+    // before interacting with the prompt input.
     await waitForChecklistCollapseOpen(page);
 
     const before = await shellRenderCounts(page);
@@ -125,12 +125,12 @@ test.describe("Render isolation (individual components render on use, instead of
     expect(await shellRenderCounts(page)).toEqual(before);
   });
 
-  test("typing a new row name in board configuration does not re-render row sections, column cards, or task cards", async ({ page }) => {
-    await page.locator("#board-config-collapse-toggle").click();
+  test("typing a new row name in the create-row modal does not re-render row sections, column cards, or task cards", async ({ page }) => {
+    await openCreateRowModal(page);
     const before = await shellRenderCounts(page);
     expect(before.row).not.toBeNull();
 
-    const rowNameInput = page.locator("#board-config-create-new-row")
+    const rowNameInput = page.locator("[data-testid='create-new-row']")
       .getByPlaceholder(
         "A project name, a category for large project tasks, etc.",
       );

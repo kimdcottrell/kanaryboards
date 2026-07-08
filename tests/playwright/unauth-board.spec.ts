@@ -18,12 +18,12 @@ test.describe("Unauthorized access to /api/board", () => {
     });
 
     expect(result.redirected).toBe(true);
-    expect(result.url).toContain("/?unauthorized=1");
+    expect(result.url).toContain("/dashboard?unauthorized=1");
   });
 
   test("shows the unauthorized error on the homepage after the redirect", async ({ page }) => {
     await page.goto("/api/board");
-    await expect(page).toHaveURL(/\/\?unauthorized=1$/);
+    await expect(page).toHaveURL(/\/dashboard\?unauthorized=1$/);
 
     const alert = page.locator("#unauthorized-alert");
     await expect(alert).toBeVisible();
@@ -33,7 +33,7 @@ test.describe("Unauthorized access to /api/board", () => {
 
   test("the user is shown as logged out after the redirect", async ({ page }) => {
     await page.goto("/api/board");
-    await expect(page).toHaveURL(/\/\?unauthorized=1$/);
+    await expect(page).toHaveURL(/\/dashboard\?unauthorized=1$/);
     await expect(page.getByRole("button", { name: "Sign In" })).toBeVisible();
   });
 });

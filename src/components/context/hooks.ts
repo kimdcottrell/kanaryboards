@@ -1,10 +1,13 @@
 export {
+  useBoardConfigState,
   useBoardDataState,
   useBoardDispatch,
+  useBoardMeta,
   useBoardRefs,
   useChecklistAIState,
   useColumnConfigState,
   useColumnEditState,
+  useColumnFilterState,
   useDragState,
   useRowEditState,
   useRowFormState,
@@ -12,6 +15,8 @@ export {
   useTaskEditState,
   useTasksByCell,
 } from "./BoardContext.tsx";
+export { useSharedMenuActions } from "./actions/shortcutAndDockMenus.ts";
+export { useBoardConfigActions } from "./actions/boardConfig.ts";
 export { useBoardLifecycleActions } from "./actions/boardLifecycle.ts";
 export { useChecklistAIActions } from "./actions/checklistAi.ts";
 export { useColumnConfigActions } from "./actions/columnConfig.ts";
@@ -23,3 +28,4 @@ export { handleChecklistKeyDown } from "./actions/shared.ts";
 export { useTaskActions } from "./actions/task.ts";
 export { useTaskCreateActions } from "./actions/taskCreate.ts";
 export { useTaskEditActions } from "./actions/taskEdit.ts";
+export { useColumnFilterActions } from "./actions/view.ts";

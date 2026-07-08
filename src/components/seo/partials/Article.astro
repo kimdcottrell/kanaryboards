@@ -1,0 +1,70 @@
+---
+// kind of janky but we need the types in this file.
+// they're not auto generated in .astro/types.d.s by astro sync.
+// that means that they're inaccessable via astro:content
+import {
+  articleSchema,
+  isEmpty,
+  type Article,
+  type Image,
+  type SeoMetadata,
+} from "@src/content.config";
+import { init } from "zod-empty";
+
+const defaults = init(articleSchema);
+
+// check that all passed in props are of a type that is used by this component, and comform to the types defined for eah k->v pair
+const { ...props } = Astro.props as SeoMetadata;
+// check to see if the overrides found are of a type that is used by this component
+const overrides = props.metadata?.article as Article;
+// let us merge everything and see if the result conforms to the proper type.
+const merged = { ...defaults, ...props, ...overrides } as Article;
+
+const {
+  title,
+  images,
+  publishedTime,
+  modifiedTime,
+  expirationTime,
+  author,
+  section,
+  tags,
+} = merged;
+
+let schemaDotOrg = {
+  "@context": "https://schema.org",
+  "@type": "NewsArticle",
+  headline: title,
+  image: images?.map((img: Image) => img.src) ?? [],
+  datePublished: publishedTime,
+  author: [
+    {
+      "@type": "Organzation",
+      name: author,
+    },
+  ],
+};
+modifiedTime && Object.assign(schemaDotOrg, { dateModified: modifiedTime });
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(schemaDotOrg)} />
+
+<meta property="article:published_time" content={publishedTime} />
+<meta property="article:section" content={section} />
+<meta name="author" property="article:author" content={author} />
+
+{
+  modifiedTime && (
+    <meta property="article:modified_time" content={modifiedTime} />
+  )
+}
+{
+  expirationTime && (
+    <meta property="article:expiration_time" content={expirationTime} />
+  )
+}
+
+{
+  tags &&
+    tags.map((tag: string) => <meta property="article:tag" content={tag} />)
+}

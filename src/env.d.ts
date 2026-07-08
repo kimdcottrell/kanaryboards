@@ -6,6 +6,7 @@ interface ImportMetaEnv {
   readonly GOOGLE_AI_STUDIO_KEY: string | undefined;
   readonly GOOGLE_AI_STUDIO_MODEL: string | undefined;
   readonly MODE: string;
+  readonly RESEND_API_KEY: string | undefined;
   [key: string]: string | boolean | undefined;
 }
 
@@ -17,6 +18,9 @@ declare namespace App {
   interface Locals {
     boardId: string;
     auth: () => { userId: string | null };
+    timestamp?: string;
+    status?: number;
+    statusText?: string;
   }
 }
 

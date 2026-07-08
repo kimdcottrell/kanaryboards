@@ -1,0 +1,25 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import Prose from "@components/pages/Prose.astro";
+import type { SeoMetadata } from "@src/content.config";
+
+interface Props {
+  frontmatter: {
+    title: string;
+    description: string;
+  };
+}
+
+const { frontmatter } = Astro.props;
+
+const seo: SeoMetadata = {
+  title: frontmatter.title,
+  description: frontmatter.description,
+};
+---
+
+<BaseLayout seo={seo}>
+  <Prose>
+    <slot />
+  </Prose>
+</BaseLayout>

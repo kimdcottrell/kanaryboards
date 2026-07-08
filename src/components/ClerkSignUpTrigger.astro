@@ -1,0 +1,40 @@
+---
+---
+
+<script is:inline>
+    const ALREADY_SIGNED_IN_TIP =
+        "You're already logged in, clicking this will do nothing";
+
+    function setSignedInState(isSignedIn) {
+        document
+            .querySelectorAll("[data-open-clerk-sign-up-modal]")
+            .forEach((el) => {
+                el.classList.toggle("tooltip", isSignedIn);
+                el.classList.toggle("tooltip-top", isSignedIn);
+                if (isSignedIn) {
+                    el.setAttribute("data-tip", ALREADY_SIGNED_IN_TIP);
+                } else {
+                    el.removeAttribute("data-tip");
+                }
+            });
+    }
+
+    document.addEventListener("click", (event) => {
+        const trigger = event.target.closest(
+            "[data-open-clerk-sign-up-modal]",
+        );
+        if (!trigger) return;
+        event.preventDefault();
+        if (window.Clerk?.user) return;
+        window.Clerk?.openSignUp();
+    });
+
+    (function waitForClerk() {
+        if (!window.Clerk) {
+            setTimeout(waitForClerk, 50);
+            return;
+        }
+        setSignedInState(Boolean(window.Clerk.user));
+        window.Clerk.addListener(({ user }) => setSignedInState(Boolean(user)));
+    })();
+</script>

@@ -36,7 +36,8 @@
     ]
   },
   "enabledPlugins": {
-    "typescript-lsp@claude-plugins-official": true
+    "typescript-lsp@claude-plugins-official": true,
+    "policystack@policystack": true
   },
   "autoMemoryEnabled": true,
   "autoMemoryDirectory": "$CLAUDE_PROJECT_DIR/.claude/memory"

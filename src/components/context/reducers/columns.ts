@@ -5,7 +5,97 @@ export function add(
   state: BoardState,
   payload: Extract<ColumnAction, { type: "COLUMN/ADD" }>["payload"],
 ): BoardState {
-  return { ...state, columns: [...state.columns, payload] };
+  return {
+    ...state,
+    columns: [
+      ...state.columns,
+      {
+        ...payload,
+        pinnedToShortcut: false,
+        pinnedToDock: false,
+        iconInBoardMenu: false,
+        iconNearColumnTitle: false,
+      },
+    ],
+  };
+}
+
+export function togglePinShortcut(
+  state: BoardState,
+  payload: Extract<
+    ColumnAction,
+    { type: "COLUMN/TOGGLE_PIN_SHORTCUT" }
+  >["payload"],
+): BoardState {
+  const target = state.columns.find((c) => c.id === payload.columnId);
+  // Unpinning removes the column from the shortcut menu. Drop it from the view
+  // filter to avoid a stuck filtered state with no item to toggle off, unless
+  // it's still reachable via the dock menu.
+  const wentUnreachable = target?.pinnedToShortcut && !target.pinnedToDock;
+  return {
+    ...state,
+    columns: state.columns.map((c) =>
+      c.id === payload.columnId
+        ? { ...c, pinnedToShortcut: !c.pinnedToShortcut }
+        : c
+    ),
+    selectedColumnIds: wentUnreachable
+      ? state.selectedColumnIds.filter((id) => id !== payload.columnId)
+      : state.selectedColumnIds,
+  };
+}
+
+export function togglePinDock(
+  state: BoardState,
+  payload: Extract<ColumnAction, { type: "COLUMN/TOGGLE_PIN_DOCK" }>["payload"],
+): BoardState {
+  const target = state.columns.find((c) => c.id === payload.columnId);
+  // Unpinning removes the column from the dock menu. Drop it from the view
+  // filter unless it's still reachable via the shortcut menu.
+  const wentUnreachable = target?.pinnedToDock && !target.pinnedToShortcut;
+  return {
+    ...state,
+    columns: state.columns.map((c) =>
+      c.id === payload.columnId ? { ...c, pinnedToDock: !c.pinnedToDock } : c
+    ),
+    selectedColumnIds: wentUnreachable
+      ? state.selectedColumnIds.filter((id) => id !== payload.columnId)
+      : state.selectedColumnIds,
+  };
+}
+
+export function toggleIconInBoardMenu(
+  state: BoardState,
+  payload: Extract<
+    ColumnAction,
+    { type: "COLUMN/TOGGLE_ICON_IN_BOARD_MENU" }
+  >["payload"],
+): BoardState {
+  return {
+    ...state,
+    columns: state.columns.map((c) =>
+      c.id === payload.columnId
+        ? { ...c, iconInBoardMenu: !c.iconInBoardMenu }
+        : c
+    ),
+  };
+}
+
+export function toggleIconNearColumnTitle(
+  state: BoardState,
+  payload: Extract<
+    ColumnAction,
+    { type: "COLUMN/TOGGLE_ICON_NEAR_COLUMN_TITLE" }
+  >["payload"],
+): BoardState {
+  return {
+    ...state,
+    columns: state.columns.map((c) =>
+      c.id === payload.columnId
+        ? { ...c, iconNearColumnTitle: !c.iconNearColumnTitle }
+        : c
+    ),
+  };
 }
 
 export function remove(
@@ -17,6 +107,7 @@ export function remove(
     ...state,
     columns: state.columns.filter((c) => c.id !== columnId),
     tasks: state.tasks.filter((t) => t.colId !== columnId),
+    selectedColumnIds: state.selectedColumnIds.filter((id) => id !== columnId),
   };
   if (state.taskCreateModalOpen && state.taskDraft.colId === columnId) {
     next = { ...next, taskCreateModalOpen: false };
@@ -63,6 +154,28 @@ export function setInput(
   payload: Extract<ColumnAction, { type: "COLUMN/SET_INPUT" }>["payload"],
 ): BoardState {
   return { ...state, defaultColumnInput: payload.value };
+}
+
+export function setIcon(
+  state: BoardState,
+  payload: Extract<ColumnAction, { type: "COLUMN/SET_ICON" }>["payload"],
+): BoardState {
+  return { ...state, defaultColumnIcon: payload.icon };
+}
+
+export function setColumnIcon(
+  state: BoardState,
+  payload: Extract<
+    ColumnAction,
+    { type: "COLUMN/SET_COLUMN_ICON" }
+  >["payload"],
+): BoardState {
+  return {
+    ...state,
+    columns: state.columns.map((c) =>
+      c.id === payload.columnId ? { ...c, icon: payload.icon } : c
+    ),
+  };
 }
 
 export function setDraggedIndex(

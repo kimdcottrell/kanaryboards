@@ -3,7 +3,7 @@ import { expect, testNoClerk as test } from "./fixtures.ts";
 const CLEAN_BOARD = {
   rows: [{
     id: "row-e2e-1",
-    title: "Sample Project",
+    title: "Test Project",
     color: "var(--color-row-blue)",
     order: "a0",
   }],
@@ -17,26 +17,20 @@ const CLEAN_BOARD = {
 
 test.describe("Task URL", () => {
   test.beforeEach(async ({ page }) => {
-    await page.route("/api/board", async (route) => {
-      if (route.request().method() === "GET") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(CLEAN_BOARD),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-    await page.goto("/");
+    // Unauthenticated: the board is read from localStorage, so seed it there
+    // (an empty board would render the create-row empty state, not a row).
+    await page.addInitScript((board) => {
+      localStorage.setItem("kanby-v0-1-0", JSON.stringify(board));
+    }, CLEAN_BOARD);
+    await page.goto("/dashboard");
   });
 
   test("created task gets a URL when the edit modal is opened", async ({ page }) => {
     // Wait for board to finish loading and render the add-task buttons
-    await page.waitForSelector("button:has(.hugeicons--credit-card-add)");
+    await page.waitForSelector("button:has(.hugeicons--add-01)");
 
     // Open task create modal — .first() avoids strict-mode multi-match (3 add-task buttons)
-    await page.locator("button:has(.hugeicons--credit-card-add)").first()
+    await page.locator("button:has(.hugeicons--add-01)").first()
       .click();
     await expect(page.getByRole("heading", { name: "Add task" })).toBeVisible();
 
@@ -46,14 +40,17 @@ test.describe("Task URL", () => {
     await page.locator("dialog").getByRole("button", { name: "Create task" })
       .click();
 
-    // Task card is visible and URL is still /
-    await expect(page.getByText("My URL Test Task")).toBeVisible();
-    expect(new URL(page.url()).pathname).toBe("/");
+    // Task card is visible and URL is still /dashboard. Use the heading role to
+    // disambiguate from the column-settings delete preview, which also lists the
+    // task title as a <span>.
+    await expect(page.getByRole("heading", { name: "My URL Test Task" }))
+      .toBeVisible();
+    expect(new URL(page.url()).pathname).toBe("/dashboard");
 
     // Click the task title to open the edit modal
-    await page.getByText("My URL Test Task").click();
+    await page.getByRole("heading", { name: "My URL Test Task" }).click();
 
-    // URL is now /task/:id
-    await expect(page).toHaveURL(/\/task\/.+/);
+    // URL is now /dashboard/task/:id
+    await expect(page).toHaveURL(/\/dashboard\/task\/.+/);
   });
 });

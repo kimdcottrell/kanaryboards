@@ -10,10 +10,12 @@ import {
 import type { Dispatch, ReactNode } from "react";
 import type {
   BoardAction,
+  BoardConfigState,
   BoardData,
   ChecklistAIState,
   ColumnConfigState,
   ColumnEditState,
+  ColumnFilterState,
   DragState,
   RowEditState,
   RowFormState,
@@ -22,7 +24,8 @@ import type {
   TaskEditState,
 } from "./types.ts";
 import { boardReducer, createInitialState } from "./reducer.ts";
-import { createDefaultBoard, STORAGE_KEY } from "./constants.ts";
+import { STORAGE_KEY } from "./constants.ts";
+import { createDemoBoard } from "../demo/demoBoardData.ts";
 import { computeTasksByCell } from "./selectors.ts";
 
 export const BoardDispatchContext = createContext<Dispatch<BoardAction> | null>(
@@ -96,6 +99,15 @@ export function useColumnConfigState(): ColumnConfigState {
   return v;
 }
 
+const BoardConfigContext = createContext<BoardConfigState | null>(null);
+export function useBoardConfigState(): BoardConfigState {
+  const v = useContext(BoardConfigContext);
+  if (!v) {
+    throw new Error("useBoardConfigState must be used within a BoardProvider");
+  }
+  return v;
+}
+
 const TaskCreateContext = createContext<TaskCreateState | null>(null);
 export function useTaskCreateState(): TaskCreateState {
   const v = useContext(TaskCreateContext);
@@ -130,10 +142,26 @@ export function useDragState(): DragState {
   return v;
 }
 
+const ColumnFilterContext = createContext<ColumnFilterState | null>(null);
+export function useColumnFilterState(): ColumnFilterState {
+  const v = useContext(ColumnFilterContext);
+  if (!v) {
+    throw new Error("useColumnFilterState must be used within a BoardProvider");
+  }
+  return v;
+}
+
 const TasksByCellContext = createContext<Record<string, Task[]> | null>(null);
 export function useTasksByCell(): Record<string, Task[]> {
   const v = useContext(TasksByCellContext);
   if (!v) throw new Error("useTasksByCell must be used within a BoardProvider");
+  return v;
+}
+
+const BoardMetaContext = createContext<{ boardId: string } | null>(null);
+export function useBoardMeta(): { boardId: string } {
+  const v = useContext(BoardMetaContext);
+  if (!v) throw new Error("useBoardMeta must be used within a BoardProvider");
   return v;
 }
 
@@ -152,53 +180,65 @@ export function BoardProvider(
 
   // Load board on mount. Authenticated: load from API, migrate localStorage if needed.
   // Unauthenticated: load from localStorage (falling back to API for legacy KV data).
+  // boardId === "demo" (landing-page demo): always seed from createDemoBoard(), skip storage entirely.
   useEffect(() => {
     async function load() {
-      if (isAuthenticated) {
-        const res = await fetch("/api/board");
-        // Non-404 errors are unexpected — bail out and leave the board unloaded.
-        if (!res.ok && res.status !== 404) return;
-        const hasRemoteData = res.ok;
-        const remote = hasRemoteData ? await res.json() : null;
+      try {
+        if (boardId === "demo") {
+          dispatch({ type: "BOARD/LOAD", payload: createDemoBoard() });
+          return;
+        }
+        if (isAuthenticated) {
+          const res = await fetch("/api/board");
+          // Non-404 errors are unexpected — bail out and leave the board unloaded.
+          if (!res.ok && res.status !== 404) return;
+          const hasRemoteData = res.ok;
+          const remote = hasRemoteData ? await res.json() : null;
 
-        // Migrate full board from localStorage if the server has no data yet.
-        if (!hasRemoteData) {
+          // Migrate full board from localStorage if the server has no data yet.
+          if (!hasRemoteData) {
+            const stored = globalThis.localStorage?.getItem(STORAGE_KEY);
+            if (stored) {
+              try {
+                const local = JSON.parse(stored);
+                const putRes = await fetch("/api/board", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(local),
+                });
+                if (putRes.ok) {
+                  globalThis.localStorage?.removeItem(STORAGE_KEY);
+                }
+                dispatch({ type: "BOARD/LOAD", payload: local });
+                return;
+              } catch {
+                // ignore malformed localStorage
+              }
+            }
+            dispatch({ type: "BOARD/RESET" });
+            return;
+          }
+
+          dispatch({ type: "BOARD/LOAD", payload: remote });
+        } else {
+          // Unauthenticated: board lives in localStorage only, no KV interaction.
           const stored = globalThis.localStorage?.getItem(STORAGE_KEY);
           if (stored) {
             try {
               const local = JSON.parse(stored);
-              const putRes = await fetch("/api/board", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(local),
-              });
-              if (putRes.ok) {
-                globalThis.localStorage?.removeItem(STORAGE_KEY);
-              }
               dispatch({ type: "BOARD/LOAD", payload: local });
               return;
             } catch {
               // ignore malformed localStorage
             }
           }
-          dispatch({ type: "BOARD/LOAD", payload: createDefaultBoard() });
-          return;
+          dispatch({ type: "BOARD/RESET" });
         }
-
-        dispatch({ type: "BOARD/LOAD", payload: remote });
-      } else {
-        // Unauthenticated: board lives in localStorage only, no KV interaction.
-        const stored = globalThis.localStorage?.getItem(STORAGE_KEY);
-        if (stored) {
-          try {
-            const local = JSON.parse(stored);
-            dispatch({ type: "BOARD/LOAD", payload: local });
-            return;
-          } catch {
-            // ignore malformed localStorage
-          }
-        }
-        dispatch({ type: "BOARD/LOAD", payload: createDefaultBoard() });
+      } catch (error) {
+        // Whatever failed (fetch rejection, res.json() on a non-JSON body,
+        // etc.), don't leave boardLoaded stuck false with no visible error.
+        console.error("Failed to load board:", error);
+        dispatch({ type: "BOARD/RESET" });
       }
     }
     load();
@@ -207,8 +247,10 @@ export function BoardProvider(
 
   // Persist board on state changes (after initial load).
   // Authenticated: save to API (KV). Unauthenticated: save to localStorage only.
+  // boardId === "demo": never write anywhere — the demo board is ephemeral.
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
+    if (boardId === "demo") return;
     if (!state.boardLoaded) return;
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
@@ -239,6 +281,7 @@ export function BoardProvider(
     state.tasks,
     state.boardLoaded,
     isAuthenticated,
+    boardId,
   ]);
 
   const checklistInputRefs = useRef<Record<string, HTMLInputElement>>({});
@@ -272,6 +315,7 @@ export function BoardProvider(
       newRowFormKey: state.newRowFormKey,
       isGeneratingTasks: state.isGeneratingTasks,
       taskGenerationStatus: state.taskGenerationStatus,
+      createRowModalOpen: state.createRowModalOpen,
     }),
     [
       state.newRowName,
@@ -279,6 +323,7 @@ export function BoardProvider(
       state.newRowFormKey,
       state.isGeneratingTasks,
       state.taskGenerationStatus,
+      state.createRowModalOpen,
     ],
   );
 
@@ -302,9 +347,22 @@ export function BoardProvider(
   const columnConfigState = useMemo(
     () => ({
       defaultColumnInput: state.defaultColumnInput,
+      defaultColumnIcon: state.defaultColumnIcon,
       draggedDefaultIndex: state.draggedDefaultIndex,
     }),
-    [state.defaultColumnInput, state.draggedDefaultIndex],
+    [
+      state.defaultColumnInput,
+      state.defaultColumnIcon,
+      state.draggedDefaultIndex,
+    ],
+  );
+
+  const boardConfigState = useMemo(
+    () => ({
+      boardConfigModalOpen: state.boardConfigModalOpen,
+      boardConfigScrollTarget: state.boardConfigScrollTarget,
+    }),
+    [state.boardConfigModalOpen, state.boardConfigScrollTarget],
   );
 
   const taskCreateState = useMemo(
@@ -346,37 +404,54 @@ export function BoardProvider(
     [state.draggedTask],
   );
 
+  const columnFilterState = useMemo(
+    () => ({ selectedColumnIds: state.selectedColumnIds }),
+    [state.selectedColumnIds],
+  );
+
   const tasksByCell = useMemo(
     () => computeTasksByCell(state.tasks),
     [state.tasks],
   );
+
+  const boardMeta = useMemo(() => ({ boardId }), [boardId]);
 
   return (
     <BoardDispatchContext.Provider value={dispatch}>
       <BoardRefsContext.Provider
         value={{ setChecklistInputRef, focusChecklistInput }}
       >
-        <BoardDataContext.Provider value={boardData}>
-          <RowFormContext.Provider value={rowFormState}>
-            <RowEditContext.Provider value={rowEditState}>
-              <ColumnEditContext.Provider value={columnEditState}>
-                <ColumnConfigContext.Provider value={columnConfigState}>
-                  <TaskCreateContext.Provider value={taskCreateState}>
-                    <TaskEditContext.Provider value={taskEditState}>
-                      <ChecklistAIContext.Provider value={checklistAIState}>
-                        <DragContext.Provider value={dragState}>
-                          <TasksByCellContext.Provider value={tasksByCell}>
-                            {children}
-                          </TasksByCellContext.Provider>
-                        </DragContext.Provider>
-                      </ChecklistAIContext.Provider>
-                    </TaskEditContext.Provider>
-                  </TaskCreateContext.Provider>
-                </ColumnConfigContext.Provider>
-              </ColumnEditContext.Provider>
-            </RowEditContext.Provider>
-          </RowFormContext.Provider>
-        </BoardDataContext.Provider>
+        <BoardMetaContext.Provider value={boardMeta}>
+          <BoardDataContext.Provider value={boardData}>
+            <RowFormContext.Provider value={rowFormState}>
+              <RowEditContext.Provider value={rowEditState}>
+                <ColumnEditContext.Provider value={columnEditState}>
+                  <ColumnConfigContext.Provider value={columnConfigState}>
+                    <BoardConfigContext.Provider value={boardConfigState}>
+                      <TaskCreateContext.Provider value={taskCreateState}>
+                        <TaskEditContext.Provider value={taskEditState}>
+                          <ChecklistAIContext.Provider value={checklistAIState}>
+                            <DragContext.Provider value={dragState}>
+                              <ColumnFilterContext.Provider
+                                value={columnFilterState}
+                              >
+                                <TasksByCellContext.Provider
+                                  value={tasksByCell}
+                                >
+                                  {children}
+                                </TasksByCellContext.Provider>
+                              </ColumnFilterContext.Provider>
+                            </DragContext.Provider>
+                          </ChecklistAIContext.Provider>
+                        </TaskEditContext.Provider>
+                      </TaskCreateContext.Provider>
+                    </BoardConfigContext.Provider>
+                  </ColumnConfigContext.Provider>
+                </ColumnEditContext.Provider>
+              </RowEditContext.Provider>
+            </RowFormContext.Provider>
+          </BoardDataContext.Provider>
+        </BoardMetaContext.Provider>
       </BoardRefsContext.Provider>
     </BoardDispatchContext.Provider>
   );

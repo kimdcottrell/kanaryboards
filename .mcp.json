@@ -15,6 +15,10 @@
     "MCPDoc": {
       "type": "sse",
       "url": "http://mcp_mcpdoc:8082/sse"
+    },
+    "Mermaid": {
+      "type": "http",
+      "url": "https://mcp.mermaid.ai/mcp"
     }
   }
 }

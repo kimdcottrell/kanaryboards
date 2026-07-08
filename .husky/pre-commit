@@ -1,6 +1,7 @@
 deno fmt
 deno lint
 deno check
+deno types > src/deno.d.ts
 deno task astro check
 deno task vitest
 deno task e2e-test

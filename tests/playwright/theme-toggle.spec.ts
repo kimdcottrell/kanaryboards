@@ -8,7 +8,7 @@ test.describe("ThemeController", () => {
   test.describe("initial theme from system preference", () => {
     test("defaults to kanary-day when prefers-color-scheme is light", async ({ page }) => {
       await page.emulateMedia({ colorScheme: "light" });
-      await page.goto("/");
+      await page.goto("/dashboard");
 
       const html = page.locator("html");
       await expect(html).toHaveAttribute("data-theme", "kanary-day");
@@ -18,7 +18,7 @@ test.describe("ThemeController", () => {
 
     test("defaults to kanary-night when prefers-color-scheme is dark", async ({ page }) => {
       await page.emulateMedia({ colorScheme: "dark" });
-      await page.goto("/");
+      await page.goto("/dashboard");
 
       const html = page.locator("html");
       await expect(html).toHaveAttribute("data-theme", "kanary-night");
@@ -30,7 +30,7 @@ test.describe("ThemeController", () => {
   test.describe("theme toggle", () => {
     test("switches from light to dark when toggle is clicked", async ({ page }) => {
       await page.emulateMedia({ colorScheme: "light" });
-      await page.goto("/", { waitUntil: "load" });
+      await page.goto("/dashboard", { waitUntil: "load" });
 
       const html = page.locator("html");
       await expect(html).toHaveAttribute("data-theme", "kanary-day");
@@ -44,7 +44,7 @@ test.describe("ThemeController", () => {
 
     test("switches from dark to light when toggle is clicked", async ({ page }) => {
       await page.emulateMedia({ colorScheme: "dark" });
-      await page.goto("/", { waitUntil: "load" });
+      await page.goto("/dashboard", { waitUntil: "load" });
 
       const html = page.locator("html");
       await expect(html).toHaveAttribute("data-theme", "kanary-night");
@@ -58,7 +58,7 @@ test.describe("ThemeController", () => {
 
     test("toggles back to original theme on second click", async ({ page }) => {
       await page.emulateMedia({ colorScheme: "light" });
-      await page.goto("/", { waitUntil: "load" });
+      await page.goto("/dashboard", { waitUntil: "load" });
 
       const toggle = page.locator("#theme-controller");
       const html = page.locator("html");
@@ -76,7 +76,7 @@ test.describe("ThemeController", () => {
   test.describe("localStorage persistence", () => {
     test("saves theme to localStorage after toggling", async ({ page }) => {
       await page.emulateMedia({ colorScheme: "light" });
-      await page.goto("/", { waitUntil: "load" });
+      await page.goto("/dashboard", { waitUntil: "load" });
 
       await page.locator("#theme-controller").click();
 
@@ -89,7 +89,7 @@ test.describe("ThemeController", () => {
         localStorage.setItem("theme", "kanary-night")
       );
       await page.emulateMedia({ colorScheme: "light" });
-      await page.goto("/", { waitUntil: "load" });
+      await page.goto("/dashboard", { waitUntil: "load" });
 
       const html = page.locator("html");
       await expect(html).toHaveAttribute("data-theme", "kanary-night");
@@ -106,7 +106,7 @@ test.describe("ThemeController", () => {
         localStorage.setItem("theme", "kanary-day")
       );
       await page.emulateMedia({ colorScheme: "dark" });
-      await page.goto("/", { waitUntil: "load" });
+      await page.goto("/dashboard", { waitUntil: "load" });
 
       const html = page.locator("html");
       await expect(html).toHaveAttribute("data-theme", "kanary-day");

@@ -1,5 +1,5 @@
 ---
-import BaseLayout from "@layouts/BaseLayout.astro";
+import Layout from "@layouts/BaseLayout.astro";
 import BoardController from "@components/BoardController";
 
 const boardId = Astro.locals.boardId;
@@ -8,40 +8,49 @@ const isAuthenticated = !!userId;
 const unauthorized = Astro.url.searchParams.get("unauthorized") === "1";
 ---
 
-<BaseLayout>
-  {
-    unauthorized && (
-      <div
-        id="unauthorized-alert"
-        role="alert"
-        class="alert alert-error fixed inset-x-0 top-4 z-50 mx-auto w-11/12 max-w-2xl shadow-lg"
-      >
-        <span class="iconify hugeicons--alert-02 text-xl" />
-        <span>
-          <strong>Unauthorized request was made.</strong> You must be logged in
-          with the correct permissions to complete your request.
-        </span>
-        <button
-          type="button"
-          aria-label="Dismiss"
-          class="btn btn-ghost btn-sm btn-circle"
-          data-dismiss-unauthorized
+<Layout>
+  <section class="mx-auto w-full z-1">
+    {
+      unauthorized && (
+        <div
+          id="unauthorized-alert"
+          role="alert"
+          class="alert alert-error fixed inset-x-0 top-4 z-50 mx-auto w-11/12 max-w-2xl shadow-lg"
         >
-          ✕
-        </button>
+          <span class="iconify hugeicons--alert-02 text-xl" />
+          <span>
+            <strong>Unauthorized request was made.</strong> You must be logged
+            in with the correct permissions to complete your request.
+          </span>
+          <button
+            type="button"
+            aria-label="Dismiss"
+            class="btn btn-ghost btn-sm btn-circle"
+            data-dismiss-unauthorized
+          >
+            ✕
+          </button>
+        </div>
+      )
+    }
+    {
+      /* Props are the only channel from Astro's server context into this client:only React island. */
+    }
+    <BoardController
+      client:only="react"
+      boardId={boardId}
+      isAuthenticated={isAuthenticated}
+    >
+      <div
+        slot="fallback"
+        class="flex min-h-[60vh] flex-col items-center justify-center gap-4"
+      >
+        <h2 class="text-xl font-semibold">Task dashboard is loading...</h2>
+        <span class="loading loading-spinner loading-xl"></span>
       </div>
-    )
-  }
-  {
-    /* Props are the only channel from Astro's server context into this client:only React island. */
-  }
-  <BoardController
-    client:only="react"
-    boardId={boardId}
-    isAuthenticated={isAuthenticated}
-  />
-</BaseLayout>
-
+    </BoardController>
+  </section>
+</Layout>
 <script>
   document
     .querySelector("[data-dismiss-unauthorized]")

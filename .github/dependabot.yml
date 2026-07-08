@@ -19,7 +19,7 @@ updates:
           - "react"
           - "react-dom"
           - "@types/react*"
-      tailwind:
+      frontend:
         patterns:
           - "tailwindcss"
           - "@tailwindcss/*"
@@ -32,12 +32,22 @@ updates:
       clerk:
         patterns:
           - "@clerk/*"
+      policystack:
+        patterns:
+          - "@policystack/*"
       misc_core:
         patterns:
           - "@anthropic-ai/*"
           - "typescript"
           - "@google/genai"
           - "fractional-indexing"
+          - "@jsr/std__uuid"
+          - "husky"
+      pages:
+        patterns:
+          - "dayjs"
+          - "zod-empty"
+          
 
   - package-ecosystem: "docker"
     directory: "/"

@@ -1,56 +1,21 @@
 // @vitest-environment node
-import { existsSync, readFileSync } from "node:fs";
-import { createRequire } from "node:module";
-import { dirname, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { GoogleGenAI } from "@google/genai";
 import type { APIContext } from "astro";
+import { KNOWN_MODELS } from "../fixtures/genai-model.ts";
 
 const mockGenerateContentStream = vi.hoisted(() => vi.fn());
 const mockModelsList = vi.hoisted(() => vi.fn());
 
 vi.mock("@google/genai", () => ({
-  GoogleGenAI: vi.fn().mockImplementation(function () {
+  GoogleGenAI: vi.fn().mockImplementation(function (
+    this: { models: unknown },
+  ) {
     this.models = {
       generateContentStream: mockGenerateContentStream,
       list: mockModelsList,
     };
   }),
 }));
-
-// Derive named models from the Model_2 union type in @google/genai's type definitions.
-// Walks up from the resolved package entry to find the package root, reads the
-// typings field from package.json, then parses the Model_2 type from the .d.ts file.
-function readKnownGenAIModels(): string[] {
-  const _require = createRequire(import.meta.url);
-  let dir = dirname(_require.resolve("@google/genai"));
-  while (dir !== dirname(dir)) {
-    const pkgPath = resolve(dir, "package.json");
-    if (existsSync(pkgPath)) {
-      const pkg = JSON.parse(readFileSync(pkgPath, "utf-8")) as {
-        name?: string;
-        typings?: string;
-      };
-      if (pkg.name === "@google/genai" && pkg.typings) {
-        const match = readFileSync(resolve(dir, pkg.typings), "utf-8").match(
-          /declare type Model_2 = (.*?);/s,
-        );
-        if (!match) throw new Error("Model_2 not found in @google/genai types");
-        return [...match[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
-      }
-    }
-    dir = dirname(dir);
-  }
-  throw new Error("@google/genai package root not found");
-}
-
-const GENERATE_CONTENT_MODELS = readKnownGenAIModels();
-
-async function* makeModelList(names: readonly string[]) {
-  for (const name of names) {
-    yield { name, supportedActions: ["generateContent"] };
-  }
-}
 
 const apiContext = (request: Request): APIContext =>
   ({ request }) as APIContext;
@@ -116,9 +81,6 @@ describe("POST /api/generate-tasks", () => {
       vi.resetModules();
       vi.stubEnv("GOOGLE_AI_STUDIO_KEY", "test-api-key");
       mockGenerateContentStream.mockReset();
-      mockModelsList.mockImplementation(() =>
-        makeModelList(GENERATE_CONTENT_MODELS)
-      );
       POST = await importPOST();
     });
 
@@ -196,22 +158,6 @@ describe("POST /api/generate-tasks", () => {
     });
 
     describe("AI model", () => {
-      test("uses a model from the list of models that support generateContent", async () => {
-        mockGenerateContentStream.mockReturnValue(streamChunks(["Task one"]));
-        await POST(apiContext(makeRequest({ prompt: "build an app" })));
-
-        const ai = new GoogleGenAI({ apiKey: "test-api-key" });
-        const supported: string[] = [];
-        for await (const model of await ai.models.list()) {
-          if (model.supportedActions?.includes("generateContent")) {
-            supported.push(model.name!);
-          }
-        }
-
-        const [args] = mockGenerateContentStream.mock.calls;
-        expect(supported).toContain(args[0].model);
-      });
-
       test("uses the configured model name", async () => {
         mockGenerateContentStream.mockReturnValue(streamChunks(["Task one"]));
         const apiModel = await importApiModel();
@@ -219,6 +165,11 @@ describe("POST /api/generate-tasks", () => {
         expect(mockGenerateContentStream).toHaveBeenCalledWith(
           expect.objectContaining({ model: apiModel }),
         );
+      });
+
+      test("uses a model name known to the Gemini API", async () => {
+        const apiModel = await importApiModel();
+        expect(KNOWN_MODELS).toContain(apiModel);
       });
 
       test("passes a systemInstruction about kanban task titles", async () => {

@@ -1,5 +1,280 @@
 ---
-import SPA from "@components/SPA.astro";
+import BaseLayout from "@layouts/BaseLayout.astro";
+import DemoExperience from "@components/demo/DemoExperience";
+import HeroStartForm from "@components/HeroStartForm";
+
+const { userId } = Astro.locals.auth();
+const isAuthenticated = !!userId;
 ---
 
-<SPA />
+<BaseLayout>
+  <section id="hero" class="relative lg:h-screen lg:overflow-hidden">
+    <div
+      class="min-h-screen h-full bg-linear-to-br/oklch from-ctp-flamingo-100/50 dark:from-ctp-lavender-950 mask-b-from-base-100 to-base-100"
+    >
+    </div>
+    <div class="hero min-h-screen h-full top-0 absolute z-10">
+      <div class="hero-content">
+        <div class="text-center md:text-left">
+          <h1
+            class="text-6xl lg:text-7xl font-semibold bg-clip-text text-transparent bg-linear-to-r from-accent to-secondary"
+          >
+            Discover what can be with <span class="font-logo font-normal"
+              >Kanby</span
+            >.
+          </h1>
+          <p class="py-6">
+            <span class="text-lg md:text-2xl font-extralight">
+              Whether you're
+              <span class="text-rotate block md:inline-block md:text-2xl">
+                <span class="justify-items-center md:justify-items-start">
+                  <span class="bg-primary text-primary-content px-2">
+                    planning a project
+                  </span>
+                  <span class="bg-secondary text-primary-content px-2">
+                    organizing your day
+                  </span>
+                  <span class="bg-info text-primary-content px-2">
+                    feeling overwhelmed with decision fatigue
+                  </span>
+                  <span class="bg-success text-primary-content px-2">
+                    confused on where to start
+                  </span>
+                </span>
+              </span>
+              <br class="hidden md:block" />
+              <span class="block mx-auto max-w-[80%] md:mx-0 md:max-w-full">
+                Kanby is the tool you need to stay organized and focused.
+              </span>
+            </span>
+          </p>
+          <div
+            role="alert"
+            class="mb-6 alert alert-soft border border-info/50 alert-info alert-vertical md:alert-horizontal w-fit mx-auto md:mx-0"
+          >
+            <span class="iconify hugeicons--chat text-xl"></span>
+            <div>
+              <h3 class="font-bold">KANBY IS STILL IN DEVELOPMENT.</h3>
+              <div class="text-xs">
+                This is a beta version of the application.<br />
+                Expect bugs, missing features, and frequent updates.<br />
+                Your data is not guaranteed to be preserved.
+              </div>
+            </div>
+          </div>
+          <HeroStartForm client:load isAuthenticated={isAuthenticated} />
+        </div>
+        <div
+          class="card hidden md:block bg-base-100 w-full max-w-sm lg:shrink-0 shadow-2xl"
+        >
+          <div class="card-body">
+            <ul class="timeline timeline-vertical">
+              <li>
+                <div class="timeline-start timeline-box bg-neutral">
+                  Describe your goal
+                </div>
+                <div class="timeline-middle">
+                  <span
+                    class="bg-info text-secondary-content rounded-full p-1.5 inline-flex items-center justify-center"
+                  >
+                    <span class="iconify hugeicons--edit-01 text-xl"></span>
+                  </span>
+                </div>
+                <hr class="bg-info" />
+              </li>
+              <li>
+                <hr class="bg-info" />
+                <div class="timeline-middle">
+                  <span
+                    class="bg-info text-secondary-content rounded-full p-1.5 inline-flex items-center justify-center"
+                  >
+                    <span class="iconify hugeicons--ai-innovation-02 text-xl"
+                    ></span>
+                  </span>
+                </div>
+                <div class="timeline-end timeline-box bg-neutral">
+                  Kanby turns it into an actionable plan
+                </div>
+                <hr class="bg-info" />
+              </li>
+              <li>
+                <hr />
+                <div class="timeline-start timeline-box bg-neutral">
+                  Your task board is generated within seconds
+                </div>
+                <div class="timeline-middle">
+                  <span
+                    class="bg-neutral text-neutral-content rounded-full p-1.5 inline-flex items-center justify-center"
+                  >
+                    <span class="iconify hugeicons--rocket-01 text-xl"></span>
+                  </span>
+                </div>
+                <hr />
+              </li>
+              <li>
+                <hr />
+                <div class="timeline-middle">
+                  <span
+                    class="bg-neutral text-neutral-content rounded-full p-1.5 inline-flex items-center justify-center"
+                  >
+                    <span class="iconify hugeicons--ai-user text-xl"></span>
+                  </span>
+                </div>
+                <div class="timeline-end timeline-box bg-neutral">
+                  Choose where AI helps along the way
+                </div>
+                <hr />
+              </li>
+              <li>
+                <hr />
+                <div class="timeline-start timeline-box bg-neutral">
+                  Turn your goals into completed projects
+                </div>
+                <div class="timeline-middle">
+                  <span
+                    class="bg-success text-success-content rounded-full p-1.5 inline-flex items-center justify-center"
+                  >
+                    <span class="iconify hugeicons--party text-xl"></span>
+                  </span>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <DemoExperience client:only="react" />
+  <section id="donate">
+    <div class="text-center mx-auto max-w-11/12 px-3 py-20 space-y-3">
+      <h2 class="text-4xl font-semibold mb-8">
+        Help shape the future of Kanby.
+      </h2>
+      <p>Kanby is built by a woman with a big dream:</p>
+      <p class="text-2xl italic font-extralight">
+        the dream of never again having to work with horrible task management
+        software.
+      </p>
+      <div
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-8 text-left"
+      >
+        <div
+          class="card bg-info/5 shadow-md dark:shadow shadow-info/10 border border-[color-mix(in_srgb,var(--color-info)_13%,transparent)]"
+        >
+          <div class="card-body">
+            <span class="iconify hugeicons--ai-user text-3xl text-secondary"
+            ></span>
+            <h3 class="card-title">AI as assistant, not replacement</h3>
+            <p class="text-sm">
+              The industry keeps promising AI can replace the people solving
+              problems. Kanby uses AI to support human judgment, not stand in
+              for it.
+            </p>
+          </div>
+        </div>
+        <div
+          class="card bg-info/5 shadow-md dark:shadow shadow-info/20 border border-[color-mix(in_srgb,var(--color-info)_13%,transparent)]"
+        >
+          <div class="card-body">
+            <span
+              class="iconify hugeicons--dashboard-square-setting text-3xl text-secondary"
+            ></span>
+            <h3 class="card-title">Simplicity over complexity</h3>
+            <p class="text-sm">
+              Every feature is measured against one question: does it reduce
+              complexity, or add to it? Kanby shouldn't require a certification
+              to understand.
+            </p>
+          </div>
+        </div>
+        <div
+          class="card bg-info/5 shadow-md dark:shadow shadow-info/20 border border-[color-mix(in_srgb,var(--color-info)_13%,transparent)]"
+        >
+          <div class="card-body">
+            <span class="iconify hugeicons--ai-magic text-3xl text-secondary"
+            ></span>
+            <h3 class="card-title">Built to actually help</h3>
+            <p class="text-sm">
+              Productivity tools shouldn't increase your workload. Kanby aims to
+              make overwhelming goals feel manageable, calmer, and more
+              enjoyable to work through.
+            </p>
+          </div>
+        </div>
+        <div
+          class="card bg-info/5 shadow-md dark:shadow shadow-info/20 border border-[color-mix(in_srgb,var(--color-info)_13%,transparent)]"
+        >
+          <div class="card-body">
+            <span class="iconify hugeicons--chat text-3xl text-secondary"
+            ></span>
+            <h3 class="card-title">Free & fair</h3>
+            <p class="text-sm">
+              Kanby is free today, and there will always be a free plan. As new
+              features are added, some will be part of a paid subscription - but
+              the core experience will remain accessible to everyone.
+            </p>
+            <p><strong class="italic">Your data will not be sold.</strong></p>
+          </div>
+        </div>
+      </div>
+      <div class="mt-20 flex flex-col sm:flex-row w-full">
+        <div class="card rounded-box grid grow place-items-center">
+          <h3 class="font-roboto-slab text-2xl text-primary">
+            Want to help support the project?
+          </h3>
+        </div>
+        <div class="divider sm:divider-horizontal"></div>
+        <div
+          class="card bg-base-300/20 rounded-box grid grow place-items-center"
+        >
+          <div class="flex flex-col sm:flex-row flex-wrap gap-8 sm:gap-12 p-4">
+            <div class="flex flex-col gap-3">
+              <span
+                class="text-sm font-semibold font-roboto-slab uppercase opacity-60"
+                >Join Kanby</span
+              >
+              <a href="/dashboard" data-open-clerk-sign-up-modal>
+                <button
+                  type="button"
+                  class="btn btn-warning font-roboto-slab! text-xl"
+                >
+                  <span class="iconify hugeicons--user-group text-xl"></span>
+                  Sign up today
+                </button>
+              </a>
+            </div>
+            <div class="flex flex-col gap-3">
+              <span
+                class="text-sm font-semibold font-roboto-slab uppercase opacity-60"
+                >Donate</span
+              >
+              <a href="https://buymeacoffee.com/kanby" target="_blank">
+                <button
+                  type="button"
+                  class="btn btn-secondary font-roboto-slab! text-xl"
+                >
+                  <span class="iconify hugeicons--coffee-04 text-xl"></span>
+                  Help fund the project
+                </button>
+              </a>
+            </div>
+            <div class="flex flex-col gap-3">
+              <span
+                class="text-sm font-semibold font-roboto-slab uppercase opacity-60"
+                >Stay updated</span
+              >
+              <a href="#mc_embed_shell" class="link">Join the newsletter</a>
+              <a href="#social-media-links" class="link"
+                >Follow on social media</a
+              >
+              <div>
+                <a href="/blog" class="link">Check out the blog</a><br />
+                <small class="text-[0.625rem]">In development. </small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

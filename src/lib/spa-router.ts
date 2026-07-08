@@ -3,11 +3,15 @@ import BoardView from "@components/BoardView.tsx";
 
 export const router = createBrowserRouter([
   {
-    path: "/",
+    path: "/dashboard",
     Component: BoardView,
   },
   {
-    path: "/task/:taskId",
+    path: "/dashboard/task/:taskId",
+    Component: BoardView,
+  },
+  {
+    path: "/dashboard/row/:rowId",
     Component: BoardView,
   },
 ]);

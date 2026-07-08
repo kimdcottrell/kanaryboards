@@ -1,0 +1,139 @@
+---
+import { MESSAGE_MAX_LENGTH } from "@lib/contact-schema.ts";
+---
+
+<form
+    id="contact-form"
+    class="space-y-4 bg-secondary/10 p-6 rounded-lg shadow-md"
+    novalidate
+>
+    <div class="flex flex-col gap-3 md:flex-row">
+        <div class="form-control md:flex-1">
+            <fieldset class="fieldset">
+                <label class="fieldset-legend" for="contact-name">Name</label>
+                <input
+                    id="contact-name"
+                    name="name"
+                    class="input validator input-bordered w-full"
+                    type="text"
+                    maxlength="100"
+                    required
+                />
+                <span class="validator-hint">Please enter your name.</span>
+            </fieldset>
+        </div>
+
+        <div class="form-control md:flex-1">
+            <fieldset class="fieldset">
+                <label class="fieldset-legend" for="contact-email">
+                    Email
+                </label>
+                <input
+                    id="contact-email"
+                    name="email"
+                    class="input validator input-bordered w-full"
+                    type="email"
+                    required
+                />
+                <span class="validator-hint">
+                    Please enter a valid email address.
+                </span>
+            </fieldset>
+        </div>
+    </div>
+
+    <div class="form-control">
+        <fieldset class="fieldset">
+            <label class="fieldset-legend" for="contact-message">
+                Message
+            </label>
+            <textarea
+                id="contact-message"
+                name="message"
+                class="textarea validator textarea-bordered w-full"
+                rows="5"
+                maxlength={MESSAGE_MAX_LENGTH}
+                required></textarea>
+            <p class="label justify-end">
+                <span data-char-count>0</span>/{MESSAGE_MAX_LENGTH}
+            </p>
+            <span class="validator-hint">Please enter a message.</span>
+        </fieldset>
+    </div>
+
+    <button type="submit" class="btn btn-primary" data-submit-button>
+        Send message
+    </button>
+
+    <div role="alert" class="alert alert-success" data-success hidden>
+        <span>Thanks! Your message has been sent.</span>
+    </div>
+
+    <div role="alert" class="alert alert-error" data-error hidden>
+        <span data-error-message></span>
+    </div>
+</form>
+
+<script>
+    import { contactFormSchema } from "@lib/contact-schema.ts";
+
+    const form = document.querySelector<HTMLFormElement>("#contact-form")!;
+    const messageInput =
+        form.querySelector<HTMLTextAreaElement>("#contact-message")!;
+    const charCount = form.querySelector("[data-char-count]")!;
+    const submitButton = form.querySelector<HTMLButtonElement>(
+        "[data-submit-button]",
+    )!;
+    const successAlert = form.querySelector<HTMLElement>("[data-success]")!;
+    const errorAlert = form.querySelector<HTMLElement>("[data-error]")!;
+    const errorMessage = form.querySelector("[data-error-message]")!;
+
+    messageInput.addEventListener("input", () => {
+        charCount.textContent = String(messageInput.value.length);
+    });
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        successAlert.hidden = true;
+        errorAlert.hidden = true;
+
+        const formData = new FormData(form);
+        const parsed = contactFormSchema.safeParse({
+            name: formData.get("name"),
+            email: formData.get("email"),
+            message: formData.get("message"),
+        });
+
+        if (!parsed.success) {
+            errorMessage.textContent =
+                parsed.error.issues[0]?.message ?? "Invalid input.";
+            errorAlert.hidden = false;
+            return;
+        }
+
+        submitButton.disabled = true;
+        submitButton.textContent = "Sending...";
+
+        try {
+            const res = await fetch("/api/contact", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(parsed.data),
+            });
+            const data = await res.json();
+            if (!res.ok)
+                throw new Error(data.error ?? "Failed to send message.");
+
+            successAlert.hidden = false;
+            form.reset();
+            charCount.textContent = "0";
+        } catch (err) {
+            errorMessage.textContent =
+                err instanceof Error ? err.message : "Failed to send message.";
+            errorAlert.hidden = false;
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = "Send message";
+        }
+    });
+</script>

@@ -19,10 +19,12 @@
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "paths": {
-      "@pages/*": ["./src/pages/*"],
       "@components/*": ["./src/components/*"],
+      "@layouts/*": ["./src/layouts/*"],
       "@lib/*": ["./src/lib/*"],
-      "@layouts/*": ["./src/layouts/*"]
+      "@pages/*": ["./src/pages/*"],
+      "@src/*": ["./src/*"],
+      "@styles/*": ["./src/styles/*"]
     }
   }
 }

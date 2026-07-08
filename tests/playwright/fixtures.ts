@@ -1,5 +1,40 @@
 import { setupClerkTestingToken } from "@clerk/testing/playwright";
-import { expect, type Locator, test as base } from "@playwright/test";
+import {
+  type BrowserContext,
+  expect,
+  type Locator,
+  type Page,
+  test as base,
+} from "@playwright/test";
+import { CONSENT_COOKIE } from "../../src/lib/consent.ts";
+
+// A pre-decided "necessary only" consent record, base64url-encoded exactly as
+// @policystack/core's cookieAdapter does (dist/consent/storage/cookie.js `encode`).
+// Seeding it hides the cookie banner so its fixed bottom bar can't overlap
+// controls in unrelated specs. cookie-consent.spec.ts clears it to test the banner.
+const consentedRecord = {
+  schemaVersion: 1,
+  decisions: { essential: true, analytics: false },
+  policyVersion: "",
+  decidedAt: "2026-01-01T00:00:00.000Z",
+  jurisdiction: null,
+  locale: "en",
+  source: "banner",
+};
+const consentCookieValue = btoa(JSON.stringify(consentedRecord))
+  .replace(/\+/g, "-")
+  .replace(/\//g, "_")
+  .replace(/=+$/, "");
+
+async function seedConsentCookie(
+  context: BrowserContext,
+  baseURL: string | undefined,
+): Promise<void> {
+  if (!baseURL) return;
+  await context.addCookies([
+    { name: CONSENT_COOKIE, value: consentCookieValue, url: baseURL },
+  ]);
+}
 
 // Fills a React-controlled input and waits until the value actually commits.
 // The board mounts via client:only, so shortly after an input becomes
@@ -18,6 +53,31 @@ export async function fillStable(
   await page.locator("html[data-board-loaded='true']").waitFor({
     state: "attached",
   });
+  await fillControlled(locator, value);
+}
+
+// Fills a React-controlled input without any board-loaded gate, retrying the
+// fill+assert until the value sticks. Use for islands that don't set the
+// board-loaded flag (e.g. the homepage HeroStartForm): the retry loop itself
+// gates on hydration, since the value only commits once React's onChange is
+// wired up.
+export async function fillControlled(
+  locator: Locator,
+  value: string,
+): Promise<void> {
+  const page = locator.page();
+  // A plain SSR input accepts .fill() and holds the value until React hydrates
+  // and clobbers it, so the fill can "succeed" before the onSubmit handler is
+  // wired — a subsequent click then does nothing. Gate on React having actually
+  // hydrated this element (it tags managed host nodes with a __reactFiber$ key)
+  // before filling.
+  await expect
+    .poll(() =>
+      locator.evaluate((el) =>
+        Object.keys(el).some((k) => k.startsWith("__reactFiber$"))
+      )
+    )
+    .toBe(true);
   // Webkit on CI is the slowest engine and loses the controlled-input commit
   // race most often — give its retry loop more room before failing.
   const isWebkit = page.context().browser()?.browserType().name() === "webkit";
@@ -25,6 +85,22 @@ export async function fillStable(
     await locator.fill(value);
     await expect(locator).toHaveValue(value);
   }).toPass({ timeout: isWebkit ? 20000 : 10000 });
+}
+
+// Opens the board "+" dropdown in #board-menu and clicks "Add new project row",
+// which opens CreateRowModal (the create-row form now lives there, not in the
+// board-config gear modal). Gates on hydration so the menu click is stable.
+export async function openCreateRowModal(page: Page): Promise<void> {
+  await page.locator("html[data-board-loaded='true']").waitFor({
+    state: "attached",
+  });
+  await page.locator(
+    "#board-menu summary:has(.hugeicons--dashboard-square-add)",
+  ).click();
+  await page.locator("#board-menu").getByText("Add new project row").click();
+  // Scope to the dialog: an empty board also renders an inline create-new-row.
+  await expect(page.locator("dialog [data-testid='create-new-row']"))
+    .toBeVisible();
 }
 
 // Derive the Clerk Frontend API URL from the publishable key as a fallback.
@@ -38,17 +114,40 @@ const fapiFromKey = atob(pk.split("_")[2] ?? "").replace(/\$$/, "");
 // test signature. Registers Clerk FAPI route interception + retry-on-429 logic.
 export const test = base.extend<{ clerkSetup: void }>({
   clerkSetup: [
-    async ({ page }, use) => {
+    async ({ page, baseURL }, use) => {
       await setupClerkTestingToken({
         page,
         options: { frontendApiUrl: process.env.CLERK_FAPI ?? fapiFromKey },
       });
+      await seedConsentCookie(page.context(), baseURL);
       await use();
     },
     { auto: true },
   ],
 });
 
-// Use for tests that don't need Clerk authentication — avoids per-test Clerk API calls.
-export const testNoClerk = base;
+// Use for tests that don't need Clerk authentication. Still injects the Clerk
+// testing token (without signing in) so the guest /dashboard skips Clerk's
+// dev-browser handshake. Without it, a fresh context has no Clerk cookies, so
+// the handshake (dev-browser-missing) redirects/reloads /dashboard repeatedly,
+// remounting the board island and resetting boardLoaded — which makes the
+// html[data-board-loaded='true'] gate flaky and can exceed the test timeout.
+// `test` and `testNoClerk` are distinct TestType extensions, so a union of the
+// two isn't callable (their signatures differ). Shared, session-agnostic checks
+// that accept either flavor should type their parameter as this common base.
+export type SessionTest = typeof base;
+
+export const testNoClerk = base.extend<{ clerkTestingToken: void }>({
+  clerkTestingToken: [
+    async ({ page, baseURL }, use) => {
+      await setupClerkTestingToken({
+        page,
+        options: { frontendApiUrl: process.env.CLERK_FAPI ?? fapiFromKey },
+      });
+      await seedConsentCookie(page.context(), baseURL);
+      await use();
+    },
+    { auto: true },
+  ],
+});
 export { expect };

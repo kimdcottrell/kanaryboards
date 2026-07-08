@@ -1,0 +1,34 @@
+---
+import Layout from "@layouts/BaseLayout.astro";
+import Prose from "@components/pages/Prose.astro";
+import { getProtectedCollection } from "@src/utils";
+
+const isPlaywrightTest =
+    Astro.request.headers.get("x-playwright-test") === "true";
+const posts = await getProtectedCollection("blog", {
+    includeTestOnly: isPlaywrightTest,
+});
+
+let seo = {
+    title: "Blog",
+    description: "All blog posts.",
+};
+---
+
+<Layout seo={seo}>
+    <Prose>
+        {
+            posts.length > 0 ? (
+                <ul>
+                    {posts.map((post) => (
+                        <li>
+                            <a href={`/blog/${post.id}`}>{post.data.title}</a>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p>No blog posts yet. Check back soon.</p>
+            )
+        }
+    </Prose>
+</Layout>

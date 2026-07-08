@@ -1,9 +1,11 @@
 // @ts-check
-import { defineConfig } from "astro/config";
+import { defineConfig, fontProviders } from "astro/config";
 import deno from "@deno/astro-adapter";
 import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
 import clerk from "@clerk/astro";
+
+import sitemap from "@astrojs/sitemap";
 
 // https://astro.build/config
 export default defineConfig({
@@ -11,9 +13,40 @@ export default defineConfig({
   integrations: [
     clerk(),
     react(),
+    sitemap({
+      // /blog/* routes are rendered on demand, so the sitemap integration
+      // can't discover them by crawling static build output; they publish
+      // their own sitemap fragment instead (see src/pages/sitemap-blog.xml.ts).
+      customSitemaps: ["https://kanby.ai/sitemap-blog.xml"],
+    }),
   ],
 
   output: "server",
+
+  fonts: [{
+    provider: fontProviders.google(),
+    name: "Cherry Bomb One",
+    cssVariable: "--font-cherry-bomb-one",
+    weights: ["400"],
+    styles: ["normal"],
+  }, {
+    provider: fontProviders.google(),
+    name: "Roboto Slab",
+    cssVariable: "--font-roboto-slab",
+    weights: ["100 900"],
+    styles: ["normal", "italic"],
+  }, {
+    provider: fontProviders.google(),
+    name: "Nunito",
+    cssVariable: "--font-nunito",
+    weights: ["200 1000"],
+  }, {
+    provider: fontProviders.google(),
+    name: "Inter",
+    cssVariable: "--font-inter",
+    weights: ["100 900"],
+    styles: ["normal", "italic"],
+  }],
 
   site: "https://kanby.ai",
 
@@ -29,6 +62,8 @@ export default defineConfig({
   },
 
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [
+      tailwindcss(),
+    ],
   },
 });

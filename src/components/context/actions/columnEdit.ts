@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useBoardDispatch } from "../BoardContext.tsx";
-import type { Column, Row } from "../types.ts";
+import type { Column } from "../types.ts";
 
 export function useColumnEditActions() {
   const dispatch = useBoardDispatch();
@@ -11,12 +11,14 @@ export function useColumnEditActions() {
       if (name === null) dispatch({ type: "COLUMN/RENAME_CANCEL" });
       else dispatch({ type: "COLUMN/RENAME_CHANGE", payload: { name } });
     },
-    editColumnTitle: (column: Column, row: Row) =>
+    // rowId is null when editing outside the context of a specific row (e.g.
+    // ColumnSettingsSection, where each column only renders once)
+    editColumnTitle: (column: Column, rowId: string | null) =>
       dispatch({
         type: "COLUMN/RENAME_START",
         payload: {
           columnId: column.id,
-          rowId: row.id,
+          rowId,
           currentName: column.title,
         },
       }),

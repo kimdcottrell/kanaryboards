@@ -1,0 +1,41 @@
+---
+import "@styles/global.css";
+import "@lyfie/luthor/styles.css";
+
+import { Font } from "astro:assets";
+
+import GoogleAnalytics from "@components/seo/partials/GoogleAnalytics.astro";
+import SEO from "@components/seo/SEO.astro";
+import { CONSENT_COOKIE, hasAnalyticsConsent } from "@lib/consent.ts";
+import type { SeoMetadata } from "@src/content.config";
+
+interface Props {
+    seo?: SeoMetadata;
+}
+
+const { seo } = Astro.props;
+const googleTag = import.meta.env.GOOGLE_TAG;
+const isPlaywright = Astro.request.headers.get("x-playwright-test") === "true";
+const analyticsConsent = hasAnalyticsConsent(
+    Astro.cookies.get(CONSENT_COOKIE)?.value,
+);
+---
+
+<meta charset="UTF-8" />
+<meta
+    name="viewport"
+    content="viewport-fit=cover, width=device-width, initial-scale=1.0"
+/>
+{!seo && <title>Kanby</title>}
+<Font cssVariable="--font-cherry-bomb-one" />
+<Font cssVariable="--font-roboto-slab" />
+<Font cssVariable="--font-nunito" />
+<Font cssVariable="--font-inter" />
+<SEO seo={seo} />
+{
+    googleTag && !isPlaywright && (
+        <GoogleAnalytics tag={googleTag} analyticsConsent={analyticsConsent} />
+    )
+}
+
+<link rel="icon" type="image/x-icon" href="/favicon.ico" />

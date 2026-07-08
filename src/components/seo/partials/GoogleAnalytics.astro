@@ -1,0 +1,33 @@
+---
+const { tag, analyticsConsent = false } = Astro.props;
+if (!tag)
+    throw new Error(
+        `GoogleTag is missing. This will cause analytics to not load.\n
+        Check to see if the GOOGLE_TAG environment variable is set and being passed correctly to the component.`,
+    );
+const url = `https://www.googletagmanager.com/gtag/js?id=${tag}`;
+// Google Consent Mode v2: default everything denied (analytics reflects the
+// stored choice so returning consenters don't flicker denied→granted), then the
+// cookie banner issues `consent update` when the user changes it. Advertising
+// signals stay denied — the site has no marketing/ad tracking.
+const htmlString = `
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+    gtag("consent", "default", {
+        ad_storage: "denied",
+        ad_user_data: "denied",
+        ad_personalization: "denied",
+        analytics_storage: "${analyticsConsent ? "granted" : "denied"}",
+        wait_for_update: 500,
+    });
+    gtag("js", new Date());
+    gtag("config", "${tag}");
+</script>
+`;
+---
+
+<script is:inline src={url}></script>
+<Fragment set:html={htmlString} />

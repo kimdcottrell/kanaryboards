@@ -1,5 +1,5 @@
 import { clerk } from "@clerk/testing/playwright";
-import { expect, test } from "./fixtures.ts";
+import { expect, openCreateRowModal, test } from "./fixtures.ts";
 
 const E2E_EMAIL = process.env.E2E_CLERK_USER_EMAIL ?? "";
 
@@ -12,7 +12,7 @@ test.describe("Board persistence across sign-in", () => {
       browserName !== "chromium",
       "shares one Clerk test account across runs",
     );
-    await page.goto("/");
+    await page.goto("/dashboard");
 
     // Clear out any board left over from a previous run so sign-in migrates
     // this test's localStorage data instead of loading stale remote data.
@@ -30,24 +30,31 @@ test.describe("Board persistence across sign-in", () => {
     const rowName = `E2E Row ${crypto.randomUUID()}`;
     const taskName = `E2E Task ${crypto.randomUUID()}`;
 
-    // Add a new row via the board configuration panel
-    await page.locator("#board-config-collapse-toggle").click();
-    const createRow = page.locator("#board-config-create-new-row");
-    await expect(createRow).toBeVisible();
+    // Add a new row via the board "+" menu (CreateRowModal)
+    await openCreateRowModal(page);
+    const createRow = page.locator("dialog [data-testid='create-new-row']");
     await createRow
       .getByPlaceholder(
         "A project name, a category for large project tasks, etc.",
       )
       .fill(rowName);
     await createRow.getByRole("button", { name: "Add Row" }).click();
-    await expect(
-      page.locator("#board-config-row-display-settings").getByText(rowName),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: rowName })).toBeVisible();
+
+    // Close the create-row modal so its backdrop no longer
+    // intercepts pointer events on the board behind it. The close button and
+    // backdrop both sit under the fixed navbar in places Playwright's
+    // hit-testing considers the click target, so dispatch the backdrop's
+    // click handler directly instead of simulating a real pointer click.
+    await page.evaluate(() => {
+      document.querySelector("dialog.modal-open .modal-backdrop")
+        ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
 
     // Add a task to the new row
     const newRow = page.locator("[id^='row-section-']").last();
     await expect(newRow.getByText(rowName)).toBeVisible();
-    await newRow.locator("button:has(.hugeicons--credit-card-add)").first()
+    await newRow.locator("button:has(.hugeicons--add-01)").first()
       .click();
     await expect(page.getByRole("heading", { name: "Add task" }))
       .toBeVisible();
@@ -69,12 +76,34 @@ test.describe("Board persistence across sign-in", () => {
     // Clerk instance and resolves once Clerk.user is set.
     await clerk.signIn({ page, emailAddress: E2E_EMAIL });
 
-    await page.goto("/");
+    // The post-sign-in BOARD/LOAD schedules a debounced (500ms) autosave PUT to
+    // /api/board. Track those PUT responses so we can wait for them to settle
+    // before the test ends — otherwise a late PUT is processed after afterEach's
+    // delete and resurrects the board (the /api/board middleware re-creates the
+    // user_board mapping on any authenticated write), which the next repeat then
+    // reads as stale remote data instead of migrating its own localStorage row.
+    let lastBoardPutAt = Date.now();
+    page.on("response", (resp) => {
+      if (
+        resp.url().endsWith("/api/board") && resp.request().method() === "PUT"
+      ) {
+        lastBoardPutAt = Date.now();
+      }
+    });
+
+    await page.goto("/dashboard");
 
     await expect(page.getByRole("button", { name: "Sign In" })).toBeHidden();
 
     // Row and task created before sign-in are still present after logging in
     await expect(newRow.getByText(rowName)).toBeVisible();
     await expect(newRow.getByText(taskName)).toBeVisible();
+
+    // Wait until /api/board PUTs have quiesced (>700ms since the last one) so
+    // afterEach's delete is the final KV write and can't be undone by a late
+    // autosave PUT.
+    await expect
+      .poll(() => Date.now() - lastBoardPutAt, { timeout: 10_000 })
+      .toBeGreaterThan(700);
   });
 });

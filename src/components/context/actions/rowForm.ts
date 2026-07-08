@@ -5,10 +5,8 @@ import {
   useRowFormState,
 } from "../BoardContext.tsx";
 import { createId, rowColorOptions } from "../constants.ts";
-import { findTodoColumnId } from "../selectors.ts";
-import { fetchGeneratedItems } from "./shared.ts";
-import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
-import type { Task } from "../types.ts";
+import { buildTasksFromTitles, fetchGeneratedItems } from "./shared.ts";
+import { generateKeyBetween } from "fractional-indexing";
 import type { SubmitEvent } from "react";
 
 export function useRowFormActions() {
@@ -24,17 +22,7 @@ export function useRowFormActions() {
 
     try {
       const titles = await fetchGeneratedItems(prompt, 10);
-      const todoColId = findTodoColumnId(columns);
-      const orders = generateNKeysBetween(null, null, titles.length);
-      const tasks: Task[] = titles.map((title, i) => ({
-        id: createId(),
-        rowId,
-        colId: todoColId,
-        order: orders[i],
-        title,
-        description: "",
-        checklist: [],
-      }));
+      const tasks = buildTasksFromTitles(titles, rowId, columns);
 
       if (tasks.length > 0) {
         dispatch({ type: "TASK_AI/GENERATE_SUCCESS", payload: { tasks } });
@@ -84,6 +72,8 @@ export function useRowFormActions() {
       dispatch({ type: "ROW/SET_NEW_NAME", payload: { name } }),
     setNewRowPrompt: (prompt: string) =>
       dispatch({ type: "ROW/SET_NEW_PROMPT", payload: { prompt } }),
+    openCreateRowModal: () => dispatch({ type: "ROW/OPEN_CREATE_MODAL" }),
+    closeCreateRowModal: () => dispatch({ type: "ROW/CLOSE_CREATE_MODAL" }),
   }), [dispatch]);
 
   return { ...setters, addRow, generateTasksForRow };

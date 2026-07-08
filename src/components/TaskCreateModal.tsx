@@ -1,7 +1,8 @@
-import Modal from "./Modal.tsx";
+import Modal from "./shared/Modal.tsx";
 import TaskForm from "./TaskForm.tsx";
 import {
   handleChecklistKeyDown,
+  useBoardDataState,
   useBoardRefs,
   useChecklistAIActions,
   useChecklistAIState,
@@ -11,6 +12,7 @@ import {
 } from "./context/hooks.ts";
 
 export default function TaskCreateModal() {
+  const { columns, rows } = useBoardDataState();
   const { taskCreateModalOpen, taskDraft } = useTaskCreateState();
   const {
     setTaskDraft,
@@ -61,6 +63,9 @@ export default function TaskCreateModal() {
           generateChecklistItems={generateChecklistItems}
           applyChecklist={applyChecklistPreviewToDraft}
           clearChecklistPreview={clearChecklistPreview}
+          columns={columns}
+          rows={rows}
+          requireRowColumn
         />
       )}
     </Modal>

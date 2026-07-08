@@ -1,4 +1,9 @@
-import { expect, fillStable, testNoClerk as test } from "./fixtures.ts";
+import {
+  expect,
+  fillStable,
+  openCreateRowModal,
+  testNoClerk as test,
+} from "./fixtures.ts";
 
 const MOCK_TASKS_RESPONSE = {
   response: [
@@ -16,7 +21,8 @@ const MOCK_TASKS_RESPONSE = {
 };
 
 /**
- * BoardConfiguration.tsx — #board-config-create-new-row section.
+ * CreateRowModal.tsx — [data-testid='create-new-row'] section (opened from the
+ * board "+" menu via "Add new project row", no longer the gear/config modal).
  * Contains a form with:
  *   - Row name input (required, no id, identified by placeholder)
  *   - AI prompt input (#newRowPrompt, optional)
@@ -28,17 +34,37 @@ const MOCK_TASKS_RESPONSE = {
  * After completion, ROW/RESET_FORM resets state (newRowFormKey changes,
  * unmounting/remounting the form to clear inputs).
  */
+// A dashboard with no rows renders CreateRowSection inline (empty state), which
+// would duplicate the modal's copy. Seed one row so only the modal form renders.
+const SEED_BOARD = {
+  rows: [
+    {
+      id: "row-seed",
+      title: "Seed Project",
+      color: "var(--color-row-blue)",
+      order: "a0",
+    },
+  ],
+  columns: [
+    { id: "col-todo", title: "To Do", order: "a0" },
+    { id: "col-prog", title: "In Progress", order: "a1" },
+    { id: "col-done", title: "Done", order: "a2" },
+  ],
+  tasks: [],
+};
+
 test.describe("Board Configuration — Create New Row section", () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => localStorage.clear());
-    await page.goto("/");
-    await page.locator("#board-config-collapse-toggle").click();
-    await expect(page.locator("#board-config-create-new-row")).toBeVisible();
+    await page.addInitScript((board) => {
+      localStorage.setItem("kanby-v0-1-0", JSON.stringify(board));
+    }, SEED_BOARD);
+    await page.goto("/dashboard");
+    await openCreateRowModal(page);
   });
 
   test.describe("form visibility", () => {
     test("shows heading, row name input, AI prompt input, and Add Row button", async ({ page }) => {
-      const section = page.locator("#board-config-create-new-row");
+      const section = page.locator("[data-testid='create-new-row']");
       await expect(section.getByText("Create a new row")).toBeVisible();
       await expect(
         section.getByPlaceholder(
@@ -52,7 +78,7 @@ test.describe("Board Configuration — Create New Row section", () => {
 
     test("does not show the status alert by default", async ({ page }) => {
       await expect(
-        page.locator("#board-config-create-new-row .alert-info"),
+        page.locator("[data-testid='create-new-row'] .alert-info"),
       ).not.toBeVisible();
     });
   });
@@ -62,7 +88,7 @@ test.describe("Board Configuration — Create New Row section", () => {
       const rowSettings = page.locator("#board-config-row-display-settings");
       const before = await rowSettings.locator("li").count();
 
-      await page.locator("#board-config-create-new-row").getByRole("button", {
+      await page.locator("[data-testid='create-new-row']").getByRole("button", {
         name: "Add Row",
       }).click();
 
@@ -71,22 +97,22 @@ test.describe("Board Configuration — Create New Row section", () => {
     });
 
     test("adds the new row to row settings when only a name is provided", async ({ page }) => {
-      const section = page.locator("#board-config-create-new-row");
+      const section = page.locator("[data-testid='create-new-row']");
       const nameInput = section.getByPlaceholder(
         "A project name, a category for large project tasks, etc.",
       );
       await fillStable(nameInput, "My New Row");
       await section.getByRole("button", { name: "Add Row" }).click();
 
+      // The row-settings list lives in the (closed) gear modal, so verify the
+      // new row appears on the board itself instead.
       await expect(
-        page.locator("#board-config-row-display-settings").getByText(
-          "My New Row",
-        ),
+        page.getByRole("heading", { name: "My New Row" }),
       ).toBeVisible();
     });
 
     test("resets the row name field after the row is added", async ({ page }) => {
-      const section = page.locator("#board-config-create-new-row");
+      const section = page.locator("[data-testid='create-new-row']");
       const rowNameInput = section.getByPlaceholder(
         "A project name, a category for large project tasks, etc.",
       );
@@ -114,7 +140,7 @@ test.describe("Board Configuration — Create New Row section", () => {
           ),
       );
 
-      const section = page.locator("#board-config-create-new-row");
+      const section = page.locator("[data-testid='create-new-row']");
       const nameInput = section.getByPlaceholder(
         "A project name, a category for large project tasks, etc.",
       );
@@ -138,7 +164,7 @@ test.describe("Board Configuration — Create New Row section", () => {
       resolveRoute();
     });
 
-    test("adds the new row to row settings after AI generation completes", async ({ page }) => {
+    test("adds the new row to the board after AI generation completes", async ({ page }) => {
       await page.route("/api/generate-tasks", (route) =>
         route.fulfill({
           status: 200,
@@ -146,7 +172,7 @@ test.describe("Board Configuration — Create New Row section", () => {
           body: JSON.stringify(MOCK_TASKS_RESPONSE),
         }));
 
-      const section = page.locator("#board-config-create-new-row");
+      const section = page.locator("[data-testid='create-new-row']");
       const nameInput = section.getByPlaceholder(
         "A project name, a category for large project tasks, etc.",
       );
@@ -155,10 +181,9 @@ test.describe("Board Configuration — Create New Row section", () => {
       await fillStable(promptInput, "Steps to make a pizza");
       await section.getByRole("button", { name: "Add Row" }).click();
 
+      // Row-settings list is in the closed gear modal — verify on the board.
       await expect(
-        page.locator("#board-config-row-display-settings").getByText(
-          "Pizza Making",
-        ),
+        page.getByRole("heading", { name: "Pizza Making" }),
       ).toBeVisible();
     });
 
@@ -170,7 +195,7 @@ test.describe("Board Configuration — Create New Row section", () => {
           body: JSON.stringify(MOCK_TASKS_RESPONSE),
         }));
 
-      const section = page.locator("#board-config-create-new-row");
+      const section = page.locator("[data-testid='create-new-row']");
       const nameInput = section.getByPlaceholder(
         "A project name, a category for large project tasks, etc.",
       );
@@ -179,15 +204,18 @@ test.describe("Board Configuration — Create New Row section", () => {
       await fillStable(promptInput, "Steps to make a pizza");
       await section.getByRole("button", { name: "Add Row" }).click();
 
-      await expect(page.getByText("Prepare pizza dough")).toBeVisible({
-        timeout: 10000,
-      });
-      await expect(page.getByText("Bake pizza")).toBeVisible({
-        timeout: 10000,
-      });
-      await expect(page.getByText("Slice and serve")).toBeVisible({
-        timeout: 10000,
-      });
+      // Target the board task-card headings — task titles also appear (as
+      // <span>s) in ColumnSettingsSection's column-deletion preview, which is
+      // always mounted, so a bare getByText would be ambiguous.
+      await expect(
+        page.getByRole("heading", { name: "Prepare pizza dough" }),
+      ).toBeVisible({ timeout: 10000 });
+      await expect(
+        page.getByRole("heading", { name: "Bake pizza" }),
+      ).toBeVisible({ timeout: 10000 });
+      await expect(
+        page.getByRole("heading", { name: "Slice and serve" }),
+      ).toBeVisible({ timeout: 10000 });
     });
 
     test("restores Add Row button after AI generation completes", async ({ page }) => {
@@ -198,7 +226,7 @@ test.describe("Board Configuration — Create New Row section", () => {
           body: JSON.stringify(MOCK_TASKS_RESPONSE),
         }));
 
-      const section = page.locator("#board-config-create-new-row");
+      const section = page.locator("[data-testid='create-new-row']");
       const nameInput = section.getByPlaceholder(
         "A project name, a category for large project tasks, etc.",
       );
@@ -220,7 +248,7 @@ test.describe("Board Configuration — Create New Row section", () => {
           body: JSON.stringify(MOCK_TASKS_RESPONSE),
         }));
 
-      const section = page.locator("#board-config-create-new-row");
+      const section = page.locator("[data-testid='create-new-row']");
       const rowNameInput = section.getByPlaceholder(
         "A project name, a category for large project tasks, etc.",
       );

@@ -19,17 +19,27 @@ vi.mock("react-router-dom", async (importOriginal) => {
 
 vi.mock("@components/context/hooks.ts", () => ({
   useTaskActions: vi.fn(),
+  useRowFormActions: vi.fn(),
+  useColumnFilterState: vi.fn(),
+  useColumnFilterActions: vi.fn(),
   useBoardDataState: vi.fn(),
+  useBoardConfigActions: vi.fn(),
   useTaskEditState: vi.fn(),
   useTaskEditActions: vi.fn(),
   useBoardRefs: vi.fn(),
   useChecklistAIState: vi.fn(),
   useChecklistAIActions: vi.fn(),
+  useSharedMenuActions: vi.fn(),
   handleChecklistKeyDown: vi.fn(),
 }));
 
 // Stub heavy child components used by BoardView that aren't under test here
-vi.mock("@components/BoardConfiguration.tsx", () => ({ default: () => null }));
+vi.mock("@components/config/board/BoardConfigModal.tsx", () => ({
+  default: () => null,
+}));
+vi.mock("@components/config/board/CreateRowModal.tsx", () => ({
+  default: () => null,
+}));
 vi.mock("@components/RowBoard.tsx", () => ({ default: () => null }));
 vi.mock("@components/TaskCreateModal.tsx", () => ({ default: () => null }));
 // TaskEditModal is NOT mocked — it is rendered directly in tests below
@@ -41,10 +51,15 @@ vi.mock("@lyfie/luthor", () => ({
 }));
 
 import {
+  useBoardConfigActions,
   useBoardDataState,
   useBoardRefs,
   useChecklistAIActions,
   useChecklistAIState,
+  useColumnFilterActions,
+  useColumnFilterState,
+  useRowFormActions,
+  useSharedMenuActions,
   useTaskActions,
   useTaskEditActions,
   useTaskEditState,
@@ -57,6 +72,7 @@ import {
   makeBoardRefs,
   makeChecklistAIActions,
   makeChecklistAIState,
+  makeSharedMenuActions,
   makeTaskActions,
   makeTaskEditActions,
   makeTaskEditState,
@@ -73,12 +89,29 @@ beforeEach(() => {
   mockNavigate.mockClear();
   delete mockParams.taskId;
   vi.mocked(useTaskActions).mockReturnValue(makeTaskActions());
+  vi.mocked(useColumnFilterState).mockReturnValue({ selectedColumnIds: [] });
+  vi.mocked(useColumnFilterActions).mockReturnValue({
+    toggleColumnFilter: vi.fn(),
+  });
+  vi.mocked(useRowFormActions).mockReturnValue({
+    setNewRowName: vi.fn(),
+    setNewRowPrompt: vi.fn(),
+    openCreateRowModal: vi.fn(),
+    closeCreateRowModal: vi.fn(),
+    addRow: vi.fn(),
+    generateTasksForRow: vi.fn(),
+  });
   vi.mocked(useBoardDataState).mockReturnValue(makeBoardDataState());
+  vi.mocked(useBoardConfigActions).mockReturnValue({
+    openBoardConfigModal: vi.fn(),
+    closeBoardConfigModal: vi.fn(),
+  });
   vi.mocked(useTaskEditState).mockReturnValue(makeTaskEditState());
   vi.mocked(useTaskEditActions).mockReturnValue(makeTaskEditActions());
   vi.mocked(useBoardRefs).mockReturnValue(makeBoardRefs());
   vi.mocked(useChecklistAIState).mockReturnValue(makeChecklistAIState());
   vi.mocked(useChecklistAIActions).mockReturnValue(makeChecklistAIActions());
+  vi.mocked(useSharedMenuActions).mockReturnValue(makeSharedMenuActions());
 });
 
 afterEach(() => {
@@ -97,17 +130,17 @@ describe("TaskCard — URL navigation", () => {
     isDragging: false,
   };
 
-  test("clicking the task title navigates to /task/:id", () => {
+  test("clicking the task title navigates to /dashboard/task/:id", () => {
     const { getByText } = render(<TaskCard {...cardProps} />);
     fireEvent.click(getByText(urlTask.title));
-    expect(mockNavigate).toHaveBeenCalledWith(`/task/${urlTask.id}`);
+    expect(mockNavigate).toHaveBeenCalledWith(`/dashboard/task/${urlTask.id}`);
   });
 
   test("navigate receives the exact task ID (URL is deterministic from task ID)", () => {
     const { getByText } = render(<TaskCard {...cardProps} />);
     fireEvent.click(getByText(urlTask.title));
     const [url] = mockNavigate.mock.calls[0] as [string];
-    expect(url).toBe(`/task/task-abc-123`);
+    expect(url).toBe(`/dashboard/task/task-abc-123`);
   });
 
   test("startEditTask is called alongside navigate when clicking the title", () => {
@@ -118,14 +151,16 @@ describe("TaskCard — URL navigation", () => {
     const { getByText } = render(<TaskCard {...cardProps} />);
     fireEvent.click(getByText(urlTask.title));
     expect(startEditTask).toHaveBeenCalledWith(urlTask);
-    expect(mockNavigate).toHaveBeenCalledWith(`/task/${urlTask.id}`);
+    expect(mockNavigate).toHaveBeenCalledWith(`/dashboard/task/${urlTask.id}`);
   });
 
-  test("clicking the edit (pencil) button also navigates to /task/:id", () => {
+  test("clicking the edit (pencil) icon also navigates to /dashboard/task/:id", () => {
     const { container } = render(<TaskCard {...cardProps} />);
-    const btn = container.querySelector("button") as HTMLButtonElement;
-    fireEvent.click(btn);
-    expect(mockNavigate).toHaveBeenCalledWith(`/task/${urlTask.id}`);
+    const icon = container.querySelector(
+      ".hugeicons--edit-03",
+    ) as HTMLElement;
+    fireEvent.click(icon);
+    expect(mockNavigate).toHaveBeenCalledWith(`/dashboard/task/${urlTask.id}`);
   });
 
   test("different tasks produce different navigate URLs", () => {
@@ -134,7 +169,7 @@ describe("TaskCard — URL navigation", () => {
       <TaskCard {...cardProps} task={otherTask} />,
     );
     fireEvent.click(getByText(otherTask.title));
-    expect(mockNavigate).toHaveBeenCalledWith("/task/task-xyz-999");
+    expect(mockNavigate).toHaveBeenCalledWith("/dashboard/task/task-xyz-999");
   });
 });
 
@@ -229,7 +264,7 @@ describe("TaskEditModal — URL unchanged when row changes", () => {
 });
 
 describe("TaskEditModal — URL updates on save actions", () => {
-  test("closing the modal calls navigate('/')", () => {
+  test("closing the modal calls navigate('/dashboard')", () => {
     const cancelEditTask = vi.fn();
     setEditState();
     vi.mocked(useTaskActions).mockReturnValue(
@@ -239,17 +274,17 @@ describe("TaskEditModal — URL updates on save actions", () => {
     const backdrop = container.querySelector(".modal-backdrop") as HTMLElement;
     fireEvent.click(backdrop);
     expect(cancelEditTask).toHaveBeenCalled();
-    expect(mockNavigate).toHaveBeenCalledWith("/");
+    expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
   });
 
-  test("deleting the task calls navigate('/')", () => {
+  test("deleting the task calls navigate('/dashboard')", () => {
     const deleteTask = vi.fn();
     setEditState();
     vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ deleteTask }));
     const { getByRole } = render(<TaskEditModal />);
     fireEvent.click(getByRole("button", { name: "Delete", hidden: true }));
     expect(deleteTask).toHaveBeenCalledWith(editTask.id);
-    expect(mockNavigate).toHaveBeenCalledWith("/");
+    expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
   });
 });
 
@@ -281,7 +316,7 @@ describe("BoardView — deep-link via useParams", () => {
     expect(startEditTask).toHaveBeenCalledWith(deepTask);
   });
 
-  test("navigate('/', {replace:true}) is called when taskId is not found in loaded board", () => {
+  test("navigate('/dashboard', {replace:true}) is called when taskId is not found in loaded board", () => {
     mockParams.taskId = "ghost-task-id";
     vi.mocked(useBoardDataState).mockReturnValue(
       makeBoardDataState({ boardLoaded: true, tasks: [] }),
@@ -289,7 +324,7 @@ describe("BoardView — deep-link via useParams", () => {
     act(() => {
       render(<BoardView />);
     });
-    expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });
+    expect(mockNavigate).toHaveBeenCalledWith("/dashboard", { replace: true });
   });
 
   test("startEditTask is NOT called before the board has loaded", () => {
@@ -350,7 +385,7 @@ describe("BoardView — deep-link via route params", () => {
     expect(startEditTask).toHaveBeenCalledWith(deepTask);
   });
 
-  test("navigate to / when route taskId does not match any task", () => {
+  test("navigate to /dashboard when route taskId does not match any task", () => {
     mockParams.taskId = "no-such-task";
     vi.mocked(useBoardDataState).mockReturnValue(
       makeBoardDataState({ boardLoaded: true, tasks: [] }),
@@ -358,6 +393,6 @@ describe("BoardView — deep-link via route params", () => {
     act(() => {
       render(<BoardView />);
     });
-    expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });
+    expect(mockNavigate).toHaveBeenCalledWith("/dashboard", { replace: true });
   });
 });

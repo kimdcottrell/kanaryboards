@@ -6,6 +6,10 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "tests/playwright",
+  // Runs against the dev server, where the security headers don't exist. That
+  // suite has its own config (playwright.security.config.ts) + `deno task
+  // e2e-security`, which forces a prod build+preview.
+  testIgnore: "**/security-headers.spec.ts",
   ...(process.env.START_DEV_SERVER
     ? {
       webServer: {
@@ -31,6 +35,9 @@ export default defineConfig({
     video: "retain-on-failure",
     baseURL: process.env.BASE_URL ?? "https://kanary.local.dev",
     ignoreHTTPSErrors: true,
+    extraHTTPHeaders: {
+      "x-playwright-test": "true",
+    },
   },
   projects: [
     {

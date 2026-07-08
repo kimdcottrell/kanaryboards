@@ -1,6 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { useTaskActions } from "./context/hooks.ts";
 import { useRenderCount } from "@lib/use-render-count.ts";
+import { hasDescriptionContent } from "@lib/lexical-content.ts";
+import type { Row, Task } from "./context/types.ts";
+import type { DragEvent } from "react";
 
 export default function TaskCard({
   task,
@@ -9,6 +12,13 @@ export default function TaskCard({
   isDropBefore,
   isDropAfter,
   isDragging,
+}: {
+  task: Task;
+  row: Row;
+  onDragOver: (event: DragEvent) => void;
+  isDropBefore: boolean;
+  isDropAfter: boolean;
+  isDragging: boolean;
 }) {
   const navigate = useNavigate();
   const {
@@ -27,7 +37,7 @@ export default function TaskCard({
       onDragStart={handleTaskDragStart(task)}
       onDragEnd={handleTaskDragEnd}
       onDragOver={onDragOver}
-      className="overflow-hidden shadow-sm shadow-base-900/5"
+      className="group rounded shadow-sm shadow-base-900/5"
       style={{
         opacity: isDragging ? 0.4 : 1,
         borderTop: `2px solid ${isDropBefore ? row.color : "transparent"}`,
@@ -35,65 +45,79 @@ export default function TaskCard({
       }}
     >
       <div className="block">
-        <div className="join-item bg-base-200 p-4">
+        <div className="bg-base-200 p-3">
           <div
             onClick={() => {
               startEditTask(task);
-              navigate(`/task/${task.id}`);
+              navigate(`/dashboard/task/${task.id}`);
             }}
             className="flex items-center justify-between gap-3 cursor-grab"
           >
             <h5 className="text-base font-semibold">
               {task.title}
             </h5>
-            <button
-              type="button"
-              onMouseEnter={(e) =>
-                e.currentTarget.style.backgroundColor = row.color}
-              onMouseLeave={(e) =>
-                e.currentTarget.style.backgroundColor =
-                  `color-mix(in srgb, ${row.color} 60%, transparent)`}
-              className="btn text-base-100 btn-sm btn-square text-md"
-              style={{
-                backgroundColor:
-                  `color-mix(in srgb, ${row.color} 60%, transparent)`,
-              }}
-            >
-              <span className="iconify hugeicons--pencil-edit-02 text-xl">
-              </span>
-            </button>
+
+            <span className="iconify hugeicons--edit-03 text-base-content text-md opacity-0 group-hover:opacity-100 shrink-0">
+            </span>
           </div>
         </div>
-        {task.checklist &&
-          task.checklist.length > 0 && (
-          <div className="space-y-2 bg-base-100 p-4">
-            <p className="text-xs uppercase tracking-[0.18em]">
-              Checklist
-            </p>
-            <div className="space-y-2">
-              {task.checklist.map((item) => (
-                <label
-                  key={item.id}
-                  className="flex items-center gap-2 text-sm"
+
+        {(hasDescriptionContent(task.description) ||
+          (task.checklist && task.checklist.length > 0)) && (
+          <div className="space-y-2 bg-base-100 p-3">
+            {hasDescriptionContent(task.description) && (
+              <div
+                className="tooltip tooltip-bottom"
+                data-tip="This task has a description."
+              >
+                <span className="iconify hugeicons--bar-chart-horizontal">
+                </span>
+              </div>
+            )}
+            {task.checklist &&
+              task.checklist.length > 0 && (
+              <section className="block">
+                {hasDescriptionContent(task.description) && (
+                  <hr className="mb-3 opacity-50" />
+                )}
+
+                <p className="inline-block text-xs uppercase tracking-[0.18em] mb-3">
+                  Checklist
+                </p>
+                <div
+                  style={{ backgroundColor: row.color }}
+                  className="badge badge-sm text-base-100"
                 >
-                  <input
-                    type="checkbox"
-                    checked={item.checked}
-                    onChange={() =>
-                      toggleTaskChecklist(
-                        task.id,
-                        item.id,
-                      )}
-                    className="checkbox checkbox-sm"
-                  />
-                  <span
-                    className={item.checked ? "line-through " : ""}
-                  >
-                    {item.text}
-                  </span>
-                </label>
-              ))}
-            </div>
+                  {task.checklist.filter((item) => item.checked).length}/{task
+                    .checklist.length}
+                </div>
+
+                <div className="space-y-2">
+                  {task.checklist.map((item) => (
+                    <label
+                      key={item.id}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={item.checked}
+                        onChange={() =>
+                          toggleTaskChecklist(
+                            task.id,
+                            item.id,
+                          )}
+                        className="checkbox checkbox-sm"
+                      />
+                      <span
+                        className={item.checked ? "line-through " : ""}
+                      >
+                        {item.text}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
         )}
       </div>

@@ -54,7 +54,7 @@ sequenceDiagram
     Actions->>Ctx: dispatch(TASK/OPEN_EDIT_MODAL, {task})
     Ctx->>Reducer: tasks.openEditModal(state, {task})
     Reducer-->>Ctx: editingTaskId = task.id<br/>editTaskDraft = normalized clone<br/>taskEditModalOpen = true
-    Card->>Card: navigate(/task/:id)
+    Card->>Card: navigate(/dashboard/task/:id)
     Ctx-->>TaskModal: TaskEditModal re-renders<br/>(TaskEditContext: taskEditModalOpen=true)<br/>-> opens
     TaskModal-->>Form: TaskForm + ChecklistSection mount<br/>(taskDraft = editTaskDraft)
 
@@ -81,7 +81,7 @@ sequenceDiagram
     Actions->>Ctx: dispatch(TASK/SAVE_EDIT)
     Ctx->>Reducer: tasks.saveEdit(state)
     Reducer-->>Ctx: tasks updated (title/description/rowId/colId/checklist)<br/>editingTaskId = null, editTaskDraft = null<br/>taskEditModalOpen = false
-    TaskModal->>TaskModal: navigate(/)
+    TaskModal->>TaskModal: navigate(/dashboard)
     Ctx->>Ctx: computeTasksByCell(tasks)
     Ctx-->>TaskModal: TaskEditModal re-renders<br/>(TaskEditContext: taskEditModalOpen=false)<br/>-> modal closes, unmounts Form
     Ctx-->>Cell: ColumnCard(s) re-render<br/>(TasksByCellContext changed)<br/>-> TaskCard moves to new cell if rowId/colId<br/>changed, otherwise updates in place
@@ -92,7 +92,7 @@ sequenceDiagram
     Actions->>Ctx: dispatch(TASK/DELETE, {taskId})
     Ctx->>Reducer: tasks.remove(state, {taskId})
     Reducer-->>Ctx: tasks filtered<br/>closes edit modal if it was the edited task
-    TaskModal->>TaskModal: navigate(/)
+    TaskModal->>TaskModal: navigate(/dashboard)
     Ctx-->>TaskModal: TaskEditModal re-renders<br/>(TaskEditContext: taskEditModalOpen=false)<br/>-> modal closes, unmounts Form
     Ctx-->>Cell: ColumnCard re-renders<br/>(TasksByCellContext changed)<br/>-> TaskCard unmounts
 

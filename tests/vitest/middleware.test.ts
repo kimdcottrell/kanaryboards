@@ -58,7 +58,7 @@ describe("protectedRequestMiddleware", () => {
         ) as Response;
 
         expect(res.status).toBe(302);
-        expect(res.headers.get("location")).toBe("/?unauthorized=1");
+        expect(res.headers.get("location")).toBe("/dashboard?unauthorized=1");
         expect(res.headers.get("x-authenticated")).toBe("false");
         expect(next).not.toHaveBeenCalled();
       },
@@ -72,7 +72,7 @@ describe("protectedRequestMiddleware", () => {
       ) as Response;
 
       expect(res.status).toBe(302);
-      expect(res.headers.get("location")).toBe("/?unauthorized=1");
+      expect(res.headers.get("location")).toBe("/dashboard?unauthorized=1");
       expect(next).not.toHaveBeenCalled();
     });
 

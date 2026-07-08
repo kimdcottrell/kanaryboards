@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import type { PropsWithChildren } from "react";
+import type { FormEvent } from "react";
 import { ExtensiveEditor } from "@lyfie/luthor";
 import type {
   CoreEditorMode,
@@ -7,7 +7,7 @@ import type {
   ExtensiveEditorRef,
   ToolbarLayout,
 } from "@lyfie/luthor";
-import type { ChecklistAIState, Task } from "./context/types.ts";
+import type { ChecklistAIState, Column, Row, Task } from "./context/types.ts";
 
 const MD_TOOLBAR_LAYOUT: ToolbarLayout = {
   sections: [
@@ -73,7 +73,6 @@ type EditorContent = { json: string; markdown: string; html: string };
 // interfaces there). The shared *data* it owns — Task, and the ChecklistAIState
 // slice forwarded below via Pick — is imported instead of redeclared here.
 interface TaskFormProps extends
-  PropsWithChildren,
   Pick<
     ChecklistAIState,
     | "checklistPrompt"
@@ -88,6 +87,9 @@ interface TaskFormProps extends
   submitLabel?: string;
   onDelete?: () => void;
   initialMode?: CoreEditorMode;
+  columns: Column[];
+  rows: Row[];
+  requireRowColumn?: boolean;
   addChecklistItem: (focusNew?: boolean, insertBeforeIndex?: number) => void;
   updateChecklistItem: (
     id: string,
@@ -95,7 +97,7 @@ interface TaskFormProps extends
     value: string | boolean,
   ) => void;
   deleteChecklistItem: (id: string) => void;
-  reorderChecklistItem?: (itemId: string, beforeItemId: string | null) => void;
+  reorderChecklistItem: (itemId: string, beforeItemId: string | null) => void;
   handleChecklistKeyDown: (
     event: KeyboardEvent,
     index: number,
@@ -116,6 +118,9 @@ export default function TaskForm({
   submitLabel = "Create task",
   onDelete,
   initialMode = "markdown",
+  columns,
+  rows,
+  requireRowColumn = false,
   addChecklistItem,
   updateChecklistItem,
   deleteChecklistItem,
@@ -130,19 +135,18 @@ export default function TaskForm({
   generateChecklistItems,
   applyChecklist,
   clearChecklistPreview,
-  children,
 }: TaskFormProps) {
   const editorRef = useRef<ExtensiveEditorRef | null>(null);
   const submitButtonRef = useRef(null);
   const titleId = useId();
   const luthorTheme = useLuthorTheme();
-  function handleSubmit(e) {
-    const submitter = e.nativeEvent?.submitter;
+  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    const submitter = (e.nativeEvent as SubmitEvent)?.submitter;
     if (submitter && submitter !== submitButtonRef.current) {
       e.preventDefault();
       return;
     }
-    onSubmit(e, {
+    onSubmit(e.nativeEvent, {
       json: editorRef.current?.getJSON() ?? "",
       markdown: editorRef.current?.getMarkdown() ?? "",
       html: editorRef.current?.getHTML() ?? "",
@@ -189,8 +193,61 @@ export default function TaskForm({
         </div>
         <p className="label">Optional</p>
       </fieldset>
-      {children}
       <div className="grid grid-cols-2 gap-4 items-start">
+        <fieldset className="fieldset">
+          <label
+            className="fieldset-legend"
+            htmlFor={`column-select-${taskDraft.id || "new"}`}
+          >
+            Status
+          </label>
+          <select
+            id={`column-select-${taskDraft.id || "new"}`}
+            className={`select select-bordered w-full${
+              requireRowColumn ? " validator" : ""
+            }`}
+            value={taskDraft.colId}
+            onChange={(e) =>
+              setTaskDraft({ ...taskDraft, colId: e.currentTarget.value })}
+            required={requireRowColumn}
+          >
+            {requireRowColumn && <option value="">Select a status</option>}
+            {columns.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.title}
+              </option>
+            ))}
+          </select>
+          {requireRowColumn && <span className="validator-hint">Required</span>}
+        </fieldset>
+        <fieldset className="fieldset">
+          <label
+            className="fieldset-legend"
+            htmlFor={`row-select-${taskDraft.id || "new"}`}
+          >
+            Row
+          </label>
+          <select
+            id={`row-select-${taskDraft.id || "new"}`}
+            className={`select select-bordered w-full${
+              requireRowColumn ? " validator" : ""
+            }`}
+            value={taskDraft.rowId}
+            onChange={(e) =>
+              setTaskDraft({ ...taskDraft, rowId: e.currentTarget.value })}
+            required={requireRowColumn}
+          >
+            {requireRowColumn && <option value="">Select a row</option>}
+            {rows.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.title}
+              </option>
+            ))}
+          </select>
+          {requireRowColumn && <span className="validator-hint">Required</span>}
+        </fieldset>
+      </div>
+      <div className="grid md:grid-cols-2 gap-4 items-start">
         <ChecklistSection
           checklist={taskDraft.checklist}
           addChecklistItem={addChecklistItem}
@@ -200,17 +257,19 @@ export default function TaskForm({
           handleChecklistKeyDown={handleChecklistKeyDown}
           setChecklistInputRef={setChecklistInputRef}
         />
-        <ChecklistGenerationCollapse
-          taskDraft={taskDraft}
-          checklistPrompt={checklistPrompt}
-          checklistPreview={checklistPreview}
-          isGeneratingChecklist={isGeneratingChecklist}
-          checklistModalError={checklistModalError}
-          setChecklistPrompt={setChecklistPrompt}
-          generateChecklistItems={generateChecklistItems}
-          applyChecklist={applyChecklist}
-          clearChecklistPreview={clearChecklistPreview}
-        />
+        <div className="order-first md:order-0">
+          <ChecklistGenerationCollapse
+            taskDraft={taskDraft}
+            checklistPrompt={checklistPrompt}
+            checklistPreview={checklistPreview}
+            isGeneratingChecklist={isGeneratingChecklist}
+            checklistModalError={checklistModalError}
+            setChecklistPrompt={setChecklistPrompt}
+            generateChecklistItems={generateChecklistItems}
+            applyChecklist={applyChecklist}
+            clearChecklistPreview={clearChecklistPreview}
+          />
+        </div>
       </div>
       <div
         className={`flex gap-2 ${onDelete ? "justify-between" : "justify-end"}`}

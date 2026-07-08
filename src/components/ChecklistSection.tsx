@@ -1,6 +1,8 @@
 import { useId, useState } from "react";
-import CloseButton from "./buttons/CloseButton.tsx";
+import CloseButton from "./shared/CloseButton.tsx";
 import { beforeIdFromOrderedList, useDropTarget } from "@lib/drag.ts";
+import type { ChecklistAIState, ChecklistItem, Task } from "./context/types.ts";
+import type { DragEvent } from "react";
 
 export default function ChecklistSection({
   checklist,
@@ -10,11 +12,27 @@ export default function ChecklistSection({
   reorderChecklistItem,
   handleChecklistKeyDown,
   setChecklistInputRef,
+}: {
+  checklist: ChecklistItem[];
+  addChecklistItem: (focusNew?: boolean, insertBeforeIndex?: number) => void;
+  updateChecklistItem: (
+    id: string,
+    field: string,
+    value: string | boolean,
+  ) => void;
+  deleteChecklistItem: (id: string) => void;
+  reorderChecklistItem: (itemId: string, beforeItemId: string | null) => void;
+  handleChecklistKeyDown: (
+    event: KeyboardEvent,
+    index: number,
+    addItemFn: (focusNew: boolean, insertBeforeIndex?: number) => void,
+  ) => void;
+  setChecklistInputRef: (id: string, el: HTMLInputElement | null) => void;
 }) {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const { dropTarget, handleDragOver } = useDropTarget(!!draggedId);
 
-  const handleDrop = (e) => {
+  const handleDrop = (e: DragEvent) => {
     e.preventDefault();
     const target = dropTarget;
     const moved = draggedId;
@@ -26,7 +44,7 @@ export default function ChecklistSection({
 
   return (
     <div className="space-y-3 rounded bg-base-content/10 p-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="overflow-hidden flex items-center justify-between gap-3">
         <p className="text-sm font-semibold">
           Checklist items
         </p>
@@ -93,7 +111,7 @@ export default function ChecklistSection({
                 )}
               onKeyDown={(e) =>
                 handleChecklistKeyDown(
-                  e,
+                  e.nativeEvent,
                   index,
                   addChecklistItem,
                 )}
@@ -122,7 +140,21 @@ export function ChecklistGenerationCollapse({
   generateChecklistItems,
   applyChecklist,
   clearChecklistPreview,
-}) {
+}:
+  & Pick<
+    ChecklistAIState,
+    | "checklistPrompt"
+    | "checklistPreview"
+    | "isGeneratingChecklist"
+    | "checklistModalError"
+  >
+  & {
+    taskDraft: Task;
+    setChecklistPrompt: (prompt: string) => void;
+    generateChecklistItems: (task?: Task) => void;
+    applyChecklist: () => void;
+    clearChecklistPreview: () => void;
+  }) {
   const [showError, setShowError] = useState(false);
   const promptId = useId();
 
@@ -135,7 +167,7 @@ export function ChecklistGenerationCollapse({
     generateChecklistItems(taskDraft);
   }
 
-  const [collapseOpen, setCollapseOpen] = useState(false);
+  const [collapseOpen, setCollapseOpen] = useState(true);
 
   return (
     <div
@@ -148,13 +180,7 @@ export function ChecklistGenerationCollapse({
         id="checklist-gen-collapse-toggle"
         type="button"
         className="collapse-title font-semibold text-sm py-3 w-full text-left"
-        onClick={() => {
-          const opening = !collapseOpen;
-          setCollapseOpen(opening);
-          if (opening && !checklistPrompt.trim() && taskDraft?.title) {
-            setChecklistPrompt(taskDraft.title);
-          }
-        }}
+        onClick={() => setCollapseOpen(!collapseOpen)}
       >
         Generate checklist items with AI
       </button>
@@ -194,7 +220,7 @@ export function ChecklistGenerationCollapse({
             onClick={applyChecklist}
             disabled={checklistPreview.length === 0}
           >
-            <span className="iconify hugeicons--arrow-left-big text-lg">
+            <span className="iconify hugeicons--arrow-down-big md:hugeicons--arrow-left-big text-lg">
             </span>
             Copy checklist items to task
           </button>

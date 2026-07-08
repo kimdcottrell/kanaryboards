@@ -34,12 +34,22 @@ jobs:
       - name: Check code
         id: check
         continue-on-error: true
-        run: "deno check"
+        run: | 
+          deno check
+          deno types > src/deno.d.ts
+          deno task astro check
+
+      - name: Validate PolicyStack config
+        id: policystack
+        continue-on-error: true
+        run: |
+          deno run -A npm:@policystack/cli@latest validate --json | tee policystack-result.json
+          jq -e '.ok == true' policystack-result.json > /dev/null
 
       - name: Summary
         if: always()
         run: |
-          if [ "${{ steps.fmt.outcome }}" = "success" ] && [ "${{ steps.lint.outcome }}" = "success" ] && [ "${{ steps.check.outcome }}" = "success" ]; then
+          if [ "${{ steps.fmt.outcome }}" = "success" ] && [ "${{ steps.lint.outcome }}" = "success" ] && [ "${{ steps.check.outcome }}" = "success" ] && [ "${{ steps.policystack.outcome }}" = "success" ]; then
             echo "🎉 Your code is lookin' pretty good." >> "$GITHUB_STEP_SUMMARY"
           else
             {
@@ -48,9 +58,20 @@ jobs:
               [ "${{ steps.fmt.outcome }}" = "success" ] && echo "| ✅ | Format code |" || echo "| ❌ | Format code |"
               [ "${{ steps.lint.outcome }}" = "success" ] && echo "| ✅ | Lint code |" || echo "| ❌ | Lint code |"
               [ "${{ steps.check.outcome }}" = "success" ] && echo "| ✅ | Check code |" || echo "| ❌ | Check code |"
+              [ "${{ steps.policystack.outcome }}" = "success" ] && echo "| ✅ | PolicyStack config |" || echo "| ❌ | PolicyStack config |"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ -s policystack-result.json ] && [ "$(jq '.issues | length' policystack-result.json)" -gt 0 ]; then
+            {
+              echo ""
+              echo "#### PolicyStack issues"
+              echo "| Level | Code | Message |"
+              echo "| --- | --- | --- |"
+              jq -r '.issues[] | "| " + (if .level == "error" then "❌ error" else "⚠️ warning" end) + " | `" + .code + "` | " + .message + " |"' policystack-result.json
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Fail if any check failed
-        if: steps.fmt.outcome == 'failure' || steps.lint.outcome == 'failure' || steps.check.outcome == 'failure'
+        if: steps.fmt.outcome == 'failure' || steps.lint.outcome == 'failure' || steps.check.outcome == 'failure' || steps.policystack.outcome == 'failure'
         run: exit 1
