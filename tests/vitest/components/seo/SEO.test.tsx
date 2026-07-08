@@ -34,7 +34,7 @@ describe("SEO fallback metadata", () => {
     );
 
     const ogImageMatch = result.match(
-      /<meta name="og:image" content="([^"]+)">/,
+      /<meta property="og:image" content="([^"]+)">/,
     );
     expect(ogImageMatch).not.toBeNull();
     expect(ogImageMatch?.[1]).toContain("site-default");

@@ -39,7 +39,7 @@ test.describe("Blog", () => {
         "content",
         "While easy to get started, Astrowind is quite complex internally.  This page provides documentation on some of the more intricate parts.",
       );
-      await expect(page.locator('meta[name="og:image"]')).toHaveAttribute(
+      await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
         "content",
         "https://docs.astro.build/assets/rose.webp",
       );

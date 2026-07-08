@@ -35,10 +35,10 @@ const firstImage: Pick<ImageMetadata, "src"> & { alt?: string | null } =
 <meta property="og:title" content={title} />
 
 <meta property="og:type" content={type} />
-{firstImage.src && <meta name="og:image" content={firstImage.src} />}
-{firstImage.alt && <meta name="og:image:alt" content={firstImage.alt} />}
+{firstImage.src && <meta property="og:image" content={firstImage.src} />}
+{firstImage.alt && <meta property="og:image:alt" content={firstImage.alt} />}
 <meta property="og:url" content={Astro.url.href} />
-
+<meta property="og:locale" content="en_US" />
 {
   description && (
     <meta name="description" property="og:description" content={description} />
