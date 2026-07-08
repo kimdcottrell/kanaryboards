@@ -6,9 +6,9 @@
   "dependencies": {
     "@astrojs/react": "5.0.7",
     "@astrojs/sitemap": "3.7.3",
-    "@clerk/astro": "3.4.12",
-    "@clerk/backend": "3.11.0",
-    "@clerk/testing": "2.2.3",
+    "@clerk/astro": "3.4.13",
+    "@clerk/backend": "3.11.1",
+    "@clerk/testing": "2.2.4",
     "@deno/astro-adapter": "0.5.2",
     "@google/genai": "2.10.0",
     "@iconify/json": "2.2.497",
