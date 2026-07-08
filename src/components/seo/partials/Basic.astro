@@ -2,6 +2,7 @@
 import type { ImageMetadata } from "astro";
 import { init } from "zod-empty";
 import { z } from "astro:content";
+import type { Organization, WebSite, WithContext } from "schema-dts";
 
 // allow for blank values that can be replaced
 import {
@@ -27,6 +28,32 @@ try {
 
 const firstImage: Pick<ImageMetadata, "src"> & { alt?: string | null } =
   images[0];
+
+const siteUrl = Astro.site?.href ?? Astro.url.origin;
+
+const organization: WithContext<Organization> = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: SITENAME,
+  url: siteUrl,
+  logo: new URL("/images/kanby.jpg", siteUrl).href,
+  sameAs: [
+    "https://discord.gg/GMT7ZvuJf",
+    "https://bsky.app/profile/kanby.ai",
+    "https://twitter.com/kanby_ai",
+    "https://www.youtube.com/@KanbyAI",
+    "https://www.facebook.com/kanbyllc",
+    "https://www.instagram.com/kanbyai/",
+    "https://www.linkedin.com/company/kanbyai/",
+  ],
+};
+
+const website: WithContext<WebSite> = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: SITENAME,
+  url: siteUrl,
+};
 ---
 
 <meta name="creator" property="og:site_name" content={SITENAME} />
@@ -45,3 +72,6 @@ const firstImage: Pick<ImageMetadata, "src"> & { alt?: string | null } =
   )
 }
 {video && <meta property="og:video" content={video} />}
+
+<script type="application/ld+json" set:html={JSON.stringify(organization)} />
+<script type="application/ld+json" set:html={JSON.stringify(website)} />
