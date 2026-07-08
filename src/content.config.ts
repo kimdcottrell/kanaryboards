@@ -89,8 +89,8 @@ export const twitterCardSchema = z.object({
   card: z.enum(["summary", "summary_large_image", "app", "player"]).default(
     "summary",
   ),
-  site: z.string().default("@richvsyou"),
-  creator: z.string().default("@richvsyou"),
+  site: z.string().default("@kanbyai"),
+  creator: z.string().default("@kanbyai"),
 })
   .merge(_minimumComponentSchema.partial());
 
@@ -106,7 +106,7 @@ const _blogSchema = z.object({
   .merge(_minimumComponentSchema);
 
 export const articleSchema = _blogSchema.partial().extend({
-  section: z.string().optional().default("Politics"),
+  section: z.string().optional().default("Task management"),
 });
 
 export type blogArticle = z.infer<typeof _blogSchema>;
