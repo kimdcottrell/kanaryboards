@@ -11,7 +11,7 @@
     "@clerk/testing": "2.2.3",
     "@deno/astro-adapter": "0.5.2",
     "@google/genai": "2.10.0",
-    "@iconify/json": "2.2.496",
+    "@iconify/json": "2.2.497",
     "@iconify/tailwind4": "1.2.3",
     "@lyfie/luthor": "2.9.0",
     "@policystack/cli": "1.0.1",
