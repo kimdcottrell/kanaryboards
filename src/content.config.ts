@@ -61,7 +61,10 @@ const _author = z.string().default("Kanby Team").transform((value) =>
 );
 
 export const SITENAME = "Kanby";
-const DEFAULT_SITE_IMAGE = new URL(siteDefaultImage.src, "https://kanby.ai")
+const SITE_BASE_URL = import.meta.env.DEV
+  ? "https://kanary.local.dev"
+  : "https://kanby.ai";
+const DEFAULT_SITE_IMAGE = new URL(siteDefaultImage.src, SITE_BASE_URL)
   .href;
 
 // seo metadata that can be applied to most components
