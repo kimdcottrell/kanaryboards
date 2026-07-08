@@ -15,7 +15,12 @@ function jsonResponse(body: object, status: number): Response {
   });
 }
 
-const apiKey = import.meta.env.RESEND_API_KEY;
+// Read the secret at runtime via Deno.env.get(), NOT import.meta.env.
+// Astro/Vite statically inlines import.meta.env.* at build time, so on Deno
+// Deploy the value gets frozen in during the build — or baked as `undefined`
+// when the var isn't present in the build environment — and the production
+// runtime env var is ignored. Deno.env.get() is a true runtime lookup.
+const apiKey = Deno.env.get("RESEND_API_KEY");
 if (!apiKey) {
   console.error("RESEND_API_KEY is not set in environment variables.");
 }
