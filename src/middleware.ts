@@ -52,14 +52,16 @@ export const protectedRequestMiddleware = clerkMiddleware(
 // (*.clerk.accounts.dev) and production (clerk.kanby.ai) Clerk Frontend API
 // hosts are listed so promoting to a production Clerk instance doesn't break
 // auth. challenges.cloudflare.com is Clerk's bot-protection (Turnstile).
+// static.cloudflareinsights.com / cloudflareinsights.com cover the Web
+// Analytics beacon Cloudflare's edge auto-injects into the page for this zone.
 const CSP = [
   "default-src 'self'",
   "base-uri 'self'",
   "object-src 'none'",
   "frame-ancestors 'self'",
   "form-action 'self' https://kanby.us6.list-manage.com",
-  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://s3.amazonaws.com https://*.list-manage.com https://challenges.cloudflare.com https://*.clerk.accounts.dev https://clerk.kanby.ai",
-  "connect-src 'self' https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.clerk.accounts.dev https://clerk.kanby.ai https://clerk-telemetry.com",
+  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://s3.amazonaws.com https://*.list-manage.com https://challenges.cloudflare.com https://*.clerk.accounts.dev https://clerk.kanby.ai https://static.cloudflareinsights.com",
+  "connect-src 'self' https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.clerk.accounts.dev https://clerk.kanby.ai https://clerk-telemetry.com https://cloudflareinsights.com",
   "img-src 'self' data: https://www.googletagmanager.com https://*.google-analytics.com https://img.clerk.com",
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",

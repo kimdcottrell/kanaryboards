@@ -34,7 +34,7 @@ test.describe("Blog", () => {
   test.describe("SEO metadata", () => {
     test("reflects each article's own frontmatter", async ({ page }) => {
       await page.goto("/blog/test");
-      await expect(page).toHaveTitle("Testing | Kanby");
+      await expect(page).toHaveTitle("Kanby | Testing");
       await expect(page.locator('meta[name="description"]')).toHaveAttribute(
         "content",
         "While easy to get started, Astrowind is quite complex internally.  This page provides documentation on some of the more intricate parts.",
@@ -45,7 +45,7 @@ test.describe("Blog", () => {
       );
 
       await page.goto("/blog/test2");
-      await expect(page).toHaveTitle("Test 2 | Kanby");
+      await expect(page).toHaveTitle("Kanby | Test 2");
       await expect(page.locator('meta[name="description"]')).toHaveAttribute(
         "content",
         "This is the second Astro blog post",
@@ -115,7 +115,7 @@ test.describe("Blog", () => {
       // nonexistent slug — not specific to testOnly filtering). Assert on the
       // content instead: the article body/title must not render.
       await page.goto("/blog/test");
-      await expect(page).not.toHaveTitle("Testing | Kanby");
+      await expect(page).not.toHaveTitle("Kanby | Testing");
       await expect(
         page.getByRole("heading", { name: "My First Blog Post" }),
       ).toHaveCount(0);
