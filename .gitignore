@@ -20,4 +20,3 @@ HELP.md
 **/settings.local.json
 tests/playwright/.clerk
 **/playwright-report/*
-.npmrc
