@@ -11,6 +11,7 @@
     "deny": []
   },
   "unstable": ["kv"],
+  "minimumDependencyAge": "0",
   "fmt": {
     "exclude": [
       "**/*.md",
