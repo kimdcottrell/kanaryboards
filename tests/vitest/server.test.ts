@@ -6,7 +6,9 @@ import { describe, expect, test, vi } from "vitest";
 // stubbed out here. Every test supplies its own `serveStatic` anyway.
 vi.mock("@std/http/file-server", () => ({ serveDir: vi.fn() }));
 
-const { createRequestHandler } = await import("../../src/server.ts");
+const { createRequestHandler } = await import(
+  "../../src/cf-headers-included-server.ts"
+);
 
 function makeStaticResponse(
   status: number,

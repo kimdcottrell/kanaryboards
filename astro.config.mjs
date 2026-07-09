@@ -31,9 +31,14 @@ const prerenderedRoutesManifest = {
   },
 };
 
+let startStatus = {};
+if (import.meta.env.MODE === "development") {
+  startStatus = { start: false };
+}
+
 // https://astro.build/config
 export default defineConfig({
-  adapter: deno(),
+  adapter: deno(startStatus),
   integrations: [
     clerk(),
     react(),
