@@ -7,11 +7,11 @@ import baseLayoutSource from "@layouts/BaseLayout.astro?raw";
 import htmlHeadSource from "@layouts/partials/HtmlHead.astro?raw";
 
 const EXPECTED_TITLE =
-  "Kanby | Discover what can be with Kanby: task management software that works FOR you, not to replace you";
+  "Kanby | Discover what can be with Kanby: task management software written by people who have had to use it";
 const EXPECTED_DESCRIPTION =
-  "Task management software written by people who have had to use it. Kanby is here to help you, not replace you. Whether you're planning a project, organizing your day, feeling overwhelmed with decision fatigue, or confused on where to start, Kanby is the tool you need to stay organized and focused.";
+  "Whether you're planning a project, organizing your day, feeling overwhelmed with decision fatigue, or confused on where to start, Kanby is the tool you need to stay organized and focused.";
 const EXPECTED_OG_TITLE =
-  "Discover what can be with Kanby: task management software that works FOR you, not to replace you";
+  "Discover what can be with Kanby: task management software written by people who have had to use it";
 
 describe("SEO fallback metadata", () => {
   test("renders default title, description, and Open Graph tags when no seo prop is provided", async () => {
