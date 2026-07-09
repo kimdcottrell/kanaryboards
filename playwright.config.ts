@@ -6,10 +6,11 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "tests/playwright",
-  // Runs against the dev server, where the security headers don't exist. That
-  // suite has its own config (playwright.security.config.ts) + `deno task
-  // e2e-security`, which forces a prod build+preview.
-  testIgnore: "**/security-headers.spec.ts",
+  // Runs against the dev server, where tests requiring a prod build+preview
+  // (e.g. the security headers, which don't exist under dev) don't apply.
+  // Those live under preview-only/ and run via their own config
+  // (playwright.security.config.ts) + `deno task e2e-security`.
+  testIgnore: "**/preview-only/**",
   ...(process.env.START_DEV_SERVER
     ? {
       webServer: {

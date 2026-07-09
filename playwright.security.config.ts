@@ -1,9 +1,12 @@
-// Dedicated Playwright config for the "malicious user" security-header suite.
+// Dedicated Playwright config for tests that need a prod build+preview server
+// (currently just the "malicious user" security-header suite).
 //
 // The security headers in src/middleware.ts are only emitted when
 // import.meta.env.PROD is true (see the `if (import.meta.env.PROD)` gate), so
 // they do NOT exist under `deno task dev`. This config therefore forces a fresh
-// production `build` + `preview` and points the tests at that server.
+// production `build` + `preview` and points the tests at that server. Any spec
+// requiring this setup lives under tests/playwright/preview-only/, which the
+// main config (playwright.config.ts) explicitly ignores.
 //
 // Run it with `deno task e2e-security` (local only), which uses the same remote
 // browser server as the main suite (ws://playwright:3000). Playwright forwards
@@ -15,13 +18,12 @@ import { defineConfig, devices } from "@playwright/test";
 const BASE = process.env.BASE_URL ?? "http://localhost:8085"; // local preview server
 
 export default defineConfig({
-  testDir: "tests/playwright",
-  testMatch: "**/security-headers.spec.ts",
+  testDir: "tests/playwright/preview-only",
   webServer: {
     // PROD build → src/middleware.ts emits the security headers on every response.
     command: "deno task build && deno task preview",
     url: BASE,
-    reuseExistingServer: false, // always exercise a freshly built server
+    reuseExistingServer: true, // skip build+preview if a server is already up at BASE
     timeout: 240_000, // build + boot can take a while
   },
   expect: { timeout: 10_000 },

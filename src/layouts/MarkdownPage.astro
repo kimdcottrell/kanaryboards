@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "@layouts/BaseLayout.astro";
 import Prose from "@components/pages/Prose.astro";
+import { setPublicCache } from "@lib/cache";
 import type { SeoMetadata } from "@src/content.config";
 
 interface Props {
@@ -11,6 +12,8 @@ interface Props {
 }
 
 const { frontmatter } = Astro.props;
+
+setPublicCache(Astro);
 
 const seo: SeoMetadata = {
   title: frontmatter.title,

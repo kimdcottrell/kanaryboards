@@ -2,7 +2,7 @@
 import SubscribeForm from "@components/SubscribeForm.astro";
 ---
 
-<footer class="bg-base-300 text-base-content p-10">
+<footer id="footer-one" class="bg-base-300 text-base-content p-10">
     <div
         class="w-11/12 mx-auto footer sm:footer-horizontal grid-cols-2 md:grid-cols-3 text-neutral-content items-start pt-4"
     >
@@ -20,11 +20,40 @@ import SubscribeForm from "@components/SubscribeForm.astro";
             </a>
         </nav>
         <div class="col-span-2 md:col-span-1 md:col-start-3">
-            <SubscribeForm />
+            <SubscribeForm server:defer>
+                <div slot="fallback" id="mc_embed_shell">
+                    <h3 class="text-xl mb-3">Tag along on the journey</h3>
+                    <p class="text-sm mb-6">
+                        Interested in what's to come?<br />
+                        How Kanby is being made?<br />
+                        <span class="font-bold"
+                            >Sign up for our newsletter to stay in the loop.</span
+                        >
+                    </p>
+                    <div class="join">
+                        <label
+                            class="input input-lg join-item input-secondary opacity-50"
+                        >
+                            <input
+                                type="email"
+                                placeholder="mail@site.com"
+                                disabled
+                            />
+                        </label>
+                        <button
+                            type="button"
+                            class="btn btn-secondary join-item"
+                            disabled
+                        >
+                            Join
+                        </button>
+                    </div>
+                </div>
+            </SubscribeForm>
         </div>
     </div>
 </footer>
-<footer class="bg-base-300 text-base-content p-10">
+<footer id="footer-two" class="bg-base-300 text-base-content p-10">
     <div
         class="w-11/12 mx-auto footer sm:footer-horizontal border-t-2 border-primary-content mt-4 text-neutral-content items-center py-4"
     >

@@ -43,7 +43,7 @@
     "e2e-security": "deno task playwright test --config=playwright.security.config.ts",
     "husky": "deno run --allow-all husky",
     "playwright": "START_DEV_SERVER=1 PW_TEST_CONNECT_WS_ENDPOINT='ws://playwright:3000' PW_DISABLE_TS_ESM=1 deno run --env-file=.env --allow-all ./node_modules/.bin/playwright",
-    "preview": "deno run --allow-net --allow-read --allow-env ./dist/server/entry.mjs",
+    "preview": "deno run --allow-net --allow-read --allow-env ./src/server.ts",
     "vitest": "deno run --allow-all vitest"
   },
   "test": {

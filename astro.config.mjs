@@ -1,15 +1,39 @@
 // @ts-check
 import { defineConfig, fontProviders } from "astro/config";
+/** @typedef {import("astro").HookParameters<"astro:build:done">} BuildDoneParams */
 import deno from "@deno/astro-adapter";
 import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
 import clerk from "@clerk/astro";
+import { writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 import sitemap from "@astrojs/sitemap";
 
+// @deno/astro-adapter has no staticHeaders support (see the filed issue), so
+// server.ts can't ask the adapter which routes were prerendered. `pages` here
+// is exactly the static/prerendered output — the same list @astrojs/sitemap
+// above relies on — so record it as a small manifest server.ts can read at
+// startup instead of hardcoding a path list there.
+const prerenderedRoutesManifest = {
+  name: "prerendered-routes-manifest",
+  hooks: {
+    /** @param {BuildDoneParams} params */
+    "astro:build:done": ({ pages, dir }) => {
+      const outPath = fileURLToPath(
+        new URL("../prerendered-routes.json", dir),
+      );
+      writeFileSync(
+        outPath,
+        JSON.stringify(pages.map((p) => p.pathname === "" ? "/" : p.pathname)),
+      );
+    },
+  },
+};
+
 // https://astro.build/config
 export default defineConfig({
-  adapter: deno(),
+  adapter: deno({ start: false }),
   integrations: [
     clerk(),
     react(),
@@ -19,6 +43,7 @@ export default defineConfig({
       // their own sitemap fragment instead (see src/pages/sitemap-blog.xml.ts).
       customSitemaps: ["https://kanby.ai/sitemap-blog.xml"],
     }),
+    prerenderedRoutesManifest,
   ],
 
   output: "server",

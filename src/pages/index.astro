@@ -1,21 +1,9 @@
 ---
+export const prerender = true;
+
 import BaseLayout from "@layouts/BaseLayout.astro";
 import DemoExperience from "@components/demo/DemoExperience";
 import HeroStartForm from "@components/HeroStartForm";
-
-const { userId } = Astro.locals.auth();
-const isAuthenticated = !!userId;
-
-// Anonymous homepage HTML is identical for every visitor (no per-user data
-// is rendered), so it's safe to let the edge cache it. Authenticated
-// responses carry personalized drawer data (DrawerMenu.astro) and must never
-// be cached.
-if (!isAuthenticated) {
-  Astro.response.headers.set(
-    "Cache-Control",
-    "public, s-maxage=300, stale-while-revalidate=600",
-  );
-}
 ---
 
 <BaseLayout>
@@ -73,7 +61,7 @@ if (!isAuthenticated) {
               </div>
             </div>
           </div>
-          <HeroStartForm client:load isAuthenticated={isAuthenticated} />
+          <HeroStartForm client:idle />
         </div>
         <div
           class="card hidden md:block bg-base-100 w-full max-w-sm lg:shrink-0 shadow-2xl"

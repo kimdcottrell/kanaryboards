@@ -36,6 +36,15 @@ async function seedConsentCookie(
   ]);
 }
 
+// GA used to be suppressed server-side via the x-playwright-test header, but
+// HtmlHead.astro no longer reads it (that check blocked prerendering the
+// static marketing pages). Block the requests here instead, which keeps
+// third-party network noise out of traces and CSP assertions.
+async function blockAnalytics(page: Page): Promise<void> {
+  await page.route("**/googletagmanager.com/**", (route) => route.abort());
+  await page.route("**/google-analytics.com/**", (route) => route.abort());
+}
+
 // Fills a React-controlled input and waits until the value actually commits.
 // The board mounts via client:only, so shortly after an input becomes
 // fillable an early re-render can clobber a freshly-filled controlled input
@@ -120,6 +129,7 @@ export const test = base.extend<{ clerkSetup: void }>({
         options: { frontendApiUrl: process.env.CLERK_FAPI ?? fapiFromKey },
       });
       await seedConsentCookie(page.context(), baseURL);
+      await blockAnalytics(page);
       await use();
     },
     { auto: true },
@@ -145,6 +155,7 @@ export const testNoClerk = base.extend<{ clerkTestingToken: void }>({
         options: { frontendApiUrl: process.env.CLERK_FAPI ?? fapiFromKey },
       });
       await seedConsentCookie(page.context(), baseURL);
+      await blockAnalytics(page);
       await use();
     },
     { auto: true },

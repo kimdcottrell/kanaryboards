@@ -117,8 +117,10 @@
     </div>
     <script
         type="text/javascript"
+        id="mc-validate-script"
         src="https://s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js"
     ></script><script type="text/javascript">
+        function __initMailchimpEmbed() {
         (function ($) {
             window.fnames = new Array();
             window.ftypes = new Array();
@@ -1709,5 +1711,18 @@
                 initializeSmsPhoneDropdown(fieldName);
             });
         });
+        }
+
+        // Server-island script insertion doesn't preserve the document-order
+        // execution guarantee a static <script> tag would have relative to the
+        // external mc-validate.js above, so wait for it explicitly instead of
+        // assuming jQuery is already defined.
+        if (window.jQuery) {
+            __initMailchimpEmbed();
+        } else {
+            document
+                .getElementById("mc-validate-script")
+                .addEventListener("load", __initMailchimpEmbed, { once: true });
+        }
     </script>
 </div>

@@ -15,7 +15,6 @@ interface Props {
 
 const { seo } = Astro.props;
 const googleTag = import.meta.env.GOOGLE_TAG;
-const isPlaywright = Astro.request.headers.get("x-playwright-test") === "true";
 const analyticsConsent = hasAnalyticsConsent(
     Astro.cookies.get(CONSENT_COOKIE)?.value,
 );
@@ -32,7 +31,7 @@ const analyticsConsent = hasAnalyticsConsent(
 <Font cssVariable="--font-inter" />
 <SEO seo={seo} />
 {
-    googleTag && !isPlaywright && (
+    googleTag && (
         <GoogleAnalytics tag={googleTag} analyticsConsent={analyticsConsent} />
     )
 }
