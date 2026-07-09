@@ -9,7 +9,7 @@ import {
   anyPageSchema,
   type AnyPageMetadata,
   SITENAME,
-} from "@src/content.config";
+} from "@lib/seo-schema.ts";
 
 const defaults: AnyPageMetadata = init(anyPageSchema);
 const { ...props } = Astro.props as AnyPageMetadata;

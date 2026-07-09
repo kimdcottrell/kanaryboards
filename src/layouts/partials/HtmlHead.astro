@@ -7,7 +7,7 @@ import { Font } from "astro:assets";
 import GoogleAnalytics from "@components/seo/partials/GoogleAnalytics.astro";
 import SEO from "@components/seo/SEO.astro";
 import { CONSENT_COOKIE, hasAnalyticsConsent } from "@lib/consent";
-import type { SeoMetadata } from "@src/content.config";
+import type { SeoMetadata } from "@lib/seo-schema.ts";
 
 interface Props {
     seo?: SeoMetadata;
