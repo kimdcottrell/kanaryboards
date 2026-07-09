@@ -7,14 +7,16 @@ import clerk from "@clerk/astro";
 
 import sitemap from "@astrojs/sitemap";
 
-let startStatus = {};
-if (import.meta.env.MODE === "development") {
-  startStatus = { start: false };
-}
+// this needs to only happen for the preview:cf-headers
+// let startStatus = {};
+// if (import.meta.env.MODE === "development") {
+//   startStatus = { start: false };
+// }
+// adapter: deno(startStatus),
 
 // https://astro.build/config
 export default defineConfig({
-  adapter: deno(startStatus),
+  adapter: deno(),
   integrations: [
     clerk(),
     react(),
