@@ -33,7 +33,7 @@ const prerenderedRoutesManifest = {
 
 // https://astro.build/config
 export default defineConfig({
-  adapter: deno({ start: false }),
+  adapter: deno(),
   integrations: [
     clerk(),
     react(),
