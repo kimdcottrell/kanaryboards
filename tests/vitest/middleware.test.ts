@@ -22,7 +22,7 @@ vi.mock("@clerk/astro/server", async (importOriginal) => {
 });
 
 // Avoid touching Deno KV — the authenticated path looks up a board id.
-vi.mock("@lib/kv.ts", () => ({
+vi.mock("@lib/db/kv.ts", () => ({
   getBoardIdForUser: vi.fn(() => "existing-board"),
   setBoardIdForUser: vi.fn(async () => {}),
 }));

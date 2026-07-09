@@ -1,6 +1,6 @@
 import { useId, useState } from "react";
 import CloseButton from "./shared/CloseButton.tsx";
-import { beforeIdFromOrderedList, useDropTarget } from "@lib/drag.ts";
+import { beforeIdFromOrderedList, useDropTarget } from "@lib/dashboard/drag.ts";
 import type { ChecklistAIState, ChecklistItem, Task } from "./context/types.ts";
 import type { DragEvent } from "react";
 

@@ -1,9 +1,28 @@
 import { useNavigate } from "react-router-dom";
 import { useTaskActions } from "./context/hooks.ts";
-import { useRenderCount } from "@lib/use-render-count.ts";
-import { hasDescriptionContent } from "@lib/lexical-content.ts";
+import { useRenderCount } from "@lib/dashboard/use-render-count.ts";
 import type { Row, Task } from "./context/types.ts";
 import type { DragEvent } from "react";
+
+interface LexicalNode {
+  text?: string;
+  children?: LexicalNode[];
+}
+
+function hasText(node: LexicalNode): boolean {
+  if (node.text && node.text.trim().length > 0) return true;
+  return node.children?.some(hasText) ?? false;
+}
+
+function hasDescriptionContent(description: string): boolean {
+  if (!description) return false;
+  try {
+    const parsed = JSON.parse(description);
+    return hasText(parsed.root);
+  } catch {
+    return false;
+  }
+}
 
 export default function TaskCard({
   task,

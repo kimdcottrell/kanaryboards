@@ -9,7 +9,7 @@ import {
   useRowEditActions,
   useRowEditState,
 } from "./context/hooks.ts";
-import { useRenderCount } from "@lib/use-render-count.ts";
+import { useRenderCount } from "@lib/dashboard/use-render-count.ts";
 import type { Row } from "./context/types.ts";
 
 export default function RowSection({ row }: { row: Row }) {

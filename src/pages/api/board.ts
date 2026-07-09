@@ -1,8 +1,8 @@
 export const prerender = false;
 
 import type { APIRoute } from "astro";
-import { deleteBoard, getBoard, saveBoard } from "@lib/kv.ts";
-import type { PersistedBoard } from "@lib/kv.ts";
+import { deleteBoard, getBoard, saveBoard } from "@lib/db/kv.ts";
+import type { PersistedBoard } from "@lib/db/kv.ts";
 
 function jsonResponse(body: object, status: number): Response {
   return new Response(JSON.stringify(body), {

@@ -5,7 +5,7 @@ import BoardMenu from "@components/BoardMenu.tsx";
 import BoardDock from "@components/BoardDock.tsx";
 import DynamicIcon from "@components/shared/DynamicIcon.tsx";
 import ColumnReorderList from "@components/shared/ColumnReorderList.tsx";
-import { searchHugeicons } from "@lib/icons.ts";
+import { searchHugeicons } from "@lib/dashboard/icons.ts";
 import {
   useBoardDataState,
   useColumnConfigActions,

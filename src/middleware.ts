@@ -1,8 +1,8 @@
 import { defineMiddleware, sequence } from "astro/middleware";
 import { clerkMiddleware, createRouteMatcher } from "@clerk/astro/server";
-import { createId } from "@lib/uuid.ts";
-import { getBoardIdForUser, setBoardIdForUser } from "@lib/kv.ts";
-import { securityHeaders } from "@lib/security-headers.ts";
+import { createId } from "@lib/db/uuid.ts";
+import { getBoardIdForUser, setBoardIdForUser } from "@lib/db/kv.ts";
+import { securityHeaders } from "@lib/http/security-headers.ts";
 
 const isProtectedRoute = createRouteMatcher(["/api/board(.*)"]);
 

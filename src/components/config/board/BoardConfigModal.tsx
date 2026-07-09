@@ -7,7 +7,7 @@ import {
   useBoardConfigActions,
   useBoardConfigState,
 } from "@components/context/hooks.ts";
-import { useRenderCount } from "@lib/use-render-count.ts";
+import { useRenderCount } from "@lib/dashboard/use-render-count.ts";
 
 export default function BoardConfigModal() {
   const { boardConfigModalOpen, boardConfigScrollTarget } =

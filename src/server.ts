@@ -11,8 +11,8 @@
 // import map, so it can't resolve this specifier even though `deno run` and
 // `deno check` do.
 import { serveDir } from "@std/http/file-server";
-import { securityHeaders } from "./lib/security-headers.ts";
-import { PUBLIC_CACHE_CONTROL } from "./lib/cache.ts";
+import { securityHeaders } from "./lib/http/security-headers.ts";
+import { PUBLIC_CACHE_CONTROL } from "./lib/http/cache-headers.ts";
 
 // astro.config.mjs's prerenderedRoutesManifest integration writes this at
 // build time from the same `astro:build:done` `pages` list @astrojs/sitemap
@@ -77,6 +77,8 @@ export function createRequestHandler({
 }
 
 if (import.meta.main) {
+  // @ts-ignore -- dist/server/entry.mjs is a build output, so it doesn't
+  // exist when `astro check` runs (pre-commit, CI) against a fresh checkout.
   const { handle } = await import("../dist/server/entry.mjs");
   const port = Number(Deno.env.get("PORT") ?? 8085);
   const hostname = "0.0.0.0";

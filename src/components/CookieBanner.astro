@@ -110,8 +110,8 @@ const hasConsent = Boolean(Astro.cookies.get(CONSENT_COOKIE)?.value);
 <script>
     import { createConsentStore } from "@policystack/core/consent";
     import { cookieAdapter } from "@policystack/core/consent/storage/cookie";
-    import { categories } from "../lib/cookie-categories.ts";
-    import { CONSENT_COOKIE } from "../lib/consent.ts";
+    import { categories } from "@lib/cookie-categories.ts";
+    import { CONSENT_COOKIE } from "@lib/consent.ts";
 
     const store = createConsentStore({
         categories,

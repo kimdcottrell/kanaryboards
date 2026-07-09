@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { RouterProvider } from "react-router-dom";
 import { BoardProvider } from "./context/BoardContext.tsx";
-import { router } from "@lib/spa-router.ts";
+import { router } from "@lib/dashboard/spa-router.ts";
 
 export default function BoardController(
   { boardId, isAuthenticated }: {

@@ -2,7 +2,7 @@
 import Layout from "@layouts/BaseLayout.astro";
 import Prose from "@components/pages/Prose.astro";
 import { getProtectedCollection, getTagsFromCollection } from "@src/utils";
-import { setPublicCache } from "@lib/cache";
+import { setPublicCache } from "@lib/http/cache-headers";
 
 setPublicCache(Astro);
 
