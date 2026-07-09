@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
+import { useAuth } from "@clerk/astro/react";
 import {
   createId,
   loadPersistedState,
@@ -21,7 +22,9 @@ type Board = { rows: Row[]; columns: Column[]; tasks: Task[] };
 // board lives in KV (via /api/board); anonymous visitors' in localStorage. When
 // no board exists yet, seed the default columns so generated tasks have a "To Do"
 // column to land in (ignoring reset()'s sample row, so the new project stands alone).
-async function loadBoard(isAuthenticated: boolean): Promise<Board> {
+async function loadBoard(
+  isAuthenticated: ReturnType<typeof useAuth>["isSignedIn"],
+): Promise<Board> {
   let existing:
     | { rows?: Row[]; columns?: Column[]; tasks?: Task[] }
     | null = null;
@@ -45,9 +48,8 @@ async function loadBoard(isAuthenticated: boolean): Promise<Board> {
   return { rows: [], columns: reset().columns, tasks: [] };
 }
 
-export default function HeroStartForm(
-  { isAuthenticated }: { isAuthenticated: boolean },
-) {
+export default function HeroStartForm() {
+  const { isLoaded, isSignedIn } = useAuth();
   const [value, setValue] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [status, setStatus] = useState("");
@@ -64,7 +66,7 @@ export default function HeroStartForm(
     setStatus("Generating tasks...");
 
     try {
-      const board = await loadBoard(isAuthenticated);
+      const board = await loadBoard(isSignedIn);
       const lastRow = board.rows[board.rows.length - 1];
       const newRow: Row = {
         id: createId(),
@@ -80,7 +82,7 @@ export default function HeroStartForm(
         tasks: [...newTasks, ...board.tasks],
       };
 
-      if (isAuthenticated) {
+      if (isSignedIn) {
         await fetch("/api/board", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -126,9 +128,9 @@ export default function HeroStartForm(
         </label>
         <button
           type="submit"
-          disabled={isGenerating}
+          disabled={isGenerating || !isLoaded}
           className={`md:rounded-none! md:rounded-r! btn btn-lg btn-warning font-roboto-slab! font-normal text-xl md:self-end inline-flex items-center gap-2 shadow-none${
-            isGenerating ? " btn-disabled" : ""
+            isGenerating || !isLoaded ? " btn-disabled" : ""
           }`}
         >
           <span className="iconify hugeicons--rocket-01 text-xl"></span>

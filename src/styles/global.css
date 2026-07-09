@@ -125,11 +125,14 @@
 }
 
 @layer utilities {
+  .page-dashboard #footer-two {
+    @apply mb-15;
+  }
   .footer div.mce_inline_error {
     @apply hidden!;
   }
   .page-home #header-nav {
-    @apply absolute top-0 left-0 w-full;
+    @apply md:absolute md:top-0 md:left-0 md:w-full;
   }
   #drawer-row-list a {
     max-width: 210px;

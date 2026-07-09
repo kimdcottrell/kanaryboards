@@ -1,10 +1,9 @@
 ---
+export const prerender = true;
+
 import BaseLayout from "@layouts/BaseLayout.astro";
 import DemoExperience from "@components/demo/DemoExperience";
 import HeroStartForm from "@components/HeroStartForm";
-
-const { userId } = Astro.locals.auth();
-const isAuthenticated = !!userId;
 ---
 
 <BaseLayout>
@@ -62,7 +61,7 @@ const isAuthenticated = !!userId;
               </div>
             </div>
           </div>
-          <HeroStartForm client:load isAuthenticated={isAuthenticated} />
+          <HeroStartForm client:idle />
         </div>
         <div
           class="card hidden md:block bg-base-100 w-full max-w-sm lg:shrink-0 shadow-2xl"

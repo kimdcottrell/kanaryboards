@@ -8,8 +8,8 @@ import {
   useTasksByCell,
 } from "./context/hooks.ts";
 
-import { useRenderCount } from "@lib/use-render-count.ts";
-import { beforeIdFromOrderedList, useDropTarget } from "@lib/drag.ts";
+import { useRenderCount } from "@lib/dashboard/use-render-count.ts";
+import { beforeIdFromOrderedList, useDropTarget } from "@lib/dashboard/drag.ts";
 
 import type { Column, Row } from "./context/types.ts";
 import type { DragEvent } from "react";

@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 import process from "node:process";
-import { expect, testNoClerk as test } from "./fixtures.ts";
+import { expect, testNoClerk as test } from "../fixtures.ts";
 import type { Page } from "@playwright/test";
 
 // A "malicious user" suite: it attempts the attacks the security headers in
@@ -30,7 +30,7 @@ type Violation = {
 };
 
 type Attack = {
-  kind: "script" | "img" | "object" | "base" | "fetch";
+  kind: "script" | "img" | "object" | "base" | "fetch" | "iframe" | "style";
   url: string;
 };
 
@@ -74,6 +74,19 @@ async function collectViolations(
         const b = document.createElement("base");
         b.href = a.url;
         document.head.appendChild(b);
+        break;
+      }
+      case "iframe": {
+        const f = document.createElement("iframe");
+        f.src = a.url;
+        document.body.appendChild(f);
+        break;
+      }
+      case "style": {
+        const l = document.createElement("link");
+        l.rel = "stylesheet";
+        l.href = a.url;
+        document.head.appendChild(l);
         break;
       }
       case "fetch": {
@@ -204,6 +217,88 @@ test.describe("security headers block a malicious user", () => {
       url: `${EVIL}/evil.swf`,
     });
     expectViolation(violations, "object-src");
+  });
+
+  // The mirror image of the clickjacking test above: that one checks this
+  // site can't be framed by others; this one checks this site can't frame
+  // a foreign host itself (e.g. via injected content).
+  test("framing others: an injected iframe to a foreign host is caught by frame-src", async ({ page }) => {
+    const violations = await collectViolations(page, {
+      kind: "iframe",
+      url: `${EVIL}/frame`,
+    });
+    expectViolation(violations, "frame-src");
+  });
+
+  test("style injection: an external stylesheet is caught by style-src", async ({ page }) => {
+    const violations = await collectViolations(page, {
+      kind: "style",
+      url: `${EVIL}/evil.css`,
+    });
+    expectViolation(violations, "style-src");
+  });
+
+  test("form hijack: a form pointed at a foreign host is caught by form-action", async ({ page }) => {
+    await page.goto("/");
+    // Report-only CSP still lets the form attempt to open a new tab even
+    // though it reports the violation — close it so no stray tab lingers.
+    page.context().once("page", (p) => p.close().catch(() => {}));
+
+    const violations = await page.evaluate(async (evilUrl) => {
+      const out: {
+        directive: string;
+        blockedURI: string;
+        disposition: string;
+      }[] = [];
+      document.addEventListener("securitypolicyviolation", (e) => {
+        out.push({
+          directive: e.effectiveDirective,
+          blockedURI: e.blockedURI,
+          disposition: e.disposition,
+        });
+      });
+      const form = document.createElement("form");
+      form.action = evilUrl;
+      form.method = "post";
+      form.target = "_blank";
+      document.body.appendChild(form);
+      form.requestSubmit();
+      await new Promise((r) => setTimeout(r, 1500));
+      return out;
+    }, `${EVIL}/steal`);
+
+    expectViolation(violations, "form-action");
+  });
+
+  test("the six security headers and no permissive CORS are present on API routes, not just /", async ({ request }) => {
+    const responses = await Promise.all([
+      request.get("/"),
+      // Empty bodies fail schema validation before either route ever calls
+      // its downstream service (Resend / Gemini), so these are safe to hit
+      // against the live server.
+      request.post("/api/contact", { data: {} }),
+      request.post("/api/generate-tasks", { data: {} }),
+    ]);
+
+    for (const res of responses) {
+      const h = res.headers();
+      expect(h["strict-transport-security"]).toBe(
+        "max-age=31536000; includeSubDomains",
+      );
+      expect(h["x-frame-options"]).toBe("SAMEORIGIN");
+      expect(h["x-content-type-options"]).toBe("nosniff");
+      expect(h["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+      expect(h["permissions-policy"]).toContain("geolocation=()");
+      const csp = h["content-security-policy"] ??
+        h["content-security-policy-report-only"];
+      expect(csp, "a Content-Security-Policy header should be present")
+        .toBeTruthy();
+      expect(h["access-control-allow-origin"]).toBeUndefined();
+    }
+
+    const [, contactRes, generateTasksRes] = responses;
+    expect(contactRes.status()).toBe(400);
+    expect(generateTasksRes.status()).toBe(400);
   });
 
   test("geolocation is disabled by Permissions-Policy", async ({ page }) => {

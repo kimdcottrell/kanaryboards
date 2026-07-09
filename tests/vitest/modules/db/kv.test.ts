@@ -7,8 +7,8 @@ import {
   getBoardIdForUser,
   saveBoard,
   setBoardIdForUser,
-} from "@lib/kv.ts";
-import type { PersistedBoard } from "@lib/kv.ts";
+} from "@lib/db/kv.ts";
+import type { PersistedBoard } from "@lib/db/kv.ts";
 
 let memKv: Deno.Kv;
 

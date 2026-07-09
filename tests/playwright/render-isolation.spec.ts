@@ -8,7 +8,7 @@ import { expect, openCreateRowModal, testNoClerk as test } from "./fixtures.ts";
  * context, so typing into those fields no longer re-renders the board-shell
  * components (RowSection, ColumnCard, TaskCard, BoardConfiguration). Each
  * board-shell component exposes its render count via `data-render-count`
- * (see src/lib/use-render-count.ts, non-production-only).
+ * (see src/lib/dashboard/use-render-count.ts, non-production-only).
  */
 const BOARD_STATE = {
   rows: [

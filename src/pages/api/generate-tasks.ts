@@ -32,6 +32,10 @@ const apiKey = Deno.env.get("GOOGLE_AI_STUDIO_KEY");
 export const apiModel = Deno.env.get("GOOGLE_AI_STUDIO_MODEL") ||
   "gemini-3.1-flash-lite";
 
+const MAX_PROMPT_LENGTH = 2000;
+const MIN_TASKS = 1;
+const MAX_TASKS = 30;
+
 if (!apiKey) {
   console.error(
     import.meta.env.MODE === "development"
@@ -64,10 +68,16 @@ export const POST: APIRoute = async ({ request }: APIContext) => {
   }
 
   const prompt = String(body.prompt || "").trim();
-  const maxTasks = Number(body.maxTasks ?? 10) || 10;
+  const maxTasks = Math.min(
+    Math.max(Number(body.maxTasks ?? 10) || 10, MIN_TASKS),
+    MAX_TASKS,
+  );
 
   if (!prompt) {
     return jsonResponse({ error: "Missing prompt." }, 400);
+  }
+  if (prompt.length > MAX_PROMPT_LENGTH) {
+    return jsonResponse({ error: "Prompt is too long." }, 400);
   }
 
   const systemPrompt =
@@ -106,6 +116,14 @@ export const POST: APIRoute = async ({ request }: APIContext) => {
       message = (e as Error).message || message;
     }
 
+    console.error({
+      event: "generate-tasks: Google AI request failed",
+      model: apiModel,
+      maxTasks,
+      prompt: cleanedPrompt,
+      status,
+      message,
+    });
     return jsonResponse({ error: message }, status);
   }
 };

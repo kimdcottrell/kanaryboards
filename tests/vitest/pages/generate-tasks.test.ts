@@ -155,6 +155,42 @@ describe("POST /api/generate-tasks", () => {
         const [args] = mockGenerateContentStream.mock.calls;
         expect(args[0].config.systemInstruction).toContain("8");
       });
+
+      test("returns 400 when prompt exceeds the max length", async () => {
+        const res = await POST(
+          apiContext(makeRequest({ prompt: "a".repeat(2001) })),
+        );
+        expect(res.status).toBe(400);
+        const json = await res.json();
+        expect(json.error).toBe("Prompt is too long.");
+      });
+
+      test("accepts a prompt exactly at the max length", async () => {
+        mockGenerateContentStream.mockReturnValue(streamChunks(["Task one"]));
+        const res = await POST(
+          apiContext(makeRequest({ prompt: "a".repeat(2000) })),
+        );
+        expect(res.status).toBe(200);
+      });
+
+      test("clamps maxTasks above the cap instead of sending it straight to the AI call", async () => {
+        mockGenerateContentStream.mockReturnValue(streamChunks(["Task one"]));
+        await POST(
+          apiContext(makeRequest({ prompt: "build an app", maxTasks: 999999 })),
+        );
+        const [args] = mockGenerateContentStream.mock.calls;
+        expect(args[0].contents).toContain("15 to 30");
+        expect(args[0].contents).not.toContain("999999");
+      });
+
+      test("clamps a negative maxTasks up to the minimum", async () => {
+        mockGenerateContentStream.mockReturnValue(streamChunks(["Task one"]));
+        await POST(
+          apiContext(makeRequest({ prompt: "build an app", maxTasks: -5 })),
+        );
+        const [args] = mockGenerateContentStream.mock.calls;
+        expect(args[0].contents).toContain("0.5 to 1");
+      });
     });
 
     describe("AI model", () => {

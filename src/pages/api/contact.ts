@@ -3,10 +3,21 @@ export const prerender = false;
 import type { APIRoute } from "astro";
 import { Resend } from "resend";
 import { contactFormSchema } from "@lib/contact-schema.ts";
-import { escapeHtml } from "@lib/escape-html.ts";
 
 const CONTACT_EMAIL_TO = "hello@kanby.ai";
 const CONTACT_EMAIL_FROM = "Kanby Contact Form <contact@kanby.ai>";
+
+const HTML_ESCAPES: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+};
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]);
+}
 
 function jsonResponse(body: object, status: number): Response {
   return new Response(JSON.stringify(body), {

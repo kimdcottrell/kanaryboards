@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getHugeiconSvg } from "@lib/icons.ts";
+import { getHugeiconSvg } from "@lib/dashboard/icons.ts";
 
 type IconSvg = { body: string; width: number; height: number };
 

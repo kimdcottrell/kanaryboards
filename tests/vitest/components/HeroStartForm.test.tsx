@@ -1,7 +1,15 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import HeroStartForm from "@components/HeroStartForm.tsx";
 import { STORAGE_KEY } from "@components/context/constants.ts";
+
+// Controllable Clerk state, matching the pattern in LoginControls.test.tsx.
+const clerk = vi.hoisted(() => ({ isLoaded: true, isSignedIn: false }));
+
+vi.mock("@clerk/astro/react", () => ({
+  useAuth: () => ({ isLoaded: clerk.isLoaded, isSignedIn: clerk.isSignedIn }),
+}));
+
+import HeroStartForm from "@components/HeroStartForm.tsx";
 
 const MOCK_TITLES = ["Book venue", "Send invites", "Order cake"];
 
@@ -68,12 +76,14 @@ afterEach(() => {
   vi.unstubAllGlobals();
   restoreLocation();
   globalThis.localStorage.clear();
+  clerk.isLoaded = true;
+  clerk.isSignedIn = false;
 });
 
 describe("HeroStartForm", () => {
   test("renders a required input and the Get Started button", () => {
     vi.stubGlobal("fetch", makeFetch(generateOk));
-    render(<HeroStartForm isAuthenticated={false} />);
+    render(<HeroStartForm />);
     const input = screen.getByPlaceholderText("What do you want to do?");
     expect(input.hasAttribute("required")).toBe(true);
     expect(screen.getByRole("button", { name: "Get Started" })).toBeTruthy();
@@ -82,7 +92,7 @@ describe("HeroStartForm", () => {
   test("empty submit calls no API and does not navigate", () => {
     const fetchMock = makeFetch(generateOk);
     vi.stubGlobal("fetch", fetchMock);
-    render(<HeroStartForm isAuthenticated={false} />);
+    render(<HeroStartForm />);
 
     const input = screen.getByPlaceholderText("What do you want to do?");
     fireEvent.submit(input.closest("form")!);
@@ -94,7 +104,7 @@ describe("HeroStartForm", () => {
   test("anonymous: generates tasks, persists to localStorage, and redirects", async () => {
     const fetchMock = makeFetch(generateOk);
     vi.stubGlobal("fetch", fetchMock);
-    render(<HeroStartForm isAuthenticated={false} />);
+    render(<HeroStartForm />);
 
     submitGoal("Plan a party");
 
@@ -120,7 +130,7 @@ describe("HeroStartForm", () => {
           });
       });
     vi.stubGlobal("fetch", makeFetch(deferred));
-    render(<HeroStartForm isAuthenticated={false} />);
+    render(<HeroStartForm />);
 
     submitGoal("Plan a party");
 
@@ -141,7 +151,7 @@ describe("HeroStartForm", () => {
         json: () => Promise.resolve({ error: "boom" }),
       });
     vi.stubGlobal("fetch", makeFetch(generateFail));
-    render(<HeroStartForm isAuthenticated={false} />);
+    render(<HeroStartForm />);
 
     submitGoal("Plan a party");
 
@@ -154,9 +164,10 @@ describe("HeroStartForm", () => {
   });
 
   test("authenticated: persists via PUT /api/board before redirecting", async () => {
+    clerk.isSignedIn = true;
     const fetchMock = makeFetch(generateOk);
     vi.stubGlobal("fetch", fetchMock);
-    render(<HeroStartForm isAuthenticated />);
+    render(<HeroStartForm />);
 
     submitGoal("Plan a party");
 

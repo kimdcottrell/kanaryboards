@@ -22,21 +22,31 @@ vi.mock("@clerk/astro/server", async (importOriginal) => {
 });
 
 // Avoid touching Deno KV — the authenticated path looks up a board id.
-vi.mock("@lib/kv.ts", () => ({
+vi.mock("@lib/db/kv.ts", () => ({
   getBoardIdForUser: vi.fn(() => "existing-board"),
   setBoardIdForUser: vi.fn(async () => {}),
 }));
 
-const { protectedRequestMiddleware } = await import("../../src/middleware.ts");
+const { protectedRequestMiddleware, boardMiddleware } = await import(
+  "../../src/middleware.ts"
+);
 
-function makeContext(url: string, method = "GET"): APIContext {
+function makeContext(
+  url: string,
+  method = "GET",
+  cookieValue?: string,
+): APIContext {
   const request = new Request(url, { method });
+  const cookieSet = vi.fn();
   return {
     request,
     url: new URL(url),
     clientAddress: "127.0.0.1",
     locals: {},
-    cookies: { get: () => undefined, set: () => {} },
+    cookies: {
+      get: () => cookieValue === undefined ? undefined : { value: cookieValue },
+      set: cookieSet,
+    },
   } as unknown as APIContext;
 }
 
@@ -98,5 +108,38 @@ describe("protectedRequestMiddleware", () => {
       expect(next).toHaveBeenCalledOnce();
       expect(context.locals.boardId).toBe("existing-board");
     });
+  });
+});
+
+describe("boardMiddleware", () => {
+  test("does not create a boardId cookie for a first-time anonymous visitor", async () => {
+    const next = vi.fn(() => Promise.resolve(new Response("ok")));
+    const context = makeContext("http://localhost/");
+    await boardMiddleware(context, next);
+
+    expect(context.cookies.set).not.toHaveBeenCalled();
+    expect(context.locals.boardId).toBeUndefined();
+    expect(next).toHaveBeenCalledOnce();
+  });
+
+  test("reuses an existing boardId cookie without re-setting it", async () => {
+    const next = vi.fn(() => Promise.resolve(new Response("ok")));
+    const context = makeContext("http://localhost/", "GET", "existing-cookie");
+    await boardMiddleware(context, next);
+
+    expect(context.cookies.set).not.toHaveBeenCalled();
+    expect(context.locals.boardId).toBe("existing-cookie");
+    expect(next).toHaveBeenCalledOnce();
+  });
+
+  test("leaves an already-assigned boardId (authenticated flow) untouched", async () => {
+    const next = vi.fn(() => Promise.resolve(new Response("ok")));
+    const context = makeContext("http://localhost/");
+    context.locals.boardId = "from-kv";
+    await boardMiddleware(context, next);
+
+    expect(context.cookies.set).not.toHaveBeenCalled();
+    expect(context.locals.boardId).toBe("from-kv");
+    expect(next).toHaveBeenCalledOnce();
   });
 });

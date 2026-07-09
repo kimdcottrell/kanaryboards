@@ -16,7 +16,7 @@ interface ImportMeta {
 
 declare namespace App {
   interface Locals {
-    boardId: string;
+    boardId: string | undefined;
     auth: () => { userId: string | null };
     timestamp?: string;
     status?: number;
