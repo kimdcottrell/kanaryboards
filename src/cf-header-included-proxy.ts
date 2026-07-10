@@ -6,17 +6,24 @@ const DENO_ADAPTER_BACKEND = "http://localhost:8085";
 import { securityHeaders } from "./lib/http/security-headers.ts";
 import { PUBLIC_CACHE_CONTROL } from "./lib/http/cache-headers.ts";
 
+// The Deno adapter builds Astro.url (and thus Clerk's dev-browser handshake
+// redirect target) from the Host header it receives. fetch() normally forces
+// Host to match the target URL, which would make the backend think its own
+// origin is DENO_ADAPTER_BACKEND (:8085) instead of this proxy's public port
+// — allowHost lets us forward the client's real Host through untouched.
+const httpClient = Deno.createHttpClient({ allowHost: true });
+
 const proxy = Deno.serve({ port: 8080, hostname: "0.0.0.0" }, async (req) => {
   const url = new URL(req.url);
   const target = new URL(url.pathname + url.search, DENO_ADAPTER_BACKEND);
 
   const headers = new Headers(req.headers);
-  headers.delete("host");
 
-  const init: RequestInit & { duplex?: "half" } = {
+  const init: RequestInit & { duplex?: "half"; client?: Deno.HttpClient } = {
     method: req.method,
     headers,
     redirect: "manual",
+    client: httpClient,
   };
 
   if (req.body) {
@@ -48,5 +55,6 @@ Deno.addSignalListener("SIGINT", async () => {
   const { stop } = await import("../dist/server/entry.mjs");
   await stop();
   await proxy.shutdown();
+  httpClient.close();
   Deno.exit(0);
 });
