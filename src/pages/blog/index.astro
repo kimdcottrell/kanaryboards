@@ -4,7 +4,7 @@ import Prose from "@components/pages/Prose.astro";
 import { getProtectedCollection } from "@src/utils";
 import { setPublicCache } from "@lib/http/cache-headers";
 
-setPublicCache(Astro);
+setPublicCache(Astro, "x-playwright-test");
 
 const isPlaywrightTest =
     Astro.request.headers.get("x-playwright-test") === "true";
