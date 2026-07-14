@@ -39,6 +39,7 @@ const BOARD_STATE = {
       order: "a0",
       pinnedToShortcut: false,
       pinnedToDock: false,
+      icon: null,
       iconInBoardMenu: false,
       iconNearColumnTitle: false,
     },

@@ -33,7 +33,7 @@
   "nodeModulesDir": "auto",
   "tasks": {
     "astro": "deno run --allow-all astro",
-    "build": "rm -rf ./.astro ./dist; deno run --allow-all astro build",
+    "build": "rm -rf ./.astro ./dist; INLINE_RUNTIME_CHUNK=false deno run --allow-all astro build",
     "dev": "deno run --allow-all astro dev",
     "e2e-test": "deno task playwright test --project=chromium",
     "e2e-test:ui": "deno task playwright test --ui-port=8080 --ui-host=0.0.0.0",
@@ -44,7 +44,7 @@
     "husky": "deno run --allow-all husky",
     "playwright": "START_DEV_SERVER=1 PW_TEST_CONNECT_WS_ENDPOINT='ws://playwright:3000' PW_DISABLE_TS_ESM=1 deno run --env-file=.env --allow-all ./node_modules/.bin/playwright",
     "preview": "deno run --allow-net --allow-read --allow-env ./dist/server/entry.mjs",
-    "preview:cf-headers": "deno run --allow-net --allow-read --allow-env ./src/cf-headers-included-server.ts",
+    "preview:cf-headers": "deno run --allow-net --allow-read --allow-env ./src/cf-header-included-proxy.ts",
     "vitest": "deno run --allow-all vitest"
   },
   "test": {

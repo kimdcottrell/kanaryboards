@@ -21,6 +21,10 @@ jobs:
         with:
           deno-version: v2.x
 
+      - name: Build
+        id: build
+        run: "deno task build"
+
       - name: Format code
         id: fmt
         continue-on-error: true
