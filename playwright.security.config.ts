@@ -15,13 +15,13 @@
 import process from "node:process";
 import { defineConfig, devices } from "@playwright/test";
 
-const BASE = process.env.BASE_URL ?? "http://localhost:8085"; // local preview server
+const BASE = process.env.BASE_URL ?? "http://localhost:8080"; // local preview server
 
 export default defineConfig({
   testDir: "tests/playwright/preview-only",
   webServer: {
     // PROD build → src/middleware.ts emits the security headers on every response.
-    command: "deno task build && deno task preview",
+    command: "deno task build && deno task preview:cf-headers",
     url: BASE,
     reuseExistingServer: true, // skip build+preview if a server is already up at BASE
     timeout: 240_000, // build + boot can take a while
@@ -30,9 +30,12 @@ export default defineConfig({
   use: {
     baseURL: BASE,
     trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
     // Matches the main config: the app suppresses Google Analytics for this
     // header, which keeps third-party script noise out of the CSP assertions.
     extraHTTPHeaders: { "x-playwright-test": "true" },
+    ignoreHTTPSErrors: false,
     // The browser runs in the remote playwright container, so its own localhost
     // is NOT the app container's preview. exposeNetwork tunnels the runner's
     // loopback to the remote browser so it can reach http://localhost:8085.
@@ -51,5 +54,8 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  reporter: [["list"]],
+  reporter: [
+    ["html"],
+    ["list"],
+  ],
 });

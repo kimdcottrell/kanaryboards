@@ -17,7 +17,7 @@ import type { Page } from "@playwright/test";
 // (disposition "report" now, "enforce" after the CSP_REPORT_ONLY flip) rather
 // than on a hard block, so they stay correct across that change.
 
-const BASE = process.env.BASE_URL ?? "http://localhost:8085";
+const BASE = process.env.BASE_URL ?? "http://localhost:8080";
 
 // A host that appears in no CSP allowlist. example.com is IANA-reserved, so this
 // never accidentally matches a real allowed source.
