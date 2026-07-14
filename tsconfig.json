@@ -11,7 +11,7 @@
     "playwright-report",
     "test-results"
   ],
-  "types": ["vitest/globals"],
+  "types": ["vitest/globals", "deno"],
   "compilerOptions": {
     "strictNullChecks": true,
     "allowJs": true,

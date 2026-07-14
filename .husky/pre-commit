@@ -1,8 +1,12 @@
-deno fmt
+#!/usr/bin/bash
+set -e
+
+deno task build 
+deno fmt --check
 deno lint
 deno check
 deno types > src/deno.d.ts
 deno task astro check
-deno task vitest
+deno task vitest --run
 deno task e2e-test
 deno task e2e-security

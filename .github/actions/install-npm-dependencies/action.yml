@@ -17,4 +17,4 @@ runs:
       run: |
         npm config set min-release-age 0 --location=project
         npm config set @jsr:registry https://npm.jsr.io --location=project
-        npm install
+        npm install --legacy-peer-deps

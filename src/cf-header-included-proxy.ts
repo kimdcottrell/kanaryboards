@@ -1,5 +1,9 @@
 // proxy.ts
-import "../dist/server/entry.mjs"; // starts Astro's Deno.serve on 8085 inside the container
+// Indirected through a variable so `deno check` won't statically resolve into
+// dist/ — the built bundle carries JSDoc type comments (e.g. from `devalue`)
+// pointing at paths that don't exist in the build output.
+const distEntry = "../dist/server/entry.mjs";
+await import(distEntry); // starts Astro's Deno.serve on 8085 inside the container
 
 const DENO_ADAPTER_BACKEND = "http://localhost:8085";
 
@@ -52,7 +56,7 @@ const proxy = Deno.serve({ port: 8080, hostname: "0.0.0.0" }, async (req) => {
 
 // Graceful shutdown, coordinating both servers
 Deno.addSignalListener("SIGINT", async () => {
-  const { stop } = await import("../dist/server/entry.mjs");
+  const { stop } = await import(distEntry);
   await stop();
   await proxy.shutdown();
   httpClient.close();

@@ -20,5 +20,5 @@ jobs:
           deno-version: v2.x
 
       - name: Run unit tests
-        run: deno task vitest
+        run: deno task vitest --run
 

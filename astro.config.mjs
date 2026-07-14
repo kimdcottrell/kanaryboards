@@ -4,15 +4,7 @@ import deno from "@deno/astro-adapter";
 import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
 import clerk from "@clerk/astro";
-
 import sitemap from "@astrojs/sitemap";
-
-// this needs to only happen for the preview:cf-headers
-// let startStatus = {};
-// if (import.meta.env.MODE === "development") {
-//   startStatus = { start: false };
-// }
-// adapter: deno(startStatus),
 
 // https://astro.build/config
 export default defineConfig({
