@@ -27,6 +27,7 @@ import { boardReducer, createInitialState } from "./reducer.ts";
 import { STORAGE_KEY } from "./constants.ts";
 import { createDemoBoard } from "../demo/demoBoardData.ts";
 import { computeTasksByCell } from "./selectors.ts";
+import { byOrder } from "./ordering.ts";
 
 export const BoardDispatchContext = createContext<Dispatch<BoardAction> | null>(
   null,
@@ -285,6 +286,29 @@ export function BoardProvider(
     isAuthenticated,
     boardId,
   ]);
+
+  // DrawerMenu.astro renders its row list outside this React island (an Astro
+  // server island, hydrated once at load), so it never learns about client-side
+  // row changes on its own. Mirror state.rows into its DOM here instead.
+  // boardId === "demo": this provider's rows are the landing-page demo board,
+  // not the visitor's real rows — never let it overwrite the shared drawer.
+  useEffect(() => {
+    if (boardId === "demo") return;
+    if (!state.boardLoaded) return;
+    const list = document.getElementById("drawer-row-list");
+    if (!list) return;
+    list.replaceChildren(
+      ...[...state.rows].sort(byOrder).map((row) => {
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+        a.href = `/dashboard/row/${row.id}`;
+        a.dataset.boardLink = "";
+        a.textContent = row.title;
+        li.appendChild(a);
+        return li;
+      }),
+    );
+  }, [state.rows, state.boardLoaded]);
 
   const checklistInputRefs = useRef<Record<string, HTMLInputElement>>({});
 

@@ -213,6 +213,25 @@ testNoClerk.describe("Drawer row navigation (guest)", () => {
   });
 
   drawerNavChecks(testNoClerk);
+
+  testNoClerk(
+    "the homepage demo board never overwrites the drawer with its own rows",
+    async ({ page }) => {
+      await page.goto("/");
+
+      // Prove the demo widget has actually hydrated and dispatched its own
+      // BOARD/LOAD (whose seed row is titled "Sample Project") before checking
+      // that the drawer wasn't clobbered by it.
+      await expect(page.locator("#demo h3", { hasText: "Sample Project" }))
+        .toBeVisible();
+
+      await openDrawer(page);
+      await expect(rowLink(page, "row-e2e-2")).toBeVisible();
+      await expect(page.locator("#drawer-row-list")).not.toContainText(
+        "Sample Project",
+      );
+    },
+  );
 });
 
 test.describe("Drawer row navigation (authenticated)", () => {
