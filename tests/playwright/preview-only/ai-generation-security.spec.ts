@@ -15,7 +15,7 @@ import { expect, fillControlled, testNoClerk as test } from "../fixtures.ts";
 // environment.
 
 const MALICIOUS_TITLES = [
-  "<script>window.__xss=1</script>",
+  "<script>window.__xss=1; console.log('pwned')</script>",
   '<img src=x onerror="window.__xss=1">',
   '"><svg onload="window.__xss=1">',
 ];

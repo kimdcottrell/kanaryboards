@@ -29,6 +29,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         aggregate \
         vim \
         zsh \
+        unzip \
+        gunzip \
         && \
         apt-get clean && rm -rf /var/lib/apt/lists/*; \
     git config --global --add safe.directory /var/dev

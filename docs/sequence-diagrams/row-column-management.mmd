@@ -271,3 +271,8 @@ sequenceDiagram
     Note over User,AI: Autosave (debounced, async)
     Ctx->>Ctx: useEffect on rows/columns/tasks (500ms debounce)
     Ctx->>Ctx: PUT /api/board {rows, columns, tasks}<br/>(or localStorage if unauthenticated)
+
+    Note over User,AI: Sync drawer row list (DrawerMenu.astro,<br/>an Astro server island rendered outside the React tree —<br/>see BoardController's document-click-delegation note above)
+    Ctx->>Ctx: useEffect on rows (after boardLoaded, skipped when boardId === "demo")
+    Ctx->>Ctx: rebuild #drawer-row-list DOM via replaceChildren<br/>(li/a[data-board-link] per row, sorted by order)
+    Note over Ctx: Runs on ROW/ADD, ROW/DELETE, ROW/EDIT_SAVE, ROW/MOVE —<br/>any change to state.rows. New anchors are picked up by<br/>BoardController's existing document click-delegation,<br/>so they still route through the SPA router.<br/>Skipped entirely for the homepage DemoExperience's<br/>BoardProvider (boardId === "demo"), whose rows are never<br/>the visitor's real rows and must not overwrite the shared<br/>#drawer-row-list.
