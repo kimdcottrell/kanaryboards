@@ -12,9 +12,8 @@ export default defineConfig({
   env: {
     schema: {
       TESTING: envField.string({
-        context: "server",
-        access: "secret",
-        optional: false,
+        context: "client",
+        access: "public",
         default: Deno.env.get("TESTING"),
       }),
     },
