@@ -11,7 +11,12 @@ export default defineConfig({
   adapter: deno(),
   env: {
     schema: {
-      TESTING: envField.number({ context: "server", access: "secret" }),
+      TESTING: envField.string({
+        context: "server",
+        access: "secret",
+        optional: false,
+        default: Deno.env.get("TESTING"),
+      }),
     },
   },
   integrations: [
