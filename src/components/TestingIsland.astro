@@ -1,13 +1,10 @@
 ---
-import TestingIsland from "@components/TestingIsland.astro";
 const import_secret = import.meta.env.TESTING;
 const deno_secret = Deno.env.get("TESTING");
 ---
 
-<h1>SSR</h1>
+<h1>Testing Island</h1>
 
 <p>Import: {import_secret}</p>
 
 <p>Deno: {deno_secret}</p>
-
-<TestingIsland server:defer />

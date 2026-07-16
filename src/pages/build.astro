@@ -1,4 +1,5 @@
 ---
+import TestingIsland from "@components/TestingIsland.astro";
 const prerender = true;
 
 const import_secret = import.meta.env.TESTING;
@@ -10,3 +11,5 @@ const deno_secret = Deno.env.get("TESTING");
 <p>Import: {import_secret}</p>
 
 <p>Deno: {deno_secret}</p>
+
+<TestingIsland server:defer />
