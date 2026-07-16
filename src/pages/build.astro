@@ -1,6 +1,6 @@
 ---
 import TestingIsland from "@components/TestingIsland.astro";
-const prerender = true;
+export const prerender = true;
 
 const import_secret = import.meta.env.TESTING;
 const deno_secret = Deno.env.get("TESTING");
