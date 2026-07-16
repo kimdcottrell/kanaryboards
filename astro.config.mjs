@@ -1,5 +1,5 @@
 // @ts-check
-import { defineConfig, fontProviders } from "astro/config";
+import { defineConfig, envField, fontProviders } from "astro/config";
 import deno from "@deno/astro-adapter";
 import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
@@ -9,6 +9,11 @@ import sitemap from "@astrojs/sitemap";
 // https://astro.build/config
 export default defineConfig({
   adapter: deno(),
+  env: {
+    schema: {
+      TESTING: envField.number({ context: "server", access: "secret" }),
+    },
+  },
   integrations: [
     clerk(),
     react(),
