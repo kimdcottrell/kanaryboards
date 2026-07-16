@@ -1,0 +1,12 @@
+---
+const prerender = true;
+
+const import_secret = import.meta.env.TESTING;
+const deno_secret = Deno.env.get("TESTING");
+---
+
+<h1>Build</h1>
+
+<p>Import: {import_secret}</p>
+
+<p>Deno: {deno_secret}</p>

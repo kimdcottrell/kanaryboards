@@ -17,6 +17,9 @@ export default defineConfig({
       // can't discover them by crawling static build output; they publish
       // their own sitemap fragment instead (see src/pages/sitemap-blog.xml.ts).
       customSitemaps: ["https://kanby.ai/sitemap-blog.xml"],
+      filter: (page) =>
+        page !== "https://example.com/build/" &&
+        page !== "https://example.com/ssr/",
     }),
   ],
 
