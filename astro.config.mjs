@@ -5,6 +5,9 @@ import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
 import clerk from "@clerk/astro";
 import sitemap from "@astrojs/sitemap";
+import { loadEnv } from "vite";
+
+const { TESTING } = loadEnv(Deno.env.get("TESTING"), Deno.cwd(), "");
 
 // https://astro.build/config
 export default defineConfig({
@@ -12,11 +15,13 @@ export default defineConfig({
   env: {
     schema: {
       TESTING: envField.string({
-        context: "client",
-        access: "public",
-        default: Deno.env.get("TESTING"),
+        context: "server",
+        access: "secret",
+        optional: false,
+        default: TESTING,
       }),
     },
+    validateSecrets: true,
   },
   integrations: [
     clerk(),
