@@ -1,19 +1,103 @@
 ---
-import "@styles/global.css";
 import "@lyfie/luthor/styles.css";
+import "@styles/global.css";
 
-import { Font } from "astro:assets";
+import { CONSENT_COOKIE, hasAnalyticsConsent } from "@lib/consent";
+import { Font, getImage } from "astro:assets";
+import { SEO } from "astro-seo";
+import { Schema } from "astro-seo-schema";
 
 import GoogleAnalytics from "@components/seo/partials/GoogleAnalytics.astro";
-import SEO from "@components/seo/SEO.astro";
-import { CONSENT_COOKIE, hasAnalyticsConsent } from "@lib/consent";
-import type { SeoMetadata } from "@lib/seo-schema.ts";
+import Logo from "@src/images/kanby.jpg";
+import siteDefaultImage from "@src/images/site-default.png";
+
+import type { Props as AstroSEOProps } from "astro-seo";
+import type { Organization, Thing, WebSite, WithContext } from "schema-dts";
 
 interface Props {
-    seo?: SeoMetadata;
+    seo?: AstroSEOProps;
+    schema?: WithContext<Thing>[];
 }
 
-const { seo } = Astro.props;
+const SITENAME = "Kanby";
+const DEFAULT_TITLE =
+    "Discover what can be with Kanby: task management software written by people who have had to use it";
+const DEFAULT_DESCRIPTION =
+    "Whether you're planning a project, organizing your day, feeling overwhelmed with decision fatigue, or confused on where to start, Kanby is the tool you need to stay organized and focused.";
+
+const { seo = {}, schema = [] } = Astro.props;
+
+const defaultImage = await getImage({ src: siteDefaultImage });
+const defaultImageUrl = decodeURIComponent(defaultImage.src);
+
+const title = seo.title ?? DEFAULT_TITLE;
+const description = seo.description ?? DEFAULT_DESCRIPTION;
+const ogImage = seo.openGraph?.basic?.image ?? defaultImageUrl;
+const ogImageAlt = seo.openGraph?.image?.alt ?? DEFAULT_TITLE;
+
+const mergedSeo: AstroSEOProps = {
+    ...seo,
+    title,
+    description,
+    titleTemplate: seo.titleTemplate ?? `${SITENAME} | %s`,
+    openGraph: {
+        basic: {
+            title: seo.openGraph?.basic?.title ?? title,
+            type: seo.openGraph?.basic?.type ?? "website",
+            image: ogImage,
+        },
+        optional: {
+            locale: "en_US",
+            siteName: SITENAME,
+            description,
+            ...seo.openGraph?.optional,
+        },
+        image: { alt: ogImageAlt, ...seo.openGraph?.image },
+        article: seo.openGraph?.article,
+    },
+    twitter: {
+        card: "summary_large_image",
+        site: "@kanbyai",
+        creator: "@kanbyai",
+        title,
+        description,
+        image: ogImage,
+        imageAlt: ogImageAlt,
+        ...seo.twitter,
+    },
+};
+
+const logo = await getImage({ src: Logo });
+
+const organization: WithContext<Organization> = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: SITENAME,
+    url: Astro.url.origin,
+    logo: decodeURIComponent(logo.src),
+    sameAs: [
+        "https://discord.gg/GMT7ZvuJf",
+        "https://bsky.app/profile/kanby.ai",
+        "https://twitter.com/kanby_ai",
+        "https://www.youtube.com/@KanbyAI",
+        "https://www.facebook.com/kanbyllc",
+        "https://www.instagram.com/kanbyai/",
+        "https://www.linkedin.com/company/kanbyai/",
+    ],
+    contactPoint: {
+        "@type": "ContactPoint",
+        email: "hello@kanby.ai",
+        contactType: "customer service",
+    },
+};
+
+const website: WithContext<WebSite> = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITENAME,
+    url: Astro.url.origin,
+};
+
 const googleTag = import.meta.env.GOOGLE_TAG;
 const analyticsConsent = hasAnalyticsConsent(
     Astro.cookies.get(CONSENT_COOKIE)?.value,
@@ -29,7 +113,12 @@ const analyticsConsent = hasAnalyticsConsent(
 <Font cssVariable="--font-roboto-slab" />
 <Font cssVariable="--font-nunito" />
 <Font cssVariable="--font-inter" />
-<SEO seo={seo} />
+
+<SEO {...mergedSeo} />
+<Schema item={organization} />
+<Schema item={website} />
+{schema.map((item) => <Schema item={item} />)}
+
 {
     googleTag && (
         <GoogleAnalytics tag={googleTag} analyticsConsent={analyticsConsent} />

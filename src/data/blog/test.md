@@ -15,8 +15,7 @@ tags:
     - testing_tag_1
     - testing_tag_2
 description: While easy to get started, Astrowind is quite complex internally.  This page provides documentation on some of the more intricate parts.
-metadata:
-    canonical: https://astrowind.vercel.app/astrowind-template-in-depth
+canonical: https://astrowind.vercel.app/astrowind-template-in-depth
 ---
 # My First Blog Post
 

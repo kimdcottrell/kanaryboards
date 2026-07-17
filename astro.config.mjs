@@ -6,6 +6,21 @@ import tailwindcss from "@tailwindcss/vite";
 import clerk from "@clerk/astro";
 import sitemap from "@astrojs/sitemap";
 
+let site = "";
+
+switch (import.meta.env.MODE) {
+  case "production":
+    site = "https://kanby.ai";
+    break;
+  case "development":
+    site = "https://kanary.local.dev";
+    break;
+  default:
+    site = `https://kanby-${
+      Deno.env.get("DENO_DEPLOY_BUILD_ID")
+    }.kimdcottrell.deno.net`;
+}
+
 // https://astro.build/config
 export default defineConfig({
   adapter: deno(),
@@ -16,7 +31,7 @@ export default defineConfig({
       // /blog/* routes are rendered on demand, so the sitemap integration
       // can't discover them by crawling static build output; they publish
       // their own sitemap fragment instead (see src/pages/sitemap-blog.xml.ts).
-      customSitemaps: ["https://kanby.ai/sitemap-blog.xml"],
+      customSitemaps: [`${site}/sitemap-blog.xml`],
       filter: (page) =>
         page !== "https://example.com/build/" &&
         page !== "https://example.com/ssr/",
@@ -50,7 +65,7 @@ export default defineConfig({
     styles: ["normal", "italic"],
   }],
 
-  site: "https://kanby.ai",
+  site: site,
 
   server: {
     port: 4321,

@@ -2,9 +2,7 @@
 import { experimental_AstroContainer as AstroContainer } from "astro/container";
 import { describe, expect, test } from "vitest";
 
-import SEO from "@components/seo/SEO.astro";
-import baseLayoutSource from "@layouts/BaseLayout.astro?raw";
-import htmlHeadSource from "@layouts/partials/HtmlHead.astro?raw";
+import HtmlHead from "@layouts/partials/HtmlHead.astro";
 
 const EXPECTED_TITLE =
   "Kanby | Discover what can be with Kanby: task management software written by people who have had to use it";
@@ -17,13 +15,13 @@ describe("SEO fallback metadata", () => {
   test("renders default title, description, and Open Graph tags when no seo prop is provided", async () => {
     const container = await AstroContainer.create();
 
-    const result = await container.renderToString(SEO, {
+    const result = await container.renderToString(HtmlHead, {
       request: new Request("http://kanby.ai/"),
     });
 
     expect(result).toContain(`<title>${EXPECTED_TITLE}</title>`);
     expect(result).toContain(
-      `<meta name="description" property="og:description" content="${EXPECTED_DESCRIPTION}">`,
+      `<meta name="description" content="${EXPECTED_DESCRIPTION}">`,
     );
     expect(result).toContain(
       '<meta property="og:url" content="http://kanby.ai/">',
@@ -39,18 +37,41 @@ describe("SEO fallback metadata", () => {
     expect(ogImageMatch).not.toBeNull();
     expect(ogImageMatch?.[1]).toContain("site-default");
   });
-});
 
-describe("SEO wiring", () => {
-  test("BaseLayout renders HtmlHead, which renders SEO", () => {
-    expect(baseLayoutSource).toMatch(
-      /import\s+HtmlHead\s+from\s+["']\.\/partials\/HtmlHead\.astro["']/,
-    );
-    expect(baseLayoutSource).toMatch(/<HtmlHead\s+seo={seo}\s*\/>/);
+  test("renders site-wide Twitter Card defaults when no seo prop is provided", async () => {
+    const container = await AstroContainer.create();
 
-    expect(htmlHeadSource).toMatch(
-      /import\s+SEO\s+from\s+["']@components\/seo\/SEO\.astro["']/,
+    const result = await container.renderToString(HtmlHead, {
+      request: new Request("http://kanby.ai/"),
+    });
+
+    expect(result).toContain(
+      '<meta name="twitter:card" content="summary_large_image">',
     );
-    expect(htmlHeadSource).toMatch(/<SEO\s+seo={seo}\s*\/>/);
+    expect(result).toContain('<meta name="twitter:site" content="@kanbyai">');
+    expect(result).toContain(
+      '<meta name="twitter:creator" content="@kanbyai">',
+    );
+  });
+
+  test("renders sitewide Organization and WebSite JSON-LD", async () => {
+    const container = await AstroContainer.create();
+
+    const result = await container.renderToString(HtmlHead, {
+      request: new Request("http://kanby.ai/"),
+    });
+
+    const jsonLdBlocks = [
+      ...result.matchAll(
+        /<script type="application\/ld\+json">(.*?)<\/script>/g,
+      ),
+    ].map((match) => JSON.parse(match[1]));
+
+    expect(
+      jsonLdBlocks.some((block) => block["@type"] === "Organization"),
+    ).toBe(true);
+    expect(jsonLdBlocks.some((block) => block["@type"] === "WebSite")).toBe(
+      true,
+    );
   });
 });
