@@ -15,14 +15,28 @@ let schema: WithContext<BlogPosting>[] | undefined;
 
 if (entry) {
   const {
-    title, description, images, publishedTime, modifiedTime, expirationTime,
-    tags, author, authorLink, section, canonical, noindex, nofollow, twitter,
+    title,
+    description,
+    images,
+    publishedTime,
+    modifiedTime,
+    expirationTime,
+    tags,
+    author,
+    authorLink,
+    section,
+    canonical,
+    noindex,
+    nofollow,
+    twitter,
   } = entry.data;
   const firstImage = images[0];
-  const additionalImages = images.slice(1).flatMap((img) => [
-    { property: "og:image", content: img.src },
-    ...(img.alt ? [{ property: "og:image:alt", content: img.alt }] : []),
-  ]);
+  const additionalImages = images
+    .slice(1)
+    .flatMap((img) => [
+      { property: "og:image", content: img.src },
+      ...(img.alt ? [{ property: "og:image:alt", content: img.alt }] : []),
+    ]);
 
   seo = {
     title,
@@ -49,26 +63,28 @@ if (entry) {
       title: twitter.title,
       description: twitter.description,
       image: twitter.images?.[0]?.src,
-      imageAlt: twitter.images?.[0]?.alt,
+      imageAlt: twitter.images?.[0]?.alt ?? undefined,
     },
     extend: additionalImages.length ? { meta: additionalImages } : undefined,
   };
 
-  schema = [{
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    headline: title,
-    datePublished: publishedTime,
-    ...(modifiedTime && { dateModified: modifiedTime }),
-    ...(expirationTime && { expires: expirationTime }),
-    author: {
-      "@type": "Person",
-      name: author,
-      ...(authorLink && { url: authorLink }),
+  schema = [
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      headline: title,
+      datePublished: publishedTime,
+      ...(modifiedTime && { dateModified: modifiedTime }),
+      ...(expirationTime && { expires: expirationTime }),
+      author: {
+        "@type": "Person",
+        name: author,
+        ...(authorLink && { url: authorLink }),
+      },
+      image: images.map((img) => img.src),
+      description,
     },
-    image: images.map((img) => img.src),
-    description,
-  }];
+  ];
 }
 ---
 

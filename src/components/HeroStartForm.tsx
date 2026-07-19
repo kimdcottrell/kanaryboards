@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { SubmitEvent } from "react";
 import { useAuth } from "@clerk/astro/react";
 import {
   createId,
@@ -55,7 +55,7 @@ export default function HeroStartForm() {
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isGenerating) return;
     const goal = value.trim();

@@ -1,4 +1,5 @@
 ---
+### This tests the bare minimum setup
 title: "Test 2"
 draft: false
 testOnly: true

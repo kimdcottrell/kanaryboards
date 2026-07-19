@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM denoland/deno:2.9.2 as dev 
+FROM denoland/deno:2.9.3 as dev 
 
 # Prefer not to run as root.
 ARG LOCAL_MACHINE_GID=${LOCAL_MACHINE_GID:-1000}
@@ -30,7 +30,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         vim \
         zsh \
         unzip \
-        gunzip \
         && \
         apt-get clean && rm -rf /var/lib/apt/lists/*; \
     git config --global --add safe.directory /var/dev

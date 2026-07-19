@@ -54,8 +54,8 @@
   },
   "imports": {
     // these are needed to get around Deno Deploy problems thanks to @deno/astro-adapter
-    "@std/http": "jsr:@std/http@^1.1.0",
-    "@std/path": "jsr:@std/path@^1.1.4"
+    "@std/http": "jsr:@std/http@^1.1.2",
+    "@std/path": "jsr:@std/path@^1.1.6"
     // NOTE: package.json MUST exist for:
     // - resolving preview error of `error: [ERR_UNSUPPORTED_ESM_URL_SCHEME] Only file and data URLs are supported by the default ESM loader. Received protocol 'astro'`
     // - dependabot does not support deno.jsonc

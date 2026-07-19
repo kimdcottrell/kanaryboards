@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import type { FormEvent } from "react";
+import type { SubmitEvent as ReactSubmitEvent } from "react";
 import { ExtensiveEditor } from "@lyfie/luthor";
 import type {
   CoreEditorMode,
@@ -140,7 +140,7 @@ export default function TaskForm({
   const submitButtonRef = useRef(null);
   const titleId = useId();
   const luthorTheme = useLuthorTheme();
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  function handleSubmit(e: ReactSubmitEvent<HTMLFormElement>) {
     const submitter = (e.nativeEvent as SubmitEvent)?.submitter;
     if (submitter && submitter !== submitButtonRef.current) {
       e.preventDefault();
