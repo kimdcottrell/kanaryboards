@@ -8,8 +8,8 @@ const deno_secret = Deno.env.get("TESTING");
 
 <h1>Build</h1>
 
-<p>Import: {import_secret}</p>
+<p>import.meta.env: {import_secret}</p>
 
-<p>Deno: {deno_secret}</p>
+<p>Deno.env.get: {deno_secret}</p>
 
 <TestingIsland server:defer />
