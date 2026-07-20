@@ -10,7 +10,7 @@
     "@clerk/backend": "3.11.5",
     "@clerk/testing": "2.2.8",
     "@deno/astro-adapter": "0.6.0",
-    "@google/genai": "2.11.0",
+    "@google/genai": "2.12.0",
     "@iconify/json": "2.2.499",
     "@iconify/tailwind4": "1.2.3",
     "@lyfie/luthor": "2.9.0",
@@ -40,7 +40,7 @@
     "@jsr/std__uuid": "1.1.1"
   },
   "devDependencies": {
-    "@anthropic-ai/claude-code": "2.1.207",
+    "@anthropic-ai/claude-code": "2.1.215",
     "@astrojs/check": "0.9.9",
     "@catppuccin/tailwindcss": "1.0.0",
     "@playwright/test": "1.61.1",
@@ -50,9 +50,9 @@
     "@testing-library/react": "16.3.2",
     "@testing-library/user-event": "14.6.1",
     "vitest-browser-react": "2.2.0",
-    "typescript": "6.0.3"
+    "typescript": "7.0.2"
   },
   "overrides": {
-    "typescript": "6.0.3"
+    "typescript": "7.0.2"
   }
 }
