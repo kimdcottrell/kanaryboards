@@ -5,6 +5,7 @@ import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
 import clerk from "@clerk/astro";
 import sitemap from "@astrojs/sitemap";
+import { pickClerkPublishableKey } from "./src/lib/clerk/publishable-keys.ts";
 
 let site = "";
 
@@ -21,11 +22,29 @@ switch (import.meta.env.MODE) {
     }.kimdcottrell.deno.net`;
 }
 
+// Clerk publishable keys are PUBLIC (they are designed to ship to the browser),
+// so hardcoding all three here is safe.
+// This exists to get around a nasty bug where Deno Deploy is not generating SSR
+// island secrets properly for pre-rendered pages, and this is affecting Clerk
+export function pickClerkPublishableKey(mode) {
+  switch (mode) {
+    case "production":
+      return "pk_live_Y2xlcmsua2FuYnkuYWkk";
+    case "development":
+      return "pk_test_Z3VpZGVkLWJyZWFtLTc5LmNsZXJrLmFjY291bnRzLmRldiQ";
+    default:
+      return "pk_test_bmF0aXZlLXplYnJhLTU5LmNsZXJrLmFjY291bnRzLmRldiQ";
+  }
+}
+
 // https://astro.build/config
 export default defineConfig({
   adapter: deno(),
   integrations: [
-    clerk(),
+    // @ts-expect-error `publishableKey` is applied at runtime (merged into the
+    // injected boot script via internalParams), but it's typed only on
+    // AstroClerkCreateInstanceParams, not the integration's params.
+    clerk({ publishableKey: pickClerkPublishableKey(import.meta.env.MODE) }),
     react(),
     sitemap({
       // /blog/* routes are rendered on demand, so the sitemap integration
