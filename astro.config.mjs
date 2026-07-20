@@ -5,7 +5,6 @@ import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
 import clerk from "@clerk/astro";
 import sitemap from "@astrojs/sitemap";
-import { pickClerkPublishableKey } from "./src/lib/clerk/publishable-keys.ts";
 
 let site = "";
 
