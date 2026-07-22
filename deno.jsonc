@@ -45,7 +45,7 @@
   ],
   "tasks": {
     "astro": "deno run --allow-all astro",
-    "build": "rm -rf ./.astro ./dist; PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_Z3VpZGVkLWJyZWFtLTc5LmNsZXJrLmFjY291bnRzLmRldiQ INLINE_RUNTIME_CHUNK=false deno run --allow-all astro build",
+    "build": "rm -rf ./.astro ./dist; INLINE_RUNTIME_CHUNK=false deno run --allow-all astro build",
     "dev": "deno run --allow-all astro dev",
     "e2e-test": "deno task playwright test --project=chromium",
     "e2e-test:ui": "deno task playwright test --ui-port=8080 --ui-host=0.0.0.0",
