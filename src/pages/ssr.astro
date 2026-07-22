@@ -1,7 +1,7 @@
 ---
 import TestingIsland from "@components/TestingIsland.astro";
-const import_secret = import.meta.env.TESTING;
-const deno_secret = Deno.env.get("TESTING");
+const import_secret = import.meta.env.PUBLIC_CLERK_PUBLISHABLE_KEY;
+const deno_secret = Deno.env.get("PUBLIC_CLERK_PUBLISHABLE_KEY");
 ---
 
 <h1>SSR</h1>

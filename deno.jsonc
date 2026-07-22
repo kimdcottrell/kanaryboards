@@ -31,9 +31,20 @@
     "test-results/"
   ],
   "nodeModulesDir": "auto",
+  // @clerk/astro v4 (Astro 7 support) is not published to npm yet — it exists
+  // only as the pkg.pr.new preview from clerk/javascript#9206, whose deps are
+  // https:// URLs Deno can't resolve. So the coordinated preview set (astro +
+  // its backend/shared deps) is vendored under vendor/clerk/ with cross-refs
+  // rewritten to plain versions, and linked in here to override the `^4` npm
+  // spec in package.json. Remove once @clerk/astro@4 ships to npm.
+  "links": [
+    "./vendor/clerk/astro",
+    "./vendor/clerk/backend",
+    "./vendor/clerk/shared"
+  ],
   "tasks": {
     "astro": "deno run --allow-all astro",
-    "build": "rm -rf ./.astro ./dist; INLINE_RUNTIME_CHUNK=false deno run --allow-all astro build",
+    "build": "rm -rf ./.astro ./dist; PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_Z3VpZGVkLWJyZWFtLTc5LmNsZXJrLmFjY291bnRzLmRldiQ INLINE_RUNTIME_CHUNK=false deno run --allow-all astro build",
     "dev": "deno run --allow-all astro dev",
     "e2e-test": "deno task playwright test --project=chromium",
     "e2e-test:ui": "deno task playwright test --ui-port=8080 --ui-host=0.0.0.0",
@@ -54,8 +65,8 @@
   },
   "imports": {
     // these are needed to get around Deno Deploy problems thanks to @deno/astro-adapter
-    "@std/http": "jsr:@std/http@^1.1.2",
-    "@std/path": "jsr:@std/path@^1.1.6"
+    // "@std/http": "jsr:@std/http@^1.1.2",
+    // "@std/path": "jsr:@std/path@^1.1.6"
     // NOTE: package.json MUST exist for:
     // - resolving preview error of `error: [ERR_UNSUPPORTED_ESM_URL_SCHEME] Only file and data URLs are supported by the default ESM loader. Received protocol 'astro'`
     // - dependabot does not support deno.jsonc

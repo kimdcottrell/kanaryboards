@@ -1,0 +1,68 @@
+---
+import type { SignUpButtonProps } from '@clerk/shared/types';
+import type { ButtonProps } from '../../types';
+import { addUnstyledAttributeToFirstTag } from './utils';
+
+type Props = ButtonProps & SignUpButtonProps;
+
+import { generateSafeId } from '@clerk/astro/internal';
+
+const safeId = generateSafeId();
+
+const {
+  asChild,
+  fallbackRedirectUrl,
+  forceRedirectUrl,
+  signInFallbackRedirectUrl,
+  signInForceRedirectUrl,
+  mode,
+  unsafeMetadata,
+  ...props
+} = Astro.props;
+
+const signUpOptions = {
+  fallbackRedirectUrl,
+  forceRedirectUrl,
+  signInFallbackRedirectUrl,
+  signInForceRedirectUrl,
+  unsafeMetadata,
+};
+
+let htmlElement = '';
+
+if (asChild) {
+  htmlElement = await Astro.slots.render('default');
+  htmlElement = addUnstyledAttributeToFirstTag(htmlElement, safeId);
+}
+---
+
+{
+  asChild ? (
+    <Fragment set:html={htmlElement} />
+  ) : (
+    <button
+      {...props}
+      data-clerk-unstyled-id={safeId}
+    >
+      <slot>Sign up</slot>
+    </button>
+  )
+}
+
+<script is:inline define:vars={{ props, signUpOptions, mode, safeId }}>
+  const btn = document.querySelector(`[data-clerk-unstyled-id="${safeId}"]`);
+
+  btn.addEventListener('click', () => {
+    const clerk = window.Clerk;
+
+    if (mode === 'modal') {
+      return clerk.openSignUp({ ...signUpOptions, appearance: props.appearance });
+    }
+
+    return clerk.redirectToSignUp({
+      ...signUpOptions,
+      signUpFallbackRedirectUrl: signUpOptions.fallbackRedirectUrl,
+      signUpForceRedirectUrl: signUpOptions.forceRedirectUrl,
+    });
+  });
+</script>

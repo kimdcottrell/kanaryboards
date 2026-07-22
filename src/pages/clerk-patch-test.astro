@@ -1,0 +1,22 @@
+---
+// TEMPORARY demo page to prove the vendored @clerk/astro runtime-hook patch.
+// Prerendered, so no middleware runs at request time — the classic case where
+// Clerk would otherwise fall back to the build-time-inlined key.
+export const prerender = true;
+
+import Layout from "@layouts/BaseLayout.astro";
+
+// Recognizable RUNTIME key (staging / native-zebra-59), deliberately different
+// from what the build bakes in (development / guided-bream-79 locally) so we can
+// tell which one Clerk actually boots with.
+const RUNTIME_KEY = Deno.env.get("PUBLIC_CLERK_PUBLISHABLE_KEY");
+
+const seo = { title: "Clerk patch test" };
+---
+
+<Layout seo={seo}>
+    <script is:inline define:vars={{ RUNTIME_KEY }}>
+        globalThis.__clerkPublishableKey = RUNTIME_KEY;
+    </script>
+    <h1>Clerk patch test</h1>
+</Layout>
