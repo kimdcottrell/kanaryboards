@@ -28,7 +28,8 @@
     "dist/",
     "node_modules/",
     "src/db",
-    "test-results/"
+    "test-results/",
+    "vendor/"
   ],
   "nodeModulesDir": "auto",
   // @clerk/astro v4 (Astro 7 support) is not published to npm yet — it exists
