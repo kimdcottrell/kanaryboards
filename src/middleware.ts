@@ -1,38 +1,12 @@
 import { defineMiddleware, sequence } from "astro/middleware";
-import { clerkMiddleware, createRouteMatcher } from "@clerk/astro/server";
+import { clerkMiddleware } from "@clerk/astro/server";
 import { createId } from "@lib/db/uuid.ts";
 import { getBoardIdForUser, setBoardIdForUser } from "@lib/db/kv.ts";
 import { securityHeaders } from "@lib/http/security-headers.ts";
 
-const isProtectedRoute = createRouteMatcher(["/api/board(.*)"]);
-
 export const protectedRequestMiddleware = clerkMiddleware(
   async (auth, context, next) => {
-    const { isAuthenticated, userId } = auth();
-
-    if (!isAuthenticated && isProtectedRoute(context.request)) {
-      console.debug({
-        event:
-          `Unauthorized access to ${context.request.url} blocked and handled`,
-        // kanby.ai is proxied through Cloudflare, so the Deno adapter's
-        // clientAddress is Cloudflare's edge IP, not the visitor's. Cloudflare
-        // sets CF-Connecting-IP to the real client IP on every proxied
-        // request; fall back to clientAddress for non-proxied requests
-        // (local dev, direct .deno.net access).
-        ip: context.request.headers.get("CF-Connecting-IP") ??
-          context.clientAddress,
-        method: context.request.method,
-        url: context.request.url,
-        headers: Object.fromEntries(context.request.headers),
-      });
-      return new Response(null, {
-        status: 302,
-        headers: {
-          Location: "/dashboard?unauthorized=1",
-          "x-authenticated": "false",
-        },
-      });
-    }
+    const { userId } = auth();
 
     if (userId) {
       let boardId = await getBoardIdForUser(userId);

@@ -1,45 +1,36 @@
 ---
-// works for urls like /tags/huzzah and /tags/learning-in-public
 import Layout from "@layouts/BaseLayout.astro";
-import Prose from "@components/pages/Prose.astro";
+import Archive from "@components/pages/blog/Archive.astro";
 import { getProtectedCollection } from "@src/utils";
 import { setPublicCache } from "@lib/http/cache-headers";
 
 setPublicCache(Astro, "x-playwright-test");
 
 const { tag } = Astro.params;
+
 const isPlaywrightTest =
     Astro.request.headers.get("x-playwright-test") === "true";
 const allPosts = await getProtectedCollection("blog", {
     includeTestOnly: isPlaywrightTest,
 });
-const filteredPosts = tag
-    ? allPosts.filter((post) => post.data.tags?.includes(tag))
-    : [];
 
-if (filteredPosts.length === 0) {
-    Astro.response.status = 404;
-    Astro.response.statusText = "No posts found for this tag.";
-}
+const posts = allPosts.filter((post) => post.data.tags?.includes(tag!));
+
+const allTags = [
+    ...new Set(allPosts.flatMap((post) => post.data.tags ?? [])),
+].sort();
 
 let seo = {
-    title: `Articles that contain tag ${tag}`,
-    description: `Tag archive for ${tag}.`,
+    title: `Blog — #${tag}`,
+    description: `Blog posts tagged ${tag}.`,
 };
 ---
 
 <Layout seo={seo}>
-    <Prose>
-        <h1>here</h1>
-        <p>Posts tagged with {tag}</p>
-        <ul>
-            {
-                filteredPosts.map((post) => (
-                    <li>
-                        <a href={`/blog/${post.id}`}>{post.data.title}</a>
-                    </li>
-                ))
-            }
-        </ul>
-    </Prose>
+    <Archive
+        posts={posts}
+        allTags={allTags}
+        activeTag={tag}
+        emptyMessage={`No blog posts tagged “${tag}”.`}
+    />
 </Layout>

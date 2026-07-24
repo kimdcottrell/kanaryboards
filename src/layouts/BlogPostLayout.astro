@@ -1,0 +1,95 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import type { CollectionEntry } from "astro:content";
+import type { Props as AstroSEOProps } from "astro-seo";
+import type { BlogPosting, WithContext } from "schema-dts";
+
+interface Props {
+  entry?: CollectionEntry<"blog">;
+}
+
+const { entry } = Astro.props;
+
+let seo: AstroSEOProps | undefined;
+let schema: WithContext<BlogPosting>[] | undefined;
+
+if (entry) {
+  const {
+    title,
+    description,
+    images,
+    publishedTime,
+    modifiedTime,
+    expirationTime,
+    tags,
+    author,
+    authorLink,
+    section,
+    canonical,
+    noindex,
+    nofollow,
+    twitter,
+  } = entry.data;
+  const firstImage = images[0];
+  const additionalImages = images
+    .slice(1)
+    .flatMap((img) => [
+      { property: "og:image", content: img.src },
+      ...(img.alt ? [{ property: "og:image:alt", content: img.alt }] : []),
+    ]);
+
+  seo = {
+    title,
+    description,
+    canonical,
+    noindex,
+    nofollow,
+    openGraph: {
+      basic: { title, type: "article", image: firstImage.src },
+      image: firstImage.alt ? { alt: firstImage.alt } : undefined,
+      article: {
+        publishedTime,
+        modifiedTime: modifiedTime ?? undefined,
+        expirationTime: expirationTime ?? undefined,
+        authors: [author],
+        section,
+        tags,
+      },
+    },
+    twitter: twitter && {
+      card: twitter.card,
+      site: twitter.site,
+      creator: twitter.creator,
+      title: twitter.title,
+      description: twitter.description,
+      image: twitter.images?.[0]?.src,
+      imageAlt: twitter.images?.[0]?.alt ?? undefined,
+    },
+    extend: additionalImages.length ? { meta: additionalImages } : undefined,
+  };
+
+  schema = [
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      headline: title,
+      datePublished: publishedTime,
+      ...(modifiedTime && { dateModified: modifiedTime }),
+      ...(expirationTime && { expires: expirationTime }),
+      author: {
+        "@type": "Person",
+        name: author,
+        ...(authorLink && { url: authorLink }),
+      },
+      image: images.map((img) => img.src),
+      description,
+    },
+  ];
+}
+---
+
+<BaseLayout seo={seo} schema={schema}>
+  <section id="single-blog-post" class="z-2 relative">
+    <slot />
+  </section>
+</BaseLayout>

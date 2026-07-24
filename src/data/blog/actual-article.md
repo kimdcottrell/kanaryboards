@@ -1,7 +1,10 @@
 ---
 title: 'Actual Article'
-draft: true
+draft: false
+testOnly: false
 publishedTime: 2022-07-01 13:43:23
+modifiedTime: 2023-10-31 13:43:23
+expirationTime: 2031-02-16
 images:
     -
         src: 'https://docs.astro.build/assets/rose.webp'
@@ -13,14 +16,14 @@ tags:
     - Replaced
     - huzzah
 description: While easy to get started, Astrowind is quite complex internally.  This page provides documentation on some of the more intricate parts.
-metadata:
-    canonical: https://astrowind.vercel.app/astrowind-template-in-depth
+canonical: https://astrowind.vercel.app/astrowind-template-in-depth
+
 ---
 # My First Blog Post
 
-Published on: 2022-07-01
-
 Welcome to my _new blog_ about learning Astro! Here, I will share my learning journey as I build a new website.
+
+<img id="featured-image" src="https://docs.astro.build/assets/rose.webp" />
 
 ## What I've accomplished
 
@@ -34,8 +37,25 @@ Welcome to my _new blog_ about learning Astro! Here, I will share my learning jo
 
 > this is a quote
 
-```
-some code
+```js
+import { securityHeaders } from "@lib/http/security-headers.ts";
+
+export const protectedRequestMiddleware = clerkMiddleware(
+  async (auth, context, next) => {
+    const { userId } = auth();
+
+    if (userId) {
+      let boardId = await getBoardIdForUser(userId);
+      if (!boardId) {
+        boardId = createId();
+        await setBoardIdForUser(userId, boardId);
+      }
+      context.locals.boardId = boardId;
+    }
+
+    return next();
+  },
+);
 ```
 
 this is also some `code`

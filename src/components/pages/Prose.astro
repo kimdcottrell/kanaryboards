@@ -1,7 +1,56 @@
 ---
+import type { CollectionEntry } from "astro:content";
+import dayjs from "dayjs";
 
+interface Props {
+  meta?: CollectionEntry<"blog">["data"];
+}
+
+const { meta } = Astro.props;
+const fmtDate = (d: string) => dayjs(d).format("MMM D, YYYY");
 ---
 
-<article class="prose mx-auto w-11/12 max-w-3xl py-12">
+<article class="prose
+  mx-auto
+  w-11/12
+  max-w-3xl
+  py-3
+  md:py-12">
+  {
+    meta && (
+      <header class="not-prose mb-8 flex flex-col gap-3">
+        <div class="flex text-xs flex-wrap items-center gap-x-3 gap-y-1">
+          <span class="inline-flex items-center gap-1 font-semibold text-base-content">
+            <span class="iconify hugeicons--edit-01" />
+            Written by{" "}
+            {meta.authorLink ? (
+              <a href={meta.authorLink} class="hover:text-primary">
+                {meta.author}
+              </a>
+            ) : (
+              meta.author
+            )}
+          </span>
+
+          <span class="inline-flex font-semibold items-center gap-1 text-base-content/60">
+            <span class="iconify hugeicons--calendar-04" />
+            Published {fmtDate(meta.publishedTime)}
+          </span>
+          {meta.modifiedTime && (
+            <span class="inline-flex items-center gap-1 text-info font-semibold">
+              <span class="iconify hugeicons--calendar-sync" />
+              Updated {fmtDate(meta.modifiedTime)}
+            </span>
+          )}
+          {meta.expirationTime && (
+            <span class="inline-flex items-center gap-1 font-semibold text-warning">
+              <span class="iconify hugeicons--calendar-remove-01" />
+              Expires {fmtDate(meta.expirationTime)}
+            </span>
+          )}
+        </div>
+      </header>
+    )
+  }
   <slot />
 </article>

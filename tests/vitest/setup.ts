@@ -1,4 +1,4 @@
-import { getContainerRenderer as reactRenderer } from "@astrojs/react";
+import { getContainerRenderer as reactRenderer } from "@astrojs/react/container-renderer";
 import { experimental_AstroContainer } from "astro/container";
 import { loadRenderers } from "astro:container";
 

@@ -28,13 +28,14 @@
     "dist/",
     "node_modules/",
     "src/db",
-    "test-results/"
+    "test-results/",
+    "vendor/"
   ],
   "nodeModulesDir": "auto",
   "tasks": {
     "astro": "deno run --allow-all astro",
     "build": "rm -rf ./.astro ./dist; INLINE_RUNTIME_CHUNK=false deno run --allow-all astro build",
-    "dev": "deno run --allow-all astro dev",
+    "dev": "deno run --env-file=.env --allow-all astro dev",
     "e2e-test": "deno task playwright test --project=chromium",
     "e2e-test:ui": "deno task playwright test --ui-port=8080 --ui-host=0.0.0.0",
     // Local-only "malicious user" security-header suite. Builds on `playwright`
@@ -52,16 +53,9 @@
     // tests in those dirs are handled by specific `deno task` calls above
     "exclude": ["./tests/vitest/*", "./tests/playwright/*"]
   },
-  "imports": {
-    // these are needed to get around Deno Deploy problems thanks to @deno/astro-adapter
-    "@std/http": "jsr:@std/http@^1.1.0",
-    "@std/path": "jsr:@std/path@^1.1.4"
-    // NOTE: package.json MUST exist for:
-    // - resolving preview error of `error: [ERR_UNSUPPORTED_ESM_URL_SCHEME] Only file and data URLs are supported by the default ESM loader. Received protocol 'astro'`
-    // - dependabot does not support deno.jsonc
-  },
   "deploy": {
     "org": "kimdcottrell",
     "app": "kanby"
   }
 }
+

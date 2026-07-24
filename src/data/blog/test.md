@@ -1,8 +1,9 @@
 ---
 # layout: ../layouts/MainLayout.astro
+### This tests ALL possible overrides.
 title: 'Testing'
 draft: false
-testOnly: true
+testOnly: false
 publishedTime: 2022-07-01 13:43:23
 images:
     -
@@ -15,12 +16,25 @@ tags:
     - testing_tag_1
     - testing_tag_2
 description: While easy to get started, Astrowind is quite complex internally.  This page provides documentation on some of the more intricate parts.
-metadata:
-    canonical: https://astrowind.vercel.app/astrowind-template-in-depth
+canonical: https://astrowind.vercel.app/astrowind-template-in-depth
+modifiedTime: 2022-08-15 09:00:00
+expirationTime: 2030-01-01 00:00:00
+author: 'Override Author'
+authorLink: 'https://example.com/override-author'
+section: 'Overridden Section'
+noindex: true
+nofollow: true
+twitter:
+    card: summary
+    site: '@overridehandle'
+    creator: '@overridecreator'
+    title: 'Overridden Twitter Title'
+    description: 'Overridden Twitter description'
+    images:
+        - src: 'https://docs.astro.build/assets/twitter-override.webp'
+          alt: 'Overridden twitter alt text'
 ---
 # My First Blog Post
-
-Published on: 2022-07-01
 
 Welcome to my _new blog_ about learning Astro! Here, I will share my learning journey as I build a new website.
 

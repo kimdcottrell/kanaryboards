@@ -26,6 +26,8 @@
   --font-cherry-bomb-one: var(--font-cherry-bomb-one);
   --font-roboto-slab: var(--font-roboto-slab);
   --font-nunito: var(--font-nunito);
+  --font-pt-mono: var(--font-pt-mono);
+  --default-mono-font-family: var(--font-pt-mono);
 }
 
 [data-theme] {
@@ -125,14 +127,120 @@
 }
 
 @layer utilities {
-  .page-dashboard #footer-two {
-    @apply mb-15;
+  /* Fenced code blocks: Shiki dual themes. In dark mode, swap to the light
+     theme (light background, dark text) via the --shiki-dark* CSS vars that
+     Shiki emits on its highlighted output. */
+  [data-theme="kanary-night"] .astro-code,
+  [data-theme="kanary-night"] .astro-code span {
+    color: var(--shiki-dark) !important;
+    background-color: var(--bg-base-200) !important;
+  }
+  .astro-code {
+    @apply border-1 border-secondary/45;
+  }
+  /* Inline code (not inside a <pre>): Shiki doesn't touch these, so use theme
+     tokens for the matching light-background / dark-text look in dark mode. */
+  [data-theme] .prose :where(code):not(pre code) {
+    /* color: var(--color-base-100) !important;
+    background-color: var(--color-base-content) !important; */
+    @apply border-1 border-secondary/45;
+  }
+  .page-dashboard {
+    #footer-two {
+      @apply mb-15;
+    }
+    .new-board-row {
+      background: color-mix(in srgb, var(--color-row-blue) 8%, transparent)
+        !important;
+      border: 1px solid color-mix(in srgb, var(--color-row-blue) 20%,
+        transparent) !important;
+      @apply rounded-md;
+    }
   }
   .footer div.mce_inline_error {
     @apply hidden!;
   }
   .page-home #header-nav {
     @apply md:absolute md:top-0 md:left-0 md:w-full;
+  }
+  .prose h1:first-of-type,
+  #cookie-introduction h2 {
+    @apply font-roboto-slab text-4xl md:text-5xl lg:text-6xl;
+  }
+  #cookie-introduction h2 {
+    @apply mt-1;
+  }
+  .page-blog {
+    @apply bg-base-100 bg-linear-to-t from-base-100
+      to-[color-mix(in_oklab,var(--color-base-100),var(--color-ctp-mauve-50))]
+      dark:to-[color-mix(in_oklab,var(--color-base-100),var(--color-ctp-mauve-950))]
+      bg-[length:100vw_80vh]
+      bg-no-repeat;
+    /* #footer-one,
+    #footer-two {
+      @apply bg-base-100;
+    } */
+  }
+  .blog-tags {
+    @apply m-0 flex list-none flex-wrap gap-2 p-0;
+  }
+  .blog-tag {
+    @apply p-3 border-1 border-primary/45 font-bold badge badge-primary
+      badge-sm transition-colors uppercase;
+  }
+  .blog-tag:not([aria-current="page"]) {
+    @apply hover:badge-soft;
+  }
+  .card-body .blog-tag {
+    @apply badge-soft badge-secondary;
+  }
+  .tiny-header {
+    @apply mb-3 flex items-center gap-1 text-xs font-bold
+      text-base-content/60 uppercase;
+  }
+  #single-blog-post {
+    @apply grid grid-cols-1 gap-4 md:grid-cols-[4fr_1fr];
+
+    .prose {
+      @apply order-2 md:order-1;
+
+      h1:first-of-type {
+        @apply lg:my-15;
+      }
+    }
+    #blog-sidebar {
+      @apply flex order-1 flex-col gap-12 md:order-2 md:sticky
+        top-4 md:max-h-[calc(100vh-2rem)] md:self-start md:overflow-y-auto
+        pt-12;
+    }
+    #sidebar-back-button {
+      @apply pl-6 md:pl-0;
+    }
+    #sidebar-tags {
+      @apply hidden md:block;
+    }
+    #toc {
+      @apply hidden md:block;
+      ul {
+        @apply m-0 list-none border-l-2 border-base-content/15 p-0;
+      }
+      li {
+        @apply m-0;
+      }
+      li[data-depth="3"] a {
+        @apply pl-6;
+      }
+      a {
+        @apply -ml-0.5 block border-l-2 border-transparent px-3 py-1.5 text-sm
+          leading-snug text-base-content/60 transition-colors;
+      }
+      a:hover {
+        @apply text-base-content;
+      }
+      a.active {
+        @apply border-primary font-medium text-primary;
+      }
+    }
   }
   #drawer-row-list a {
     max-width: 210px;
@@ -221,8 +329,13 @@
   .btn.join-item {
     @apply rounded-none;
   }
+  .pink-purple-gradient {
+    @apply bg-linear-to-br/oklch from-ctp-flamingo-100/50
+      dark:from-ctp-lavender-950 mask-b-from-base-100 to-base-100;
+  }
   .bg-neutral-light-20 {
-    background-color: color-mix(in oklab, var(--color-neutral) 90%, white 10%);
+    background-color: color-mix(in oklab, var(--color-neutral) 90%, white
+      10%);
   }
   .row-color-tint {
     background-color: color-mix(

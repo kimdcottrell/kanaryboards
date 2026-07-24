@@ -1,4 +1,6 @@
 .env
+.env*
+!.env.sample
 **/node_modules/*
 **/.astro/*
 worker-configuration.d.ts
@@ -7,6 +9,9 @@ deno.lock
 src/policystack.gen.ts
 src/policystack.llms.txt
 **/dist/*
+# ...but keep the vendored Clerk build output — Deno Deploy needs it committed
+# to resolve @clerk/astro's ./dist/index.js entry on a fresh checkout.
+!vendor/clerk/**/dist/**
 HELP.md
 ./husky/_
 **/gitsshkey
