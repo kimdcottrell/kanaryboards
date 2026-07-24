@@ -6,7 +6,7 @@ import tailwindcss from "@tailwindcss/vite";
 import clerk from "@clerk/astro";
 import sitemap from "@astrojs/sitemap";
 
-const site = "https://kanby.ai";
+const site = Deno.env.get("SITE") || "https://kanby.ai";
 
 // Clerk publishable keys are PUBLIC (they are designed to ship to the browser),
 // so hardcoding all three here is safe.
@@ -38,37 +38,60 @@ export default defineConfig({
       // their own sitemap fragment instead (see src/pages/sitemap-blog.xml.ts).
       customSitemaps: [`${site}/sitemap-blog.xml`],
       filter: (page) =>
-        page !== "https://example.com/build/" &&
-        page !== "https://example.com/ssr/",
+        page !== `${site}/build/` &&
+        page !== `${site}/ssr/`,
     }),
   ],
 
   output: "server",
 
-  fonts: [{
-    provider: fontProviders.google(),
-    name: "Cherry Bomb One",
-    cssVariable: "--font-cherry-bomb-one",
-    weights: ["400"],
-    styles: ["normal"],
-  }, {
-    provider: fontProviders.google(),
-    name: "Roboto Slab",
-    cssVariable: "--font-roboto-slab",
-    weights: ["100 900"],
-    styles: ["normal", "italic"],
-  }, {
-    provider: fontProviders.google(),
-    name: "Nunito",
-    cssVariable: "--font-nunito",
-    weights: ["200 1000"],
-  }, {
-    provider: fontProviders.google(),
-    name: "Inter",
-    cssVariable: "--font-inter",
-    weights: ["100 900"],
-    styles: ["normal", "italic"],
-  }],
+  markdown: {
+    shikiConfig: {
+      // `light` is applied inline by default (day mode keeps the dark code
+      // block); `dark` is exposed as --shiki-dark* CSS vars and switched on
+      // under [data-theme=kanary-night] in global.css.
+      themes: { light: "catppuccin-latte", dark: "catppuccin-mocha" },
+    },
+  },
+
+  fonts: [
+    {
+      provider: fontProviders.google(),
+      name: "PT Mono",
+      cssVariable: "--font-pt-mono",
+      weights: ["400"],
+      styles: ["normal"],
+    },
+    {
+      provider: fontProviders.google(),
+      name: "Cherry Bomb One",
+      cssVariable: "--font-cherry-bomb-one",
+      weights: ["400"],
+      styles: ["normal"],
+    },
+    {
+      provider: fontProviders.google(),
+      name: "Roboto Slab",
+      cssVariable: "--font-roboto-slab",
+      weights: ["100 900"],
+      styles: ["normal", "italic"],
+    },
+    {
+      provider: fontProviders.google(),
+      name: "Nunito",
+      cssVariable: "--font-nunito",
+      weights: ["200 1000"],
+    },
+    {
+      provider: fontProviders.google(),
+      name: "Inter",
+      cssVariable: "--font-inter",
+      weights: ["100 900"],
+      styles: ["normal", "italic"],
+    },
+  ],
+
+  prefetch: true,
 
   site: site,
 
@@ -87,5 +110,29 @@ export default defineConfig({
     plugins: [
       tailwindcss(),
     ],
+    // Strip console.*/debugger from bundled client JS. Vite 8 bundles with
+    // Rolldown/Oxc (not esbuild), so `esbuild.drop` is ignored — the equivalent
+    // lives in the Oxc minifier's `compress` options. Scoped to the `client`
+    // environment so the SSR/prerender bundles stay unminified: a global
+    // minify override breaks the server build and would also drop server logs.
+    // Astro spreads this over its own client output config, so it wins.
+    environments: {
+      client: {
+        build: {
+          rolldownOptions: {
+            output: {
+              minify: {
+                compress: {
+                  dropConsole: true,
+                  dropDebugger: true,
+                },
+                mangle: true, // Makes the names shorter. ( func_Name -> c)
+                codegen: true, // Makes the text tighter. (strip newlines, etc)
+              },
+            },
+          },
+        },
+      },
+    },
   },
 });

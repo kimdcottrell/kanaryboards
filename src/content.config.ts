@@ -26,7 +26,10 @@ const _image = z.object({
   alt: z.string().nullish(),
 });
 
-const _author = z.string().default("kimdcottrell").transform((value) =>
+const DEFAULT_AUTHOR = "Kim Cottrell";
+const DEFAULT_AUTHOR_LINK = "https://kimdcottrell.com";
+
+const _author = z.string().default(DEFAULT_AUTHOR).transform((value) =>
   value.trim()
 );
 const _authorLink = z.url().nullish();
@@ -65,7 +68,13 @@ const blogCollectionSchema = z.object({
     description: z.string().optional(),
     images: z.array(_image).optional(),
   }).optional(),
-});
+}).transform((data) => ({
+  ...data,
+  // Fall back to the default author link only when the author is also the
+  // default; an overridden author with no link stays unlinked.
+  authorLink: data.authorLink ??
+    (data.author === DEFAULT_AUTHOR ? DEFAULT_AUTHOR_LINK : undefined),
+}));
 
 export type BlogCollectionMetadata = z.infer<typeof blogCollectionSchema>;
 

@@ -1,0 +1,26 @@
+---
+interface Props {
+  tags: string[];
+  activeTag?: string;
+}
+
+const { tags, activeTag } = Astro.props;
+---
+
+{
+  tags.length > 0 && (
+    <ul class="blog-tags">
+      {tags.map((tag: string) => (
+        <li>
+          <a
+            href={tag === activeTag ? "/blog" : `/blog/tags/${tag}`}
+            class="blog-tag"
+            aria-current={tag === activeTag ? "page" : undefined}
+          >
+            {tag}
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
+}

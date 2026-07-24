@@ -2,6 +2,7 @@
 import { render } from "astro:content";
 import BlogPostLayout from "@layouts/BlogPostLayout.astro";
 import Prose from "@components/pages/Prose.astro";
+import TagList from "@components/pages/blog/TagList.astro";
 import { getProtectedCollection } from "@src/utils";
 import { setPublicCache } from "@lib/http/cache-headers";
 
@@ -16,15 +17,129 @@ const posts = await getProtectedCollection("blog", {
 });
 const entry = posts.find((post) => post.id === slug);
 
-const { Content } = entry ? await render(entry) : { Content: null };
+const { Content, headings } = entry
+  ? await render(entry)
+  : { Content: null, headings: null };
+
+const tags = entry?.data.tags ?? [];
 ---
 
 <BlogPostLayout entry={entry}>
   {
     Content && (
-      <Prose>
+      <Prose meta={entry?.data}>
         <Content />
       </Prose>
     )
   }
+  <div id="blog-sidebar">
+    <div id="sidebar-back-button">
+      <a href="/blog">
+        <button type="button" class="btn btn-soft btn-secondary btn-sm">
+          <span class="iconify hugeicons--arrow-big-left-dash"></span>
+          Back to blog
+        </button>
+      </a>
+    </div>
+    {
+      tags.length > 0 && (
+        <div id="sidebar-tags">
+          <h5 class="tiny-header">
+            <span class="iconify hugeicons--pin" />
+            Category
+          </h5>
+          <TagList tags={tags} />
+        </div>
+      )
+    }
+    <aside id="toc">
+      <h5 class="tiny-header">
+        <span class="iconify hugeicons--book-open-02"></span>
+        You're reading...
+      </h5>
+      <ul>
+        {
+          headings &&
+            headings
+              .filter((h) => h.depth <= 3)
+              .map((h) => (
+                <li data-depth={h.depth}>
+                  <a href={`#${h.slug}`} data-toc-link data-slug={h.slug}>
+                    {h.text}
+                  </a>
+                </li>
+              ))
+        }
+      </ul>
+    </aside>
+  </div>
+  <script>
+    function initScrollSpy() {
+      const links =
+        document.querySelectorAll<HTMLAnchorElement>("[data-toc-link]");
+      if (!links.length) return;
+
+      // Pair each TOC link with its heading element, in document order.
+      const items = Array.from(links)
+        .map((link) => {
+          const slug = link.dataset.slug;
+          const heading = slug ? document.getElementById(slug) : null;
+          return heading ? { link, heading } : null;
+        })
+        .filter(
+          (i): i is { link: HTMLAnchorElement; heading: HTMLElement } =>
+            i !== null,
+        );
+
+      if (!items.length) return;
+
+      // Highlight every heading whose section is currently on screen, so the
+      // active border spans the full range of visible sections (refine-style).
+      const update = () => {
+        const viewBottom = window.innerHeight;
+        items.forEach((item, i) => {
+          const top = item.heading.getBoundingClientRect().top;
+          // A section runs from its heading down to the next heading.
+          const nextTop =
+            i + 1 < items.length
+              ? items[i + 1].heading.getBoundingClientRect().top
+              : Infinity;
+          const inView = top < viewBottom && nextTop > 0;
+          item.link.classList.toggle("active", inView);
+        });
+      };
+
+      let ticking = false;
+      const onScroll = () => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+          update();
+          ticking = false;
+        });
+      };
+
+      update();
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", onScroll);
+
+      // Smooth scroll on click.
+      links.forEach((link) => {
+        link.addEventListener("click", (e) => {
+          const slug = link.dataset.slug;
+          const target = slug ? document.getElementById(slug) : null;
+          if (!target) return;
+          e.preventDefault();
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+          history.pushState(null, "", `#${slug}`);
+        });
+      });
+    }
+
+    // Run on initial load
+    initScrollSpy();
+
+    // Re-run after Astro client-side navigation (View Transitions router)
+    document.addEventListener("astro:page-load", initScrollSpy);
+  </script>
 </BlogPostLayout>

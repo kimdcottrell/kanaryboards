@@ -1,0 +1,45 @@
+---
+import type { CollectionEntry } from "astro:content";
+import siteDefaultImage from "@src/images/site-default.png";
+import dayjs from "dayjs";
+
+interface Props {
+  post: CollectionEntry<"blog">;
+}
+
+const { post } = Astro.props;
+const fmtDate = (d: string) => dayjs(d).format("MMM D, YYYY");
+const image = post.data.images[0] ?? { src: siteDefaultImage.src, alt: "" };
+---
+
+<a
+  href={`/blog/${post.id}`}
+  aria-label={post.data.title}
+  class="group card card-sm card-side bg-base-100 border-1 border-secondary/40 hover:bg-secondary/20 hover:border-secondary/60"
+>
+  <figure class="max-w-[30%] shrink-0 border-secondary/40 border-r-1">
+    <img
+      src={image.src}
+      alt={image.alt ?? ""}
+      class="h-full w-full object-cover"
+    />
+  </figure>
+  <div class="card-body">
+    <h2 class="card-title font-nunito font-semibold text-lg">
+      {post.data.title}
+    </h2>
+    <p class="text-xs text-base-content/60 font-bold">
+      {fmtDate(post.data.publishedTime)}
+    </p>
+    <p class="line-clamp-3 text-sm">{post.data.description}</p>
+    <div class="card-actions justify-end">
+      <button
+        type="button"
+        class="btn btn-soft btn-secondary btn-sm group-hover:bg-secondary group-hover:text-secondary-content group-hover:border-secondary"
+      >
+        Read more
+        <span class="iconify hugeicons--arrow-big-right-dash"></span>
+      </button>
+    </div>
+  </div>
+</a>

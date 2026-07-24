@@ -15,24 +15,24 @@ test.describe("Blog", () => {
       await page.goto("/blog");
 
       await expect(
-        page.getByRole("link", { name: "Testing" }),
+        page.getByRole("link", { name: "Testing", exact: true }),
       ).toHaveAttribute("href", "/blog/test");
       await expect(
-        page.getByRole("link", { name: "Test 2" }),
+        page.getByRole("link", { name: "Test 2", exact: true }),
       ).toHaveAttribute("href", "/blog/test2");
     });
 
     test("clicking an article link navigates to the individual article", async ({ page }) => {
       await page.goto("/blog");
 
-      await page.getByRole("link", { name: "Testing" }).click();
+      await page.getByRole("link", { name: "Testing", exact: true }).click();
       await expect(page).toHaveURL("/blog/test");
       await expect(
         page.getByRole("heading", { name: "My First Blog Post" }),
       ).toBeVisible();
 
       await page.goto("/blog");
-      await page.getByRole("link", { name: "Test 2" }).click();
+      await page.getByRole("link", { name: "Test 2", exact: true }).click();
       await expect(page).toHaveURL("/blog/test2");
       await expect(
         page.getByRole("heading", { name: "My Second Blog Post" }),
@@ -79,7 +79,7 @@ test.describe("Blog", () => {
       ).toHaveCount(0);
       await expect(
         page.locator('meta[property="article:author"]'),
-      ).toHaveAttribute("content", "kimdcottrell");
+      ).toHaveAttribute("content", "Kim Cottrell");
       await expect(
         page.locator('meta[property="article:section"]'),
       ).toHaveAttribute("content", "Task management");
@@ -131,7 +131,8 @@ test.describe("Blog", () => {
       expect(blogPosting?.expires).toBeUndefined();
       expect(blogPosting?.author).toEqual({
         "@type": "Person",
-        name: "kimdcottrell",
+        name: "Kim Cottrell",
+        url: "https://kimdcottrell.com",
       });
       expect(blogPosting?.image).toHaveLength(1);
       expect(blogPosting?.image[0]).toMatch(/site-default/);
@@ -239,6 +240,36 @@ test.describe("Blog", () => {
     });
   });
 
+  test.describe("author byline", () => {
+    test("default author renders as a link to the default author URL", async ({ page }) => {
+      await page.goto("/blog/test2");
+
+      const author = page.getByRole("link", { name: "Kim Cottrell" });
+      await expect(author).toBeVisible();
+      await expect(author).toHaveAttribute("href", "https://kimdcottrell.com");
+    });
+
+    test("overridden author with an author link renders as a link to that URL", async ({ page }) => {
+      await page.goto("/blog/test");
+
+      const author = page.getByRole("link", { name: "Override Author" });
+      await expect(author).toBeVisible();
+      await expect(author).toHaveAttribute(
+        "href",
+        "https://example.com/override-author",
+      );
+    });
+
+    test("overridden author without an author link renders as plain text", async ({ page }) => {
+      await page.goto("/blog/test3");
+
+      await expect(page.getByText("Solo Writer")).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Solo Writer" }),
+      ).toHaveCount(0);
+    });
+  });
+
   test.describe("tags", () => {
     test("lists the tags", async ({ page }) => {
       await page.goto("/blog/tags");
@@ -283,8 +314,12 @@ test.describe("Blog", () => {
     test("test-only fixtures are hidden from real visitors", async ({ page }) => {
       const blogIndex = await page.goto("/blog");
       expect(blogIndex?.status()).toBe(200);
-      await expect(page.getByRole("link", { name: "Testing" })).toHaveCount(0);
-      await expect(page.getByRole("link", { name: "Test 2" })).toHaveCount(0);
+      await expect(
+        page.getByRole("link", { name: "Testing", exact: true }),
+      ).toHaveCount(0);
+      await expect(
+        page.getByRole("link", { name: "Test 2", exact: true }),
+      ).toHaveCount(0);
 
       const tagsIndex = await page.goto("/blog/tags");
       expect(tagsIndex?.status()).toBe(200);

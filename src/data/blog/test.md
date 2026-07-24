@@ -3,7 +3,7 @@
 ### This tests ALL possible overrides.
 title: 'Testing'
 draft: false
-testOnly: true
+testOnly: false
 publishedTime: 2022-07-01 13:43:23
 images:
     -
@@ -35,8 +35,6 @@ twitter:
           alt: 'Overridden twitter alt text'
 ---
 # My First Blog Post
-
-Published on: 2022-07-01
 
 Welcome to my _new blog_ about learning Astro! Here, I will share my learning journey as I build a new website.
 
