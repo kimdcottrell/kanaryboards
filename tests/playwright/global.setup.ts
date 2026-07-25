@@ -1,7 +1,7 @@
 import { clerk, clerkSetup } from "@clerk/testing/playwright";
 import { createClerkClient } from "@clerk/backend";
 import { expect, test as setup } from "@playwright/test";
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 // Must run serially: https://playwright.dev/docs/test-parallel
@@ -70,5 +70,7 @@ setup("authenticate and save state to storage", async ({ page }) => {
       (entry) => entry.name !== "kanby-v0-1-0",
     );
   }
+  // `.clerk/` is gitignored, so it doesn't exist on a fresh CI checkout.
+  await mkdir(path.dirname(authFile), { recursive: true });
   await writeFile(authFile, JSON.stringify(state, null, 2));
 });
