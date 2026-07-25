@@ -6,7 +6,8 @@
       "npm:@google/genai",
       "npm:esbuild",
       "npm:protobufjs",
-      "npm:sharp"
+      "npm:sharp",
+      "npm:core-js"
     ],
     "deny": []
   },
