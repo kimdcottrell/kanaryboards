@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const BASE_URL = Deno.env.get("CI")
-  ? Deno.env.get("BASE_URL")!
+const BASE_URL = process.env.CI
+  ? process.env.BASE_URL!
   : "http://localhost:8085";
 
 export default defineConfig({
