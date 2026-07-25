@@ -1,10 +1,10 @@
 // @vitest-environment node
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import type { APIContext } from "astro";
 
 // Avoid touching Deno KV — these tests only exercise the auth gate.
 vi.mock("@lib/db/kv.ts", () => ({
-  getBoard: vi.fn(async () => null),
+  getBoard: vi.fn(async () => {}),
   saveBoard: vi.fn(async () => {}),
   deleteBoard: vi.fn(async () => {}),
 }));

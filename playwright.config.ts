@@ -1,44 +1,43 @@
-// NOTE:
-// this actually executes in a specialized `playwright` container
-// you can call it from the `app` container via `deno task e2e-test`
-import process from "node:process";
 import { defineConfig, devices } from "@playwright/test";
+
+const BASE_URL = Deno.env.get("CI")
+  ? Deno.env.get("BASE_URL")!
+  : "http://localhost:8085";
 
 export default defineConfig({
   testDir: "tests/playwright",
-  // Runs against the dev server, where tests requiring a prod build+preview
-  // (e.g. the security headers, which don't exist under dev) don't apply.
-  // Those live under preview-only/ and run via their own config
-  // (playwright.security.config.ts) + `deno task e2e-security`.
   testIgnore: "**/preview-only/**",
-  ...(process.env.START_DEV_SERVER
-    ? {
-      webServer: {
-        command: "deno task dev",
-        reuseExistingServer: true,
-        url: "https://kanary.local.dev",
-        wait: {
-          stdout: /watching for file changes.../,
-        },
-      },
-    }
-    : {}),
+  webServer: {
+    // PROD build → src/middleware.ts emits the security headers on every response.
+    command: `BASE_URL='${BASE_URL}' deno task build && deno task preview`,
+    url: BASE_URL,
+    reuseExistingServer: true, // skip build+preview if a server is already up at BASE
+    timeout: 240_000, // build + boot can take a while
+  },
   // sometimes the first test run fails due to what I can only imagine are
   // the ghosts in the machine
   retries: 2,
   // The app is served by the dev server (client:only React island), so the
-  // initial mount can take longer than the 5s default under concurrent
+  // initial mount http://localhost:8085can take longer than the 5s default under concurrent
   // multi-browser load — give web-first assertions more room before failing.
   expect: { timeout: 10_000 },
   use: {
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
-    baseURL: process.env.BASE_URL ?? "https://kanary.local.dev",
+    baseURL: BASE_URL,
     ignoreHTTPSErrors: true,
     extraHTTPHeaders: {
       "x-playwright-test": "true",
     },
+    ...(process.env.PW_TEST_CONNECT_WS_ENDPOINT
+      ? {
+        connectOptions: {
+          wsEndpoint: process.env.PW_TEST_CONNECT_WS_ENDPOINT,
+          exposeNetwork: "<loopback>",
+        },
+      }
+      : {}),
   },
   projects: [
     {

@@ -3,7 +3,7 @@
 ### This tests ALL possible overrides.
 title: 'Testing'
 draft: false
-testOnly: false
+testOnly: true
 publishedTime: 2022-07-01 13:43:23
 images:
     -

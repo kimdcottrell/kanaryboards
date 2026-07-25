@@ -1,4 +1,5 @@
 /// <reference lib="dom" />
+import type { Page } from "@playwright/test";
 import { expect, fillStable, testNoClerk as test } from "./fixtures.ts";
 
 /**
@@ -86,10 +87,10 @@ test.describe("Board CRUD", () => {
   // that intercepts pointer events on the row/column/task elements behind
   // it), so it must be closed before interacting with the board, and can be
   // reopened afterward if a test needs to read its content again.
-  async function openBoardConfigModal(page: import("@playwright/test").Page) {
+  async function openBoardConfigModal(page: Page) {
     await page.locator("#board-config-collapse-toggle").click();
   }
-  async function closeBoardConfigModal(page: import("@playwright/test").Page) {
+  async function closeBoardConfigModal(page: Page) {
     // Both the close button and the backdrop sit under elements with a
     // higher stacking context (e.g. the fixed navbar) in places Playwright's
     // hit-testing considers the click target, so dispatch the backdrop's

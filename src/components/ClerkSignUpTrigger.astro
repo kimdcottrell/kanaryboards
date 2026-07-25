@@ -1,11 +1,13 @@
 ---
 ---
 
-<script is:inline>
+<script>
+    import { getClerkAppearanceForCurrentTheme } from "@components/theme/clerkAppearance";
+
     const ALREADY_SIGNED_IN_TIP =
         "You're already logged in, clicking this will do nothing";
 
-    function setSignedInState(isSignedIn) {
+    function setSignedInState(isSignedIn: boolean) {
         document
             .querySelectorAll("[data-open-clerk-sign-up-modal]")
             .forEach((el) => {
@@ -20,13 +22,15 @@
     }
 
     document.addEventListener("click", (event) => {
-        const trigger = event.target.closest(
+        const trigger = (event.target as HTMLElement | null)?.closest(
             "[data-open-clerk-sign-up-modal]",
         );
         if (!trigger) return;
         event.preventDefault();
         if (window.Clerk?.user) return;
-        window.Clerk?.openSignUp();
+        window.Clerk?.openSignUp({
+            appearance: getClerkAppearanceForCurrentTheme(),
+        });
     });
 
     (function waitForClerk() {

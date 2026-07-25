@@ -49,9 +49,20 @@ export default defineConfig({
       : {}),
   },
   projects: [
+    // Without this, clerkSetup() never runs for this config, so
+    // CLERK_TESTING_TOKEN is undefined and setupClerkTestingToken proxies every
+    // FAPI request through route.fetch() while appending no bypass token —
+    // all of the interception cost, none of the bot-protection bypass.
+    // global.setup.ts lives outside this config's testDir, hence the override.
+    {
+      name: "setup",
+      testDir: "tests/playwright",
+      testMatch: "**/global.setup.ts",
+    },
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
+      dependencies: ["setup"],
     },
   ],
   reporter: [

@@ -1,7 +1,12 @@
 /// <reference lib="dom" />
-import { clerk } from "@clerk/testing/playwright";
 import { type Page } from "@playwright/test";
-import { expect, type SessionTest, test, testNoClerk } from "./fixtures.ts";
+import {
+  expect,
+  gotoAndWaitForClerk,
+  type SessionTest,
+  testAuthed as test,
+  testNoClerk,
+} from "./fixtures.ts";
 
 /**
  * The drawer's project-row list (#drawer-row-list, rendered by
@@ -73,7 +78,7 @@ function mirrorMatchesDrawer(t: SessionTest) {
     "the BoardMenu row menu mirrors the drawer's row list",
     async ({ page }) => {
       await page.setViewportSize({ width: 1280, height: 720 });
-      await page.goto("/dashboard");
+      await gotoAndWaitForClerk(page, "/dashboard");
       await page.locator(DASHBOARD_READY).waitFor({ state: "attached" });
 
       const expectedCount = BOARD_STATE.rows.length;
@@ -107,8 +112,6 @@ testNoClerk.describe("Drawer/BoardMenu row-list parity (guest)", () => {
 });
 
 test.describe("Drawer/BoardMenu row-list parity (authenticated)", () => {
-  const E2E_EMAIL = process.env.E2E_CLERK_USER_EMAIL ?? "";
-
   test.beforeEach(async ({ page, browserName }) => {
     // Mutates the shared Clerk test account's board in KV — single browser only
     // so concurrent runs don't race over the same board.
@@ -116,8 +119,9 @@ test.describe("Drawer/BoardMenu row-list parity (authenticated)", () => {
       browserName !== "chromium",
       "shares one Clerk test account across runs",
     );
+    // testAuthed boots with global.setup.ts's storage state, so the session is
+    // already live — no clerk.signIn() round-trip needed here.
     await page.goto("/dashboard");
-    await clerk.signIn({ page, emailAddress: E2E_EMAIL });
 
     const cleared = await page.request.get("/api/delete-test-data");
     expect(cleared.status()).toBe(200);

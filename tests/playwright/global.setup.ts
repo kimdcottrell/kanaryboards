@@ -1,6 +1,7 @@
 import { clerk, clerkSetup } from "@clerk/testing/playwright";
 import { createClerkClient } from "@clerk/backend";
 import { expect, test as setup } from "@playwright/test";
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
 // Must run serially: https://playwright.dev/docs/test-parallel
@@ -58,5 +59,16 @@ setup("authenticate and save state to storage", async ({ page }) => {
   await page.goto("/dashboard");
   await expect(page.getByRole("button", { name: "Sign In" })).toBeHidden();
 
-  await page.context().storageState({ path: authFile });
+  // Strip the guest board out of the persisted state. /dashboard writes the
+  // board to localStorage under kanby-v0-1-0, and storageState() captures
+  // localStorage as well as cookies — so leaving it in would seed every
+  // testAuthed spec with whatever board this setup happened to leave behind,
+  // clobbering the KV boards those specs seed for themselves.
+  const state = await page.context().storageState();
+  for (const origin of state.origins ?? []) {
+    origin.localStorage = origin.localStorage.filter(
+      (entry) => entry.name !== "kanby-v0-1-0",
+    );
+  }
+  await writeFile(authFile, JSON.stringify(state, null, 2));
 });

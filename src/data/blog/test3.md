@@ -2,7 +2,7 @@
 ### Overridden author WITHOUT an author link — the byline must render as plain text.
 title: "Test 3"
 draft: false
-testOnly: false
+testOnly: true
 publishedTime: 2024-10-07 05:34:11 PM
 description: 'This is the third Astro blog post'
 tags:

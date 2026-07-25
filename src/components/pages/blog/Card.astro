@@ -28,7 +28,8 @@ const image = post.data.images[0] ?? { src: siteDefaultImage.src, alt: "" };
     <h2 class="card-title font-nunito font-semibold text-lg">
       {post.data.title}
     </h2>
-    <p class="text-xs text-base-content/60 font-bold">
+    <p class="tiny-header opacity-80 items-start!">
+      <span class="iconify hugeicons--calendar-04"></span>
       {fmtDate(post.data.publishedTime)}
     </p>
     <p class="line-clamp-3 text-sm">{post.data.description}</p>

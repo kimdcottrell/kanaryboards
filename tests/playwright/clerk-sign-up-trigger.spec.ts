@@ -1,15 +1,21 @@
 import { clerk } from "@clerk/testing/playwright";
-import { expect, test, testNoClerk } from "./fixtures.ts";
+import type { Page } from "@playwright/test";
+import {
+  expect,
+  gotoAndWaitForClerk,
+  testAuthed as test,
+  testNoClerk,
+} from "./fixtures.ts";
 
-const E2E_EMAIL = process.env.E2E_CLERK_USER_EMAIL ?? "";
-const trigger = (page: import("@playwright/test").Page) =>
+const trigger = (page: Page) =>
   page.locator("[data-open-clerk-sign-up-modal]").first();
-const signUpModalHeading = (page: import("@playwright/test").Page) =>
+const signUpModalHeading = (page: Page) =>
   page.getByRole("heading", { name: "Create your account" });
 
 testNoClerk.describe("Clerk sign-up trigger — anonymous", () => {
   testNoClerk.beforeEach(async ({ page }) => {
     await page.goto("/about");
+    await clerk.loaded({ page });
   });
 
   testNoClerk(
@@ -35,8 +41,7 @@ test.describe("Clerk sign-up trigger — authenticated", () => {
       browserName !== "chromium",
       "shares one Clerk test account across runs",
     );
-    await page.goto("/about");
-    await clerk.signIn({ page, emailAddress: E2E_EMAIL });
+    await gotoAndWaitForClerk(page, "/about");
   });
 
   test(

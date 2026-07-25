@@ -1,4 +1,5 @@
 /// <reference lib="dom" />
+import type { Page } from "@playwright/test";
 import { expect, testNoClerk as test } from "./fixtures.ts";
 
 /**
@@ -99,7 +100,7 @@ const BOARD_STATE = {
 };
 
 // Click a pinned column item in #board-menu by its title.
-function menuItem(page: import("@playwright/test").Page, title: string) {
+function menuItem(page: Page, title: string) {
   return page.locator("#board-menu a").filter({ hasText: title });
 }
 

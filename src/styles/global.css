@@ -191,12 +191,15 @@
   .blog-tag:not([aria-current="page"]) {
     @apply hover:badge-soft;
   }
+  .blog-tag[aria-current="page"] {
+    @apply badge-soft;
+  }
   .card-body .blog-tag {
     @apply badge-soft badge-secondary;
   }
   .tiny-header {
     @apply mb-3 flex items-center gap-1 text-xs font-bold
-      text-base-content/60 uppercase;
+      text-base-content/75 uppercase;
   }
   #single-blog-post {
     @apply grid grid-cols-1 gap-4 md:grid-cols-[4fr_1fr];

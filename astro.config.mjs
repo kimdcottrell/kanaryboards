@@ -6,12 +6,28 @@ import tailwindcss from "@tailwindcss/vite";
 import clerk from "@clerk/astro";
 import sitemap from "@astrojs/sitemap";
 
-const site = Deno.env.get("SITE") || "https://kanby.ai";
+// `site` drives canonical URLs, og:url, and the sitemap, so it has to match the
+// hostname the app is actually served on. `import.meta.env.DEV` is the only
+// signal available while the config loads that tells `astro dev` apart from
+// `astro build` — MODE is "development" for both.
+let site;
+if (Deno.env.get("CI")) {
+  // CI runs against the deploy preview it just published.
+  site = Deno.env.get("BASE_URL");
+} else if (import.meta.env.DEV) {
+  // The dev server is reached through the traefik proxy hostname.
+  site = "https://kanary.local.dev";
+} else {
+  // A local prod build is served by `deno task preview` on :8085, which is also
+  // where Playwright points.
+  site = "http://localhost:8085";
+}
 
 // Clerk publishable keys are PUBLIC (they are designed to ship to the browser),
 // so hardcoding all three here is safe.
 // This exists to get around a nasty bug where Deno Deploy is not generating SSR
 // island secrets properly for pre-rendered pages, and this is affecting Clerk
+/** @param {string} mode */
 export function pickClerkPublishableKey(mode) {
   switch (mode) {
     case "production":
@@ -93,6 +109,10 @@ export default defineConfig({
 
   prefetch: true,
 
+  redirects: {
+    "/blog/tags": "/blog",
+  },
+
   site: site,
 
   server: {
@@ -126,8 +146,6 @@ export default defineConfig({
                   dropConsole: true,
                   dropDebugger: true,
                 },
-                mangle: true, // Makes the names shorter. ( func_Name -> c)
-                codegen: true, // Makes the text tighter. (strip newlines, etc)
               },
             },
           },

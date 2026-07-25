@@ -22,6 +22,8 @@ const { Content, headings } = entry
   : { Content: null, headings: null };
 
 const tags = entry?.data.tags ?? [];
+
+const tocHeadings = headings?.filter((h) => h.depth <= 3) ?? [];
 ---
 
 <BlogPostLayout entry={entry}>
@@ -59,16 +61,13 @@ const tags = entry?.data.tags ?? [];
       </h5>
       <ul>
         {
-          headings &&
-            headings
-              .filter((h) => h.depth <= 3)
-              .map((h) => (
-                <li data-depth={h.depth}>
-                  <a href={`#${h.slug}`} data-toc-link data-slug={h.slug}>
-                    {h.text}
-                  </a>
-                </li>
-              ))
+          tocHeadings.map((h) => (
+            <li data-depth={h.depth}>
+              <a href={`#${h.slug}`} data-toc-link data-slug={h.slug}>
+                {h.text}
+              </a>
+            </li>
+          ))
         }
       </ul>
     </aside>

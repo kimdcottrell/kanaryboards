@@ -1,4 +1,5 @@
 /// <reference lib="dom" />
+import type { Page } from "@playwright/test";
 import { expect, testNoClerk as test } from "../fixtures.ts";
 
 // A "malicious user" suite for the /contact form. RESEND_API_KEY is set in
@@ -16,18 +17,12 @@ import { expect, testNoClerk as test } from "../fixtures.ts";
 // payloads should be reachable via `deno task e2e-test`, whose BASE_URL can
 // point at a real deployed environment).
 
-const nameInput = (page: import("@playwright/test").Page) =>
-  page.locator("#contact-name");
-const emailInput = (page: import("@playwright/test").Page) =>
-  page.locator("#contact-email");
-const messageInput = (page: import("@playwright/test").Page) =>
-  page.locator("#contact-message");
-const submitButton = (page: import("@playwright/test").Page) =>
-  page.locator("[data-submit-button]");
-const successAlert = (page: import("@playwright/test").Page) =>
-  page.locator("[data-success]");
-const errorAlert = (page: import("@playwright/test").Page) =>
-  page.locator("[data-error]");
+const nameInput = (page: Page) => page.locator("#contact-name");
+const emailInput = (page: Page) => page.locator("#contact-email");
+const messageInput = (page: Page) => page.locator("#contact-message");
+const submitButton = (page: Page) => page.locator("[data-submit-button]");
+const successAlert = (page: Page) => page.locator("[data-success]");
+const errorAlert = (page: Page) => page.locator("[data-error]");
 
 test.describe("Contact form — form injection & client-validation safety", () => {
   test.beforeEach(async ({ page }) => {

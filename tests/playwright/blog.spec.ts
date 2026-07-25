@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { expect, testNoClerk as test } from "./fixtures.ts";
+import { expect, testNoClerkToken as test } from "./fixtures.ts";
 
 async function getJsonLd(page: Page) {
   const scripts = await page.locator('script[type="application/ld+json"]')
@@ -9,30 +9,38 @@ async function getJsonLd(page: Page) {
   );
 }
 
+// Target article cards and tag links by href, not by accessible name: the
+// TagList sidebar renders `testing_tag_*` links that collide with card titles
+// under substring matching, and hrefs are unique per post/tag.
+const card = (page: Page, slug: string) =>
+  page.locator(`a.card[href="/blog/${slug}"]`);
+const tagLink = (page: Page, tag: string) =>
+  page.locator(`ul.blog-tags a.blog-tag[href="/blog/tags/${tag}"]`);
+
 test.describe("Blog", () => {
   test.describe("index", () => {
     test("lists the blog articles", async ({ page }) => {
       await page.goto("/blog");
 
-      await expect(
-        page.getByRole("link", { name: "Testing", exact: true }),
-      ).toHaveAttribute("href", "/blog/test");
-      await expect(
-        page.getByRole("link", { name: "Test 2", exact: true }),
-      ).toHaveAttribute("href", "/blog/test2");
+      await expect(card(page, "test").locator("h2.card-title"))
+        .toHaveText("Testing");
+      await expect(card(page, "test2").locator("h2.card-title"))
+        .toHaveText("Test 2");
+      // The one non-test-only post is always listed.
+      await expect(card(page, "actual-article")).toBeVisible();
     });
 
     test("clicking an article link navigates to the individual article", async ({ page }) => {
       await page.goto("/blog");
 
-      await page.getByRole("link", { name: "Testing", exact: true }).click();
+      await card(page, "test").click();
       await expect(page).toHaveURL("/blog/test");
       await expect(
         page.getByRole("heading", { name: "My First Blog Post" }),
       ).toBeVisible();
 
       await page.goto("/blog");
-      await page.getByRole("link", { name: "Test 2", exact: true }).click();
+      await card(page, "test2").click();
       await expect(page).toHaveURL("/blog/test2");
       await expect(
         page.getByRole("heading", { name: "My Second Blog Post" }),
@@ -271,35 +279,40 @@ test.describe("Blog", () => {
   });
 
   test.describe("tags", () => {
-    test("lists the tags", async ({ page }) => {
+    test("/blog/tags redirects to the blog index", async ({ page }) => {
       await page.goto("/blog/tags");
 
+      await expect(page).toHaveURL("/blog");
       await expect(
-        page.getByRole("link", { name: "testing_tag_1" }),
-      ).toHaveAttribute("href", "/blog/tags/testing_tag_1");
-      await expect(
-        page.getByRole("link", { name: "testing_tag_2" }),
-      ).toHaveAttribute("href", "/blog/tags/testing_tag_2");
+        page.getByRole("heading", { name: "What we're chirpin' about." }),
+      ).toBeVisible();
+    });
+
+    test("lists the tags", async ({ page }) => {
+      await page.goto("/blog");
+
+      await expect(tagLink(page, "testing_tag_1")).toBeVisible();
+      await expect(tagLink(page, "testing_tag_2")).toBeVisible();
     });
 
     test("clicking a tag filters articles to that tag", async ({ page }) => {
-      await page.goto("/blog/tags");
-      await page.getByRole("link", { name: "testing_tag_1" }).click();
+      await page.goto("/blog");
+      await tagLink(page, "testing_tag_1").click();
 
       await expect(page).toHaveURL("/blog/tags/testing_tag_1");
-      await expect(page.getByRole("link", { name: "Testing" })).toBeVisible();
-      await expect(page.getByRole("link", { name: "Test 2" })).toBeVisible();
+      await expect(card(page, "test")).toBeVisible();
+      await expect(card(page, "test2")).toBeVisible();
     });
 
     test("tag filtering is isolated per tag", async ({ page }) => {
       await page.goto("/blog/tags/testing_tag_2");
-      await expect(page.getByRole("link", { name: "Testing" })).toBeVisible();
-      await expect(page.getByRole("link", { name: "Test 2" })).toHaveCount(0);
+      await expect(card(page, "test")).toBeVisible();
+      await expect(card(page, "test2")).toHaveCount(0);
     });
 
     test("clicking an article link from a tag page navigates to the individual article", async ({ page }) => {
       await page.goto("/blog/tags/testing_tag_1");
-      await page.getByRole("link", { name: "Testing" }).click();
+      await card(page, "test").click();
 
       await expect(page).toHaveURL("/blog/test");
       await expect(
@@ -314,21 +327,15 @@ test.describe("Blog", () => {
     test("test-only fixtures are hidden from real visitors", async ({ page }) => {
       const blogIndex = await page.goto("/blog");
       expect(blogIndex?.status()).toBe(200);
-      await expect(
-        page.getByRole("link", { name: "Testing", exact: true }),
-      ).toHaveCount(0);
-      await expect(
-        page.getByRole("link", { name: "Test 2", exact: true }),
-      ).toHaveCount(0);
+      // Test-only posts are hidden; the one real post still renders.
+      await expect(card(page, "test")).toHaveCount(0);
+      await expect(card(page, "test2")).toHaveCount(0);
+      await expect(card(page, "test3")).toHaveCount(0);
+      await expect(card(page, "actual-article")).toBeVisible();
 
-      const tagsIndex = await page.goto("/blog/tags");
-      expect(tagsIndex?.status()).toBe(200);
-      await expect(
-        page.getByRole("link", { name: "testing_tag_1" }),
-      ).toHaveCount(0);
-      await expect(
-        page.getByRole("link", { name: "testing_tag_2" }),
-      ).toHaveCount(0);
+      // Tags exclusive to test-only posts drop out of the sidebar too.
+      await expect(tagLink(page, "testing_tag_1")).toHaveCount(0);
+      await expect(tagLink(page, "testing_tag_2")).toHaveCount(0);
 
       // Note: [slug].astro sets Astro.response.status = 404 for any unknown
       // slug, but Astro's dev server doesn't reflect that in the actual HTTP

@@ -34,8 +34,7 @@ const _author = z.string().default(DEFAULT_AUTHOR).transform((value) =>
 );
 const _authorLink = z.url().nullish();
 
-const SITE_BASE_URL = import.meta.env.SITE;
-const DEFAULT_SITE_IMAGE = new URL(siteDefaultImage.src, SITE_BASE_URL)
+const DEFAULT_SITE_IMAGE = new URL(siteDefaultImage.src, import.meta.env.SITE)
   .href;
 
 const blogCollectionSchema = z.object({
