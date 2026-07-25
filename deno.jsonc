@@ -7,7 +7,9 @@
       "npm:esbuild",
       "npm:protobufjs",
       "npm:sharp",
-      "npm:core-js"
+      "npm:core-js",
+      "npm:utf-8-validate",
+      "npm:bufferutil"
     ],
     "deny": []
   },
