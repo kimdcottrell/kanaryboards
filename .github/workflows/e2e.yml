@@ -1,11 +1,11 @@
 name: E2E Tests
 
 on:
+  # `pull_request` only. A `workflow_run` trigger runs in the default branch's
+  # context, where `github.event.pull_request` doesn't exist — the preview-url
+  # lookup got an empty SHA and failed every time. `pull_request` already fires
+  # on every push to the PR.
   pull_request:
-  workflow_run:
-    workflows: [Unit Tests]
-    types:
-      - completed
 
 jobs:
   e2e:
