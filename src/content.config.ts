@@ -21,8 +21,12 @@ const _tags = z
       ),
   );
 
+// `src` is either a full URL (external image) or a root-relative path (a local
+// asset imported through the build, e.g. `/_astro/foo.hash.png`). Root-relative
+// is enough for rendering; the absolute form only matters for og:image and
+// JSON-LD, which BlogPostLayout resolves against the request URL at render time.
 const _image = z.object({
-  src: z.url(),
+  src: z.union([z.url(), z.string().startsWith("/")]),
   alt: z.string().nullish(),
 });
 
@@ -34,16 +38,13 @@ const _author = z.string().default(DEFAULT_AUTHOR).transform((value) =>
 );
 const _authorLink = z.url().nullish();
 
-const DEFAULT_SITE_IMAGE = new URL(siteDefaultImage.src, import.meta.env.SITE)
-  .href;
-
 const blogCollectionSchema = z.object({
   draft: z.boolean().default(true),
   testOnly: z.boolean().default(false),
   title: z.string().min(1),
   description: z.string().min(1),
   images: z.array(_image).default([{
-    src: DEFAULT_SITE_IMAGE,
+    src: siteDefaultImage.src,
     alt:
       "Discover what can be with Kanby: task management software written by people who have had to use it",
   }]),

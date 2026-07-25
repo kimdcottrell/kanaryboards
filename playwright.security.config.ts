@@ -15,20 +15,22 @@
 import process from "node:process";
 import { defineConfig, devices } from "@playwright/test";
 
-const BASE = process.env.BASE_URL ?? "http://localhost:8080"; // local preview server
+const BASE_URL = process.env.CI
+  ? process.env.BASE_URL!
+  : "http://localhost:8080";
 
 export default defineConfig({
   testDir: "tests/playwright/preview-only",
   webServer: {
     // PROD build → src/middleware.ts emits the security headers on every response.
     command: "deno task build && deno task preview:cf-headers",
-    url: BASE,
+    url: "http://localhost:8080",
     reuseExistingServer: true, // skip build+preview if a server is already up at BASE
     timeout: 240_000, // build + boot can take a while
   },
   expect: { timeout: 10_000 },
   use: {
-    baseURL: BASE,
+    baseURL: BASE_URL,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",

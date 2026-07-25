@@ -30,11 +30,17 @@ if (entry) {
     nofollow,
     twitter,
   } = entry.data;
+  // og:image and JSON-LD must be absolute — social crawlers won't resolve
+  // relative paths. Resolved against the inbound request, not the configured
+  // `site`, so every env (local preview, deploy preview, prod) emits URLs on
+  // the host it's actually being served from without knowing it at build time.
+  const abs = (src: string) => new URL(src, Astro.url).href;
+
   const firstImage = images[0];
   const additionalImages = images
     .slice(1)
     .flatMap((img) => [
-      { property: "og:image", content: img.src },
+      { property: "og:image", content: abs(img.src) },
       ...(img.alt ? [{ property: "og:image:alt", content: img.alt }] : []),
     ]);
 
@@ -45,7 +51,7 @@ if (entry) {
     noindex,
     nofollow,
     openGraph: {
-      basic: { title, type: "article", image: firstImage.src },
+      basic: { title, type: "article", image: abs(firstImage.src) },
       image: firstImage.alt ? { alt: firstImage.alt } : undefined,
       article: {
         publishedTime,
@@ -62,7 +68,7 @@ if (entry) {
       creator: twitter.creator,
       title: twitter.title,
       description: twitter.description,
-      image: twitter.images?.[0]?.src,
+      image: twitter.images?.[0] && abs(twitter.images[0].src),
       imageAlt: twitter.images?.[0]?.alt ?? undefined,
     },
     extend: additionalImages.length ? { meta: additionalImages } : undefined,
@@ -81,7 +87,7 @@ if (entry) {
         name: author,
         ...(authorLink && { url: authorLink }),
       },
-      image: images.map((img) => img.src),
+      image: images.map((img) => abs(img.src)),
       description,
     },
   ];

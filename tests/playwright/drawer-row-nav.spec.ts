@@ -247,9 +247,12 @@ test.describe("Drawer row navigation (authenticated)", () => {
       browserName !== "chromium",
       "shares one Clerk test account across runs",
     );
-    // testAuthed boots with global.setup.ts's storage state, so the session is
-    // already live — no clerk.signIn() round-trip needed here.
-    await page.goto("/dashboard");
+    // storage state's __session is short-lived, so page.request would 401 on a
+    // stale one — load a page first and let Clerk JS refresh it. Deliberately
+    // NOT /dashboard: that mounts the board island, whose debounced autosave
+    // then races the seed below and can overwrite it with an empty BOARD/RESET
+    // board. /blog boots Clerk with no island at all.
+    await gotoAndWaitForClerk(page, "/blog");
 
     // Clear any leftover board, then seed KV directly via the authenticated API
     // so the server-rendered drawer reads known rows.

@@ -6,22 +6,7 @@ import tailwindcss from "@tailwindcss/vite";
 import clerk from "@clerk/astro";
 import sitemap from "@astrojs/sitemap";
 
-// `site` drives canonical URLs, og:url, and the sitemap, so it has to match the
-// hostname the app is actually served on. `import.meta.env.DEV` is the only
-// signal available while the config loads that tells `astro dev` apart from
-// `astro build` — MODE is "development" for both.
-let site;
-if (Deno.env.get("CI")) {
-  // CI runs against the deploy preview it just published.
-  site = Deno.env.get("BASE_URL");
-} else if (import.meta.env.DEV) {
-  // The dev server is reached through the traefik proxy hostname.
-  site = "https://kanary.local.dev";
-} else {
-  // A local prod build is served by `deno task preview` on :8085, which is also
-  // where Playwright points.
-  site = "http://localhost:8085";
-}
+const SITE = "https://kanby.ai";
 
 // Clerk publishable keys are PUBLIC (they are designed to ship to the browser),
 // so hardcoding all three here is safe.
@@ -52,10 +37,7 @@ export default defineConfig({
       // /blog/* routes are rendered on demand, so the sitemap integration
       // can't discover them by crawling static build output; they publish
       // their own sitemap fragment instead (see src/pages/sitemap-blog.xml.ts).
-      customSitemaps: [`${site}/sitemap-blog.xml`],
-      filter: (page) =>
-        page !== `${site}/build/` &&
-        page !== `${site}/ssr/`,
+      customSitemaps: [`${SITE}/sitemap-blog.xml`],
     }),
   ],
 
@@ -113,7 +95,7 @@ export default defineConfig({
     "/blog/tags": "/blog",
   },
 
-  site: site,
+  site: SITE,
 
   server: {
     port: 4321,

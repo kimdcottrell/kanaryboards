@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// this has to get setup.
+// the usual url of this project locally is kanary.local.dev,
+// but for testing, it is localhost:8085, UNLESS we're in CI
 const BASE_URL = process.env.CI
   ? process.env.BASE_URL!
   : "http://localhost:8085";
@@ -9,8 +12,8 @@ export default defineConfig({
   testIgnore: "**/preview-only/**",
   webServer: {
     // PROD build → src/middleware.ts emits the security headers on every response.
-    command: `BASE_URL='${BASE_URL}' deno task build && deno task preview`,
-    url: BASE_URL,
+    command: `BASE_URL="${BASE_URL}" deno task build && deno task preview`,
+    url: "http://localhost:8085",
     reuseExistingServer: true, // skip build+preview if a server is already up at BASE
     timeout: 240_000, // build + boot can take a while
   },
