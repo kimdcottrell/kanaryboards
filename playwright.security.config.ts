@@ -21,7 +21,7 @@ const BASE_URL = process.env.CI
 
 export default defineConfig({
   testDir: "tests/playwright/preview-only",
-  webServer: {
+  webServer: process.env.CI ? undefined : {
     // PROD build → src/middleware.ts emits the security headers on every response.
     command: "deno task build && deno task preview:cf-headers",
     url: "http://localhost:8080",

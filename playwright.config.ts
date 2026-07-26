@@ -10,7 +10,11 @@ const BASE_URL = process.env.CI
 export default defineConfig({
   testDir: "tests/playwright",
   testIgnore: "**/preview-only/**",
-  webServer: {
+  // In CI the tests run against the Deno Deploy preview at BASE_URL, so there is
+  // nothing to boot locally. `webServer` runs regardless of `baseURL`, and its
+  // `url` probe only ever checks localhost:8085 — so leaving it on made CI try to
+  // run `deno` on a runner that only has node installed.
+  webServer: process.env.CI ? undefined : {
     // PROD build → src/middleware.ts emits the security headers on every response.
     command: `BASE_URL="${BASE_URL}" deno task build && deno task preview`,
     url: "http://localhost:8085",
