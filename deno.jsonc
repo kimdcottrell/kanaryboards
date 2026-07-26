@@ -3,14 +3,22 @@
     "allow": [
       "npm:@anthropic-ai/claude-code",
       "npm:@clerk/shared",
-      "npm:@google/genai",
       "npm:esbuild",
-      "npm:protobufjs",
-      "npm:sharp",
-      "npm:utf-8-validate",
-      "npm:bufferutil"
+      "npm:sharp"
     ],
-    "deny": []
+    // These four are denied, not merely unlisted, so Deno never queues them.
+    // bufferutil/utf-8-validate compile native addons via node-gyp-build and get
+    // OOM-killed in Deno Deploy's build sandbox (exit 137), which SIGTERMs the rest
+    // of the queue (exit 143) and leaves the packages uninitialized at import time.
+    // They are optional ws perf addons (ws try/catches the require and falls back to
+    // JS); protobufjs' postinstall only prints a warning and @google/genai's
+    // preinstall is a literal `echo`. Nothing here produces a needed artifact.
+    "deny": [
+      "npm:@google/genai",
+      "npm:bufferutil",
+      "npm:protobufjs",
+      "npm:utf-8-validate"
+    ]
   },
   "unstable": ["kv"],
   "minimumDependencyAge": "0",
