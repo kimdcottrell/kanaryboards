@@ -61,7 +61,26 @@ function jsonResponse(body: object, status: number): Response {
   });
 }
 
-export const GET: APIRoute = async ({ locals }) => {
+// Reject an unauthenticated request. A top-level browser navigation (someone
+// typing /api/board into the address bar) is bounced to the dashboard's
+// friendly "you must be logged in" alert; every programmatic fetch — how the
+// app actually calls this endpoint — gets a plain 401.
+function unauthorizedResponse(request: Request): Response {
+  if (request.headers.get("Sec-Fetch-Mode") === "navigate") {
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: "/dashboard?unauthorized=1",
+        "x-authenticated": "false",
+      },
+    });
+  }
+  return jsonResponse({ error: "Unauthorized" }, 401);
+}
+
+export const GET: APIRoute = async ({ locals, request }) => {
+  const { userId } = locals.auth();
+  if (!userId) return unauthorizedResponse(request);
   const boardId = locals.boardId;
   if (!boardId) {
     console.error({
@@ -77,6 +96,8 @@ export const GET: APIRoute = async ({ locals }) => {
 };
 
 export const PUT: APIRoute = async ({ request, locals }) => {
+  const { userId } = locals.auth();
+  if (!userId) return unauthorizedResponse(request);
   const boardId = locals.boardId;
   if (!boardId) {
     console.error({
@@ -102,7 +123,9 @@ export const PUT: APIRoute = async ({ request, locals }) => {
   return jsonResponse({ ok: true }, 200);
 };
 
-export const DELETE: APIRoute = async ({ locals }) => {
+export const DELETE: APIRoute = async ({ locals, request }) => {
+  const { userId } = locals.auth();
+  if (!userId) return unauthorizedResponse(request);
   const boardId = locals.boardId;
   if (!boardId) {
     console.error({

@@ -1,4 +1,5 @@
 /// <reference lib="dom" />
+import type { Page } from "@playwright/test";
 import { expect, testNoClerk as test } from "../fixtures.ts";
 
 // A "malicious user" suite for the Mailchimp SubscribeForm (footer, every
@@ -15,12 +16,10 @@ const EXPECTED_ACTION =
   "https://kanby.us6.list-manage.com/subscribe/post?u=cdd9f0d14a8a33cdf4471d205&id=444ff43317&f_id=006fb5e0f0";
 const HONEYPOT_NAME = "b_cdd9f0d14a8a33cdf4471d205_444ff43317";
 
-const subscribeForm = (page: import("@playwright/test").Page) =>
+const subscribeForm = (page: Page) =>
   page.locator("#mc-embedded-subscribe-form");
-const emailInput = (page: import("@playwright/test").Page) =>
-  page.locator("#mce-EMAIL");
-const submitButton = (page: import("@playwright/test").Page) =>
-  page.locator("#mc-embedded-subscribe");
+const emailInput = (page: Page) => page.locator("#mce-EMAIL");
+const submitButton = (page: Page) => page.locator("#mc-embedded-subscribe");
 
 test.describe("Mailchimp subscribe form — form-action safety", () => {
   test.beforeEach(async ({ page }) => {

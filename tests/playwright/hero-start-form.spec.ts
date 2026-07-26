@@ -1,5 +1,11 @@
-import { clerk } from "@clerk/testing/playwright";
-import { expect, fillControlled, test, testNoClerk } from "./fixtures.ts";
+import type { Page } from "@playwright/test";
+import {
+  expect,
+  fillControlled,
+  gotoAndWaitForClerk,
+  testAuthed as test,
+  testNoClerk,
+} from "./fixtures.ts";
 
 // The homepage hero form (HeroStartForm.tsx) generates tasks via
 // /api/generate-tasks — which calls Google GenAI and needs GOOGLE_AI_STUDIO_KEY
@@ -20,22 +26,21 @@ const MOCK_TASKS_RESPONSE = {
 };
 
 const DASHBOARD_READY = "html[data-board-loaded='true']";
-const E2E_EMAIL = process.env.E2E_CLERK_USER_EMAIL ?? "";
 
-const heroInput = (page: import("@playwright/test").Page) =>
+const heroInput = (page: Page) =>
   page.getByPlaceholder("What do you want to do?");
-const getStarted = (page: import("@playwright/test").Page) =>
+const getStarted = (page: Page) =>
   page.getByRole("button", { name: "Get Started" });
 
 // The board row whose title is `goal`. Scoping task assertions to this row
 // keeps the test resilient to any other rows already on the board (the
 // authenticated case runs against a shared account that other specs mutate).
-const rowFor = (page: import("@playwright/test").Page, goal: string) =>
+const rowFor = (page: Page, goal: string) =>
   page.locator("[id^='row-section-']").filter({
     has: page.getByRole("heading", { name: goal }),
   });
 
-function mockGenerateTasks(page: import("@playwright/test").Page) {
+function mockGenerateTasks(page: Page) {
   return page.route("/api/generate-tasks", (route) =>
     route.fulfill({
       status: 200,
@@ -50,7 +55,7 @@ testNoClerk.describe("Homepage hero form — anonymous", () => {
   // which would otherwise re-run on the /dashboard redirect and wipe what we
   // just persisted.
   testNoClerk.beforeEach(async ({ page }) => {
-    await page.goto("/");
+    await gotoAndWaitForClerk(page, "/");
   });
 
   testNoClerk(
@@ -139,10 +144,11 @@ test.describe("Homepage hero form — authenticated", () => {
       browserName !== "chromium",
       "shares one Clerk test account across runs",
     );
+    // testAuthed boots with global.setup.ts's storage state, so the session is
+    // already live — no clerk.signIn() round-trip needed here.
     await page.goto("/dashboard");
     const cleared = await page.request.get("/api/delete-test-data");
     expect(cleared.status()).toBe(200);
-    await clerk.signIn({ page, emailAddress: E2E_EMAIL });
     await mockGenerateTasks(page);
   });
 

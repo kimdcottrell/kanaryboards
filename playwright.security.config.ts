@@ -15,20 +15,22 @@
 import process from "node:process";
 import { defineConfig, devices } from "@playwright/test";
 
-const BASE = process.env.BASE_URL ?? "http://localhost:8080"; // local preview server
+const BASE_URL = process.env.CI
+  ? process.env.BASE_URL!
+  : "http://localhost:8080";
 
 export default defineConfig({
   testDir: "tests/playwright/preview-only",
-  webServer: {
+  webServer: process.env.CI ? undefined : {
     // PROD build → src/middleware.ts emits the security headers on every response.
     command: "deno task build && deno task preview:cf-headers",
-    url: BASE,
+    url: "http://localhost:8080",
     reuseExistingServer: true, // skip build+preview if a server is already up at BASE
     timeout: 240_000, // build + boot can take a while
   },
   expect: { timeout: 10_000 },
   use: {
-    baseURL: BASE,
+    baseURL: BASE_URL,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
@@ -49,9 +51,20 @@ export default defineConfig({
       : {}),
   },
   projects: [
+    // Without this, clerkSetup() never runs for this config, so
+    // CLERK_TESTING_TOKEN is undefined and setupClerkTestingToken proxies every
+    // FAPI request through route.fetch() while appending no bypass token —
+    // all of the interception cost, none of the bot-protection bypass.
+    // global.setup.ts lives outside this config's testDir, hence the override.
+    {
+      name: "setup",
+      testDir: "tests/playwright",
+      testMatch: "**/global.setup.ts",
+    },
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
+      dependencies: ["setup"],
     },
   ],
   reporter: [

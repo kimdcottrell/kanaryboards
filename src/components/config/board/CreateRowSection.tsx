@@ -17,7 +17,7 @@ export default function CreateRowSection() {
   return (
     <div
       data-testid="create-new-row"
-      className=" bg-base-200 mt-6 p-2 md:p-3"
+      className="new-board-row bg-base-200 mt-6 p-2 md:p-3"
     >
       <h3 className="text-lg font-semibold mb-3">Create a new row</h3>
       <form

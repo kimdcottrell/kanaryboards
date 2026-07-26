@@ -34,10 +34,19 @@ runs:
         for i in $(seq 1 24); do
           STATUSES=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
             "https://api.github.com/repos/${{ inputs.repository }}/statuses/$SHA")
-          TARGET_URL=$(echo "$STATUSES" | jq -r \
-            '.[] | select(.context == "deploy/kimdcottrell/kanby" and .state == "success") | .target_url // empty' \
-            | head -1)
-          if [ -n "$TARGET_URL" ]; then
+          # Statuses come back newest-first, so the first entry for the deploy
+          # context is the build's current state. Reading the latest one (rather
+          # than filtering for success) lets a failed build stop the wait
+          # immediately instead of polling out the full timeout.
+          DEPLOY=$(echo "$STATUSES" | jq -r \
+            '[.[] | select(.context == "deploy/kimdcottrell/kanby")][0] // empty')
+          STATE=$(echo "$DEPLOY" | jq -r '.state // empty')
+          TARGET_URL=$(echo "$DEPLOY" | jq -r '.target_url // empty')
+          if [ "$STATE" = "failure" ] || [ "$STATE" = "error" ]; then
+            echo "::error::Deno Deploy build failed ($STATE): $TARGET_URL"
+            exit 1
+          fi
+          if [ "$STATE" = "success" ]; then
             REVISION_ID="${TARGET_URL##*/}"
             for j in $(seq 1 12); do
               RESPONSE=$(curl -s -H "Authorization: Bearer $DENO_DEPLOY_TOKEN" \

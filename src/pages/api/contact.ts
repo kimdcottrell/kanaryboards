@@ -5,7 +5,7 @@ import { Resend } from "resend";
 import { contactFormSchema } from "@lib/contact-schema.ts";
 
 const CONTACT_EMAIL_TO = "hello@kanby.ai";
-const CONTACT_EMAIL_FROM = "Kanby Contact Form <contact@kanby.ai>";
+const CONTACT_EMAIL_FROM = "Kanby Contact Form <do-not-reply@kanby.ai>";
 
 const HTML_ESCAPES: Record<string, string> = {
   "&": "&amp;",

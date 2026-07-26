@@ -1,7 +1,12 @@
 /// <reference lib="dom" />
-import { clerk } from "@clerk/testing/playwright";
 import { type Page, type Route } from "@playwright/test";
-import { expect, type SessionTest, test, testNoClerk } from "./fixtures.ts";
+import {
+  expect,
+  gotoAndWaitForClerk,
+  type SessionTest,
+  testAuthed as test,
+  testNoClerk,
+} from "./fixtures.ts";
 
 /**
  * Seeded board with enough rows that the last one sits well below the fold, so
@@ -99,7 +104,7 @@ function drawerNavChecks(t: SessionTest) {
     "drawer link scrolls the page down to the intended row",
     async ({ page }) => {
       await page.setViewportSize({ width: 1024, height: 600 });
-      await page.goto("/dashboard");
+      await gotoAndWaitForClerk(page, "/dashboard");
       await page.locator(DASHBOARD_READY).waitFor({ state: "attached" });
 
       // The last row starts below the fold.
@@ -120,7 +125,7 @@ function drawerNavChecks(t: SessionTest) {
   t(
     "clicking a drawer link on the dashboard does not fully reload the page",
     async ({ page }) => {
-      await page.goto("/dashboard");
+      await gotoAndWaitForClerk(page, "/dashboard");
       await page.locator(DASHBOARD_READY).waitFor({ state: "attached" });
 
       // A full document reload wipes the JS context; a client-side React Router
@@ -148,7 +153,7 @@ function drawerNavChecks(t: SessionTest) {
     "clicking a drawer link from outside the dashboard shows the loading screen, then the row",
     async ({ page }) => {
       // "/" is the only page outside the SPA that renders the drawer.
-      await page.goto("/");
+      await gotoAndWaitForClerk(page, "/");
       // Open the drawer, then confirm the row link is there before clicking
       // (guest: populated by the DrawerMenu client script from localStorage;
       // authenticated: server-rendered into the HTML).
@@ -217,7 +222,7 @@ testNoClerk.describe("Drawer row navigation (guest)", () => {
   testNoClerk(
     "the homepage demo board never overwrites the drawer with its own rows",
     async ({ page }) => {
-      await page.goto("/");
+      await gotoAndWaitForClerk(page, "/");
 
       // Prove the demo widget has actually hydrated and dispatched its own
       // BOARD/LOAD (whose seed row is titled "Sample Project") before checking
@@ -235,8 +240,6 @@ testNoClerk.describe("Drawer row navigation (guest)", () => {
 });
 
 test.describe("Drawer row navigation (authenticated)", () => {
-  const E2E_EMAIL = process.env.E2E_CLERK_USER_EMAIL ?? "";
-
   test.beforeEach(async ({ page, browserName }) => {
     // Mutates the shared Clerk test account's board in KV — single browser only
     // so concurrent runs don't race over the same board.
@@ -244,8 +247,12 @@ test.describe("Drawer row navigation (authenticated)", () => {
       browserName !== "chromium",
       "shares one Clerk test account across runs",
     );
-    await page.goto("/dashboard");
-    await clerk.signIn({ page, emailAddress: E2E_EMAIL });
+    // storage state's __session is short-lived, so page.request would 401 on a
+    // stale one — load a page first and let Clerk JS refresh it. Deliberately
+    // NOT /dashboard: that mounts the board island, whose debounced autosave
+    // then races the seed below and can overwrite it with an empty BOARD/RESET
+    // board. /blog boots Clerk with no island at all.
+    await gotoAndWaitForClerk(page, "/blog");
 
     // Clear any leftover board, then seed KV directly via the authenticated API
     // so the server-rendered drawer reads known rows.

@@ -1,0 +1,48 @@
+---
+import type { CollectionEntry } from "astro:content";
+import TagList from "@components/pages/blog/TagList.astro";
+import Card from "@components/pages/blog/Card.astro";
+
+interface Props {
+  posts: CollectionEntry<"blog">[];
+  allTags: string[];
+  activeTag?: string;
+  emptyMessage?: string;
+}
+
+const {
+  posts,
+  allTags,
+  activeTag,
+  emptyMessage = "No blog posts yet. Check back soon.",
+} = Astro.props;
+---
+
+<div class="mx-auto w-11/12 max-w-6xl py-12">
+  <h1 class="font-roboto-slab font-bold text-4xl md:text-5xl lg:text-6xl mb-3">
+    What we're chirpin' about.
+  </h1>
+  <p>Latest news, notes from the developer, and more.</p>
+
+  <div class="mt-6 grid grid-cols-1 gap-8 pt-8 md:grid-cols-[1fr_4fr]">
+    <aside class="flex flex-col md:sticky md:top-4 md:self-start">
+      <h5 class="tiny-header">
+        <span class="iconify hugeicons--pin"></span>
+        Category
+      </h5>
+      <TagList tags={allTags} activeTag={activeTag} />
+    </aside>
+
+    {
+      posts.length > 0 ? (
+        <section class="grid grid-cols-1 gap-4 md:grid-cols-2 md:self-start">
+          {posts.map((post) => (
+            <Card post={post} />
+          ))}
+        </section>
+      ) : (
+        <p>{emptyMessage}</p>
+      )
+    }
+  </div>
+</div>

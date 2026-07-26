@@ -3,12 +3,22 @@
     "allow": [
       "npm:@anthropic-ai/claude-code",
       "npm:@clerk/shared",
-      "npm:@google/genai",
       "npm:esbuild",
-      "npm:protobufjs",
       "npm:sharp"
     ],
-    "deny": []
+    // These four are denied, not merely unlisted, so Deno never queues them.
+    // bufferutil/utf-8-validate compile native addons via node-gyp-build and get
+    // OOM-killed in Deno Deploy's build sandbox (exit 137), which SIGTERMs the rest
+    // of the queue (exit 143) and leaves the packages uninitialized at import time.
+    // They are optional ws perf addons (ws try/catches the require and falls back to
+    // JS); protobufjs' postinstall only prints a warning and @google/genai's
+    // preinstall is a literal `echo`. Nothing here produces a needed artifact.
+    "deny": [
+      "npm:@google/genai",
+      "npm:bufferutil",
+      "npm:protobufjs",
+      "npm:utf-8-validate"
+    ]
   },
   "unstable": ["kv"],
   "minimumDependencyAge": "0",
@@ -28,13 +38,14 @@
     "dist/",
     "node_modules/",
     "src/db",
-    "test-results/"
+    "test-results/",
+    "vendor/"
   ],
   "nodeModulesDir": "auto",
   "tasks": {
     "astro": "deno run --allow-all astro",
-    "build": "rm -rf ./.astro ./dist; INLINE_RUNTIME_CHUNK=false deno run --allow-all astro build",
-    "dev": "deno run --allow-all astro dev",
+    "build": "rm -rf ./.astro ./dist; INLINE_RUNTIME_CHUNK=false deno run -A astro build",
+    "dev": "deno run --env-file=.env --allow-all astro dev",
     "e2e-test": "deno task playwright test --project=chromium",
     "e2e-test:ui": "deno task playwright test --ui-port=8080 --ui-host=0.0.0.0",
     // Local-only "malicious user" security-header suite. Builds on `playwright`
@@ -42,23 +53,15 @@
     // a prod build + preview because the headers only exist in prod.
     "e2e-security": "deno task playwright test --config=playwright.security.config.ts",
     "husky": "deno run --allow-all husky",
-    "playwright": "START_DEV_SERVER=1 PW_TEST_CONNECT_WS_ENDPOINT='ws://playwright:3000' PW_DISABLE_TS_ESM=1 deno run --env-file=.env --allow-all ./node_modules/.bin/playwright",
-    "preview": "deno run --allow-net --allow-read --allow-env ./dist/server/entry.mjs",
-    "preview:cf-headers": "deno run --allow-net --allow-read --allow-env ./src/cf-header-included-proxy.ts",
+    "playwright": "PW_TEST_CONNECT_WS_ENDPOINT='ws://playwright:3000' PW_DISABLE_TS_ESM=1 deno run --env-file=.env --allow-all ./node_modules/.bin/playwright",
+    "preview": "deno run --allow-net --allow-read --allow-ffi --allow-env ./dist/server/entry.mjs",
+    "preview:cf-headers": "deno run --allow-net --allow-ffi --allow-read --allow-env ./src/cf-header-included-proxy.ts",
     "vitest": "deno run --allow-all vitest"
   },
   "test": {
     // exclude these or `deno test` will try to run tests in these folders and fail.
     // tests in those dirs are handled by specific `deno task` calls above
     "exclude": ["./tests/vitest/*", "./tests/playwright/*"]
-  },
-  "imports": {
-    // these are needed to get around Deno Deploy problems thanks to @deno/astro-adapter
-    "@std/http": "jsr:@std/http@^1.1.0",
-    "@std/path": "jsr:@std/path@^1.1.4"
-    // NOTE: package.json MUST exist for:
-    // - resolving preview error of `error: [ERR_UNSUPPORTED_ESM_URL_SCHEME] Only file and data URLs are supported by the default ESM loader. Received protocol 'astro'`
-    // - dependabot does not support deno.jsonc
   },
   "deploy": {
     "org": "kimdcottrell",

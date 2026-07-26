@@ -6,6 +6,7 @@ export default getViteConfig({
     dir: "tests/vitest",
     environment: "jsdom",
     globals: true,
+    setupFiles: ["./tests/vitest/localStorage.setup.ts"],
     reporters: ["default", "github-actions"],
     coverage: {
       provider: "v8",

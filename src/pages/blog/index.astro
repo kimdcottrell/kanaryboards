@@ -1,6 +1,6 @@
 ---
 import Layout from "@layouts/BaseLayout.astro";
-import Prose from "@components/pages/Prose.astro";
+import Archive from "@components/pages/blog/Archive.astro";
 import { getProtectedCollection } from "@src/utils";
 import { setPublicCache } from "@lib/http/cache-headers";
 
@@ -12,6 +12,10 @@ const posts = await getProtectedCollection("blog", {
     includeTestOnly: isPlaywrightTest,
 });
 
+const allTags = [
+    ...new Set(posts.flatMap((post) => post.data.tags ?? [])),
+].sort();
+
 let seo = {
     title: "Blog",
     description: "All blog posts.",
@@ -19,19 +23,5 @@ let seo = {
 ---
 
 <Layout seo={seo}>
-    <Prose>
-        {
-            posts.length > 0 ? (
-                <ul>
-                    {posts.map((post) => (
-                        <li>
-                            <a href={`/blog/${post.id}`}>{post.data.title}</a>
-                        </li>
-                    ))}
-                </ul>
-            ) : (
-                <p>No blog posts yet. Check back soon.</p>
-            )
-        }
-    </Prose>
+    <Archive posts={posts} allTags={allTags} />
 </Layout>

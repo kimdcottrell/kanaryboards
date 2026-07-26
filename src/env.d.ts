@@ -1,4 +1,4 @@
-/// <reference path="../.astro/types.d.ts" />
+/// <reference types="astro/client" />
 
 interface ImportMetaEnv {
   readonly DENO_TIMELINE: string | undefined;
@@ -7,6 +7,7 @@ interface ImportMetaEnv {
   readonly GOOGLE_AI_STUDIO_MODEL: string | undefined;
   readonly MODE: string;
   readonly RESEND_API_KEY: string | undefined;
+
   [key: string]: string | boolean | undefined;
 }
 
@@ -30,3 +31,5 @@ declare namespace React {
     [key: `--${string}`]: string | number;
   }
 }
+
+Astro.locals.runtime.env;

@@ -36,7 +36,7 @@ COPY package*.json ./
 RUN npm config set @jsr:registry https://npm.jsr.io --location=project
 
 # Install dependencies 
-RUN npm install @playwright/test typescript --no-save
+RUN npm install @playwright/test typescript --no-save --legacy-peer-deps
 
 # sudo is installed specifically for this command, 
 #   as deps must be installed by a root-level user

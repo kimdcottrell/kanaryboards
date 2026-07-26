@@ -22,6 +22,8 @@ export function applyTheme(theme: string) {
   html.classList.toggle("mocha", theme === NIGHT_THEME);
 
   localStorage.setItem("theme", theme);
+
+  dispatchEvent(new CustomEvent("theme-change", { detail: theme }));
 }
 
 export function toggleTheme(current: string) {

@@ -1,9 +1,4 @@
-import { expect, testNoClerk as test } from "./fixtures.ts";
-
-// Override baseURL for this spec: the request fixture runs in the test runner process
-// (app container), so localhost:4321 reaches the dev server directly, bypassing Traefik.
-// Browser-based specs keep the global baseURL (https://kanary.local.dev).
-test.use({ baseURL: process.env.BASE_URL ?? "http://localhost:4321" });
+import { expect, testNoClerkToken as test } from "./fixtures.ts";
 
 test.describe("POST /api/generate-tasks — live API connection", () => {
   test("returns 200 with a non-empty task list for a real prompt", async ({ request }) => {

@@ -1,7 +1,6 @@
 /// <reference lib="dom" />
-import { clerk } from "@clerk/testing/playwright";
 import type { Page } from "@playwright/test";
-import { expect, testNoClerk as test } from "../fixtures.ts";
+import { expect, testAuthed as test } from "../fixtures.ts";
 
 // A "malicious user" suite for /api/board. There's no SQL here — Deno KV is a
 // key-value store keyed by ["board", boardId], not a query engine — so there's
@@ -23,8 +22,6 @@ import { expect, testNoClerk as test } from "../fixtures.ts";
 // preview-only/ per policy: no spec that fires attack-shaped payloads at a
 // live server should be reachable via `deno task e2e-test`, whose BASE_URL
 // can point at a real deployed environment.
-
-const E2E_EMAIL = process.env.E2E_CLERK_USER_EMAIL ?? "";
 
 async function seedBoard(page: Page, title: string) {
   const res = await page.request.put("/api/board", {
@@ -48,11 +45,8 @@ test.describe("/api/board — malicious input safety", () => {
       browserName !== "chromium",
       "shares one Clerk test account across runs",
     );
-    await page.goto("/dashboard");
-    await clerk.signIn({ page, emailAddress: E2E_EMAIL });
-    // Reload so the server recomputes isAuthenticated (see global.setup.ts) —
-    // without this wait, page.request calls below can race the server's auth
-    // cookie propagation and hit /api/board before locals.boardId is set.
+    // testAuthed boots with global.setup.ts's storage state, so the session is
+    // already live — no clerk.signIn() round-trip needed here.
     await page.goto("/dashboard");
     await page.locator("html[data-board-loaded='true']").waitFor({
       state: "attached",

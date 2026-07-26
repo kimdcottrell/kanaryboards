@@ -1,16 +1,22 @@
 name: E2E Tests
 
 on:
+  # `pull_request` only. A `workflow_run` trigger runs in the default branch's
+  # context, where `github.event.pull_request` doesn't exist — the preview-url
+  # lookup got an empty SHA and failed every time. `pull_request` already fires
+  # on every push to the PR.
   pull_request:
-  workflow_run:
-    workflows: [Unit Tests]
-    types:
-      - completed
 
 jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+
+    permissions:
+      id-token: write # Needed for auth with Deno Deploy
+      contents: read # Needed to clone the repository
+      statuses: read # Needed to read the Deno Deploy commit status
+    
     steps:
       - uses: actions/checkout@v7
 
@@ -55,7 +61,10 @@ jobs:
 
       - name: Run e2e tests
         id: run-tests
-        run: npx playwright test --project=chromium --reporter=list,json
+        # `html` must be listed explicitly: a CLI --reporter replaces the
+        # config's `reporter` array outright, so omitting it means no
+        # playwright-report/ for the artifact upload and Pages deploy below.
+        run: npx playwright test --project=chromium --reporter=list,json,html
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: results.json
           BASE_URL: ${{ steps.preview-url.outputs.base_url }}
@@ -86,31 +95,42 @@ jobs:
         env:
           REPORT_URL: ${{ steps.deploy.outputs.pages-deployment-alias-url }}
         run: |
-          {
-            if [ -n "$REPORT_URL" ]; then
-              echo "🔦 Playwright failure report: $REPORT_URL"
-            else
-              echo "🎉 All Playwright tests succeeded!"
-            fi
-            echo ""
-          } >> "$GITHUB_STEP_SUMMARY"
-
           if [ ! -f results.json ]; then
-            echo "No Playwright results found." >> "$GITHUB_STEP_SUMMARY"
+            {
+              echo "No Playwright results found."
+              if [ -n "$REPORT_URL" ]; then
+                echo ""
+                echo "🔦 [Playwright report]($REPORT_URL)"
+              fi
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
-          jq -r '
-            def collect(path):
-              ( .suites[]? | collect(path + [.title]) ),
-              ( .specs[]? | { title: ((path + [.title]) | join(" > ")), file: .file, tests: .tests } )
+          jq -r --arg reportUrl "$REPORT_URL" '
+            # Playwright error messages carry ANSI color codes; strip them and
+            # keep the first few lines so the summary stays readable.
+            def errorBlock:
+              if . == "" then ""
+              else
+                "\n\n  ```\n"
+                + (gsub("\u001b\\[[0-9;]*m"; "") | split("\n") | .[0:6] | map("  " + .) | join("\n"))
+                + "\n  ```"
+              end
+            ;
+
+            # `$path` (not `path`): a non-$ jq argument is a closure re-evaluated
+            # at each use site, so the recursive call resolved `.title` against
+            # the spec instead of the suite and titles came out duplicated.
+            def collect($path):
+              ( .suites[]? | collect($path + [.title]) ),
+              ( .specs[]? | { title: (($path + [.title]) | join(" > ")), file: .file, tests: .tests } )
             ;
 
             . as $root
             | ($root.config.retries // 0) as $maxRetries
             | [$root.suites[]? | collect([])] as $specs
             | ($specs
-                | map(.title as $t | .file as $f | .tests[] | {title: $t, file: $f, project: .projectName, status: .status, retries: ((.results // []) | length)})
+                | map(.title as $t | .file as $f | .tests[] | {title: $t, file: $f, project: .projectName, status: .status, retries: ((.results // []) | length), error: ((((.results // []) | last) // {}) | .error.message // "")})
                 | map(select(.project == "chromium" or .project == "firefox" or .project == "webkit"))
               ) as $tests
             | ($tests | map(select(.status=="expected")) | length) as $passed
@@ -119,11 +139,35 @@ jobs:
             | ($tests | map(select(.status=="skipped")) | length) as $skipped
             | ($tests | length) as $total
             | ($tests | map(select(.status=="flaky"))) as $flakyTests
+            | ($tests | map(select(.status=="unexpected"))) as $failedTests
             | [
+                (if $failed > 0
+                  then "❌ " + ($failed|tostring) + " Playwright test" + (if $failed == 1 then "" else "s" end) + " failed."
+                    + (if $reportUrl != "" then " 🔦 [View the full report](" + $reportUrl + ")" else "" end)
+                  else "🎉 All Playwright tests succeeded!"
+                end),
+                "",
                 "### Summary",
                 "",
                 "- **Test Results:** " + (if $failed>0 then "❌ " + ($failed|tostring) + " failures · " else "" end) + "✅ " + ($passed|tostring) + " passes · ⚠️ " + ($flaky|tostring) + " flaky" + (if $skipped>0 then " · ⏭️ " + ($skipped|tostring) + " skipped" else "" end) + " · " + ($total|tostring) + " total"
               ]
+              + (if ($failedTests|length) > 0 then
+                  [
+                    "",
+                    "### Failed Tests",
+                    ""
+                  ] + (
+                    $failedTests | group_by(.file) | map(
+                      ["`" + .[0].file + "` (" + (length|tostring) + " failed)", ""]
+                      + (map(
+                          "- `" + .title + "` — failed on **" + .project + "** after "
+                          + (.retries|tostring) + " attempt" + (if .retries == 1 then "" else "s" end)
+                          + (.error | errorBlock)
+                        ))
+                      + [""]
+                    ) | flatten
+                  )
+                else [] end)
               + (if ($flakyTests|length) > 0 then
                   [
                     "",
