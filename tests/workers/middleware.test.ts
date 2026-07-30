@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { APIContext } from "astro";
 
@@ -9,25 +8,24 @@ const authState = vi.hoisted(() => ({
 }));
 
 // Replace clerkMiddleware with a pass-through that invokes the handler with a
-// controllable `auth` callback.
-vi.mock("@clerk/astro/server", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@clerk/astro/server")>();
-  return {
-    ...actual,
-    // deno-lint-ignore no-explicit-any
-    clerkMiddleware: (handler: any) => (context: any, next: any) =>
-      handler(() => ({ ...authState }), context, next),
-  };
-});
+// controllable `auth` callback. Deliberately does NOT spread the real module
+// via importOriginal: loading it pulls in es-module-lexer's WASM, which
+// workerd refuses to compile ("Wasm code generation disallowed by embedder").
+// clerkMiddleware is the only export src/middleware.ts uses.
+vi.mock("@clerk/astro/server", () => ({
+  // deno-lint-ignore no-explicit-any
+  clerkMiddleware: (handler: any) => (context: any, next: any) =>
+    handler(() => ({ ...authState }), context, next),
+}));
 
-// Avoid touching Deno KV — the authenticated path looks up a board id.
+// Avoid touching KV — the authenticated path looks up a board id.
 vi.mock("@lib/db/kv.ts", () => ({
   getBoardIdForUser: vi.fn(() => "existing-board"),
   setBoardIdForUser: vi.fn(async () => {}),
 }));
 
 const { protectedRequestMiddleware, boardMiddleware } = await import(
-  "../../src/middleware.ts"
+  "@src/middleware.ts"
 );
 
 function makeContext(

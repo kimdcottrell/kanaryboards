@@ -2,6 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from "astro";
 import type { APIContext } from "astro";
+import { env } from "cloudflare:workers";
 
 import { GoogleGenAI } from "@google/genai";
 
@@ -22,31 +23,11 @@ const normalizeTaskLines = (content: string) =>
     )
     .filter(Boolean);
 
-// Read secrets at runtime via Deno.env.get(), NOT import.meta.env.
-// Astro/Vite statically inlines import.meta.env.* at build time, so on Deno
-// Deploy the value gets frozen in during the build — or baked as `undefined`
-// when the var isn't present in the build environment — and the production
-// runtime env var is ignored. Deno.env.get() is a true runtime lookup.
-// (import.meta.env.MODE below is fine: MODE is a build-time constant, not a secret.)
-const apiKey = Deno.env.get("GOOGLE_AI_STUDIO_KEY");
-export const apiModel = Deno.env.get("GOOGLE_AI_STUDIO_MODEL") ||
-  "gemini-3.1-flash-lite";
+export const DEFAULT_MODEL = "gemini-3.1-flash-lite";
 
 const MAX_PROMPT_LENGTH = 2000;
 const MIN_TASKS = 1;
 const MAX_TASKS = 30;
-
-if (!apiKey) {
-  console.error(
-    import.meta.env.MODE === "development"
-      ? "GOOGLE_AI_STUDIO_KEY is not set in environment variables."
-      : "Problem connecting to AI model. Please contact support.",
-  );
-}
-
-const ai = apiKey
-  ? new GoogleGenAI({ vertexai: false, apiVersion: "v1beta", apiKey })
-  : null;
 
 function jsonResponse(body: object, status: number): Response {
   return new Response(JSON.stringify(body), {
@@ -56,9 +37,26 @@ function jsonResponse(body: object, status: number): Response {
 }
 
 export const POST: APIRoute = async ({ request }: APIContext) => {
-  if (!ai) {
+  // Read secrets from cloudflare:workers `env`, NOT import.meta.env.
+  // Astro/Vite statically inlines import.meta.env.* at build time, so the
+  // value would get frozen into the Worker bundle (or baked as `undefined`
+  // when the var isn't present at build time) and the dashboard-configured
+  // runtime secret would be ignored. `env` is a true runtime lookup.
+  // (import.meta.env.MODE below is fine: MODE is a build-time constant, not
+  // a secret.)
+  const apiKey = env.GOOGLE_AI_STUDIO_KEY;
+  const apiModel = env.GOOGLE_AI_STUDIO_MODEL || DEFAULT_MODEL;
+
+  if (!apiKey) {
+    console.error(
+      import.meta.env.MODE === "development"
+        ? "GOOGLE_AI_STUDIO_KEY is not set in environment variables."
+        : "Problem connecting to AI model. Please contact support.",
+    );
     return jsonResponse({ error: "AI service is not configured." }, 503);
   }
+
+  const ai = new GoogleGenAI({ vertexai: false, apiVersion: "v1beta", apiKey });
 
   let body: GenerateTasksBody;
   try {

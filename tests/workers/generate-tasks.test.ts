@@ -1,7 +1,8 @@
-// @vitest-environment node
+import { env } from "cloudflare:test";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { APIContext } from "astro";
-import { KNOWN_MODELS } from "../fixtures/genai-model.ts";
+import { KNOWN_MODELS } from "../vitest/fixtures/genai-model.ts";
+import { DEFAULT_MODEL, POST } from "@pages/api/generate-tasks.ts";
 
 const mockGenerateContentStream = vi.hoisted(() => vi.fn());
 const mockModelsList = vi.hoisted(() => vi.fn());
@@ -19,6 +20,18 @@ vi.mock("@google/genai", () => ({
 
 const apiContext = (request: Request): APIContext =>
   ({ request }) as APIContext;
+
+// The endpoint reads its secret from cloudflare:workers `env`, which is the
+// same object `cloudflare:test` exposes — so tests set it there.
+function setApiKey(value: string | undefined) {
+  if (value === undefined) {
+    delete (env as Record<string, unknown>).GOOGLE_AI_STUDIO_KEY;
+  } else (env as Record<string, unknown>).GOOGLE_AI_STUDIO_KEY = value;
+}
+
+afterEach(() => {
+  setApiKey(undefined);
+});
 
 function makeRequest(body: unknown) {
   return new Request("http://localhost/api/generate-tasks", {
@@ -42,29 +55,10 @@ async function* streamChunks(chunks: string[]) {
   }
 }
 
-async function importPOST() {
-  const mod = await import("@pages/api/generate-tasks.ts");
-  return mod.POST;
-}
-
-async function importApiModel() {
-  const mod = await import("@pages/api/generate-tasks.ts");
-  return mod.apiModel;
-}
-
 describe("POST /api/generate-tasks", () => {
   describe("when AI service is not configured", () => {
-    beforeEach(() => {
-      vi.resetModules();
-      vi.stubEnv("GOOGLE_AI_STUDIO_KEY", "");
-    });
-
-    afterEach(() => {
-      vi.unstubAllEnvs();
-    });
-
     test("returns 503 with error message", async () => {
-      const POST = await importPOST();
+      setApiKey(undefined);
       const res = await POST(
         apiContext(makeRequest({ prompt: "build a kanban app" })),
       );
@@ -75,17 +69,9 @@ describe("POST /api/generate-tasks", () => {
   });
 
   describe("when AI service is configured", () => {
-    let POST: Awaited<ReturnType<typeof importPOST>>;
-
-    beforeEach(async () => {
-      vi.resetModules();
-      vi.stubEnv("GOOGLE_AI_STUDIO_KEY", "test-api-key");
+    beforeEach(() => {
+      setApiKey("test-api-key");
       mockGenerateContentStream.mockReset();
-      POST = await importPOST();
-    });
-
-    afterEach(() => {
-      vi.unstubAllEnvs();
     });
 
     describe("request body validation", () => {
@@ -196,16 +182,14 @@ describe("POST /api/generate-tasks", () => {
     describe("AI model", () => {
       test("uses the configured model name", async () => {
         mockGenerateContentStream.mockReturnValue(streamChunks(["Task one"]));
-        const apiModel = await importApiModel();
         await POST(apiContext(makeRequest({ prompt: "build an app" })));
         expect(mockGenerateContentStream).toHaveBeenCalledWith(
-          expect.objectContaining({ model: apiModel }),
+          expect.objectContaining({ model: DEFAULT_MODEL }),
         );
       });
 
-      test("uses a model name known to the Gemini API", async () => {
-        const apiModel = await importApiModel();
-        expect(KNOWN_MODELS).toContain(apiModel);
+      test("uses a model name known to the Gemini API", () => {
+        expect(KNOWN_MODELS).toContain(DEFAULT_MODEL);
       });
 
       test("passes a systemInstruction about kanban task titles", async () => {

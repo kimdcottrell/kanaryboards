@@ -1,12 +1,18 @@
 ---
 name: project_cloudflare_client_ip
-description: Deno adapter's clientAddress is the raw TCP peer, not the real visitor IP, once kanby.ai is proxied through Cloudflare — middleware.ts now prefers CF-Connecting-IP.
+description: Resolved — the Cloudflare adapter derives clientAddress from CF-Connecting-IP itself, so Astro.clientAddress is now trustworthy; the old Deno-adapter workaround is obsolete
 metadata:
   type: project
 ---
 
-kanby.ai's DNS is proxied (orange-clouded) through Cloudflare. `@deno/astro-adapter` v0.5.2 sets `context.clientAddress` directly from `handlerInfo.remoteAddr.hostname` in `Deno.serve`'s handler (`node_modules/.deno/@deno+astro-adapter@0.5.2/.../src/server.ts:48-49`) — the raw TCP connection peer, with no header-forwarding logic at all. Behind Cloudflare's proxy that peer is always Cloudflare's edge, never the actual visitor.
+**Status: resolved by the Cloudflare migration (2026-07-30). Kept as history — do not re-apply the old workaround.**
 
-Fixed on 2026-07-08 in `src/middleware.ts`'s unauthorized-access `console.debug` log (used for abuse/security tracking): now reads `context.request.headers.get("CF-Connecting-IP") ?? context.clientAddress`, since Cloudflare sets `CF-Connecting-IP` to the true client IP on every proxied request. Falls back to `clientAddress` for non-proxied requests (local dev, direct `.deno.net` access).
+kanby.ai's DNS is proxied (orange-clouded) through Cloudflare, so the raw TCP peer of any request is Cloudflare's edge, never the visitor.
 
-If any other code path ever needs the real client IP (rate limiting, analytics, abuse detection), it must use this same `CF-Connecting-IP`-first pattern — `context.clientAddress` alone is not trustworthy on this deployment. See [[project_security_headers]] for the related Cloudflare CSP audit from the same session.
+**Old problem (Deno Deploy era):** `@deno/astro-adapter` set `context.clientAddress` straight from `Deno.serve`'s `remoteAddr.hostname` with no header-forwarding logic, so `clientAddress` was always a Cloudflare edge IP. Any code needing a real client IP had to read `CF-Connecting-IP` itself.
+
+**Now:** `@astrojs/cloudflare` v14 derives it from the header for you — `getClientAddress()` in `dist/utils/cf-helpers.js` is literally `getValidatedIpFromHeader(request.headers.get("cf-connecting-ip"))`. So `Astro.clientAddress` is already the true visitor IP, validated, and needs no manual header handling. Reading `CF-Connecting-IP` directly is now redundant.
+
+**Correction to what this memory previously claimed:** it said a `CF-Connecting-IP ?? clientAddress` fallback had been added to an unauthorized-access `console.debug` in `src/middleware.ts`. That code is not present — `grep -rn "CF-Connecting-IP\|clientAddress" src/` returns nothing. Either it was removed later or the memory was written from a plan that didn't land. Verify before trusting claims about IP logging.
+
+**How to apply:** if rate limiting, analytics, or abuse detection ever needs the client IP, just use `Astro.clientAddress` / `context.clientAddress`. Note it can be empty for non-proxied or synthetic requests, so still guard for that. See [[project_security_headers]] for the Cloudflare CSP audit from the same era, and [[project_stack]] for the adapter change.

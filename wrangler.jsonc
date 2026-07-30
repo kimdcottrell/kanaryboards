@@ -1,0 +1,41 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // Pinned to a date the locally-installed workerd/miniflare binary actually
+  // supports (bumping ahead of the installed runtime's build snapshot breaks
+  // local builds/prerendering with a "newest date supported" startup error).
+  // Bump this only after confirming `wrangler`/`miniflare` have been updated
+  // to support the newer date.
+  "compatibility_date": "2026-07-29",
+  "compatibility_flags": ["global_fetch_strictly_public", "nodejs_compat"],
+  "name": "kanby",
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
+  // Board storage. Local `wrangler dev` and the Workers test pool simulate this
+  // namespace, so no `id` is needed to develop or run tests.
+  //
+  // A real *deploy* does need one. Create the production namespace once with
+  //   deno run -A npm:wrangler kv namespace create kanby-BOARD_KV
+  // and commit the returned `id` below (namespace ids are not secrets — they're
+  // useless without an API token, and committing it is what makes a plain
+  // `wrangler deploy` reproducible). PR previews get their own namespace
+  // injected by CI instead; see .github/workflows.
+  "kv_namespaces": [
+    {
+      "binding": "BOARD_KV"
+      // "id": "<production namespace id>"
+    }
+  ],
+  "vars": {
+    // Optional override for the Gemini model used by /api/generate-tasks.
+    // Declared (empty) so it exists on the generated `Env` type; the endpoint
+    // falls back to its own DEFAULT_MODEL when this is empty. Set a real value
+    // per-environment via the dashboard or `wrangler deploy --var`.
+    "GOOGLE_AI_STUDIO_MODEL": ""
+  },
+  "observability": {
+    "enabled": true
+  }
+}

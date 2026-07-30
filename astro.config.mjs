@@ -1,16 +1,17 @@
 // @ts-check
 import { defineConfig, fontProviders } from "astro/config";
-import deno from "@deno/astro-adapter";
 import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
 import clerk from "@clerk/astro";
 import sitemap from "@astrojs/sitemap";
 
+import cloudflare from "@astrojs/cloudflare";
+
 const SITE = "https://kanby.ai";
 
 // https://astro.build/config
 export default defineConfig({
-  adapter: deno(),
+  adapter: cloudflare(),
   integrations: [
     clerk(),
     react(),
@@ -85,7 +86,6 @@ export default defineConfig({
       "0.0.0.0",
       "localhost",
       "kanary.local.dev",
-      "kanby--local.kimdcottrell.deno.net",
     ],
   },
 

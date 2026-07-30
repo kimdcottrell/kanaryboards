@@ -1,4 +1,5 @@
 ---
+import { env } from "cloudflare:workers";
 import { getBoard } from "@lib/db/kv.ts";
 import { byOrder } from "@components/context/ordering.ts";
 
@@ -8,7 +9,7 @@ const boardId = Astro.locals.boardId;
 
 let rows: { id: string; title: string }[] = [];
 if (isAuthenticated && boardId) {
-    const board = await getBoard(boardId);
+    const board = await getBoard(env.BOARD_KV, boardId);
     rows = [...(board?.rows ?? [])]
         .sort(byOrder)
         .map((r) => ({ id: r.id, title: r.title }));

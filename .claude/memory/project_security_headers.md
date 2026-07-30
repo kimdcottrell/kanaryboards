@@ -1,6 +1,6 @@
 ---
 name: project_security_headers
-description: Security HTTP headers (HSTS, CSP, X-Frame-Options, etc.) are set in src/middleware.ts, gated to prod; CSP starts Report-Only, is an ongoing WIP, and its Cloudflare-related source list was audited on 2026-07-08.
+description: Security HTTP headers (HSTS, CSP, X-Frame-Options, etc.) are set in src/middleware.ts, gated to prod; CSP starts Report-Only and is an ongoing WIP; open gap — prerendered pages receive no security headers, and public/_headers is the fix path.
 metadata:
   type: project
 ---
@@ -11,7 +11,13 @@ All six security response headers (Strict-Transport-Security, Content-Security-P
 
 **Local "malicious user" e2e suite**: `tests/playwright/security-headers.spec.ts` + `playwright.security.config.ts`, run via `deno task e2e-security`. It attempts the attacks each header stops (clickjacking iframe, injected external script/img/object, `fetch()` exfiltration, `<base>` hijack, geolocation) and asserts XFO refusal / CSP `securitypolicyviolation` reports / Permissions-Policy denial, plus a header-value contract test and one test documenting that inline scripts still run under `'unsafe-inline'`. Gotchas baked into the setup: headers only exist in a prod build so the config's `webServer` forces `deno task build && deno task preview` (binds **8085**, not 4321); it's excluded from the normal suite via `testIgnore` in `playwright.config.ts` and self-skips unless `MODE==="development"`; CSP tests assert on the violation *report* (disposition report|enforce) so they survive the `CSP_REPORT_ONLY` flip; and because the browser runs in the remote `playwright` container, the config sets `connectOptions.exposeNetwork: "<loopback>"` so it can reach the runner's `localhost:8085`.
 
-**Why not Astro's `security.csp`** (it exists, added in Astro 6.0, and its `csp` runtime API works in middleware): the `@deno/astro-adapter` doesn't implement the Astro 6 `staticHeaders`/`cspDestination:'header'` feature, so Astro can only emit CSP as a `<meta>` tag — which silently ignores `frame-ancestors` (still need a real header). It's also hash-based and rejects `'unsafe-inline'` (incompatible with Clerk), and its `strict-dynamic` escape hatch is hash-only with no nonce API, so the GA inline script (hash changes per render because it interpolates the tag id + consent state) can't be pinned. See [[project_stack]].
+**Why not Astro's `security.csp`** (it exists, added in Astro 6.0, and its `csp` runtime API works in middleware): the adapter doesn't implement the Astro 6 `staticHeaders`/`cspDestination:'header'` feature, so Astro can only emit CSP as a `<meta>` tag — which silently ignores `frame-ancestors` (still need a real header). It's also hash-based and rejects `'unsafe-inline'` (incompatible with Clerk), and its `strict-dynamic` escape hatch is hash-only with no nonce API, so the GA inline script (hash changes per render because it interpolates the tag id + consent state) can't be pinned. See [[project_stack]].
+
+This still holds after the 2026-07-30 move to `@astrojs/cloudflare` — verified there are no `staticHeaders`/`cspDestination` references anywhere in the adapter's `dist/`, so the reasoning above was not specific to the old Deno adapter.
+
+⚠️ **Open gap: prerendered pages get no security headers.** `securityHeadersMiddleware` only runs for on-demand routes, so `/`, `/contact`, `/cookies` and `/privacy` (all prerendered) don't receive any of the six headers in production. A comment in `src/middleware.ts:28` claims static responses "get these same headers from server.ts instead" — **that is wrong**: `src/server.ts` has never existed in tracked history (`git log --all -- src/server.ts` is empty), and the only thing in the built `dist/client/_headers` is the `Cache-Control` rule the Cloudflare adapter injects for `/_astro/*`. Pre-existing, not caused by the migration.
+
+The fix path Cloudflare gives us: create `public/_headers` (it does not exist yet — `public/` holds only `favicon.ico`) with the header rules; the adapter copies it into the build output and appends its own entries. That would cover static assets without touching the middleware. Worth confirming the security e2e suite actually exercises a prerendered route, since it currently passes despite this gap.
 
 **This CSP is an ongoing pain point for the user** — expect repeat visits/iteration on it, not a one-and-done. As of 2026-07-08 it's still `CSP_REPORT_ONLY = true`.
 

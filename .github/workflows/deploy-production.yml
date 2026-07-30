@@ -1,0 +1,187 @@
+name: Deploy Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Never cancel an in-flight production deploy: aborting mid-`wrangler deploy`
+# can leave a version uploaded but not activated. Shared with
+# rollback-production.yml so a rollback and a deploy can't interleave.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  WORKER_NAME: kanby
+
+jobs:
+  deploy:
+    # Belt-and-braces with the Production environment's branch policy: production
+    # secrets must only ever be reachable from main.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    environment:
+      name: Production
+
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      # Captured BEFORE deploying: right now the newest deployment is the live
+      # one, so this is what we roll back to if the smoke check fails. Resolving
+      # "previous" after the deploy would be off-by-one. Empty on the very first
+      # deploy, in which case there is nothing to roll back to.
+      #
+      # `deployments list` rather than `versions list`: the latter also includes
+      # versions that were uploaded but never deployed, which are not valid
+      # rollback targets.
+      - name: Record currently deployed version
+        id: previous
+        run: |
+          PREV=$(deno run -A npm:wrangler deployments list --name "$WORKER_NAME" --json 2>/dev/null \
+            | jq -r 'first(.[]? | (.versions[0].version_id // .version_id // .id)) // empty')
+          echo "version_id=$PREV" >> "$GITHUB_OUTPUT"
+          if [ -n "$PREV" ]; then
+            echo "Current live version: $PREV"
+          else
+            echo "No existing version found — treating this as a first deploy (no rollback target)."
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # PUBLIC_* vars and GOOGLE_TAG are read through import.meta.env, which Vite
+      # inlines at build time — they have to be present here, not just at runtime.
+      - name: Build
+        run: deno task build
+        env:
+          PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          PUBLIC_CLERK_JS_VERSION: ${{ vars.PUBLIC_CLERK_JS_VERSION }}
+          GOOGLE_TAG: ${{ vars.GOOGLE_TAG }}
+          MODE: production
+
+      # Runtime secrets, by contrast, must NOT be inlined into the bundle —
+      # @clerk/astro and the API routes read them from cloudflare:workers `env`.
+      # Written to RUNNER_TEMP (outside the workspace) so no later step that
+      # uploads a directory can pick the file up.
+      - name: Write runtime secrets file
+        run: |
+          umask 077
+          {
+            printf 'CLERK_SECRET_KEY=%s\n' "$CLERK_SECRET_KEY"
+            printf 'RESEND_API_KEY=%s\n' "$RESEND_API_KEY"
+            printf 'GOOGLE_AI_STUDIO_KEY=%s\n' "$GOOGLE_AI_STUDIO_KEY"
+          } > "$RUNNER_TEMP/secrets.env"
+        env:
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          GOOGLE_AI_STUDIO_KEY: ${{ secrets.GOOGLE_AI_STUDIO_KEY }}
+
+      - name: Deploy
+        id: deploy
+        run: |
+          set -o pipefail
+          deno run -A npm:wrangler deploy \
+            --secrets-file "$RUNNER_TEMP/secrets.env" \
+            2>&1 | tee "$RUNNER_TEMP/deploy.log"
+
+          URL=$(grep -oE 'https://[A-Za-z0-9._-]+\.workers\.dev' "$RUNNER_TEMP/deploy.log" | head -1)
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+          VERSION=$(deno run -A npm:wrangler deployments list --name "$WORKER_NAME" --json \
+            | jq -r 'first(.[]? | (.versions[0].version_id // .version_id // .id)) // empty')
+          echo "version_id=$VERSION" >> "$GITHUB_OUTPUT"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Remove secrets file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/secrets.env"
+
+      # Two probes, because a 200 on the homepage alone doesn't prove much: most
+      # of the page is prerendered and would serve fine even with a broken
+      # binding. /api/board is on-demand and touches BOARD_KV, so a 401 (rather
+      # than a 500) is what actually shows the Worker booted *and* resolved its
+      # KV binding — the specific failure this migration can introduce.
+      - name: Smoke check
+        id: smoke
+        continue-on-error: true
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          if [ -z "$URL" ]; then
+            echo "::error::Could not determine the deployed URL from wrangler output."
+            exit 1
+          fi
+          echo "Smoke checking $URL"
+
+          curl -fsS --retry 5 --retry-delay 3 --retry-all-errors "$URL" -o /dev/null \
+            || { echo "::error::Homepage did not return success."; exit 1; }
+
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' "$URL/api/board")
+          if [ "$CODE" != "401" ]; then
+            echo "::error::GET /api/board returned $CODE, expected 401 (Worker or BOARD_KV binding is broken)."
+            exit 1
+          fi
+          echo "Smoke check passed."
+
+      - name: Roll back on smoke-check failure
+        id: rollback
+        if: steps.smoke.outcome == 'failure' && steps.previous.outputs.version_id != ''
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PREV_VERSION: ${{ steps.previous.outputs.version_id }}
+        run: |
+          echo "::warning::Smoke check failed — rolling back to $PREV_VERSION"
+          deno run -A npm:wrangler rollback "$PREV_VERSION" \
+            --name "$WORKER_NAME" \
+            --yes \
+            --message "auto: smoke check failed for ${{ github.sha }} (run ${{ github.run_id }})"
+
+      - name: Summary
+        if: always()
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+          NEW_VERSION: ${{ steps.deploy.outputs.version_id }}
+          PREV_VERSION: ${{ steps.previous.outputs.version_id }}
+        run: |
+          {
+            if [ "${{ steps.smoke.outcome }}" = "success" ]; then
+              echo "### 🚀 Deployed to production"
+              echo ""
+              echo "- **URL:** $URL"
+              echo "- **Version:** \`$NEW_VERSION\`"
+              echo "- **Previous version:** \`${PREV_VERSION:-none}\`"
+              echo ""
+              echo "To roll this back, run the **Rollback Production** workflow" \
+                   "with version \`${PREV_VERSION:-<pick one>}\`."
+            elif [ "${{ steps.rollback.outcome }}" = "success" ]; then
+              echo "### ⏪ Deploy rolled back"
+              echo ""
+              echo "The smoke check failed, so production was reverted to \`$PREV_VERSION\`."
+              echo "The bad version \`$NEW_VERSION\` is no longer serving traffic."
+            else
+              echo "### ❌ Deploy failed"
+              echo ""
+              echo "The smoke check failed and **no rollback was performed**" \
+                   "(no previous version was available, or the rollback itself failed)."
+              echo "Production may be serving a broken version — check it manually."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # The smoke check is continue-on-error so the rollback and summary can run;
+      # this makes the overall run reflect reality.
+      - name: Fail if the smoke check failed
+        if: steps.smoke.outcome == 'failure'
+        run: exit 1

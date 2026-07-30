@@ -1,6 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from "astro";
+import { env } from "cloudflare:workers";
 import { Resend } from "resend";
 import { contactFormSchema } from "@lib/contact-schema.ts";
 
@@ -26,21 +27,18 @@ function jsonResponse(body: object, status: number): Response {
   });
 }
 
-// Read the secret at runtime via Deno.env.get(), NOT import.meta.env.
-// Astro/Vite statically inlines import.meta.env.* at build time, so on Deno
-// Deploy the value gets frozen in during the build — or baked as `undefined`
-// when the var isn't present in the build environment — and the production
-// runtime env var is ignored. Deno.env.get() is a true runtime lookup.
-const apiKey = Deno.env.get("RESEND_API_KEY");
-if (!apiKey) {
-  console.error("RESEND_API_KEY is not set in environment variables.");
-}
-const resend = apiKey ? new Resend(apiKey) : null;
-
 export const POST: APIRoute = async ({ request }) => {
-  if (!resend) {
+  // Read the secret from cloudflare:workers `env`, NOT import.meta.env.
+  // Astro/Vite statically inlines import.meta.env.* at build time, so the
+  // value would get frozen into the Worker bundle (or baked as `undefined`
+  // when the var isn't present at build time) and the dashboard-configured
+  // runtime secret would be ignored. `env` is a true runtime lookup.
+  const apiKey = env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.error("RESEND_API_KEY is not set in environment variables.");
     return jsonResponse({ error: "Email service is not configured." }, 503);
   }
+  const resend = new Resend(apiKey);
 
   let body: unknown;
   try {

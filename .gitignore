@@ -4,6 +4,17 @@
 **/node_modules/*
 **/.astro/*
 worker-configuration.d.ts
+# Local miniflare/wrangler state (simulated KV, caches, dev session data)
+.wrangler/
+# Generated in CI from wrangler.jsonc with the PR's Worker name + KV namespace id
+wrangler.pr.json
+# OpenTofu: state holds API token values in plaintext, and tfvars hold the
+# Cloudflare account/zone IDs this public repo deliberately does not carry.
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.auto.tfvars
+crash.log
 src/deno.d.ts
 src/policystack.gen.ts
 src/policystack.llms.txt

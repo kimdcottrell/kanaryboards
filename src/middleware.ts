@@ -1,4 +1,5 @@
 import { defineMiddleware, sequence } from "astro/middleware";
+import { env } from "cloudflare:workers";
 import { clerkMiddleware } from "@clerk/astro/server";
 import { createId } from "@lib/db/uuid.ts";
 import { getBoardIdForUser, setBoardIdForUser } from "@lib/db/kv.ts";
@@ -9,10 +10,10 @@ export const protectedRequestMiddleware = clerkMiddleware(
     const { userId } = auth();
 
     if (userId) {
-      let boardId = await getBoardIdForUser(userId);
+      let boardId = await getBoardIdForUser(env.BOARD_KV, userId);
       if (!boardId) {
         boardId = createId();
-        await setBoardIdForUser(userId, boardId);
+        await setBoardIdForUser(env.BOARD_KV, userId, boardId);
       }
       context.locals.boardId = boardId;
     }

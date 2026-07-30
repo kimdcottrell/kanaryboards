@@ -1,6 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from "astro";
+import { env } from "cloudflare:workers";
 
 const E2E_TEST_USER_ID: string | null = import.meta.env.E2E_TEST_USER_ID ??
   null;
@@ -19,26 +20,15 @@ export const GET: APIRoute = async () => {
     });
   }
 
-  const kv = await Deno.openKv();
-  const entry = await kv.get<string>(["user_board", E2E_TEST_USER_ID]);
-  const atomic = kv
-    .atomic()
-    .check(entry)
-    .delete(["user_board", E2E_TEST_USER_ID]);
-  if (entry.value) atomic.delete(["board", entry.value]);
-  const res = await atomic.commit();
-  kv.close();
-  if (!res.ok) {
-    console.error({
-      event:
-        "GET /api/delete-test-data: KV atomic commit failed (concurrent modification), retry required.",
-      userId: E2E_TEST_USER_ID,
-    });
-    return new Response(JSON.stringify({ error: "Conflict, retry" }), {
-      status: 409,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+  // Cloudflare KV has no cross-key transactions, so this is two sequential
+  // deletes rather than the Deno KV atomic check-and-delete it replaces —
+  // fine for a test-only cleanup endpoint, not something to rely on for
+  // concurrent-modification safety.
+  const kv = env.BOARD_KV;
+  const boardId = await kv.get(`user_board:${E2E_TEST_USER_ID}`);
+  await kv.delete(`user_board:${E2E_TEST_USER_ID}`);
+  if (boardId) await kv.delete(`board:${boardId}`);
+
   return new Response(JSON.stringify({ ok: true }), {
     status: 200,
     headers: { "Content-Type": "application/json" },

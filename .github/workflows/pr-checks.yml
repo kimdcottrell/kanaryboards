@@ -1,0 +1,485 @@
+name: PR Checks
+
+# Replaces the old e2e.yml + generate-lighthouse-report.yml pair. They had to be
+# merged: a Cloudflare Pages branch serves one *complete* directory per
+# deployment (there is no partial/merge upload), so two workflows each deploying
+# to report-pr-<n> would silently clobber each other. Keeping it in one
+# `pull_request`-triggered workflow also avoids `workflow_run`, which runs in the
+# default branch's context where `github.event.pull_request` is empty.
+on:
+  pull_request:
+
+# Superseded runs for the same PR are safe to cancel (unlike production).
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  PR_NUMBER: ${{ github.event.pull_request.number }}
+  WORKER_NAME: pr-${{ github.event.pull_request.number }}
+  KV_NAMESPACE: pr-${{ github.event.pull_request.number }}-BOARD_KV
+  REPORT_BRANCH: report-pr-${{ github.event.pull_request.number }}
+  PAGES_PROJECT: kanby
+
+jobs:
+  deploy-preview:
+    name: Deploy preview
+    if: github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # Grants access to the Preview secret scope. Production secrets are
+    # unreachable from here.
+    environment:
+      name: Preview
+
+    permissions:
+      contents: read
+
+    outputs:
+      base_url: ${{ steps.deploy.outputs.url }}
+
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      # Idempotent: `kv namespace create` errors if the title already exists, and
+      # this runs on every push to the PR — so look the id up first and only
+      # create when it's genuinely missing. Resolution goes through `list` in
+      # both paths rather than parsing `create`'s human-readable output.
+      - name: Create or reuse the PR's KV namespace
+        id: kv
+        run: |
+          resolve() {
+            deno run -A npm:wrangler kv namespace list \
+              | jq -r --arg t "$KV_NAMESPACE" 'first(.[]? | select(.title == $t) | .id) // empty'
+          }
+
+          KV_ID=$(resolve)
+          if [ -z "$KV_ID" ]; then
+            echo "Creating KV namespace $KV_NAMESPACE"
+            deno run -A npm:wrangler kv namespace create "$KV_NAMESPACE" > /dev/null
+            KV_ID=$(resolve)
+          else
+            echo "Reusing existing KV namespace $KV_NAMESPACE"
+          fi
+
+          if [ -z "$KV_ID" ]; then
+            echo "::error::Failed to create or resolve KV namespace $KV_NAMESPACE"
+            exit 1
+          fi
+          echo "id=$KV_ID" >> "$GITHUB_OUTPUT"
+
+      # `wrangler deploy` has --name and --var but no KV-binding flag, so the
+      # per-PR namespace id has to reach the Worker through config. Rather than
+      # duplicating wrangler.jsonc (which would drift), derive a complete config
+      # from it with just `name` and the BOARD_KV `id` overridden.
+      #
+      # Written to the repo root, not RUNNER_TEMP: wrangler resolves `main`,
+      # `assets.directory` and `$schema` relative to the config file's location.
+      - name: Generate the PR wrangler config
+        env:
+          KV_ID: ${{ steps.kv.outputs.id }}
+        run: |
+          deno eval '
+            import { parse } from "jsr:@std/jsonc";
+            const cfg = parse(await Deno.readTextFile("wrangler.jsonc"));
+            cfg.name = Deno.env.get("WORKER_NAME");
+            const ns = cfg.kv_namespaces?.find((n) => n.binding === "BOARD_KV");
+            if (!ns) throw new Error("BOARD_KV binding missing from wrangler.jsonc");
+            ns.id = Deno.env.get("KV_ID");
+            await Deno.writeTextFile("wrangler.pr.json", JSON.stringify(cfg, null, 2));
+          '
+          cat wrangler.pr.json
+
+      # PUBLIC_* vars and GOOGLE_TAG are inlined by Vite at build time.
+      #
+      # E2E_TEST_USER_ID is required here and deliberately absent from the
+      # production build: /api/delete-test-data is only reachable when it is set,
+      # which is exactly what keeps that endpoint from existing in production.
+      # The board-persistence specs assert it returns 200, so previews need it.
+      - name: Build
+        run: deno task build
+        env:
+          PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          PUBLIC_CLERK_JS_VERSION: ${{ vars.PUBLIC_CLERK_JS_VERSION }}
+          GOOGLE_TAG: ${{ vars.GOOGLE_TAG }}
+          E2E_TEST_USER_ID: ${{ secrets.E2E_TEST_USER_ID }}
+          MODE: production
+
+      # Runtime secrets are never inlined into the bundle — the API routes and
+      # @clerk/astro read them from cloudflare:workers `env`. Kept in
+      # RUNNER_TEMP, outside the workspace, so the publish-report job can't
+      # sweep the file into a Pages deployment.
+      - name: Write runtime secrets file
+        run: |
+          umask 077
+          {
+            printf 'CLERK_SECRET_KEY=%s\n' "$CLERK_SECRET_KEY"
+            printf 'RESEND_API_KEY=%s\n' "$RESEND_API_KEY"
+            printf 'GOOGLE_AI_STUDIO_KEY=%s\n' "$GOOGLE_AI_STUDIO_KEY"
+          } > "$RUNNER_TEMP/secrets.env"
+        env:
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          GOOGLE_AI_STUDIO_KEY: ${{ secrets.GOOGLE_AI_STUDIO_KEY }}
+
+      - name: Deploy preview Worker
+        id: deploy
+        run: |
+          set -o pipefail
+          deno run -A npm:wrangler deploy \
+            --config wrangler.pr.json \
+            --secrets-file "$RUNNER_TEMP/secrets.env" \
+            2>&1 | tee "$RUNNER_TEMP/deploy.log"
+
+          URL=$(grep -oE 'https://[A-Za-z0-9._-]+\.workers\.dev' "$RUNNER_TEMP/deploy.log" | head -1)
+          if [ -z "$URL" ]; then
+            echo "::error::Could not determine the preview URL from wrangler output."
+            exit 1
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Remove secrets file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/secrets.env"
+
+      - name: Summary
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+          KV_ID: ${{ steps.kv.outputs.id }}
+        run: |
+          {
+            echo "### 🔎 Preview environment"
+            echo ""
+            echo "- **App:** $URL"
+            echo "- **Worker:** \`$WORKER_NAME\`"
+            echo "- **KV namespace:** \`$KV_NAMESPACE\` (\`$KV_ID\`)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  checks:
+    name: ${{ matrix.suite }}
+    needs: deploy-preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    environment:
+      name: Preview
+
+    permissions:
+      contents: read
+
+    strategy:
+      # e2e and Lighthouse are unrelated; a failure in one must not stop the
+      # other, and publish-report still wants both sets of artifacts.
+      fail-fast: false
+      matrix:
+        suite: [e2e, lighthouse]
+
+    env:
+      BASE_URL: ${{ needs.deploy-preview.outputs.base_url }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+
+      - uses: ./.github/actions/install-npm-dependencies
+
+      # ── e2e ────────────────────────────────────────────────────────────────
+      - name: Cache Playwright browsers
+        if: matrix.suite == 'e2e'
+        id: playwright-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package.json') }}
+
+      - name: Install Playwright browsers
+        if: matrix.suite == 'e2e' && steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps
+
+      - name: Install Playwright OS dependencies
+        if: matrix.suite == 'e2e' && steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps
+
+      - name: Run e2e tests
+        if: matrix.suite == 'e2e'
+        id: run-tests
+        # `html` must be listed explicitly: a CLI --reporter replaces the
+        # config's `reporter` array outright, so omitting it means no
+        # playwright-report/ to publish.
+        run: npx playwright test --project=chromium --reporter=list,json,html
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: results.json
+          PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          E2E_CLERK_USER_EMAIL: ${{ secrets.E2E_CLERK_USER_EMAIL }}
+          E2E_CLERK_USER_PASSWORD: ${{ secrets.E2E_CLERK_USER_PASSWORD }}
+
+      - name: Upload Playwright report
+        if: matrix.suite == 'e2e' && !cancelled()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 3
+
+      - name: Write e2e summary
+        if: matrix.suite == 'e2e' && always()
+        env:
+          REPORT_URL: ""
+        run: |
+          if [ ! -f results.json ]; then
+            echo "No Playwright results found." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          jq -r '
+            # Playwright error messages carry ANSI color codes; strip them and
+            # keep the first few lines so the summary stays readable.
+            def errorBlock:
+              if . == "" then ""
+              else
+                "\n\n  ```\n"
+                + (gsub("\u001b\\[[0-9;]*m"; "") | split("\n") | .[0:6] | map("  " + .) | join("\n"))
+                + "\n  ```"
+              end
+            ;
+
+            # `$path` (not `path`): a non-$ jq argument is a closure re-evaluated
+            # at each use site, so the recursive call resolved `.title` against
+            # the spec instead of the suite and titles came out duplicated.
+            def collect($path):
+              ( .suites[]? | collect($path + [.title]) ),
+              ( .specs[]? | { title: (($path + [.title]) | join(" > ")), file: .file, tests: .tests } )
+            ;
+
+            . as $root
+            | ($root.config.retries // 0) as $maxRetries
+            | [$root.suites[]? | collect([])] as $specs
+            | ($specs
+                | map(.title as $t | .file as $f | .tests[] | {title: $t, file: $f, project: .projectName, status: .status, retries: ((.results // []) | length), error: ((((.results // []) | last) // {}) | .error.message // "")})
+                | map(select(.project == "chromium" or .project == "firefox" or .project == "webkit"))
+              ) as $tests
+            | ($tests | map(select(.status=="expected")) | length) as $passed
+            | ($tests | map(select(.status=="flaky")) | length) as $flaky
+            | ($tests | map(select(.status=="unexpected")) | length) as $failed
+            | ($tests | map(select(.status=="skipped")) | length) as $skipped
+            | ($tests | length) as $total
+            | ($tests | map(select(.status=="flaky"))) as $flakyTests
+            | ($tests | map(select(.status=="unexpected"))) as $failedTests
+            | [
+                (if $failed > 0
+                  then "❌ " + ($failed|tostring) + " Playwright test" + (if $failed == 1 then "" else "s" end) + " failed."
+                  else "🎉 All Playwright tests succeeded!"
+                end),
+                "",
+                "### Summary",
+                "",
+                "- **Test Results:** " + (if $failed>0 then "❌ " + ($failed|tostring) + " failures · " else "" end) + "✅ " + ($passed|tostring) + " passes · ⚠️ " + ($flaky|tostring) + " flaky" + (if $skipped>0 then " · ⏭️ " + ($skipped|tostring) + " skipped" else "" end) + " · " + ($total|tostring) + " total"
+              ]
+              + (if ($failedTests|length) > 0 then
+                  [
+                    "",
+                    "### Failed Tests",
+                    ""
+                  ] + (
+                    $failedTests | group_by(.file) | map(
+                      ["`" + .[0].file + "` (" + (length|tostring) + " failed)", ""]
+                      + (map(
+                          "- `" + .title + "` — failed on **" + .project + "** after "
+                          + (.retries|tostring) + " attempt" + (if .retries == 1 then "" else "s" end)
+                          + (.error | errorBlock)
+                        ))
+                      + [""]
+                    ) | flatten
+                  )
+                else [] end)
+              + (if ($flakyTests|length) > 0 then
+                  [
+                    "",
+                    "### Flaky Tests",
+                    "",
+                    "These tests passed only after one or more retries on a specific browser, indicating potential instability.",
+                    ""
+                  ] + (
+                    $flakyTests | group_by(.file) | map(
+                      ["`" + .[0].file + "` (" + (length|tostring) + " flaky)", ""]
+                      + (map("- `" + .title + "` — flaky on **" + .project + "** (passed on retry " + ((.retries-1)|tostring) + " out of " + ($maxRetries|tostring) + ")"))
+                      + [""]
+                    ) | flatten
+                  )
+                else [] end)
+            | join("\n")
+          ' results.json >> "$GITHUB_STEP_SUMMARY"
+
+      # ── lighthouse ─────────────────────────────────────────────────────────
+      - name: Audit with Lighthouse (mobile)
+        if: matrix.suite == 'lighthouse'
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: ${{ needs.deploy-preview.outputs.base_url }}
+          uploadArtifacts: false
+
+      - name: Stage mobile report
+        if: matrix.suite == 'lighthouse'
+        run: mv .lighthouseci lighthouseci-mobile
+
+      - name: Write desktop Lighthouse CI config
+        if: matrix.suite == 'lighthouse'
+        run: |
+          cat > "$RUNNER_TEMP/lighthouserc-desktop.json" <<'EOF'
+          {
+            "ci": {
+              "collect": {
+                "settings": {
+                  "preset": "desktop"
+                }
+              }
+            }
+          }
+          EOF
+
+      - name: Audit with Lighthouse (desktop)
+        if: matrix.suite == 'lighthouse'
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: ${{ needs.deploy-preview.outputs.base_url }}
+          uploadArtifacts: false
+          configPath: ${{ runner.temp }}/lighthouserc-desktop.json
+
+      - name: Stage desktop report
+        if: matrix.suite == 'lighthouse'
+        run: mv .lighthouseci lighthouseci-desktop
+
+      - name: Upload Lighthouse reports
+        if: matrix.suite == 'lighthouse' && !cancelled()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lighthouse-reports
+          path: |
+            lighthouseci-mobile/
+            lighthouseci-desktop/
+          retention-days: 3
+
+  publish-report:
+    name: Publish report
+    needs: [deploy-preview, checks]
+    # `always()` so a failing suite still publishes whatever reports exist —
+    # that is exactly when the report is most wanted.
+    if: always() && needs.deploy-preview.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    environment:
+      name: Preview
+
+    permissions:
+      contents: read
+
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      # `continue-on-error` on the downloads: a cancelled or crashed suite may
+      # not have produced its artifact, and a partial report still beats none.
+      - name: Download Playwright report
+        continue-on-error: true
+        uses: actions/download-artifact@v7
+        with:
+          name: playwright-report
+          path: artifacts/playwright
+
+      - name: Download Lighthouse reports
+        continue-on-error: true
+        uses: actions/download-artifact@v7
+        with:
+          name: lighthouse-reports
+          path: artifacts/lighthouse
+
+      # One Pages deployment serves one complete directory, so everything is
+      # assembled into a single tree first and deployed exactly once.
+      - name: Assemble the report site
+        id: assemble
+        run: |
+          mkdir -p report/playwright report/lighthouse/mobile report/lighthouse/desktop
+
+          copied=""
+          if [ -d artifacts/playwright ] && [ -n "$(ls -A artifacts/playwright 2>/dev/null)" ]; then
+            cp -r artifacts/playwright/. report/playwright/
+            copied="$copied playwright"
+          fi
+          if [ -d artifacts/lighthouse/lighthouseci-mobile ]; then
+            cp -r artifacts/lighthouse/lighthouseci-mobile/. report/lighthouse/mobile/
+            copied="$copied lighthouse-mobile"
+          fi
+          if [ -d artifacts/lighthouse/lighthouseci-desktop ]; then
+            cp -r artifacts/lighthouse/lighthouseci-desktop/. report/lighthouse/desktop/
+            copied="$copied lighthouse-desktop"
+          fi
+
+          echo "Included:${copied:- nothing}"
+          echo "included=${copied:-none}" >> "$GITHUB_OUTPUT"
+
+          # Landing page, so the branch root isn't a bare 404.
+          {
+            echo "<!doctype html><meta charset=utf-8>"
+            echo "<title>PR #${PR_NUMBER} reports</title>"
+            echo "<h1>PR #${PR_NUMBER} reports</h1>"
+            echo "<ul>"
+            echo "<li><a href=\"./playwright/\">Playwright</a></li>"
+            echo "<li><a href=\"./lighthouse/mobile/\">Lighthouse — mobile</a></li>"
+            echo "<li><a href=\"./lighthouse/desktop/\">Lighthouse — desktop</a></li>"
+            echo "</ul>"
+          } > report/index.html
+
+      - name: Deploy report to Cloudflare Pages
+        id: deploy
+        run: |
+          set -o pipefail
+          deno run -A npm:wrangler pages deploy report \
+            --project-name="$PAGES_PROJECT" \
+            --branch="$REPORT_BRANCH" \
+            2>&1 | tee "$RUNNER_TEMP/pages.log"
+
+          URL=$(grep -oE 'https://[A-Za-z0-9._-]+\.pages\.dev' "$RUNNER_TEMP/pages.log" | tail -1)
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        if: always()
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+          INCLUDED: ${{ steps.assemble.outputs.included }}
+          APP_URL: ${{ needs.deploy-preview.outputs.base_url }}
+        run: |
+          {
+            echo "### 🔦 PR #${PR_NUMBER} reports"
+            echo ""
+            echo "- **App preview:** ${APP_URL}"
+            if [ -n "$URL" ]; then
+              echo "- **Playwright:** ${URL}/playwright/"
+              echo "- **Lighthouse (mobile):** ${URL}/lighthouse/mobile/"
+              echo "- **Lighthouse (desktop):** ${URL}/lighthouse/desktop/"
+            else
+              echo "- Report deployment failed; see the job log."
+            fi
+            echo ""
+            echo "_Included: ${INCLUDED}_"
+          } >> "$GITHUB_STEP_SUMMARY"

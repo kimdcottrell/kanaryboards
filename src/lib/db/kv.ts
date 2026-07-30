@@ -6,51 +6,39 @@ export interface PersistedBoard {
   tasks: Task[];
 }
 
-let _kv: Deno.Kv | null = null;
-
-async function getKv(): Promise<Deno.Kv> {
-  if (!_kv) _kv = await Deno.openKv();
-  return _kv;
-}
-
 export async function getBoardIdForUser(
+  kv: KVNamespace,
   userId: string,
 ): Promise<string | null> {
-  const kv = await getKv();
-  const result = await kv.get<string>(["user_board", userId]);
-  return result.value;
+  return await kv.get(`user_board:${userId}`);
 }
 
 export async function setBoardIdForUser(
+  kv: KVNamespace,
   userId: string,
   boardId: string,
 ): Promise<void> {
-  const kv = await getKv();
-  await kv.set(["user_board", userId], boardId);
+  await kv.put(`user_board:${userId}`, boardId);
 }
 
 export async function getBoard(
+  kv: KVNamespace,
   boardId: string,
 ): Promise<PersistedBoard | null> {
-  const kv = await getKv();
-  const result = await kv.get<PersistedBoard>(["board", boardId]);
-  return result.value;
+  return await kv.get<PersistedBoard>(`board:${boardId}`, "json");
 }
 
 export async function saveBoard(
+  kv: KVNamespace,
   boardId: string,
   board: PersistedBoard,
 ): Promise<void> {
-  const kv = await getKv();
-  await kv.set(["board", boardId], board);
+  await kv.put(`board:${boardId}`, JSON.stringify(board));
 }
 
-export async function deleteBoard(boardId: string): Promise<void> {
-  const kv = await getKv();
-  await kv.delete(["board", boardId]);
-}
-
-/** For unit tests only — injects a KV instance to replace the module singleton. */
-export function _setKvForTest(kv: Deno.Kv): void {
-  _kv = kv;
+export async function deleteBoard(
+  kv: KVNamespace,
+  boardId: string,
+): Promise<void> {
+  await kv.delete(`board:${boardId}`);
 }

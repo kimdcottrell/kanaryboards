@@ -1,6 +1,7 @@
-// @vitest-environment node
+import { env } from "cloudflare:test";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { APIContext } from "astro";
+import { POST } from "@pages/api/contact.ts";
 
 const mockSend = vi.hoisted(() => vi.fn());
 
@@ -12,6 +13,18 @@ vi.mock("resend", () => ({
 
 const apiContext = (request: Request): APIContext =>
   ({ request }) as APIContext;
+
+// The endpoint reads its secret from cloudflare:workers `env`, which is the
+// same object `cloudflare:test` exposes — so tests set it there.
+function setApiKey(value: string | undefined) {
+  if (value === undefined) {
+    delete (env as Record<string, unknown>).RESEND_API_KEY;
+  } else (env as Record<string, unknown>).RESEND_API_KEY = value;
+}
+
+afterEach(() => {
+  setApiKey(undefined);
+});
 
 function makeRequest(body: unknown) {
   return new Request("http://localhost/api/contact", {
@@ -35,24 +48,10 @@ const validPayload = {
   message: "Hello there, this is a message.",
 };
 
-async function importPOST() {
-  const mod = await import("@pages/api/contact.ts");
-  return mod.POST;
-}
-
 describe("POST /api/contact", () => {
   describe("when email service is not configured", () => {
-    beforeEach(() => {
-      vi.resetModules();
-      vi.stubEnv("RESEND_API_KEY", "");
-    });
-
-    afterEach(() => {
-      vi.unstubAllEnvs();
-    });
-
     test("returns 503 and never calls Resend", async () => {
-      const POST = await importPOST();
+      setApiKey(undefined);
       const res = await POST(apiContext(makeRequest(validPayload)));
       expect(res.status).toBe(503);
       const json = await res.json();
@@ -62,18 +61,10 @@ describe("POST /api/contact", () => {
   });
 
   describe("when email service is configured", () => {
-    let POST: Awaited<ReturnType<typeof importPOST>>;
-
-    beforeEach(async () => {
-      vi.resetModules();
-      vi.stubEnv("RESEND_API_KEY", "test-api-key");
+    beforeEach(() => {
+      setApiKey("test-api-key");
       mockSend.mockReset();
       mockSend.mockResolvedValue({ data: { id: "email-id" }, error: null });
-      POST = await importPOST();
-    });
-
-    afterEach(() => {
-      vi.unstubAllEnvs();
     });
 
     describe("request body validation — never reaches Resend", () => {

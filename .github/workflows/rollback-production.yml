@@ -1,0 +1,113 @@
+name: Rollback Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_id:
+        description: "Version ID to roll back to (leave blank for the previously deployed version)"
+        required: false
+        type: string
+      reason:
+        description: "Why are you rolling back? (recorded on the rollback in Cloudflare)"
+        required: true
+        type: string
+
+# Shared with deploy-production.yml: a rollback must never interleave with an
+# in-flight deploy, or the rollback can be silently re-clobbered.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  WORKER_NAME: kanby
+
+jobs:
+  rollback:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    environment:
+      name: Production
+
+    permissions:
+      contents: read
+
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      # Printed in full so the chosen target is auditable in the run log, and so
+      # a change in wrangler's JSON shape is immediately visible rather than
+      # silently yielding an empty target below.
+      - name: Show deployment history
+        run: |
+          deno run -A npm:wrangler deployments list --name "$WORKER_NAME" --json | tee "$RUNNER_TEMP/deployments.json"
+
+      - name: Resolve rollback target
+        id: target
+        env:
+          REQUESTED: ${{ inputs.version_id }}
+        run: |
+          if [ -n "$REQUESTED" ]; then
+            TARGET="$REQUESTED"
+            echo "Using the version supplied as input."
+          else
+            # Index 1, not 0: index 0 is what is currently live, so "previous"
+            # is the one behind it. (This differs from the auto-rollback in
+            # deploy-production.yml, which snapshots index 0 *before* deploying.)
+            TARGET=$(jq -r '[.[]? | (.versions[0].version_id // .version_id // .id)]
+              | map(select(. != null)) | .[1] // empty' "$RUNNER_TEMP/deployments.json")
+            echo "No version supplied — resolved the previous deployment."
+          fi
+
+          if [ -z "$TARGET" ]; then
+            echo "::error::Could not determine a rollback target. Pass an explicit version_id (see the deployment history above)."
+            exit 1
+          fi
+          echo "Rollback target: $TARGET"
+          echo "version_id=$TARGET" >> "$GITHUB_OUTPUT"
+
+      - name: Roll back
+        env:
+          TARGET: ${{ steps.target.outputs.version_id }}
+          REASON: ${{ inputs.reason }}
+        run: |
+          deno run -A npm:wrangler rollback "$TARGET" \
+            --name "$WORKER_NAME" \
+            --yes \
+            --message "$REASON (by ${{ github.actor }}, run ${{ github.run_id }})"
+
+      - name: Confirm what is now live
+        if: always()
+        env:
+          TARGET: ${{ steps.target.outputs.version_id }}
+          REASON: ${{ inputs.reason }}
+        run: |
+          {
+            if [ "${{ job.status }}" = "success" ]; then
+              echo "### ⏪ Production rolled back"
+            else
+              echo "### ❌ Rollback failed"
+            fi
+            echo ""
+            echo "- **Target version:** \`${TARGET:-unresolved}\`"
+            echo "- **Reason:** $REASON"
+            echo "- **By:** @${{ github.actor }}"
+            echo ""
+            echo "#### Current deployment status"
+            echo '```'
+            deno run -A npm:wrangler deployments status --name "$WORKER_NAME" 2>&1 || true
+            echo '```'
+            echo ""
+            echo "> **Note:** a rollback reverts code and bindings only — it does **not**"
+            echo "> revert Workers KV data. If the bad version wrote invalid board data,"
+            echo "> that data is still there."
+          } >> "$GITHUB_STEP_SUMMARY"
