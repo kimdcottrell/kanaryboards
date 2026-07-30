@@ -4,14 +4,12 @@ on:
   pull_request:
 
 jobs:
-  deploy:
-    name: Deploy
+  static-analysis:
+    name: Static Analysis
     runs-on: ubuntu-latest
 
     permissions:
-      id-token: write # Needed for auth with Deno Deploy
       contents: read # Needed to clone the repository
-      statuses: read # Needed to read the Deno Deploy commit status
 
     steps:
       - name: Clone repository
@@ -22,23 +20,11 @@ jobs:
         with:
           deno-version: v2.x
 
-      # `astro.config.mjs` reads BASE_URL for `site` whenever CI is set, and the
-      # content config resolves the default OG image against it, so the build
-      # can't start until the preview URL is known.
-      - name: Wait for Deno Deploy and get preview URL
-        id: preview-url
-        uses: ./.github/actions/deno-deploy-preview-url
-        with:
-          deno-deploy-token: ${{ secrets.DENO_DEPLOY_TOKEN }}
-          gh-token: ${{ github.token }}
-          sha: ${{ github.event.pull_request.head.sha }}
-          repository: ${{ github.repository }}
-
+      # No longer waits on a deploy preview: `astro.config.mjs` now hardcodes
+      # `site`, so nothing in the build depends on a preview URL being known.
       - name: Build
         id: build
         run: "deno task build"
-        env:
-          BASE_URL: ${{ steps.preview-url.outputs.base_url }}
 
       - name: Format code
         id: fmt
@@ -54,11 +40,10 @@ jobs:
         id: check
         continue-on-error: true
         run: |
+          deno run -A npm:wrangler types --include-runtime=false
           deno check
           deno types > src/deno.d.ts
           deno task astro check
-        env:
-          BASE_URL: ${{ steps.preview-url.outputs.base_url }}
 
       - name: Validate PolicyStack config
         id: policystack

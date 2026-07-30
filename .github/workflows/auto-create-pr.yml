@@ -2,10 +2,15 @@ name: Auto-Create PR
 
 on:
   push:
-    branches:
-      - "feature/**" # Matches feature/* branches
-      - "bugfix/**" # Matches bugfix/* branches
-# Add more branch patterns as needed
+    # Every branch except main and Dependabot's own. `branches-ignore` is
+    # mutually exclusive with `branches`, so this replaces the previous
+    # feature/**, bugfix/** allowlist rather than adding to it.
+    #
+    # dependabot/** is excluded because Dependabot opens its own PRs, and
+    # dependabot-auto-merge.yml handles them.
+    branches-ignore:
+      - main
+      - "dependabot/**"
 
 jobs:
   create-pull-request:

@@ -22,3 +22,6 @@ jobs:
       - name: Run unit tests
         run: deno task vitest --run
 
+      - name: Run Worker-runtime unit tests
+        run: deno task vitest:workers --run
+

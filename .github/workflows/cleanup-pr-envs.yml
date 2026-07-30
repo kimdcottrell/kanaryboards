@@ -1,0 +1,123 @@
+name: Cleanup PR Environments
+
+# Tears down everything pr-checks.yml created for a PR: the preview Worker, its
+# KV namespace(s), and the report Pages deployments.
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+env:
+  PR_NUMBER: ${{ github.event.pull_request.number }}
+  WORKER_NAME: pr-${{ github.event.pull_request.number }}
+  KV_NAMESPACE: pr-${{ github.event.pull_request.number }}-BOARD_KV
+  REPORT_BRANCH: report-pr-${{ github.event.pull_request.number }}
+  PAGES_PROJECT: kanby
+
+jobs:
+  cleanup:
+    # Deliberately NOT gated on `merged == true`. The previous version was, which
+    # meant a PR closed *without* merging leaked its Worker and KV namespace
+    # forever — and abandoned PRs are exactly the ones nobody goes back to clean
+    # up by hand.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Preview scope only: this job must never be able to reach production.
+    environment:
+      name: Preview
+
+    permissions:
+      contents: read
+
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+    steps:
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      # Every step is continue-on-error and tolerant of a missing resource:
+      # cleanup also runs for PRs that never deployed (closed before CI ran, or
+      # CI failed early), and one absent resource must not abort the rest.
+      - name: Delete the preview Worker
+        continue-on-error: true
+        run: |
+          if deno run -A npm:wrangler delete "$WORKER_NAME" --force; then
+            echo "Deleted Worker $WORKER_NAME"
+          else
+            echo "::notice::Worker $WORKER_NAME not deleted (it may never have been deployed)."
+          fi
+
+      # Removes this PR's board namespace and any namespace the Astro adapter
+      # auto-provisioned for the preview Worker (e.g. "<worker>-SESSION").
+      # The SESSION one is easy to overlook and would otherwise leave one dead
+      # namespace per PR behind.
+      - name: Delete the preview KV namespaces
+        continue-on-error: true
+        run: |
+          deno run -A npm:wrangler kv namespace list > namespaces.json 2>/dev/null \
+            || echo '[]' > namespaces.json
+
+          # Exact match on the board namespace, plus anything prefixed with
+          # "<worker>-". Both are anchored, so PR 4 can never match PR 42's
+          # namespaces.
+          TARGETS=$(jq -r --arg ns "$KV_NAMESPACE" --arg worker "$WORKER_NAME" '
+            .[]?
+            | select(.title == $ns or (.title | startswith($worker + "-")))
+            | "\(.id)\t\(.title)"
+          ' namespaces.json)
+
+          if [ -z "$TARGETS" ]; then
+            echo "::notice::No KV namespaces found for $WORKER_NAME."
+            exit 0
+          fi
+
+          printf '%s\n' "$TARGETS" | while IFS="$(printf '\t')" read -r ID TITLE; do
+            [ -n "$ID" ] || continue
+            echo "Deleting KV namespace $TITLE ($ID)"
+            deno run -A npm:wrangler kv namespace delete --namespace-id "$ID" --skip-confirmation \
+              || echo "::warning::Failed to delete KV namespace $TITLE ($ID)"
+          done
+
+      # Filters on the exact report branch rather than a `pr-<n>` prefix, which
+      # is why pr-checks.yml publishes to `report-pr-<n>`: the old prefix filter
+      # would also have matched the app's own naming.
+      - name: Delete the report Pages deployments
+        continue-on-error: true
+        run: |
+          deno run -A npm:wrangler pages deployment list \
+              --project-name="$PAGES_PROJECT" \
+              --environment=preview \
+              --json |
+            jq -r --arg branch "$REPORT_BRANCH" '
+              .[]
+              | select(.Branch == $branch)
+              | .Id
+            ' \
+            | while read -r DEPLOYMENT_ID; do
+                [ -n "$DEPLOYMENT_ID" ] || continue
+                echo "Deleting Pages deployment $DEPLOYMENT_ID"
+                deno run -A npm:wrangler pages deployment delete "$DEPLOYMENT_ID" \
+                  --project-name="$PAGES_PROJECT" --force \
+                  || echo "::warning::Failed to delete Pages deployment $DEPLOYMENT_ID"
+              done
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### 🧹 Cleaned up PR #${PR_NUMBER}"
+            echo ""
+            echo "- Worker: \`${WORKER_NAME}\`"
+            echo "- KV namespaces: \`${KV_NAMESPACE}\` and any \`${WORKER_NAME}-*\`"
+            echo "- Pages branch: \`${REPORT_BRANCH}\`"
+            echo ""
+            echo "#### Remaining KV namespaces"
+            echo '```'
+            deno run -A npm:wrangler kv namespace list 2>/dev/null \
+              | jq -r '.[]? | .title' | sort || echo "(could not list)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

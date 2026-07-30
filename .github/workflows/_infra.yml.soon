@@ -1,0 +1,151 @@
+# name: Infra
+
+# on:
+#   pull_request:
+#     paths:
+#       - "infra/**"
+#       - ".github/workflows/infra.yml"
+#   push:
+#     branches: [main]
+#     paths:
+#       - "infra/**"
+#       - ".github/workflows/infra.yml"
+#   workflow_dispatch:
+
+# # Serialised against itself: two concurrent applies would fight over the same
+# # state file. (State locking should also cover this, but the lock's behaviour
+# # against R2 is unverified — see infra/versions.tf.)
+# concurrency:
+#   group: infra
+#   cancel-in-progress: false
+
+# defaults:
+#   run:
+#     working-directory: infra
+
+# jobs:
+#   plan:
+#     name: Plan
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 20
+
+#     # `plan` needs read access to state and to Cloudflare, so it runs in the same
+#     # scope as apply. Nothing here mutates infrastructure.
+#     environment:
+#       name: Production
+
+#     permissions:
+#       contents: read
+
+#     env:
+#       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+#       # R2 credentials for the S3-compatible state backend.
+#       AWS_ACCESS_KEY_ID: ${{ secrets.TF_STATE_ACCESS_KEY_ID }}
+#       AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_STATE_SECRET_ACCESS_KEY }}
+#       TF_VAR_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+#       TF_VAR_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+
+#     steps:
+#       - uses: actions/checkout@v7
+
+#       - uses: opentofu/setup-opentofu@v2
+#         with:
+#           tofu_version: 1.10.6
+#           cache: true
+
+#       - name: Init
+#         run: |
+#           tofu init \
+#             -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+#             -backend-config="endpoints={s3=\"https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com\"}"
+
+#       - name: Format check
+#         id: fmt
+#         continue-on-error: true
+#         run: tofu fmt -check -recursive
+
+#       - name: Validate
+#         id: validate
+#         continue-on-error: true
+#         run: tofu validate
+
+#       - name: Plan
+#         id: plan
+#         continue-on-error: true
+#         run: tofu plan -no-color -input=false -out=tfplan 2>&1 | tee plan.txt
+
+#       - name: Summary
+#         if: always()
+#         run: |
+#           {
+#             echo "| Status | Step |"
+#             echo "| --- | --- |"
+#             [ "${{ steps.fmt.outcome }}" = "success" ] && echo "| ✅ | tofu fmt |" || echo "| ❌ | tofu fmt |"
+#             [ "${{ steps.validate.outcome }}" = "success" ] && echo "| ✅ | tofu validate |" || echo "| ❌ | tofu validate |"
+#             [ "${{ steps.plan.outcome }}" = "success" ] && echo "| ✅ | tofu plan |" || echo "| ❌ | tofu plan |"
+#             if [ -f plan.txt ]; then
+#               echo ""
+#               echo "<details><summary>Plan output</summary>"
+#               echo ""
+#               echo '```terraform'
+#               # Trimmed: a full plan can exceed the 1MiB step-summary limit.
+#               tail -c 60000 plan.txt
+#               echo '```'
+#               echo ""
+#               echo "</details>"
+#             fi
+#           } >> "$GITHUB_STEP_SUMMARY"
+
+#       - name: Upload plan
+#         if: steps.plan.outcome == 'success' && github.ref == 'refs/heads/main'
+#         uses: actions/upload-artifact@v7
+#         with:
+#           name: tfplan
+#           path: infra/tfplan
+#           retention-days: 3
+
+#       - name: Fail if any step failed
+#         if: steps.fmt.outcome == 'failure' || steps.validate.outcome == 'failure' || steps.plan.outcome == 'failure'
+#         run: exit 1
+
+#   apply:
+#     name: Apply
+#     needs: plan
+#     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 30
+
+#     # Separate environment so production infra changes require an approval that
+#     # ordinary production *code* deploys do not.
+#     environment:
+#       name: Production Infra
+
+#     permissions:
+#       contents: read
+
+#     env:
+#       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+#       AWS_ACCESS_KEY_ID: ${{ secrets.TF_STATE_ACCESS_KEY_ID }}
+#       AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_STATE_SECRET_ACCESS_KEY }}
+#       TF_VAR_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+#       TF_VAR_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+
+#     steps:
+#       - uses: actions/checkout@v7
+
+#       - uses: opentofu/setup-opentofu@v2
+#         with:
+#           tofu_version: 1.10.6
+#           cache: true
+
+#       - name: Init
+#         run: |
+#           tofu init \
+#             -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+#             -backend-config="endpoints={s3=\"https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com\"}"
+
+#       # Re-plans rather than reusing the artifact: the approval gate means time
+#       # may have passed, and a saved plan can be stale. `tofu apply` without a
+#       # plan file still needs -auto-approve here since there is no TTY.
+#       - name: Apply
+#         run: tofu apply -auto-approve -input=false

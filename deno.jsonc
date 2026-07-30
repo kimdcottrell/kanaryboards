@@ -25,7 +25,14 @@
   "fmt": {
     "exclude": [
       "**/*.md",
-      "**/*.mdx"
+      "**/*.mdx",
+      // Undo the top-level exclusion: only `deno check` needs to skip these.
+      "!tests/workers/"
+    ]
+  },
+  "lint": {
+    "exclude": [
+      "!tests/workers/"
     ]
   },
   "exclude": [
@@ -39,6 +46,11 @@
     "node_modules/",
     "src/db",
     "test-results/",
+    // `deno check` can't type-check these: they're built against
+    // tests/workers/tsconfig.json (`cloudflare:test`, workerd runtime types),
+    // which is a different program to the one deno/astro check use. The `fmt`
+    // and `lint` sections above opt them back in.
+    "tests/workers/",
     "vendor/"
   ],
   "nodeModulesDir": "auto",
@@ -54,14 +66,21 @@
     "e2e-security": "deno task playwright test --config=playwright.security.config.ts",
     "husky": "deno run --allow-all husky",
     "playwright": "PW_TEST_CONNECT_WS_ENDPOINT='ws://playwright:3000' PW_DISABLE_TS_ESM=1 deno run --env-file=.env --allow-all ./node_modules/.bin/playwright",
-    "preview": "deno run --allow-net --allow-read --allow-ffi --allow-env ./dist/server/entry.mjs",
-    "preview:cf-headers": "deno run --allow-net --allow-ffi --allow-read --allow-env ./src/cf-header-included-proxy.ts",
-    "vitest": "deno run --allow-all vitest"
+    "preview": "deno run -A astro preview",
+    "preview:cf": "deno run -A npm:wrangler dev",
+    "vitest": "deno run --allow-all vitest",
+    // Worker-runtime tests (real simulated KV bindings) run in a separate
+    // pool from the jsdom suite above, so they need their own config.
+    "vitest:workers": "deno run --allow-all vitest --config vitest.workers.config.ts"
   },
   "test": {
     // exclude these or `deno test` will try to run tests in these folders and fail.
     // tests in those dirs are handled by specific `deno task` calls above
-    "exclude": ["./tests/vitest/*", "./tests/playwright/*"]
+    "exclude": [
+      "./tests/vitest/*",
+      "./tests/playwright/*",
+      "./tests/workers/*"
+    ]
   },
   "deploy": {
     "org": "kimdcottrell",

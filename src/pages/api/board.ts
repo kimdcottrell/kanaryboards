@@ -1,6 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from "astro";
+import { env } from "cloudflare:workers";
 import { z } from "astro/zod";
 import { deleteBoard, getBoard, saveBoard } from "@lib/db/kv.ts";
 
@@ -42,9 +43,9 @@ const TaskSchema = z.object({
   order: z.string(),
 });
 
-// Deno KV rejects any single value over 64KiB (see saveBoard in
-// @lib/db/kv.ts), which otherwise surfaces as an unhandled 500. Reject it
-// here instead, with headroom held back for the KV entry's own overhead.
+// Caps a single board payload at ~64KB. Cloudflare KV's own per-value ceiling
+// is far higher (25MiB), so this is a deliberate product limit — it keeps one
+// board from growing unbounded and bounds the read/write cost per request.
 const PersistedBoardSchema = z.object({
   rows: z.array(RowSchema),
   columns: z.array(ColumnSchema),
@@ -90,7 +91,7 @@ export const GET: APIRoute = async ({ locals, request }) => {
     });
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
-  const board = await getBoard(boardId);
+  const board = await getBoard(env.BOARD_KV, boardId);
   if (!board) return jsonResponse({ noData: true }, 404);
   return jsonResponse(board, 200);
 };
@@ -119,7 +120,7 @@ export const PUT: APIRoute = async ({ request, locals }) => {
     auth: locals.auth(),
     rows: body.rows.map((r) => r.title),
   });
-  await saveBoard(boardId, body);
+  await saveBoard(env.BOARD_KV, boardId, body);
   return jsonResponse({ ok: true }, 200);
 };
 
@@ -140,6 +141,6 @@ export const DELETE: APIRoute = async ({ locals, request }) => {
     boardId,
     auth: locals.auth(),
   });
-  await deleteBoard(boardId);
+  await deleteBoard(env.BOARD_KV, boardId);
   return jsonResponse({ ok: true }, 200);
 };

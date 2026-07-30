@@ -153,9 +153,12 @@ const hasConsent = Boolean(Astro.cookies.get(CONSENT_COOKIE)?.value);
     function render(state: State) {
         banner.hidden = state.route !== "cookie";
         prefs.classList.toggle("modal-open", state.route === "preferences");
+        // toggle() stages into `draft`; only save() promotes it to `decisions`.
+        // Mirror the pending view so an in-progress edit isn't reverted.
+        const pending = state.draft ?? state.decisions;
         for (const cb of checkboxes) {
             const key = cb.dataset.category;
-            if (key) cb.checked = state.decisions[key] ?? false;
+            if (key) cb.checked = pending[key] ?? false;
         }
         syncConsentMode(state);
     }

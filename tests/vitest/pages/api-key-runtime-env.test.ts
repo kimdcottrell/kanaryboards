@@ -1,66 +1,47 @@
-// @vitest-environment node
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 
 // These tests guard HOW the API-key secrets are read, not what the endpoints do.
 //
-// The endpoints must read their secrets with Deno.env.get() rather than
-// import.meta.env.*. Astro/Vite statically inlines import.meta.env.* at build
-// time, so on Deno Deploy the value gets frozen in during the build (or baked
-// as `undefined` when the var isn't present in the build environment) and the
-// production runtime env var is silently ignored. Deno.env.get() is a true
-// runtime lookup, so the dashboard-configured secret is actually honored.
-//
-// Note: a value-based test can't catch a regression here — under Deno, vitest's
-// stubbed env bridges through to Deno.env, so import.meta.env.KEY would appear
-// to "work" too. So we assert the mechanism directly: (1) Deno.env.get() is the
-// function invoked, and (2) the source never reads these keys off import.meta.env.
+// The endpoints must read their secrets from `cloudflare:workers`' `env`.
+// Two specific mechanisms are wrong here, and both fail invisibly:
+//   - `import.meta.env.*` is statically inlined by Astro/Vite at build time,
+//     so the value gets frozen into the Worker bundle (or baked as
+//     `undefined` when the var isn't set at build time) and the
+//     dashboard-configured runtime secret is silently ignored.
+//   - `Astro.locals.runtime.env` was removed in Astro v6 — the adapter defines
+//     it as a getter that throws, so it breaks at runtime instead.
+// A value-based test can't distinguish these, so the mechanism is asserted
+// directly against the source text.
 
-// Mock the SDKs so importing the endpoints has no side effects — construction is
-// skipped anyway (the keys are unset in the test env), but this keeps it robust.
 vi.mock("resend", () => ({ Resend: vi.fn() }));
 vi.mock("@google/genai", () => ({ GoogleGenAI: vi.fn() }));
 
-const readSource = (relPath: string) =>
-  Deno.readTextFileSync(new URL(`../../../${relPath}`, import.meta.url));
+// Resolved against the vitest root (the repo root), not import.meta.url.
+const readSource = (repoRelPath: string) =>
+  Deno.readTextFileSync(`${Deno.cwd()}/${repoRelPath}`);
 
-describe("API-key secrets are read at runtime via Deno.env.get()", () => {
-  beforeEach(() => {
-    vi.resetModules();
+function assertReadsFromWorkersEnv(sourcePath: string, keys: string[]) {
+  const src = readSource(sourcePath);
+  expect(src).toContain('import { env } from "cloudflare:workers"');
+  for (const key of keys) {
+    expect(src).toContain(`env.${key}`);
+    // MODE is a legitimate build-time constant, so only the keys under test
+    // are asserted absent from import.meta.env.
+    expect(src).not.toMatch(new RegExp(`import\\.meta\\.env\\.${key}`));
+    expect(src).not.toMatch(new RegExp(`Deno\\.env\\.get\\(.${key}`));
+  }
+  expect(src).not.toContain("locals.runtime");
+}
+
+describe("API-key secrets are read from cloudflare:workers env", () => {
+  test("contact endpoint — RESEND_API_KEY", () => {
+    assertReadsFromWorkersEnv("src/pages/api/contact.ts", ["RESEND_API_KEY"]);
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  describe("contact endpoint — RESEND_API_KEY", () => {
-    test("reads the key through Deno.env.get() at module load", async () => {
-      const getSpy = vi.spyOn(Deno.env, "get");
-      await import("@pages/api/contact.ts");
-      expect(getSpy).toHaveBeenCalledWith("RESEND_API_KEY");
-    });
-
-    test("does not read the key off import.meta.env in source", () => {
-      const src = readSource("src/pages/api/contact.ts");
-      expect(src).toContain('Deno.env.get("RESEND_API_KEY")');
-      expect(src).not.toMatch(/import\.meta\.env\.RESEND_API_KEY/);
-    });
-  });
-
-  describe("generate-tasks endpoint — GOOGLE_AI_STUDIO_KEY / _MODEL", () => {
-    test("reads both keys through Deno.env.get() at module load", async () => {
-      const getSpy = vi.spyOn(Deno.env, "get");
-      await import("@pages/api/generate-tasks.ts");
-      expect(getSpy).toHaveBeenCalledWith("GOOGLE_AI_STUDIO_KEY");
-      expect(getSpy).toHaveBeenCalledWith("GOOGLE_AI_STUDIO_MODEL");
-    });
-
-    test("does not read the keys off import.meta.env in source", () => {
-      const src = readSource("src/pages/api/generate-tasks.ts");
-      expect(src).toContain('Deno.env.get("GOOGLE_AI_STUDIO_KEY")');
-      expect(src).toContain('Deno.env.get("GOOGLE_AI_STUDIO_MODEL")');
-      // MODE is a legitimate build-time constant, so only the secret keys are
-      // asserted absent from import.meta.env.
-      expect(src).not.toMatch(/import\.meta\.env\.GOOGLE_AI_STUDIO/);
-    });
+  test("generate-tasks endpoint — GOOGLE_AI_STUDIO_KEY / _MODEL", () => {
+    assertReadsFromWorkersEnv("src/pages/api/generate-tasks.ts", [
+      "GOOGLE_AI_STUDIO_KEY",
+      "GOOGLE_AI_STUDIO_MODEL",
+    ]);
   });
 });

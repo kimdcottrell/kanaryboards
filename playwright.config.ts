@@ -5,7 +5,7 @@ import { defineConfig, devices } from "@playwright/test";
 // but for testing, it is localhost:8085, UNLESS we're in CI
 const BASE_URL = process.env.CI
   ? process.env.BASE_URL!
-  : "http://localhost:8085";
+  : "http://localhost:4321";
 
 export default defineConfig({
   testDir: "tests/playwright",
@@ -16,8 +16,8 @@ export default defineConfig({
   // run `deno` on a runner that only has node installed.
   webServer: process.env.CI ? undefined : {
     // PROD build → src/middleware.ts emits the security headers on every response.
-    command: `BASE_URL="${BASE_URL}" deno task build && deno task preview`,
-    url: "http://localhost:8085",
+    command: `BASE_URL="${BASE_URL}" wrangler dev --port 4321`,
+    url: `${BASE_URL}`,
     reuseExistingServer: true, // skip build+preview if a server is already up at BASE
     timeout: 240_000, // build + boot can take a while
   },
