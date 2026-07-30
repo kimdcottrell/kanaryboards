@@ -24,7 +24,14 @@ setup-ssh-agent: ## Add ssh_agent_reload function and SSH_AUTH_SOCK export to yo
 	@profile=$$HOME/.bash_profile; \
 	bashrc=$$HOME/.bashrc; \
 	if [ -f "$$profile" ]; then \
-		if ! grep -q 'ssh_agent_reload' "$$profile"; then \
+		target=$$profile; \
+	elif [ -f "$$bashrc" ]; then \
+		target=$$bashrc; \
+	else \
+		target=""; \
+	fi; \
+	if [ -n "$$target" ]; then \
+		if ! grep -q 'ssh_agent_reload' "$$target"; then \
 			{ echo ''; \
 			  echo 'ssh_agent_reload() {'; \
 			  echo '  if [ -n "$$(docker ps -q --filter '"'"'label=traefik.http.routers.kanary-web.rule'"'"' 2>/dev/null)" ]; then'; \
@@ -43,13 +50,13 @@ setup-ssh-agent: ## Add ssh_agent_reload function and SSH_AUTH_SOCK export to yo
 			  echo '    echo "Warning: could not detect git SSH key; no keys added"'; \
 			  echo '  fi'; \
 			  echo '}'; \
-			} >> "$$profile"; \
-			echo "  -> Added ssh_agent_reload to $$profile"; \
+			} >> "$$target"; \
+			echo "  -> Added ssh_agent_reload to $$target"; \
 		else \
-			echo "  -> ssh_agent_reload already in $$profile, skipping"; \
+			echo "  -> ssh_agent_reload already in $$target, skipping"; \
 		fi; \
 	else \
-		echo "  -> $$profile not found, skipping"; \
+		echo "  -> Neither $$profile nor $$bashrc found, skipping"; \
 	fi; \
 	if [ -f "$$bashrc" ]; then \
 		if ! grep -q 'SSH_AUTH_SOCK' "$$bashrc"; then \
@@ -64,7 +71,7 @@ setup-ssh-agent: ## Add ssh_agent_reload function and SSH_AUTH_SOCK export to yo
 		echo "  -> $$bashrc not found, skipping"; \
 	fi; \
 	echo "  -> Running ssh_agent_reload on host..."; \
-	bash -lc 'ssh_agent_reload'
+	bash -i -c "source \"$$target\" 2>/dev/null; source \"$$bashrc\" 2>/dev/null; ssh_agent_reload"
 
 
 coffee: ## Get your terminal caffeinated
