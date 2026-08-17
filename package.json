@@ -14,7 +14,7 @@
     "@google/genai": "2.17.1",
     "@iconify/json": "2.2.516",
     "@iconify/tailwind4": "1.2.3",
-    "@lyfie/luthor": "2.9.0",
+    "@lyfie/luthor": "2.9.5",
     "@policystack/cli": "1.4.0",
     "@policystack/core": "1.4.0",
     "@policystack/react": "1.4.0",
