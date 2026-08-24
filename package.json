@@ -40,7 +40,7 @@
     "sharp": "0.35.3",
     "tailwindcss": "4.3.3",
     "zod-empty": "2.2.1",
-    "vitest": "4.1.10",
+    "vitest": "4.1.11",
     "@jsr/std__uuid": "1.1.1"
   },
   "devDependencies": {
