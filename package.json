@@ -11,7 +11,7 @@
     "@clerk/testing": "2.2.31",
     "@clerk/ui": "1.31.0",
     "@deno/astro-adapter": "0.6.0",
-    "@google/genai": "2.18.0",
+    "@google/genai": "2.19.0",
     "@iconify/json": "2.2.521",
     "@iconify/tailwind4": "1.2.3",
     "@lyfie/luthor": "2.9.5",
@@ -44,7 +44,7 @@
     "@jsr/std__uuid": "1.1.1"
   },
   "devDependencies": {
-    "@anthropic-ai/claude-code": "2.1.239",
+    "@anthropic-ai/claude-code": "2.1.251",
     "@astrojs/check": "0.9.10",
     "@catppuccin/tailwindcss": "1.0.0",
     "@playwright/test": "1.62.1",
