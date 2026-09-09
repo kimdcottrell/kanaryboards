@@ -12,7 +12,7 @@
     "@clerk/ui": "1.32.2",
     "@deno/astro-adapter": "0.6.0",
     "@google/genai": "2.21.0",
-    "@iconify/json": "2.2.525",
+    "@iconify/json": "2.2.526",
     "@iconify/tailwind4": "1.2.3",
     "@lyfie/luthor": "2.9.5",
     "@policystack/cli": "1.5.0",
@@ -23,7 +23,7 @@
     "@tailwindcss/typography": "0.5.20",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.7",
-    "astro": "7.3.1",
+    "astro": "7.3.2",
     "astro-icon": "1.2.0",
     "astro-seo": "1.2.0",
     "astro-seo-schema": "7.0.0",
@@ -44,20 +44,20 @@
     "@jsr/std__uuid": "1.1.1"
   },
   "devDependencies": {
-    "@anthropic-ai/claude-code": "2.1.261",
+    "@anthropic-ai/claude-code": "2.1.263",
     "@astrojs/check": "0.9.10",
     "@catppuccin/tailwindcss": "1.0.0",
-    "@playwright/test": "1.62.1",
+    "@playwright/test": "1.63.0",
     "@tailwindcss/vite": "4.3.3",
     "jsdom": "30.0.1",
     "@testing-library/dom": "10.4.1",
     "@testing-library/react": "16.3.3",
     "@testing-library/user-event": "14.6.7",
     "vitest-browser-react": "2.3.0",
-    "typescript": "7.0.2"
+    "typescript": "6.0.3"
   },
   "overrides": {
-    "typescript": "7.0.2",
+    "typescript": "6.0.3",
     "schema-dts": "2.0.0"
   }
 }

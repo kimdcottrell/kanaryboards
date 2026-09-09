@@ -36,7 +36,23 @@ const securityHeadersMiddleware = defineMiddleware(async (_context, next) => {
   return response;
 });
 
+// clerkMiddleware() reads the forwarded-host/proto and cookie headers as soon
+// as it's invoked, before our callback runs. During prerendering there's no
+// real request, so this must be skipped rather than short-circuited inside
+// the callback — otherwise it warns on synthetic headers for every
+// prerendered route (see securityHeadersMiddleware's comment above for why
+// prerendered responses aren't expected to run this middleware at all).
+const authMiddleware = defineMiddleware((context, next) => {
+  if (context.isPrerendered) return next();
+  return protectedRequestMiddleware(context, next);
+});
+
 export const boardMiddleware = defineMiddleware((context, next) => {
+  // context.cookies.get() reads the Cookie header, which warns during
+  // prerendering for the same reason authMiddleware skips clerkMiddleware
+  // above. Prerendered pages resolve boardId client-side from localStorage
+  // instead (see DrawerMenu.astro's fallback script).
+  if (context.isPrerendered) return next();
   if (context.locals.boardId) return next();
 
   // Unauthenticated: reuse a pre-existing boardId cookie if present, but never
@@ -51,6 +67,6 @@ export const boardMiddleware = defineMiddleware((context, next) => {
 
 export const onRequest = sequence(
   securityHeadersMiddleware,
-  protectedRequestMiddleware,
+  authMiddleware,
   boardMiddleware,
 );

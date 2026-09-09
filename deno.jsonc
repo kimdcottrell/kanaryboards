@@ -44,7 +44,15 @@
   "nodeModulesDir": "auto",
   "tasks": {
     "astro": "deno run --allow-all astro",
-    "build": "rm -rf ./.astro ./dist; INLINE_RUNTIME_CHUNK=false deno run -A astro build",
+    // The `sed` step patches a bug in @deno/astro-adapter@0.6.0's server.ts:
+    // it builds the static-fallback path as `\"./\" + app.removeBase(pathname)`,
+    // but Astro 7.3.2's removeBase() keeps the leading slash, producing a
+    // doubled slash that breaks the adapter's string-suffix match against
+    // prerendered .html files — so every prerendered route (including `/`)
+    // 404s under `deno task preview` and in production. No fixed adapter
+    // version exists yet (upstream: denoland/deno-astro-adapter); remove this
+    // once one ships.
+    "build": "rm -rf ./.astro ./dist; INLINE_RUNTIME_CHUNK=false deno run -A astro build && sed -i 's|new URL(\"\\./\" + app\\.removeBase(url\\.pathname), clientRoot)|new URL(\".\" + app.removeBase(url.pathname), clientRoot)|' ./dist/server/entry.mjs",
     "dev": "deno run --env-file=.env --allow-all astro dev",
     "e2e-test": "deno task playwright test --project=chromium",
     "e2e-test:ui": "deno task playwright test --ui-port=8080 --ui-host=0.0.0.0",

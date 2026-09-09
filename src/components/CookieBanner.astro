@@ -155,7 +155,7 @@ const hasConsent = Boolean(Astro.cookies.get(CONSENT_COOKIE)?.value);
         prefs.classList.toggle("modal-open", state.route === "preferences");
         for (const cb of checkboxes) {
             const key = cb.dataset.category;
-            if (key) cb.checked = state.decisions[key] ?? false;
+            if (key) cb.checked = (state.draft ?? state.decisions)[key] ?? false;
         }
         syncConsentMode(state);
     }
