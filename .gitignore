@@ -1,6 +1,8 @@
 .env
 .env*
 !.env.sample
+dev
+app
 **/node_modules/*
 **/.astro/*
 worker-configuration.d.ts
