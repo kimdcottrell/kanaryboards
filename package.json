@@ -11,7 +11,7 @@
     "@clerk/testing": "2.2.33",
     "@clerk/ui": "1.32.2",
     "@deno/astro-adapter": "0.6.0",
-    "@google/genai": "2.21.0",
+    "@google/genai": "2.22.0",
     "@iconify/json": "2.2.527",
     "@iconify/tailwind4": "1.2.3",
     "@lyfie/luthor": "2.9.5",
@@ -44,7 +44,7 @@
     "@jsr/std__uuid": "1.1.1"
   },
   "devDependencies": {
-    "@anthropic-ai/claude-code": "2.1.263",
+    "@anthropic-ai/claude-code": "2.1.269",
     "@astrojs/check": "0.9.10",
     "@catppuccin/tailwindcss": "1.0.0",
     "@playwright/test": "1.63.0",
@@ -54,10 +54,10 @@
     "@testing-library/react": "16.3.3",
     "@testing-library/user-event": "14.6.7",
     "vitest-browser-react": "2.3.0",
-    "typescript": "6.0.3"
+    "typescript": "7.0.2"
   },
   "overrides": {
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "schema-dts": "2.0.0"
   }
 }
