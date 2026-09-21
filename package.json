@@ -33,7 +33,7 @@
     "husky": "9.1.7",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "react-router-dom": "7.18.3",
+    "react-router-dom": "7.18.4",
     "react-select": "5.10.2",
     "resend": "6.28.1",
     "schema-dts": "2.0.0",
