@@ -7,6 +7,8 @@ updates:
       day: "monday"
     open-pull-requests-limit: 10
     target-branch: "main"
+    ignore:
+      - dependency-name: "typescript"
     groups:
       astro:
         patterns:
@@ -38,7 +40,6 @@ updates:
       misc_core:
         patterns:
           - "@anthropic-ai/*"
-          - "typescript"
           - "@google/genai"
           - "fractional-indexing"
           - "@jsr/std__uuid"

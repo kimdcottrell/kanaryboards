@@ -10,24 +10,21 @@ const url = `https://www.googletagmanager.com/gtag/js?id=${tag}`;
 // stored choice so returning consenters don't flicker denied→granted), then the
 // cookie banner issues `consent update` when the user changes it. Advertising
 // signals stay denied — the site has no marketing/ad tracking.
-const htmlString = `
-<script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() {
-        dataLayer.push(arguments);
-    }
-    gtag("consent", "default", {
-        ad_storage: "denied",
-        ad_user_data: "denied",
-        ad_personalization: "denied",
-        analytics_storage: "${analyticsConsent ? "granted" : "denied"}",
-        wait_for_update: 500,
-    });
-    gtag("js", new Date());
-    gtag("config", "${tag}");
-</script>
-`;
 ---
 
 <script is:inline src={url}></script>
-<Fragment set:html={htmlString} />
+<script is:inline define:vars={{ tag, analyticsConsent }}>
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () {
+        window.dataLayer.push(arguments);
+    };
+    window.gtag("consent", "default", {
+        ad_storage: "denied",
+        ad_user_data: "denied",
+        ad_personalization: "denied",
+        analytics_storage: analyticsConsent ? "granted" : "denied",
+        wait_for_update: 500,
+    });
+    window.gtag("js", new Date());
+    window.gtag("config", tag);
+</script>
