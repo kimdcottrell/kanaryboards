@@ -33,7 +33,7 @@
     "react-router-dom": "7.18.4",
     "react-select": "5.10.2",
     "resend": "6.28.1",
-    "sharp": "0.35.4",
+    "sharp": "0.35.5",
     "tailwindcss": "4.3.3",
     "@jsr/std__uuid": "1.1.1"
   },
