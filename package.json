@@ -11,7 +11,7 @@
     "@clerk/backend": "3.22.0",
     "@clerk/ui": "1.38.1",
     "@deno/astro-adapter": "0.6.0",
-    "@google/genai": "2.21.0",
+    "@google/genai": "2.27.0",
     "@iconify-json/basil": "1.2.4",
     "@iconify-json/hugeicons": "1.2.35",
     "@iconify-json/mingcute": "1.2.8",
@@ -38,7 +38,7 @@
     "@jsr/std__uuid": "1.1.1"
   },
   "devDependencies": {
-    "@anthropic-ai/claude-code": "2.1.263",
+    "@anthropic-ai/claude-code": "2.1.288",
     "@astrojs/check": "0.9.10",
     "@clerk/testing": "2.2.42",
     "@playwright/test": "1.63.0",
@@ -52,10 +52,10 @@
     "@testing-library/user-event": "14.6.7",
     "vitest": "5.0.3",
     "vitest-browser-react": "2.3.0",
-    "typescript": "6.0.3"
+    "typescript": "7.0.2"
   },
   "overrides": {
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "schema-dts": "2.1.0"
   }
 }
