@@ -90,6 +90,9 @@ export default defineConfig({
   },
 
   vite: {
+    // Bundle every dependency into dist/server so the Deno Deploy binary
+    // doesn't need node_modules. Sharp is native and can't be bundled.
+    ssr: { noExternal: true, external: ["sharp"] },
     plugins: [
       tailwindcss(),
     ],

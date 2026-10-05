@@ -3,13 +3,11 @@ import "@lyfie/luthor/styles.css";
 import "@styles/global.css";
 
 import { CONSENT_COOKIE, hasAnalyticsConsent } from "@lib/consent";
-import { Font, getImage } from "astro:assets";
+import { Font } from "astro:assets";
 import { SEO } from "astro-seo";
 import { Schema } from "astro-seo-schema";
 
 import GoogleAnalytics from "@components/seo/partials/GoogleAnalytics.astro";
-import Logo from "@src/images/kanby.jpg";
-import siteDefaultImage from "@src/images/site-default.png";
 
 import type { Props as AstroSEOProps } from "astro-seo";
 import type { Organization, Thing, WebSite, WithContext } from "schema-dts";
@@ -27,8 +25,11 @@ const DEFAULT_DESCRIPTION =
 
 const { seo = {}, schema = [] } = Astro.props;
 
-const defaultImage = await getImage({ src: siteDefaultImage });
-const defaultImageUrl = decodeURIComponent(defaultImage.src);
+// Pre-optimized WebP copies of src/images/site-default.png and kanby.jpg.
+// getImage() would route them through /_image, which needs Sharp at runtime,
+// and the Deno Deploy binary doesn't ship Sharp.
+const defaultImageUrl = "/images/site-default.webp";
+const logoUrl = "/images/kanby.webp";
 
 const title = seo.title ?? DEFAULT_TITLE;
 const description = seo.description ?? DEFAULT_DESCRIPTION;
@@ -67,14 +68,12 @@ const mergedSeo: AstroSEOProps = {
     },
 };
 
-const logo = await getImage({ src: Logo });
-
 const organization: WithContext<Organization> = {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: SITENAME,
     url: Astro.url.origin,
-    logo: decodeURIComponent(logo.src),
+    logo: logoUrl,
     sameAs: [
         "https://discord.gg/GMT7ZvuJf",
         "https://bsky.app/profile/kanby.ai",
