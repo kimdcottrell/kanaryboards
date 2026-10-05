@@ -12,7 +12,7 @@ let hugeiconsPromise: Promise<HugeiconsJson> | null = null;
 
 function loadHugeicons(): Promise<HugeiconsJson> {
   if (!hugeiconsPromise) {
-    hugeiconsPromise = import("@iconify/json/json/hugeicons.json").then(
+    hugeiconsPromise = import("@iconify-json/hugeicons/icons.json").then(
       (mod) => mod.default as HugeiconsJson,
     );
   }

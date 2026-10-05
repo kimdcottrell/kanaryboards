@@ -13,7 +13,6 @@ updates:
           - "astro"
           - "@astrojs/*"
           - "@deno/astro-adapter"
-          - "astro-icon"
       react:
         patterns:
           - "react"
@@ -24,6 +23,7 @@ updates:
           - "tailwindcss"
           - "@tailwindcss/*"
           - "@iconify/*"
+          - "@iconify-json/*"
           - "@catppuccin/*"
           - "daisyui"
       individual_task_display:
@@ -46,7 +46,6 @@ updates:
       pages:
         patterns:
           - "dayjs"
-          - "zod-empty"
           
 
   - package-ecosystem: "docker"

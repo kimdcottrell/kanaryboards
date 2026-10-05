@@ -92,6 +92,18 @@ export default defineConfig({
   vite: {
     plugins: [
       tailwindcss(),
+      {
+        // Bundle every dependency into dist/server so the Deno Deploy binary
+        // doesn't need node_modules. Sharp is native and can't be bundled.
+        // Build only: in dev, noExternal breaks CJS deps ("module is not
+        // defined") and `astro dev` fails to create the dev server app.
+        name: "bundle-ssr-deps",
+        config(_config, { command }) {
+          if (command === "build") {
+            return { ssr: { noExternal: true, external: ["sharp"] } };
+          }
+        },
+      },
     ],
     // Strip console.*/debugger from bundled client JS. Vite 8 bundles with
     // Rolldown/Oxc (not esbuild), so `esbuild.drop` is ignored — the equivalent
