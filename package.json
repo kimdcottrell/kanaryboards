@@ -46,7 +46,7 @@
     "@types/react-dom": "19.3.0",
     "husky": "9.1.7",
     "jsdom": "30.1.1",
-    "schema-dts": "2.0.0",
+    "schema-dts": "2.1.0",
     "@testing-library/dom": "10.4.2",
     "@testing-library/react": "16.3.3",
     "@testing-library/user-event": "14.6.7",
@@ -56,6 +56,6 @@
   },
   "overrides": {
     "typescript": "6.0.3",
-    "schema-dts": "2.0.0"
+    "schema-dts": "2.1.0"
   }
 }
