@@ -39,6 +39,7 @@ sequenceDiagram
     Ctx->>Reducer: checklist.addItem / updateItem /<br/>removeItem / reorderItem<br/>(insertKey / reorderKey from ordering.ts)
     Reducer-->>Ctx: taskDraft.checklist updated
     Ctx-->>Form: ChecklistSection re-renders<br/>(TaskCreateContext: taskDraft.checklist changed)<br/>-> item list updates
+    Note over Form,Reducer: Top item is always an empty entry row (no trash/drag).<br/>Enter / blur / Shift+Enter on it with text, or a checklist<br/>change leaving checklist[0] non-empty and unfocused<br/>(useEffect), calls addChecklistItem(_, 0) -> CHECKLIST/ADD_ITEM<br/>with insertBeforeIndex 0. Same for the edit modal below.
 
     Note over User,AI: Create task: submit
     User->>Form: submit form
@@ -74,7 +75,7 @@ sequenceDiagram
     Actions->>Ctx: dispatch(CHECKLIST/..., {target:"editDraft", ...})
     Ctx->>Reducer: checklist.* (editTaskDraft branch)
     Reducer-->>Ctx: editTaskDraft.checklist updated
-    Ctx-->>Form: ChecklistSection re-renders<br/>(TaskEditContext: editTaskDraft.checklist changed)<br/>-> item list updates
+    Ctx-->>Form: ChecklistSection re-renders<br/>(TaskEditContext: editTaskDraft.checklist changed)<br/>-> item list updates<br/>(empty top entry row kept as in create)
 
     Note over User,AI: Edit task: save
     User->>Form: submit form

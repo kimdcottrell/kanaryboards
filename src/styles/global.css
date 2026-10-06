@@ -389,15 +389,37 @@
 .task-description-editor .luthor-content-editable {
   font-size: 14px;
 }
-.task-description-editor .luthor-heading-h1 { font-size: 24px; }
-.task-description-editor .luthor-heading-h2 { font-size: 21px; }
-.task-description-editor .luthor-heading-h3 { font-size: 17.5px; }
-.task-description-editor .luthor-heading-h4 { font-size: 16px; }
-.task-description-editor .luthor-heading-h5 { font-size: 14px; }
-.task-description-editor .luthor-heading-h6 { font-size: 12px; }
+.task-description-editor .luthor-heading-h1 {
+  font-size: 24px;
+}
+.task-description-editor .luthor-heading-h2 {
+  font-size: 21px;
+}
+.task-description-editor .luthor-heading-h3 {
+  font-size: 17.5px;
+}
+.task-description-editor .luthor-heading-h4 {
+  font-size: 16px;
+}
+.task-description-editor .luthor-heading-h5 {
+  font-size: 14px;
+}
+.task-description-editor .luthor-heading-h6 {
+  font-size: 12px;
+}
 .task-description-editor .luthor-mode-tab {
   font-size: 12px;
   text-transform: uppercase;
+  font-weight: 600;
+}
+/* Relabel the first ("Visual Only") tab; ExtensiveEditor doesn't forward its
+   mode-tab `labels` prop. Visual only — the accessible name is unchanged. */
+.task-description-editor .luthor-mode-tab:first-child {
+  font-size: 0;
+}
+.task-description-editor .luthor-mode-tab:first-child::after {
+  content: "Task Details";
+  font-size: 12px;
 }
 /* Read-only comments take their container's (the chat bubble's) background
    and text color. */

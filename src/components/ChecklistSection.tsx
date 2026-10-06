@@ -1,5 +1,4 @@
-import { useId, useState } from "react";
-import CloseButton from "./shared/CloseButton.tsx";
+import { useEffect, useId, useState } from "react";
 import { beforeIdFromOrderedList, useDropTarget } from "@lib/dashboard/drag.ts";
 import type { ChecklistAIState, ChecklistItem, Task } from "./context/types.ts";
 import type { DragEvent } from "react";
@@ -32,6 +31,19 @@ export default function ChecklistSection({
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const { dropTarget, handleDragOver } = useDropTarget(!!draggedId);
 
+  // The top item is always an empty entry row; committing it (Enter / blur /
+  // Shift+Enter) spawns a fresh one above it. Re-checked on every checklist
+  // change since the draft can be replaced after mount; skipped while the
+  // entry row is focused so typing in it doesn't spawn rows.
+  useEffect(() => {
+    const top = checklist[0];
+    const focusedId = document.activeElement?.closest("[data-checklist-item]")
+      ?.getAttribute("data-checklist-item");
+    if (top?.text !== "" && focusedId !== top?.id) {
+      addChecklistItem(false, 0);
+    }
+  }, [checklist]);
+
   const handleDrop = (e: DragEvent) => {
     e.preventDefault();
     const target = dropTarget;
@@ -43,29 +55,19 @@ export default function ChecklistSection({
   };
 
   return (
-    <div className="space-y-3 rounded bg-base-content/10 p-4">
-      <div className="overflow-hidden flex items-center justify-between gap-3">
-        <p className="text-sm font-semibold">
-          Checklist items
-        </p>
-
-        <button
-          type="button"
-          data-tip="Add checklist item"
-          className="tooltip btn text-base-100 btn-info btn-sm btn-square text-md transition"
-          onClick={() => addChecklistItem(true)}
-        >
-          <span className="iconify hugeicons--layer-add text-xl">
-          </span>
-        </button>
-      </div>
+    <div className="space-y-3">
+      <p className="text-[12px] uppercase font-bold">
+        Checklist items
+      </p>
       <div className="space-y-3" onDrop={handleDrop}>
         {checklist.map((item, index) => (
           <div
             key={item.id}
             data-checklist-item={item.id}
-            onDragOver={(e) => handleDragOver(e, item.id)}
-            className="rounded flex items-center gap-3 bg-base-content/10 px-3 py-2"
+            onDragOver={index === 0
+              ? undefined
+              : (e) => handleDragOver(e, item.id)}
+            className="rounded flex items-center gap-1 bg-base-content/10 p-1"
             style={{
               opacity: draggedId === item.id ? 0.4 : 1,
               borderTop: `2px solid ${
@@ -80,14 +82,16 @@ export default function ChecklistSection({
               }`,
             }}
           >
-            <span
-              draggable="true"
-              onDragStart={() => setDraggedId(item.id)}
-              onDragEnd={() => setDraggedId(null)}
-              aria-label="Drag to reorder"
-              className="iconify hugeicons--drag-drop-vertical text-xl shrink-0 cursor-grab text-base-content/50"
-            >
-            </span>
+            {index === 0 ? <span className="w-5 shrink-0"></span> : (
+              <span
+                draggable="true"
+                onDragStart={() => setDraggedId(item.id)}
+                onDragEnd={() => setDraggedId(null)}
+                aria-label="Drag to reorder"
+                className="iconify hugeicons--drag-drop-vertical text-xl shrink-0 cursor-grab text-base-content/50"
+              >
+              </span>
+            )}
             <input
               type="checkbox"
               checked={item.checked}
@@ -109,20 +113,39 @@ export default function ChecklistSection({
                   "text",
                   e.currentTarget.value,
                 )}
-              onKeyDown={(e) =>
-                handleChecklistKeyDown(
-                  e.nativeEvent,
-                  index,
-                  addChecklistItem,
-                )}
+              onKeyDown={(e) => {
+                if (index === 0 && e.key === "Enter" && e.shiftKey) {
+                  e.preventDefault();
+                  if (item.text.trim()) addChecklistItem(true, 0);
+                } else {
+                  handleChecklistKeyDown(
+                    e.nativeEvent,
+                    index,
+                    addChecklistItem,
+                  );
+                }
+              }}
+              onBlur={index === 0
+                ? () => {
+                  if (item.text.trim()) addChecklistItem(false, 0);
+                }
+                : undefined}
               ref={(el) => setChecklistInputRef(item.id, el)}
               placeholder="Shift+Enter to add more"
             />
-            <CloseButton
-              onClick={() => deleteChecklistItem(item.id)}
-              aria-label="Delete checklist item"
-              className="shrink-0 ml-auto"
-            />
+            {index === 0
+              ? <span className="btn-sm btn-square shrink-0 ml-auto"></span>
+              : (
+                <button
+                  type="button"
+                  onClick={() => deleteChecklistItem(item.id)}
+                  aria-label="Delete checklist item"
+                  className="btn btn-soft btn-error btn-sm btn-square shrink-0 ml-auto"
+                >
+                  <span className="iconify hugeicons--delete-02 text-xl">
+                  </span>
+                </button>
+              )}
           </div>
         ))}
       </div>
@@ -179,7 +202,7 @@ export function ChecklistGenerationCollapse({
       <button
         id="checklist-gen-collapse-toggle"
         type="button"
-        className="collapse-title font-semibold text-sm py-3 w-full text-left"
+        className="collapse-title text-[12px] uppercase font-bold py-3 w-full text-left"
         onClick={() => setCollapseOpen(!collapseOpen)}
       >
         Generate checklist items with AI
@@ -213,28 +236,61 @@ export function ChecklistGenerationCollapse({
             {showError && <p className="text-error text-sm mt-1">Required</p>}
           </fieldset>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="btn btn-success btn-sm"
-            onClick={applyChecklist}
-            disabled={checklistPreview.length === 0}
-          >
-            <span className="iconify hugeicons--arrow-down-big md:hugeicons--arrow-left-big text-lg">
-            </span>
-            Copy checklist items to task
-          </button>
-
+        {checklistModalError && (
+          <p className="text-sm text-error">{checklistModalError}</p>
+        )}
+        <div className="overflow-x-auto">
           {checklistPreview.length > 0
             ? (
-              <button
-                type="button"
-                className="btn btn-warning btn-sm"
-                onClick={clearChecklistPreview}
-              >
-                <span className="iconify basil--trash-outline text-lg"></span>
-                Empty generated items
-              </button>
+              <table className="bg-base-100 table table-sm w-full">
+                <thead>
+                  <tr>
+                    <th className="text-left text-[12px] uppercase font-bold">
+                      Checklist item preview
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {checklistPreview.map((item, index) => (
+                    <tr
+                      className="border border-base-100!"
+                      key={`${item}-${index}`}
+                    >
+                      <td>{item}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )
+            : (
+              <p className="text-sm italic">
+                Preview will generate here.
+              </p>
+            )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {checklistPreview.length > 0
+            ? (
+              <>
+                <button
+                  type="button"
+                  className="btn btn-error btn-soft btn-sm"
+                  onClick={clearChecklistPreview}
+                >
+                  <span className="iconify hugeicons--delete-02  text-lg">
+                  </span>
+                  Trash generated items
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-success btn-sm"
+                  onClick={applyChecklist}
+                >
+                  <span className="iconify hugeicons--add-to-list text-lg">
+                  </span>
+                  Add items to checklist
+                </button>
+              </>
             )
             : (
               <button
@@ -249,44 +305,6 @@ export function ChecklistGenerationCollapse({
                   ? "Generating…"
                   : "Generate Checklist Items"}
               </button>
-            )}
-        </div>
-        {checklistModalError && (
-          <p className="text-sm text-error">{checklistModalError}</p>
-        )}
-        <div className="overflow-x-auto">
-          {checklistPreview.length > 0
-            ? (
-              <table className="bg-base-content/10 table w-full">
-                <thead>
-                  <tr>
-                    <th className="pe-0"></th>
-                    <th className="text-left ps-0">Checklist item preview</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {checklistPreview.map((item, index) => (
-                    <tr
-                      className="border border-base-100!"
-                      key={`${item}-${index}`}
-                    >
-                      <td className="pe-0">
-                        <input
-                          type="checkbox"
-                          className="checkbox bg-base-300"
-                          disabled
-                        />
-                      </td>
-                      <td className="ps-0">{item}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )
-            : (
-              <p className="text-sm">
-                Generate checklist items to preview them here.
-              </p>
             )}
         </div>
       </div>

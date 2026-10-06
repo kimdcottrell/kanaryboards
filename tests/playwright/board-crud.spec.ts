@@ -512,7 +512,7 @@ test.describe("Board CRUD", () => {
       await expect(item.locator("span")).toHaveClass(/line-through/);
     });
 
-    test("appends new checklist items after the last one (button + Shift+Enter)", async ({ page }) => {
+    test("keeps an empty entry row at the top; committing it spawns a new one", async ({ page }) => {
       // Open the edit modal for task-e2e-1, seeded with one item: "Draft outline".
       await page.locator("article#task-e2e-1").getByText("Write specs").click();
       const modal = page.locator("dialog.modal-open");
@@ -520,23 +520,36 @@ test.describe("Board CRUD", () => {
         .toBeVisible();
 
       const fields = modal.getByPlaceholder("Shift+Enter to add more");
-      await expect(fields).toHaveCount(1);
-      await expect(fields.nth(0)).toHaveValue("Draft outline");
-
-      // Button add must append to the END, not unshift to the front.
-      await modal.locator("button[data-tip='Add checklist item']").click();
+      const deleteButtons = modal.getByRole("button", {
+        name: "Delete checklist item",
+      });
+      // An empty entry row (no trash button) is spawned above the seeded item.
       await expect(fields).toHaveCount(2);
-      await fillStable(fields.nth(1), "Second item");
-      await expect(fields.nth(0)).toHaveValue("Draft outline");
-      await expect(fields.nth(1)).toHaveValue("Second item");
+      await expect(fields.nth(0)).toHaveValue("");
+      await expect(fields.nth(1)).toHaveValue("Draft outline");
+      await expect(deleteButtons).toHaveCount(1);
 
-      // Shift+Enter from the last input also appends directly after it.
-      await fields.nth(1).press("Shift+Enter");
+      // Enter commits the entry row and spawns a fresh one at the top.
+      await fillStable(fields.nth(0), "Entered item");
+      await fields.nth(0).press("Enter");
       await expect(fields).toHaveCount(3);
-      await fillStable(fields.nth(2), "Third item");
-      await expect(fields.nth(0)).toHaveValue("Draft outline");
-      await expect(fields.nth(1)).toHaveValue("Second item");
-      await expect(fields.nth(2)).toHaveValue("Third item");
+      await expect(fields.nth(0)).toHaveValue("");
+      await expect(fields.nth(1)).toHaveValue("Entered item");
+      await expect(deleteButtons).toHaveCount(2);
+
+      // Leaving the entry row with text in it does the same.
+      await fillStable(fields.nth(0), "Blurred item");
+      await fields.nth(0).blur();
+      await expect(fields).toHaveCount(4);
+      await expect(fields.nth(0)).toHaveValue("");
+      await expect(fields.nth(1)).toHaveValue("Blurred item");
+
+      // Shift+Enter from the last input still appends directly after it.
+      await fields.nth(3).press("Shift+Enter");
+      await expect(fields).toHaveCount(5);
+      await fillStable(fields.nth(4), "Last item");
+      await expect(fields.nth(3)).toHaveValue("Draft outline");
+      await expect(fields.nth(4)).toHaveValue("Last item");
     });
   });
 
@@ -691,19 +704,21 @@ test.describe("Board CRUD", () => {
 
     test("reorders checklist items in the edit modal via drag and drop", async ({ page }) => {
       // Open the edit modal (task-e2e-1 seeded with one item: "Draft outline")
-      // and add a second item so there are two to reorder.
+      // and commit a second item via the top entry row so there are two
+      // draggable items. Row 0 is the (non-draggable) empty entry row.
       await page.locator("article#task-e2e-1").getByText("Write specs").click();
       const modal = page.locator("dialog.modal-open");
       await expect(modal.getByRole("button", { name: "Save", exact: true }))
         .toBeVisible();
 
       const fields = modal.getByPlaceholder("Shift+Enter to add more");
-      await modal.locator("button[data-tip='Add checklist item']").click();
-      await fillStable(fields.nth(1), "Second item");
-      await expect(fields.nth(0)).toHaveValue("Draft outline");
-      await expect(fields.nth(1)).toHaveValue("Second item");
+      await fillStable(fields.nth(0), "Top item");
+      await fields.nth(0).press("Enter");
+      await expect(fields).toHaveCount(3);
+      await expect(fields.nth(1)).toHaveValue("Top item");
+      await expect(fields.nth(2)).toHaveValue("Draft outline");
 
-      // Drag the second item's handle onto the first to move it before. Each
+      // Drag the third row's handle onto the second to move it before. Each
       // HTML5 drag phase is fired in its own round trip so React can flush the
       // resulting state (draggedId, then dropTarget) before drop is handled.
       const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
@@ -712,7 +727,7 @@ test.describe("Board CRUD", () => {
         const rows = document.querySelectorAll(
           "dialog.modal-open [data-checklist-item]",
         );
-        rows[1].querySelector("[aria-label='Drag to reorder']")!
+        rows[2].querySelector("[aria-label='Drag to reorder']")!
           .dispatchEvent(
             new DragEvent("dragstart", {
               bubbles: true,
@@ -726,7 +741,7 @@ test.describe("Board CRUD", () => {
         const rows = document.querySelectorAll(
           "dialog.modal-open [data-checklist-item]",
         );
-        rows[0].dispatchEvent(
+        rows[1].dispatchEvent(
           new DragEvent("dragover", {
             bubbles: true,
             cancelable: true,
@@ -747,15 +762,15 @@ test.describe("Board CRUD", () => {
               dataTransfer,
             }),
           );
-        fire(rows[0], "drop");
+        fire(rows[1], "drop");
         fire(
-          rows[1].querySelector("[aria-label='Drag to reorder']")!,
+          rows[2].querySelector("[aria-label='Drag to reorder']")!,
           "dragend",
         );
       }, dataTransfer);
 
-      await expect(fields.nth(0)).toHaveValue("Second item");
       await expect(fields.nth(1)).toHaveValue("Draft outline");
+      await expect(fields.nth(2)).toHaveValue("Top item");
     });
   });
 });

@@ -1,6 +1,6 @@
 import { useId, useRef } from "react";
 import { createPortal } from "react-dom";
-import type { SubmitEvent as ReactSubmitEvent } from "react";
+import type { CSSProperties, SubmitEvent as ReactSubmitEvent } from "react";
 import { ExtensiveEditor } from "@lyfie/luthor";
 import type {
   CoreEditorMode,
@@ -130,6 +130,7 @@ export default function TaskForm({
   const titleId = useId();
   const formId = useId();
   const luthorTheme = useLuthorTheme();
+  const selectedRowColor = rows.find((r) => r.id === taskDraft.rowId)?.color;
   function handleSubmit(e: ReactSubmitEvent<HTMLFormElement>) {
     const submitter = (e.nativeEvent as SubmitEvent)?.submitter;
     if (submitter && submitter !== submitButtonRef.current) {
@@ -212,104 +213,114 @@ export default function TaskForm({
           titleContainer,
         )}
 
-      <fieldset className="fieldset">
-        <label className="fieldset-legend">Description</label>
-        <div className="border border-base-content/20 rounded-lg overflow-hidden">
-          <ExtensiveEditor
-            className="task-description-editor"
-            defaultContent={taskDraft.description}
-            onReady={(methods) => {
-              editorRef.current = methods;
-            }}
-            initialTheme={luthorTheme}
-            initialMode={initialMode}
-            availableModes={["visual-only", "visual-editor", "markdown"]}
-            markdownSourceOfTruth
-            markdownBridgeFlavor="github"
-            sourceMetadataMode="none"
-            isListStyleDropdownEnabled={false}
-            toolbarLayout={MD_TOOLBAR_LAYOUT}
-            featureFlags={{ codeIntelligence: false, iframeEmbed: false }}
-          />
-        </div>
-        <p className="label">Optional</p>
-      </fieldset>
-      <div className="grid grid-cols-2 gap-4 items-start">
-        <fieldset className="fieldset">
-          <label
-            className="fieldset-legend"
-            htmlFor={`column-select-${taskDraft.id || "new"}`}
-          >
-            Status
-          </label>
-          <select
-            id={`column-select-${taskDraft.id || "new"}`}
-            className={`select select-bordered w-full${
-              requireRowColumn ? " validator" : ""
-            }`}
-            value={taskDraft.colId}
-            onChange={(e) =>
-              setTaskDraft({ ...taskDraft, colId: e.currentTarget.value })}
-            required={requireRowColumn}
-          >
-            {requireRowColumn && <option value="">Select a status</option>}
-            {columns.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.title}
-              </option>
-            ))}
-          </select>
-          {requireRowColumn && <span className="validator-hint">Required</span>}
-        </fieldset>
-        <fieldset className="fieldset">
-          <label
-            className="fieldset-legend"
-            htmlFor={`row-select-${taskDraft.id || "new"}`}
-          >
-            Row
-          </label>
-          <select
-            id={`row-select-${taskDraft.id || "new"}`}
-            className={`select select-bordered w-full${
-              requireRowColumn ? " validator" : ""
-            }`}
-            value={taskDraft.rowId}
-            onChange={(e) =>
-              setTaskDraft({ ...taskDraft, rowId: e.currentTarget.value })}
-            required={requireRowColumn}
-          >
-            {requireRowColumn && <option value="">Select a row</option>}
-            {rows.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.title}
-              </option>
-            ))}
-          </select>
-          {requireRowColumn && <span className="validator-hint">Required</span>}
-        </fieldset>
-      </div>
       <div className="grid md:grid-cols-2 gap-4 items-start">
-        <ChecklistSection
-          checklist={taskDraft.checklist}
-          addChecklistItem={addChecklistItem}
-          updateChecklistItem={updateChecklistItem}
-          deleteChecklistItem={deleteChecklistItem}
-          reorderChecklistItem={reorderChecklistItem}
-          handleChecklistKeyDown={handleChecklistKeyDown}
-          setChecklistInputRef={setChecklistInputRef}
-        />
-        <div className="order-first md:order-0">
-          <ChecklistGenerationCollapse
-            taskDraft={taskDraft}
-            checklistPrompt={checklistPrompt}
-            checklistPreview={checklistPreview}
-            isGeneratingChecklist={isGeneratingChecklist}
-            checklistModalError={checklistModalError}
-            setChecklistPrompt={setChecklistPrompt}
-            generateChecklistItems={generateChecklistItems}
-            applyChecklist={applyChecklist}
-            clearChecklistPreview={clearChecklistPreview}
+        <fieldset className="fieldset">
+          <div className="border border-base-content/20 rounded-lg overflow-hidden">
+            <ExtensiveEditor
+              className="task-description-editor"
+              defaultContent={taskDraft.description}
+              onReady={(methods) => {
+                editorRef.current = methods;
+              }}
+              initialTheme={luthorTheme}
+              initialMode={initialMode}
+              availableModes={["visual-only", "visual-editor", "markdown"]}
+              markdownSourceOfTruth
+              markdownBridgeFlavor="github"
+              sourceMetadataMode="none"
+              isListStyleDropdownEnabled={false}
+              toolbarLayout={MD_TOOLBAR_LAYOUT}
+              featureFlags={{ codeIntelligence: false, iframeEmbed: false }}
+            />
+          </div>
+        </fieldset>
+        <div className="grid grid-cols-2 gap-4 items-start md:col-span-2 md:order-first">
+          <fieldset className="fieldset">
+            <label
+              className={`select select-primary w-full${
+                requireRowColumn ? " validator" : ""
+              }`}
+            >
+              <span className="label text-primary text-[12px] uppercase font-bold">
+                Status
+              </span>
+              <select
+                id={`column-select-${taskDraft.id || "new"}`}
+                value={taskDraft.colId}
+                onChange={(e) =>
+                  setTaskDraft({ ...taskDraft, colId: e.currentTarget.value })}
+                required={requireRowColumn}
+              >
+                {requireRowColumn && <option value="">Select a status</option>}
+                {columns.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {requireRowColumn && (
+              <span className="validator-hint">Required</span>
+            )}
+          </fieldset>
+          <fieldset className="fieldset">
+            <label
+              className={`select w-full${requireRowColumn ? " validator" : ""}`}
+              style={selectedRowColor
+                ? { "--input-color": selectedRowColor } as CSSProperties
+                : undefined}
+            >
+              <span
+                className="label text-[12px] uppercase font-bold"
+                style={selectedRowColor
+                  ? { color: selectedRowColor }
+                  : undefined}
+              >
+                Project
+              </span>
+              <select
+                id={`row-select-${taskDraft.id || "new"}`}
+                value={taskDraft.rowId}
+                onChange={(e) =>
+                  setTaskDraft({ ...taskDraft, rowId: e.currentTarget.value })}
+                required={requireRowColumn}
+              >
+                {requireRowColumn && <option value="">Select a project</option>}
+                {rows.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {requireRowColumn && (
+              <span className="validator-hint">Required</span>
+            )}
+          </fieldset>
+        </div>
+        <div className="flex flex-col gap-4">
+          <ChecklistSection
+            checklist={taskDraft.checklist}
+            addChecklistItem={addChecklistItem}
+            updateChecklistItem={updateChecklistItem}
+            deleteChecklistItem={deleteChecklistItem}
+            reorderChecklistItem={reorderChecklistItem}
+            handleChecklistKeyDown={handleChecklistKeyDown}
+            setChecklistInputRef={setChecklistInputRef}
           />
+          <div className="order-first md:order-0">
+            <ChecklistGenerationCollapse
+              taskDraft={taskDraft}
+              checklistPrompt={checklistPrompt}
+              checklistPreview={checklistPreview}
+              isGeneratingChecklist={isGeneratingChecklist}
+              checklistModalError={checklistModalError}
+              setChecklistPrompt={setChecklistPrompt}
+              generateChecklistItems={generateChecklistItems}
+              applyChecklist={applyChecklist}
+              clearChecklistPreview={clearChecklistPreview}
+            />
+          </div>
         </div>
       </div>
       {actionsContainer === undefined && (

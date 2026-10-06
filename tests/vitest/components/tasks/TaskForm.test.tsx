@@ -43,11 +43,6 @@ describe("TaskForm", () => {
     expect(titleInput?.hasAttribute("required")).toBe(true);
   });
 
-  test("description fieldset is labeled Optional", () => {
-    render(<TaskForm {...baseProps} />);
-    expect(screen.getByText("Optional")).toBeTruthy();
-  });
-
   test("renders the Luthor editor for description", () => {
     render(<TaskForm {...baseProps} />);
     expect(screen.getByTestId("luthor-editor")).toBeTruthy();
