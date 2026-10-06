@@ -13,6 +13,7 @@
     "jsr:@std/path@^1.1.5": "1.1.6",
     "jsr:@std/path@^1.1.6": "1.1.6",
     "jsr:@std/streams@^1.2.0": "1.2.0",
+    "jsr:@zip-js/zip-js@*": "2.23.0",
     "npm:@anthropic-ai/claude-code@2.1.289": "2.1.289",
     "npm:@astrojs/check@0.9.10": "0.9.10_typescript@6.0.3_@emnapi+runtime@1.11.3",
     "npm:@astrojs/react@7.0.0": "7.0.0_@types+react@19.3.0_@types+react-dom@19.3.0__@types+react@19.3.0_react@19.3.0_react-dom@19.3.0__react@19.3.0",
@@ -60,6 +61,7 @@
     "npm:tailwindcss@4.3.3": "4.3.3",
     "npm:typescript@6.0.3": "6.0.3",
     "npm:vitest-browser-react@2.3.0": "2.3.0_@types+react@19.3.0_@types+react-dom@19.3.0__@types+react@19.3.0_react@19.3.0_react-dom@19.3.0__react@19.3.0_vitest@5.0.3__jsdom@30.1.2__vite@8.3.2___esbuild@0.28.2_jsdom@30.1.2_vite@8.3.2__esbuild@0.28.2",
+    "npm:vitest@*": "5.0.3_jsdom@30.1.2_vite@8.3.2__esbuild@0.28.2",
     "npm:vitest@5.0.3": "5.0.3_jsdom@30.1.2_vite@8.3.2__esbuild@0.28.2"
   },
   "jsr": {
@@ -109,6 +111,9 @@
     },
     "@std/streams@1.2.0": {
       "integrity": "256b934254778f2bf45f5713b934209ff29e9b4b7fd4ec095219966813758c5f"
+    },
+    "@zip-js/zip-js@2.23.0": {
+      "integrity": "d69cba3ef26191df72b752fa82db944520ac00330446db9ac80c795b8e6682d7"
     }
   },
   "npm": {
@@ -1501,8 +1506,6 @@
     "@napi-rs/wasm-runtime@1.2.4_@emnapi+core@1.11.1_@emnapi+runtime@1.11.1": {
       "integrity": "sha512-AJxoUD2/15ESHbvpcyjU274nsAPLuOtPHCk0vKJM5pj//Fg/B1FXNWjPnXTT9PymCYYiHo4zPj0ZomXBKhoy7g==",
       "dependencies": [
-        "@emnapi/core@1.11.1",
-        "@emnapi/runtime@1.11.1",
         "@tybys/wasm-util"
       ]
     },
@@ -2024,7 +2027,7 @@
         "emmet",
         "jsonc-parser@2.3.1",
         "vscode-languageserver-textdocument",
-        "vscode-languageserver-types@3.18.4",
+        "vscode-languageserver-types",
         "vscode-uri"
       ]
     },
@@ -4068,7 +4071,7 @@
       "dependencies": [
         "@vscode/l10n",
         "vscode-languageserver-textdocument",
-        "vscode-languageserver-types@3.17.5",
+        "vscode-languageserver-types",
         "vscode-uri"
       ]
     },
@@ -4077,7 +4080,7 @@
       "dependencies": [
         "@vscode/l10n",
         "vscode-languageserver-textdocument",
-        "vscode-languageserver-types@3.18.4",
+        "vscode-languageserver-types",
         "vscode-uri"
       ]
     },
@@ -4086,7 +4089,7 @@
       "dependencies": [
         "jsonc-parser@3.3.1",
         "vscode-languageserver-textdocument",
-        "vscode-languageserver-types@3.18.4",
+        "vscode-languageserver-types",
         "vscode-nls",
         "vscode-uri"
       ]
@@ -4101,7 +4104,7 @@
       "integrity": "sha512-mb1bvRJN8SVznADSGWM9u/b07H7Ecg0I3OgXDuLdn307rl/J3A9YD6/eYOssqhecL27hK1IPZAsaqh00i/Jljg==",
       "dependencies": [
         "vscode-jsonrpc@8.2.0",
-        "vscode-languageserver-types@3.17.5"
+        "vscode-languageserver-types"
       ]
     },
     "vscode-languageserver-textdocument@1.0.15": {
@@ -4109,9 +4112,6 @@
     },
     "vscode-languageserver-types@3.17.5": {
       "integrity": "sha512-Ld1VelNuX9pdF39h2Hgaeb5hEZM2Z3jUrrMgWQAu82jMtZp7p3vJT3BzToKtZI7NgQssZje5o0zryOrhQvzQAg=="
-    },
-    "vscode-languageserver-types@3.18.4": {
-      "integrity": "sha512-nQsacoiijvl0fRf2q28uFDrAVwRhdCa3QveiF7/CX0r18mLR5FU/1WskSsCKOjmEbtteKUnY8x8Yzxop+k0zwg=="
     },
     "vscode-languageserver@9.0.1": {
       "integrity": "sha512-woByF3PDpkHFUreUa7Hos7+pUWdeWMXRd26+ZX2A8cFx6v/JPTtd4/uN0/jB6XQHYaOlHbio03NTHCqrgG5n7g==",
@@ -4188,7 +4188,7 @@
         "vscode-json-languageservice",
         "vscode-languageserver",
         "vscode-languageserver-textdocument",
-        "vscode-languageserver-types@3.18.4",
+        "vscode-languageserver-types",
         "vscode-uri",
         "yaml@2.8.3"
       ],
