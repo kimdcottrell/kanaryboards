@@ -110,7 +110,12 @@ export const PUT: APIRoute = async ({ request, locals }) => {
   let body: z.infer<typeof PersistedBoardSchema>;
   try {
     body = PersistedBoardSchema.parse(await request.json());
-  } catch {
+  } catch (error) {
+    console.error({
+      event: "Rejected PUT /api/board: invalid request body",
+      boardId,
+      issues: error instanceof z.ZodError ? error.issues : String(error),
+    });
     return jsonResponse({ error: "Invalid request body." }, 400);
   }
   console.debug({

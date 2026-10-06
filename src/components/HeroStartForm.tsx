@@ -7,7 +7,7 @@ import {
   rowColorOptions,
   STORAGE_KEY,
 } from "./context/constants.ts";
-import { reset } from "./context/reducers/board.ts";
+import { normalizeColumn, reset } from "./context/reducers/board.ts";
 import {
   buildTasksFromTitles,
   fetchGeneratedItems,
@@ -41,7 +41,7 @@ async function loadBoard(
   ) {
     return {
       rows: existing.rows ?? [],
-      columns: existing.columns,
+      columns: existing.columns.map(normalizeColumn),
       tasks: existing.tasks ?? [],
     };
   }
@@ -83,11 +83,14 @@ export default function HeroStartForm() {
       };
 
       if (isSignedIn) {
-        await fetch("/api/board", {
+        const res = await fetch("/api/board", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(merged),
         });
+        if (!res.ok) {
+          throw new Error(`Saving the board failed (${res.status}).`);
+        }
       } else {
         globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(merged));
       }

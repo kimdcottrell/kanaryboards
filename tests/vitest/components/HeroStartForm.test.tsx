@@ -177,4 +177,71 @@ describe("HeroStartForm", () => {
       expect.objectContaining({ method: "PUT" }),
     );
   });
+
+  test("authenticated: a failed PUT shows an error and does not redirect", async () => {
+    clerk.isSignedIn = true;
+    const fetchMock = vi.fn((input: string, init?: { method?: string }) => {
+      const url = String(input);
+      if (url.includes("/api/generate-tasks")) return generateOk();
+      if (init?.method === "PUT") {
+        return Promise.resolve({
+          ok: false,
+          status: 400,
+          json: () => Promise.resolve({}),
+        });
+      }
+      return Promise.resolve({
+        ok: false,
+        status: 404,
+        json: () => Promise.resolve({}),
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<HeroStartForm />);
+
+    submitGoal("Plan a party");
+
+    expect(await screen.findByRole("alert")).toHaveProperty(
+      "textContent",
+      expect.stringContaining("Saving the board failed (400)"),
+    );
+    expect(globalThis.location.href).toBe("");
+  });
+
+  test("authenticated: backfills legacy column fields before the PUT", async () => {
+    clerk.isSignedIn = true;
+    const fetchMock = vi.fn((input: string, init?: { method?: string }) => {
+      const url = String(input);
+      if (url.includes("/api/generate-tasks")) return generateOk();
+      if (init?.method === "PUT") {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            rows: [],
+            columns: [{ id: "col-1", title: "To Do", order: "a0" }],
+            tasks: [],
+          }),
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<HeroStartForm />);
+
+    submitGoal("Plan a party");
+
+    await waitFor(() => expect(globalThis.location.href).toBe("/dashboard"));
+    const put = fetchMock.mock.calls.find(([, init]) =>
+      init?.method === "PUT"
+    )!;
+    const body = JSON.parse((put[1] as { body: string }).body);
+    expect(body.columns[0]).toMatchObject({
+      pinnedToShortcut: false,
+      pinnedToDock: false,
+      icon: null,
+      iconInBoardMenu: false,
+      iconNearColumnTitle: false,
+    });
+  });
 });
