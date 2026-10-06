@@ -116,7 +116,7 @@ export async function openCreateRowModal(page: Page): Promise<void> {
     state: "attached",
   });
   await page.locator(
-    "#board-menu summary:has(.hugeicons--dashboard-square-add)",
+    "#board-menu [data-testid='board-menu-add-dropdown']",
   ).click();
   await page.locator("#board-menu").getByText("Add new project row").click();
   // Scope to the dialog: an empty board also renders an inline create-new-row.

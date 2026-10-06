@@ -35,7 +35,7 @@ test.describe("Board menu — add dropdown", () => {
       state: "attached",
     });
     await page.locator(
-      "#board-menu summary:has(.hugeicons--dashboard-square-add)",
+      "#board-menu [data-testid='board-menu-add-dropdown']",
     ).click();
   });
 

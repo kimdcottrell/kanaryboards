@@ -50,7 +50,7 @@ export default function BoardDock({ isPreview }: { isPreview?: boolean }) {
           className="flex flex-col items-center justify-center list-none [&::-webkit-details-marker]:hidden"
           onClick={handleClick()}
         >
-          <span className="iconify hugeicons--dashboard-square-add text-xl">
+          <span className="iconify hugeicons--plus-sign-square text-xl">
           </span>
           <span className="dock-label">Add</span>
         </summary>

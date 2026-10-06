@@ -36,6 +36,7 @@ export default function BoardMenu(
         menu-horizontal rounded-box
         justify-center
         flex
+        space-x-1
       `}
     >
       <li>
@@ -73,10 +74,24 @@ export default function BoardMenu(
           </a>
         </li>
       ))}
+
+      <li>
+        <a
+          id={isPreview ? undefined : "board-config-collapse-toggle"}
+          onClick={handleClick(openSettings)}
+        >
+          <span className="iconify hugeicons--settings-01 text-xl"></span>
+        </a>
+      </li>
+
       <li>
         <details ref={detailsRef}>
-          <summary onClick={handleClick()}>
-            <span className="iconify hugeicons--dashboard-square-add text-xl">
+          <summary
+            data-testid="board-menu-add-dropdown"
+            className="bg-secondary/20 hover:bg-secondary/30 [details[open]>&]:bg-secondary/30"
+            onClick={handleClick()}
+          >
+            <span className="iconify hugeicons--plus-sign-square text-xl">
             </span>
           </summary>
           <ul className="w-max">
@@ -90,15 +105,6 @@ export default function BoardMenu(
             ))}
           </ul>
         </details>
-      </li>
-
-      <li>
-        <a
-          id={isPreview ? undefined : "board-config-collapse-toggle"}
-          onClick={handleClick(openSettings)}
-        >
-          <span className="iconify hugeicons--settings-01 text-xl"></span>
-        </a>
       </li>
     </ul>
   );

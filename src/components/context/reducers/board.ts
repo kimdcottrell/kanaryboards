@@ -1,4 +1,4 @@
-import type { BoardLifecycleAction, BoardState } from "../types.ts";
+import type { BoardLifecycleAction, BoardState, Column } from "../types.ts";
 import { createId, emptyTaskDraft } from "../constants.ts";
 import { generateNKeysBetween } from "fractional-indexing";
 
@@ -58,6 +58,20 @@ export function closeConfigModal(state: BoardState): BoardState {
   };
 }
 
+// Boards saved before the column pin/icon fields existed (6abb264, 2026-07-07)
+// are missing them, and /api/board's validator rejects the whole board on the
+// next PUT. Backfill them as off/none.
+export const normalizeColumn = (
+  column: Partial<Column> & Pick<Column, "id" | "title" | "order">,
+): Column => ({
+  ...column,
+  pinnedToShortcut: column.pinnedToShortcut ?? false,
+  pinnedToDock: column.pinnedToDock ?? false,
+  icon: column.icon ?? null,
+  iconInBoardMenu: column.iconInBoardMenu ?? false,
+  iconNearColumnTitle: column.iconNearColumnTitle ?? false,
+});
+
 export function load(
   state: BoardState,
   payload: Extract<BoardLifecycleAction, { type: "BOARD/LOAD" }>["payload"],
@@ -66,7 +80,9 @@ export function load(
   return {
     ...state,
     rows: [...rows].sort((a, b) => a.order < b.order ? -1 : 1),
-    columns: [...columns].sort((a, b) => a.order < b.order ? -1 : 1),
+    columns: columns.map(normalizeColumn).sort((a, b) =>
+      a.order < b.order ? -1 : 1
+    ),
     tasks,
     boardLoaded: true,
   };

@@ -9,7 +9,7 @@ const unauthorized = Astro.url.searchParams.get("unauthorized") === "1";
 ---
 
 <Layout>
-  <section class="mx-auto w-full z-1">
+  <section class="mx-auto w-full">
     {
       unauthorized && (
         <div
