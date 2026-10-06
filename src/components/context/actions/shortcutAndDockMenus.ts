@@ -48,7 +48,7 @@ export function useSharedMenuActions(isPreview?: boolean) {
 
   const addActions = [
     {
-      icon: "hugeicons--add-square",
+      icon: "hugeicons--insert-center-image",
       label: "Create new task",
       run: () => openTaskForm("", ""),
     },

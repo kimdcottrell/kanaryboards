@@ -146,8 +146,14 @@
     @apply border-1 border-secondary/45;
   }
   .page-dashboard {
+    main.drawer-content {
+      @apply md:flex md:min-h-dvh md:flex-col;
+    }
+    #footer-one {
+      @apply md:mt-auto;
+    }
     #footer-two {
-      @apply mb-15;
+      @apply mb-15 lg:mb-0;
     }
     .new-board-row {
       background: color-mix(in srgb, var(--color-row-blue) 8%, transparent)

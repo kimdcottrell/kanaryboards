@@ -136,69 +136,55 @@ export default function ColumnSettingsSection() {
         </form>
       </div>
       <div className="bg-base-content/10 p-3 rounded">
-        {columns.some((column) =>
-          column.pinnedToShortcut || column.pinnedToDock
-        ) && (
-          <>
-            <h4 className="text-md font-semibold">
-              Manage existing columns
-            </h4>
-            <p className="text-sm py-3">
-              Manage the columns set used across projects. Drag cards to
-              reorder, pin to the board shortcut menu, or add a new default
-              column.
+        <h4 className="text-md font-semibold">
+          Manage existing columns
+        </h4>
+        <p className="text-sm py-3">
+          Manage the columns set used across projects. Drag cards to reorder,
+          pin to the board shortcut menu, or add a new default column.
+        </p>
+        <p className="text-sm">
+          Icons are generated from Iconify's{" "}
+          <a
+            href="https://icon-sets.iconify.design/hugeicons/"
+            target="_blank"
+          >
+            HugeIcons
+          </a>{" "}
+          library.
+        </p>
+        <div className="p-2 mt-6 md:p-3 space-y-6 rounded bg-base-content/5">
+          <div className="text-center space-y-1">
+            <h5 className="text-lg font-semibold">Live preview</h5>
+            <p className="text-sm text-base-content/70">
+              Changes below in{" "}
+              <span className="font-semibold">Column configuration</span>{" "}
+              update these previews
             </p>
-            <p className="text-sm">
-              Icons are generated from Iconify's{" "}
-              <a
-                href="https://icon-sets.iconify.design/hugeicons/"
-                target="_blank"
-              >
-                HugeIcons
-              </a>{" "}
-              library.
-            </p>
-            <div className="p-2 mt-6 md:p-3 space-y-6 rounded bg-base-content/5">
-              <div className="text-center space-y-1">
-                <h5 className="text-lg font-semibold">Live preview</h5>
-                <p className="text-sm text-base-content/70">
-                  Changes below in{" "}
-                  <span className="font-semibold">Column configuration</span>
-                  {" "}
-                  update these previews
-                </p>
-              </div>
-              <div className="flex flex-wrap items-stretch justify-center gap-10">
-                {columns.some((column) => column.pinnedToShortcut) && (
-                  <div className="flex flex-col items-center gap-3 min-w-0 max-w-full p-4 rounded bg-base-content/5">
-                    <span className="badge badge-warning badge-sm rounded-xs p-3 text-base">
-                      Shortcut Menu
-                    </span>
-                    <p className="max-w-xs text-center text-sm text-base-content/70">
-                      Shows on devices with a wide resolution, such as a
-                      desktop.
-                    </p>
-                    <div className="w-full overflow-x-auto">
-                      <BoardMenu isPreview />
-                    </div>
-                  </div>
-                )}
-                {columns.some((column) => column.pinnedToDock) && (
-                  <div className="flex flex-col items-center gap-3 p-4 rounded bg-base-content/5">
-                    <span className="badge badge-warning badge-sm rounded-xs p-3 text-base">
-                      Dock Menu
-                    </span>
-                    <p className="max-w-xs text-center text-sm text-base-content/70">
-                      Shows on devices with a narrow resolution, such as a
-                      phone.
-                    </p>
-                    <BoardDock isPreview />
-                  </div>
-                )}
+          </div>
+          <div className="flex flex-wrap items-stretch justify-center gap-10">
+            <div className="flex flex-col items-center gap-3 min-w-0 max-w-full p-4 rounded bg-base-content/5">
+              <span className="badge badge-warning badge-sm rounded-xs p-3 text-base">
+                Shortcut Menu
+              </span>
+              <p className="max-w-xs text-center text-sm text-base-content/70">
+                Shows on devices with a wide resolution, such as a desktop.
+              </p>
+              <div className="w-full overflow-x-auto">
+                <BoardMenu isPreview />
               </div>
             </div>
-          </>
-        )}
+            <div className="flex flex-col items-center gap-3 p-4 rounded bg-base-content/5">
+              <span className="badge badge-warning badge-sm rounded-xs p-3 text-base">
+                Dock Menu
+              </span>
+              <p className="max-w-xs text-center text-sm text-base-content/70">
+                Shows on devices with a narrow resolution, such as a phone.
+              </p>
+              <BoardDock isPreview />
+            </div>
+          </div>
+        </div>
         <div className="p-2 mt-6 md:p-3 space-y-2 rounded bg-base-content/5">
           <div className="text-center space-y-1">
             <h5 className="text-lg font-semibold">Column configuration</h5>

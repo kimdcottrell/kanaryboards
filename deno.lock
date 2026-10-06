@@ -45,6 +45,7 @@
     "npm:@types/react@19.3.0": "19.3.0",
     "npm:astro-seo-schema@7.0.0": "7.0.0_astro@7.3.5_schema-dts@2.1.0",
     "npm:astro-seo@1.2.0": "1.2.0",
+    "npm:astro@*": "7.3.5",
     "npm:astro@7.3.5": "7.3.5",
     "npm:daisyui@5.7.47": "5.7.47",
     "npm:dayjs@1.11.23": "1.11.23",
