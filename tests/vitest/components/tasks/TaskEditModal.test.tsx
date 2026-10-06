@@ -34,6 +34,11 @@ vi.mock("@components/context/hooks.ts", () => ({
   handleChecklistKeyDown: vi.fn(),
 }));
 
+// Comments have their own tests (TaskComments.test.tsx).
+vi.mock("@components/comments/TaskComments.tsx", () => ({
+  default: () => null,
+}));
+
 vi.mock("@lyfie/luthor", () => ({
   ExtensiveEditor: (props: { initialMode?: string }) =>
     React.createElement("div", {
@@ -79,9 +84,17 @@ afterEach(() => {
 });
 
 describe("TaskEditModal", () => {
-  test("shows 'Edit task' heading", () => {
+  test("renders the title input in place of a heading, without a visible label", () => {
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
+    );
     render(<TaskEditModal />);
-    expect(screen.getByText("Edit task")).toBeTruthy();
+    expect(screen.queryByText("Edit task")).toBeNull();
+    expect(screen.queryByText("Title")).toBeNull();
+    const title = screen.getByDisplayValue("Existing task");
+    expect(title.getAttribute("aria-label")).toBe("Title");
+    expect(title.closest("form")).toBeNull();
+    expect(title.className).toContain("text-xl");
   });
 
   test("shows loading message when editTaskDraft is null", () => {

@@ -2,27 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { useTaskActions } from "./context/hooks.ts";
 import { useRenderCount } from "@lib/dashboard/use-render-count.ts";
 import type { Row, Task } from "./context/types.ts";
+import { hasLexicalText } from "@lib/lexical.ts";
 import type { DragEvent } from "react";
-
-interface LexicalNode {
-  text?: string;
-  children?: LexicalNode[];
-}
-
-function hasText(node: LexicalNode): boolean {
-  if (node.text && node.text.trim().length > 0) return true;
-  return node.children?.some(hasText) ?? false;
-}
-
-function hasDescriptionContent(description: string): boolean {
-  if (!description) return false;
-  try {
-    const parsed = JSON.parse(description);
-    return hasText(parsed.root);
-  } catch {
-    return false;
-  }
-}
 
 export default function TaskCard({
   task,
@@ -81,10 +62,10 @@ export default function TaskCard({
           </div>
         </div>
 
-        {(hasDescriptionContent(task.description) ||
+        {(hasLexicalText(task.description) ||
           (task.checklist && task.checklist.length > 0)) && (
           <div className="space-y-2 bg-base-100 p-3">
-            {hasDescriptionContent(task.description) && (
+            {hasLexicalText(task.description) && (
               <div
                 className="tooltip tooltip-bottom"
                 data-tip="This task has a description."
@@ -96,7 +77,7 @@ export default function TaskCard({
             {task.checklist &&
               task.checklist.length > 0 && (
               <section className="block">
-                {hasDescriptionContent(task.description) && (
+                {hasLexicalText(task.description) && (
                   <hr className="mb-3 opacity-50" />
                 )}
 

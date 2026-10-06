@@ -160,9 +160,12 @@ export function useTasksByCell(): Record<string, Task[]> {
 }
 
 const BoardMetaContext = createContext<
-  { boardId: string | undefined } | null
+  { boardId: string | undefined; isAuthenticated: boolean } | null
 >(null);
-export function useBoardMeta(): { boardId: string | undefined } {
+export function useBoardMeta(): {
+  boardId: string | undefined;
+  isAuthenticated: boolean;
+} {
   const v = useContext(BoardMetaContext);
   if (!v) throw new Error("useBoardMeta must be used within a BoardProvider");
   return v;
@@ -440,7 +443,10 @@ export function BoardProvider(
     [state.tasks],
   );
 
-  const boardMeta = useMemo(() => ({ boardId }), [boardId]);
+  const boardMeta = useMemo(
+    () => ({ boardId, isAuthenticated }),
+    [boardId, isAuthenticated],
+  );
 
   return (
     <BoardDispatchContext.Provider value={dispatch}>

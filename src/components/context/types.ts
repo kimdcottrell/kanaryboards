@@ -33,6 +33,19 @@ export interface Task {
   order: string;
 }
 
+// Stored outside the board blob (one KV entry per comment), so it is not part
+// of PersistedBoard. Mirrors the task_comments table in src/db/schema.dbml.
+export interface TaskComment {
+  id: string;
+  taskId: string;
+  authorId: string | null; // Clerk userId; null when stored in localStorage
+  authorName: string;
+  authorImageUrl: string | null;
+  content: string; // Lexical JSON from ExtensiveEditorRef.getJSON()
+  createdAt: string; // ISO timestamp
+  updatedAt: string | null; // ISO timestamp; set once the comment is edited
+}
+
 // ── BOARD STATE ────────────────────────────────────────────────────────────────
 
 // Persisted board model: rows, columns, tasks, and load status.

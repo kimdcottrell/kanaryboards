@@ -1,10 +1,12 @@
 import { useMemo } from "react";
-import { useBoardDispatch } from "../BoardContext.tsx";
+import { useBoardDispatch, useBoardMeta } from "../BoardContext.tsx";
+import { deleteAllComments } from "../../comments/commentStore.ts";
 import type { Task } from "../types.ts";
 import type { DragEvent } from "react";
 
 export function useTaskActions() {
   const dispatch = useBoardDispatch();
+  const { boardId, isAuthenticated } = useBoardMeta();
 
   return useMemo(() => ({
     openTaskForm: (rowId: string, colId: string) =>
@@ -13,8 +15,17 @@ export function useTaskActions() {
     startEditTask: (task: Task) =>
       dispatch({ type: "TASK/OPEN_EDIT_MODAL", payload: { task } }),
     cancelEditTask: () => dispatch({ type: "TASK/CLOSE_EDIT_MODAL" }),
-    deleteTask: (taskId: string) =>
-      dispatch({ type: "TASK/DELETE", payload: { taskId } }),
+    deleteTask: (taskId: string) => {
+      dispatch({ type: "TASK/DELETE", payload: { taskId } });
+      // Comments are stored outside the board, so they need their own cleanup.
+      deleteAllComments({ boardId, isAuthenticated }, taskId).catch((error) =>
+        console.error({
+          event: "Failed to delete task comments",
+          taskId,
+          error,
+        })
+      );
+    },
     toggleTaskChecklist: (taskId: string, itemId: string) =>
       dispatch({
         type: "TASK/TOGGLE_CHECKLIST_ITEM",
@@ -41,5 +52,5 @@ export function useTaskActions() {
           payload: { toRowId: rowId, toColId: colId, beforeTaskId },
         });
       },
-  }), [dispatch]);
+  }), [dispatch, boardId, isAuthenticated]);
 }

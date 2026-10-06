@@ -361,3 +361,62 @@
     );
   }
 }
+
+/* Compact Luthor editors for task comments (CommentEditor.tsx). Unlayered so
+   they beat @lyfie/luthor's own unlayered styles; the extra class adds the
+   specificity. */
+.luthor-preset-extensive.luthor-editor-wrapper.comment-editor {
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+}
+.comment-editor .luthor-editor {
+  min-height: 5rem;
+}
+.comment-editor .luthor-toolbar {
+  min-height: 0;
+  padding: 4px;
+}
+.comment-editor .luthor-richtext-container {
+  --luthor-editor-content-padding-y: 8px;
+  --luthor-editor-content-padding-x: 12px;
+}
+.comment-editor .luthor-content-editable {
+  font-size: 14px;
+}
+/* Task description editor (TaskForm.tsx): text ~12% smaller than Luthor's
+   defaults (16px body, 28–14px headings). */
+.task-description-editor .luthor-content-editable {
+  font-size: 14px;
+}
+.task-description-editor .luthor-heading-h1 { font-size: 24px; }
+.task-description-editor .luthor-heading-h2 { font-size: 21px; }
+.task-description-editor .luthor-heading-h3 { font-size: 17.5px; }
+.task-description-editor .luthor-heading-h4 { font-size: 16px; }
+.task-description-editor .luthor-heading-h5 { font-size: 14px; }
+.task-description-editor .luthor-heading-h6 { font-size: 12px; }
+.task-description-editor .luthor-mode-tab {
+  font-size: 12px;
+  text-transform: uppercase;
+}
+/* Read-only comments take their container's (the chat bubble's) background
+   and text color. */
+.luthor-preset-extensive.luthor-editor-wrapper.comment-editor--readonly {
+  background: transparent;
+}
+.comment-editor--readonly .luthor-editor {
+  min-height: 0;
+  --luthor-bg: transparent;
+}
+.comment-editor--readonly .luthor-richtext-container,
+.comment-editor--readonly .luthor-content-editable {
+  --luthor-editor-content-padding-y: 0px;
+  --luthor-editor-content-padding-x: 0px;
+  --luthor-first-block-offset: 0px;
+}
+.luthor-preset-extensive.luthor-editor-wrapper.comment-editor--readonly,
+.comment-editor--readonly .luthor-editor,
+.comment-editor--readonly .luthor-richtext-container,
+.comment-editor--readonly .luthor-content-editable {
+  color: inherit;
+}

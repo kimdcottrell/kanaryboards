@@ -82,7 +82,12 @@ test.describe("Render isolation (individual components render on use, instead of
     await page.locator("#row-columns-row-e2e-1").getByText("Write specs", {
       exact: true,
     }).click();
-    await expect(page.getByRole("heading", { name: "Edit task" }))
+    await expect(
+      page.locator("dialog.modal-open").getByRole("button", {
+        name: "Save",
+        exact: true,
+      }),
+    )
       .toBeVisible();
     // The AI checklist collapse is open by default (see
     // ChecklistGenerationCollapse) — wait for its content to finish laying out

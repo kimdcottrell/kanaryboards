@@ -129,7 +129,12 @@ test.describe("Checklist AI generation — malicious items render as inert text"
     await page.locator("#row-columns-row-e2e-1").getByText("Write specs", {
       exact: true,
     }).click();
-    await expect(page.getByRole("heading", { name: "Edit task" }))
+    await expect(
+      page.locator("dialog.modal-open").getByRole("button", {
+        name: "Save",
+        exact: true,
+      }),
+    )
       .toBeVisible();
     await waitForChecklistCollapseOpen(page);
 

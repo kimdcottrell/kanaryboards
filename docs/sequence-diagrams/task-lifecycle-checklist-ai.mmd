@@ -11,6 +11,9 @@ sequenceDiagram
     participant Reducer as reducers<br/>(tasks.ts, checklist.ts, checklistAi.ts)
     participant Ctx as BoardContext<br/>(TaskCreate/TaskEdit/ChecklistAI/<br/>BoardData/TasksByCell)
     participant AI as /api/generate-tasks<br/>(Google GenAI)
+    participant Comments as TaskComments<br/>(comments/TaskComments.tsx,<br/>useTaskComments.ts)
+    participant Store as commentStore<br/>(comments/commentStore.ts)
+    participant CommentsAPI as /api/task-comments<br/>(Deno KV task_comment entries)
 
     Note over User,AI: Create task: open modal
     User->>Cell: click "add task"
@@ -92,9 +95,29 @@ sequenceDiagram
     Actions->>Ctx: dispatch(TASK/DELETE, {taskId})
     Ctx->>Reducer: tasks.remove(state, {taskId})
     Reducer-->>Ctx: tasks filtered<br/>closes edit modal if it was the edited task
+    Actions->>Store: deleteAllComments(taskId) (fire-and-forget)
+    Store->>CommentsAPI: DELETE {taskId}<br/>(or localStorage / in-memory demo)
     TaskModal->>TaskModal: navigate(/dashboard)
     Ctx-->>TaskModal: TaskEditModal re-renders<br/>(TaskEditContext: taskEditModalOpen=false)<br/>-> modal closes, unmounts Form
     Ctx-->>Cell: ColumnCard re-renders<br/>(TasksByCellContext changed)<br/>-> TaskCard unmounts
+
+    Note over User,CommentsAPI: Task comments (edit modal only; local state, outside the reducer)
+    TaskModal->>Comments: render TaskComments(taskId)<br/>(desktop: 30% sidebar; mobile: below form)
+    Comments->>Ctx: useBoardMeta() -> {boardId, isAuthenticated}
+    Comments->>Store: listComments(taskId)
+    alt isAuthenticated
+        Store->>CommentsAPI: GET ?taskId
+    else anonymous
+        Store->>Store: read localStorage kanby-comments-v0-1-0
+    else demo board
+        Store->>Store: in-memory Map
+    end
+    Store-->>Comments: TaskComment[] (newest first)
+    User->>Comments: post / edit / delete a comment
+    Comments->>Store: createComment / updateComment / deleteComment
+    Store->>CommentsAPI: POST / PATCH / DELETE<br/>(or localStorage / in-memory demo)
+    Comments->>Comments: setState -> only TaskComments re-renders
+    Note over Comments,Ctx: no dispatch; board autosave unaffected
 
     Note over User,AI: Checklist AI: generate suggestions
     User->>Form: open "Generate checklist" panel,<br/>edit prompt (ChecklistSection)

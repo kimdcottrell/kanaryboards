@@ -45,6 +45,11 @@ vi.mock("@components/TaskCreateModal.tsx", () => ({ default: () => null }));
 // TaskEditModal is NOT mocked — it is rendered directly in tests below
 
 // Stub the rich-text editor used inside TaskForm / TaskEditModal
+// Comments have their own tests (TaskComments.test.tsx).
+vi.mock("@components/comments/TaskComments.tsx", () => ({
+  default: () => null,
+}));
+
 vi.mock("@lyfie/luthor", () => ({
   ExtensiveEditor: () =>
     React.createElement("div", { "data-testid": "luthor-editor" }),

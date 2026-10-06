@@ -1,13 +1,14 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef } from "react";
+import { createPortal } from "react-dom";
 import type { SubmitEvent as ReactSubmitEvent } from "react";
 import { ExtensiveEditor } from "@lyfie/luthor";
 import type {
   CoreEditorMode,
-  CoreTheme,
   ExtensiveEditorRef,
   ToolbarLayout,
 } from "@lyfie/luthor";
 import type { ChecklistAIState, Column, Row, Task } from "./context/types.ts";
+import { useLuthorTheme } from "./shared/useLuthorTheme.ts";
 
 const MD_TOOLBAR_LAYOUT: ToolbarLayout = {
   sections: [
@@ -37,29 +38,6 @@ const MD_TOOLBAR_LAYOUT: ToolbarLayout = {
   ],
 };
 
-function useLuthorTheme(): CoreTheme {
-  const [theme, setTheme] = useState((): CoreTheme =>
-    document.documentElement.getAttribute("data-theme") === "kanary-night"
-      ? "dark"
-      : "light"
-  );
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setTheme(
-        document.documentElement.getAttribute("data-theme") === "kanary-night"
-          ? "dark"
-          : "light",
-      );
-    });
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["data-theme"],
-    });
-    return () => observer.disconnect();
-  }, []);
-  return theme;
-}
-
 import ChecklistSection, {
   ChecklistGenerationCollapse,
 } from "./ChecklistSection.tsx";
@@ -86,6 +64,15 @@ interface TaskFormProps extends
   onCancel?: () => void;
   submitLabel?: string;
   onDelete?: () => void;
+  // When provided (even as null while it mounts), the Delete/Cancel/Submit
+  // buttons render into this element (e.g. a modal's docked footer) instead
+  // of at the end of the form. The submit button stays tied to the form via
+  // its `form` attribute.
+  actionsContainer?: HTMLElement | null;
+  // When provided (even as null while it mounts), the title input renders
+  // into this element as an unlabeled, heading-styled field instead of a
+  // labeled fieldset at the top of the form.
+  titleContainer?: HTMLElement | null;
   initialMode?: CoreEditorMode;
   columns: Column[];
   rows: Row[];
@@ -117,6 +104,8 @@ export default function TaskForm({
   onCancel,
   submitLabel = "Create task",
   onDelete,
+  actionsContainer,
+  titleContainer,
   initialMode = "markdown",
   columns,
   rows,
@@ -139,6 +128,7 @@ export default function TaskForm({
   const editorRef = useRef<ExtensiveEditorRef | null>(null);
   const submitButtonRef = useRef(null);
   const titleId = useId();
+  const formId = useId();
   const luthorTheme = useLuthorTheme();
   function handleSubmit(e: ReactSubmitEvent<HTMLFormElement>) {
     const submitter = (e.nativeEvent as SubmitEvent)?.submitter;
@@ -153,29 +143,80 @@ export default function TaskForm({
     });
   }
 
+  const deleteButton = onDelete && (
+    <button
+      type="button"
+      className="btn btn-error btn-outline"
+      onClick={onDelete}
+    >
+      Delete
+    </button>
+  );
+  const cancelButton = onCancel && (
+    <button type="button" className="btn btn-ghost" onClick={onCancel}>
+      Cancel
+    </button>
+  );
+  const submitButton = (
+    <button
+      ref={submitButtonRef}
+      type="submit"
+      form={formId}
+      className="btn btn-success"
+    >
+      {submitLabel}
+    </button>
+  );
+
   return (
-    <form className="mt-4 space-y-4" onSubmit={handleSubmit} noValidate>
-      <fieldset className="fieldset">
-        <label className="fieldset-legend" htmlFor={titleId}>Title</label>
-        <input
-          id={titleId}
-          className="input validator input-bordered w-full"
-          type="text"
-          value={taskDraft.title}
-          onChange={(e) =>
-            setTaskDraft({
-              ...taskDraft,
-              title: e.currentTarget.value,
-            })}
-          required
-        />
-        <span className="validator-hint hidden">Required</span>
-      </fieldset>
+    <form
+      id={formId}
+      className="mt-4 space-y-4"
+      onSubmit={handleSubmit}
+      noValidate
+    >
+      {titleContainer === undefined && (
+        <fieldset className="fieldset">
+          <label className="fieldset-legend" htmlFor={titleId}>Title</label>
+          <input
+            id={titleId}
+            className="input validator input-bordered w-full"
+            type="text"
+            value={taskDraft.title}
+            onChange={(e) =>
+              setTaskDraft({
+                ...taskDraft,
+                title: e.currentTarget.value,
+              })}
+            required
+          />
+          <span className="validator-hint hidden">Required</span>
+        </fieldset>
+      )}
+      {titleContainer &&
+        createPortal(
+          <input
+            id={titleId}
+            form={formId}
+            aria-label="Title"
+            className="input input-ghost validator w-full px-0 text-xl font-semibold"
+            type="text"
+            value={taskDraft.title}
+            onChange={(e) =>
+              setTaskDraft({
+                ...taskDraft,
+                title: e.currentTarget.value,
+              })}
+            required
+          />,
+          titleContainer,
+        )}
 
       <fieldset className="fieldset">
         <label className="fieldset-legend">Description</label>
         <div className="border border-base-content/20 rounded-lg overflow-hidden">
           <ExtensiveEditor
+            className="task-description-editor"
             defaultContent={taskDraft.description}
             onReady={(methods) => {
               editorRef.current = methods;
@@ -271,33 +312,28 @@ export default function TaskForm({
           />
         </div>
       </div>
-      <div
-        className={`flex gap-2 ${onDelete ? "justify-between" : "justify-end"}`}
-      >
-        {onDelete && (
-          <button
-            type="button"
-            className="btn btn-error btn-outline"
-            onClick={onDelete}
-          >
-            Delete
-          </button>
-        )}
-        <div className="flex gap-2">
-          {onCancel && (
-            <button type="button" className="btn btn-ghost" onClick={onCancel}>
-              Cancel
-            </button>
-          )}
-          <button
-            ref={submitButtonRef}
-            type="submit"
-            className="btn btn-success"
-          >
-            {submitLabel}
-          </button>
+      {actionsContainer === undefined && (
+        <div
+          className={`flex gap-2 ${
+            onDelete ? "justify-between" : "justify-end"
+          }`}
+        >
+          {deleteButton}
+          <div className="flex gap-2">
+            {cancelButton}
+            {submitButton}
+          </div>
         </div>
-      </div>
+      )}
+      {actionsContainer &&
+        createPortal(
+          <>
+            {deleteButton}
+            {cancelButton}
+            {submitButton}
+          </>,
+          actionsContainer,
+        )}
     </form>
   );
 }

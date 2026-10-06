@@ -442,7 +442,12 @@ test.describe("Board CRUD", () => {
       await page.locator("#row-columns-row-e2e-1").getByText("Write specs", {
         exact: true,
       }).click();
-      await expect(page.getByRole("heading", { name: "Edit task" }))
+      await expect(
+        page.locator("dialog.modal-open").getByRole("button", {
+          name: "Save",
+          exact: true,
+        }),
+      )
         .toBeVisible();
       await expect(page).toHaveURL(/\/dashboard\/task\/task-e2e-1/);
 
@@ -459,7 +464,12 @@ test.describe("Board CRUD", () => {
       await page.locator("dialog").getByRole("button", { name: "Save" })
         .click();
 
-      await expect(page.getByRole("heading", { name: "Edit task" }))
+      await expect(
+        page.locator("dialog.modal-open").getByRole("button", {
+          name: "Save",
+          exact: true,
+        }),
+      )
         .toBeHidden();
       await expect(page).toHaveURL("/dashboard");
       const targetColumn = page.locator("#row-columns-row-e2e-2 > div > div")
@@ -473,7 +483,12 @@ test.describe("Board CRUD", () => {
       await page.locator("#row-columns-row-e2e-1").getByText("Drag me", {
         exact: true,
       }).click();
-      await expect(page.getByRole("heading", { name: "Edit task" }))
+      await expect(
+        page.locator("dialog.modal-open").getByRole("button", {
+          name: "Save",
+          exact: true,
+        }),
+      )
         .toBeVisible();
 
       await page.locator("dialog").getByRole("button", {
@@ -501,7 +516,8 @@ test.describe("Board CRUD", () => {
       // Open the edit modal for task-e2e-1, seeded with one item: "Draft outline".
       await page.locator("article#task-e2e-1").getByText("Write specs").click();
       const modal = page.locator("dialog.modal-open");
-      await expect(modal.getByText("Edit task")).toBeVisible();
+      await expect(modal.getByRole("button", { name: "Save", exact: true }))
+        .toBeVisible();
 
       const fields = modal.getByPlaceholder("Shift+Enter to add more");
       await expect(fields).toHaveCount(1);
@@ -678,7 +694,8 @@ test.describe("Board CRUD", () => {
       // and add a second item so there are two to reorder.
       await page.locator("article#task-e2e-1").getByText("Write specs").click();
       const modal = page.locator("dialog.modal-open");
-      await expect(modal.getByText("Edit task")).toBeVisible();
+      await expect(modal.getByRole("button", { name: "Save", exact: true }))
+        .toBeVisible();
 
       const fields = modal.getByPlaceholder("Shift+Enter to add more");
       await modal.locator("button[data-tip='Add checklist item']").click();

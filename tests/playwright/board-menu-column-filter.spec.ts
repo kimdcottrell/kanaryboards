@@ -219,7 +219,12 @@ test.describe("Board menu — column view filter", () => {
       exact: true,
     }).click();
 
-    await expect(page.getByRole("heading", { name: "Edit task" }))
+    await expect(
+      page.locator("dialog.modal-open").getByRole("button", {
+        name: "Save",
+        exact: true,
+      }),
+    )
       .toBeVisible();
     await expect(page).toHaveURL(/\/dashboard\/task\/task-prog-eng/);
   });

@@ -1,4 +1,6 @@
+import { useState } from "react";
 import Modal from "./shared/Modal.tsx";
+import ActionsDock from "./shared/ActionsDock.tsx";
 import TaskForm from "./TaskForm.tsx";
 import {
   handleChecklistKeyDown,
@@ -36,6 +38,9 @@ export default function TaskCreateModal() {
     applyChecklistPreviewToDraft,
     clearChecklistPreview,
   } = useChecklistAIActions();
+  // State, not a ref: TaskForm must re-render once the dock exists so it can
+  // portal its Cancel/Create buttons into it.
+  const [actionsDock, setActionsDock] = useState<HTMLDivElement | null>(null);
 
   return (
     <Modal open={taskCreateModalOpen} onClose={closeTaskCreateModal}>
@@ -49,6 +54,7 @@ export default function TaskCreateModal() {
           setTaskDraft={setTaskDraft}
           onSubmit={createTask}
           onCancel={closeTaskCreateModal}
+          actionsContainer={actionsDock}
           addChecklistItem={addChecklistItem}
           updateChecklistItem={updateChecklistItem}
           deleteChecklistItem={deleteChecklistItem}
@@ -68,6 +74,7 @@ export default function TaskCreateModal() {
           requireRowColumn
         />
       )}
+      <ActionsDock ref={setActionsDock} />
     </Modal>
   );
 }
