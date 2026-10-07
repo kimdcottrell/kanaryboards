@@ -4,7 +4,7 @@ title: Task Drag-and-Drop
 sequenceDiagram
     actor User
     participant Card as TaskCard<br/>(task/TaskCard.tsx)
-    participant Cell as ColumnCard<br/>(ColumnCard.tsx)
+    participant Cell as ColumnSection<br/>(ColumnSection.tsx)
     participant Actions as task actions<br/>(actions/task.ts)
     participant Reducer as tasks reducer<br/>(reducers/tasks.ts)
     participant Ctx as BoardContext<br/>(Drag / TasksByCell / BoardData)
@@ -15,7 +15,7 @@ sequenceDiagram
     Actions->>Ctx: dispatch(TASK/START_DRAG, {task})
     Ctx->>Reducer: startDrag(state, {task})
     Reducer-->>Ctx: draggedTask = task
-    Ctx-->>Cell: every ColumnCard re-renders<br/>(DragContext: draggedTask set)
+    Ctx-->>Cell: every ColumnSection re-renders<br/>(DragContext: draggedTask set)
     Note over Cell: useDropTarget(active=true)<br/>useRenderCount++ (all cells)
     Cell-->>Card: the dragged TaskCard re-renders<br/>(isDragging=true prop) -> dimmed (opacity 0.4)
 
@@ -45,10 +45,10 @@ sequenceDiagram
 
     Note over User,Ctx: Re-render after drop
     Ctx->>Ctx: computeTasksByCell(tasks)<br/>(selectors.ts)
-    Ctx-->>Cell: source + destination ColumnCard re-render<br/>(TasksByCellContext changed)
-    Ctx-->>Cell: every other ColumnCard re-renders<br/>(DragContext: draggedTask -> null)
-    Note over Cell,Card: Trash ColumnCard passes isTrash -> TaskCard body<br/>shows "N days until permanent deletion."
-    Cell-->>Card: TaskCards in the affected cell(s) re-render.<br/>a cross-cell move unmounts the TaskCard from its<br/>source ColumnCard and mounts it fresh in the<br/>destination ColumnCard
+    Ctx-->>Cell: source + destination ColumnSection re-render<br/>(TasksByCellContext changed)
+    Ctx-->>Cell: every other ColumnSection re-renders<br/>(DragContext: draggedTask -> null)
+    Note over Cell,Card: Trash ColumnSection passes isTrash -> TaskCard body<br/>shows "N days until permanent deletion."
+    Cell-->>Card: TaskCards in the affected cell(s) re-render.<br/>a cross-cell move unmounts the TaskCard from its<br/>source ColumnSection and mounts it fresh in the<br/>destination ColumnSection
 
     Note over User,Ctx: Drag end (cancel safety net)
     User->>Card: dragend

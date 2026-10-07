@@ -51,12 +51,12 @@ Import `generateKeyBetween` and `generateNKeysBetween` directly from `"fractiona
 
 **`addRow` in `useAsyncActions.ts`:** Computes `order = generateKeyBetween(lastRow?.order, null)` for new rows. Payload uses `title` not `name`.
 
-**Drag-and-drop state split:** `draggedTask: DraggedTask | null` lives in reducer. `dropTarget` for hover indicators is local `useState` in `ColumnCard`.
+**Drag-and-drop state split:** `draggedTask: DraggedTask | null` lives in reducer. `dropTarget` for hover indicators is local `useState` in `ColumnSection`.
 
 **Inline editing patterns (two distinct approaches):**
 - `RowSection` (board view): shared reducer state via `ROW/EDIT_START` / `ROW/EDIT_CHANGE` / `ROW/EDIT_SAVE` / `ROW/EDIT_CANCEL`
 - `BoardConfiguration` row settings: local `useState` + `ROW/RENAME` (one-shot dispatch)
-- `ColumnCard`: shared state via `COLUMN/RENAME_*`; `editingColumnRowId` scopes the input to the clicked row (prevents multi-row autoFocus conflict)
+- `ColumnSection`: shared state via `COLUMN/RENAME_*`; `editingColumnRowId` scopes the input to the clicked row (prevents multi-row autoFocus conflict)
 
 **`BoardView.tsx` URL↔modal sync gotcha:** A `useEffect` keyed on `[boardLoaded, taskId, tasks]` opens `TaskEditModal` via `startEditTask(task)` whenever `/task/:taskId` matches a task. Because `tasks` is in the deps, saving an edit (which mutates `state.tasks`) used to re-fire this effect *while still on the same URL* and re-open the just-closed modal — so clicking "Save" appeared to do nothing. Fixed with a `syncedTaskId` ref: `startEditTask` only fires once per distinct `taskId` (reset to `undefined` when `taskId` becomes falsy). `TaskEditModal`'s Save handler also now calls `navigate("/")` after `saveTaskEdit`, matching Close/Delete. **If you add new reactive deps to that effect, re-check this interaction.**
 

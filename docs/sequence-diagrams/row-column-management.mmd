@@ -8,7 +8,7 @@ sequenceDiagram
     participant RowModal as CreateRowModal<br/>(config/board/CreateRowModal.tsx +<br/>CreateRowSection.tsx)
     participant Board as RowBoard<br/>(RowBoard.tsx)
     participant Row as RowSection<br/>(RowSection.tsx)
-    participant Cell as ColumnCard<br/>(ColumnCard.tsx)
+    participant Cell as ColumnSection<br/>(ColumnSection.tsx)
     participant Actions as action hooks<br/>(actions/boardConfig.ts,<br/>row*.ts, column*.ts, view.ts)
     participant Reducer as reducers<br/>(board.ts, rows.ts, columns.ts, taskAi.ts, view.ts)
     participant Ctx as BoardContext<br/>(BoardConfig/BoardData/RowForm/<br/>RowEdit/ColumnEdit/ColumnConfig/ColumnFilter)
@@ -76,7 +76,7 @@ sequenceDiagram
             Reducer-->>Ctx: isGeneratingTasks=false<br/>taskGenerationStatus=error<br/>newRowName="", newRowPrompt="", newRowFormKey++
         end
         Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: isGeneratingTasks=false)<br/>-> form resets, "Add Row" button reappears<br/>(modal stays open)
-        Ctx-->>Cell: ColumnCard (Todo column, new row)<br/>re-renders (TasksByCellContext changed)<br/>-> new TaskCards mount
+        Ctx-->>Cell: ColumnSection (Todo column, new row)<br/>re-renders (TasksByCellContext changed)<br/>-> new TaskCards mount
     else newRowPrompt empty
         Actions->>Ctx: dispatch(ROW/RESET_FORM)
         Ctx->>Reducer: rows.resetForm
@@ -123,7 +123,7 @@ sequenceDiagram
     Actions->>Ctx: dispatch(ROW/DELETE, {rowId})
     Ctx->>Reducer: rows.remove(state, payload)
     Reducer-->>Ctx: rows filtered. tasks for that row removed.<br/>clears any open modal/edit state referencing it
-    Ctx-->>Row: that RowSection (+ its ColumnCards/TaskCards)<br/>unmounts (BoardData: rows/tasks changed)
+    Ctx-->>Row: that RowSection (+ its ColumnSections/TaskCards)<br/>unmounts (BoardData: rows/tasks changed)
     Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: rows changed)<br/>-> row settings list loses the row
 
     Note over User,AI: Reorder row (move up / down, RowSettingsSection only)
@@ -142,7 +142,7 @@ sequenceDiagram
     Ctx->>Reducer: rows.updateColor
     Reducer-->>Ctx: rows[rowId].color = color
     Ctx-->>Row: that RowSection re-renders<br/>(BoardData: row.color changed)<br/>-> background color-mix updates
-    Ctx-->>Cell: every ColumnCard in that row re-renders<br/>(BoardData: row.color changed)<br/>-> background/border + add-task button tint update
+    Ctx-->>Cell: every ColumnSection in that row re-renders<br/>(BoardData: row.color changed)<br/>-> background/border + add-task button tint update
 
     Note over Config: The Trash column is left out of the settings badge list,<br/>ColumnReorderList and the add-column reference select,<br/>so it cannot be renamed, deleted or moved, and stays last.<br/>Adding "right of" the last column, or dropping on the trailing<br/>drop zone, places the column before Trash
     Note over User,AI: Add column (ColumnSettingsSection, "Create a new column" form)
@@ -170,26 +170,26 @@ sequenceDiagram
     Reducer-->>Ctx: defaultColumnInput = ""
     Config->>Config: reset local direction + referenceColumnId to ""
     Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: columns changed)<br/>-> reference select lists the new column, name input clears
-    Ctx-->>Cell: every RowSection mounts a new ColumnCard<br/>(BoardData: columns changed)<br/>-> appears to the left/right of the reference column
+    Ctx-->>Cell: every RowSection mounts a new ColumnSection<br/>(BoardData: columns changed)<br/>-> appears to the left/right of the reference column
 
-    Note over User,AI: Rename column (per ColumnCard, double-click)
+    Note over User,AI: Rename column (per ColumnSection, double-click)
     Note over Cell: The Trash column (isTrash) has no double-click rename<br/>and no "+" button. It shows a "deleted after 30 days" disclaimer
     User->>Cell: double-click column title
     Cell->>Actions: editColumnTitle(column, row)<br/>(actions/columnEdit.ts)
     Actions->>Ctx: dispatch(COLUMN/RENAME_START, {columnId, rowId, currentName})
     Ctx->>Reducer: columns.renameStart
     Reducer-->>Ctx: editingColumnId, editingColumnRowId, editingColumnName set
-    Ctx-->>Cell: the matching ColumnCard (columnId, rowId)<br/>re-renders (ColumnEditContext changed)<br/>-> shows input
+    Ctx-->>Cell: the matching ColumnSection (columnId, rowId)<br/>re-renders (ColumnEditContext changed)<br/>-> shows input
 
     User->>Cell: type name, Enter / blur
     Cell->>Actions: setEditingColumnName(name) -> saveColumnTitle(columnId)
     Actions->>Ctx: dispatch(COLUMN/RENAME_CHANGE, {name})<br/>dispatch(COLUMN/RENAME_SAVE, {columnId})
     Ctx->>Reducer: columns.renameChange / renameSave
     Reducer-->>Ctx: columns[columnId].title = trimmed (if non-empty)<br/>editingColumnId/editingColumnRowId = null
-    Ctx-->>Cell: every ColumnCard for this column<br/>(across all rows) re-renders<br/>(BoardData: column.title changed)<br/>-> shows new title
-    Ctx-->>Cell: the editing ColumnCard re-renders<br/>(ColumnEditContext: editingColumnId=null)<br/>-> input reverts to text
+    Ctx-->>Cell: every ColumnSection for this column<br/>(across all rows) re-renders<br/>(BoardData: column.title changed)<br/>-> shows new title
+    Ctx-->>Cell: the editing ColumnSection re-renders<br/>(ColumnEditContext: editingColumnId=null)<br/>-> input reverts to text
 
-    Note over Cell: Escape → COLUMN/RENAME_CANCEL → columns.renameCancel<br/>(editing ColumnCard re-renders via ColumnEditContext,<br/>no title change)
+    Note over Cell: Escape → COLUMN/RENAME_CANCEL → columns.renameCancel<br/>(editing ColumnSection re-renders via ColumnEditContext,<br/>no title change)
 
     Note over User,AI: Delete column (ColumnSettingsSection)
     User->>Config: click delete on column badge
@@ -198,7 +198,7 @@ sequenceDiagram
     Ctx->>Reducer: columns.remove(state, payload)
     Reducer-->>Ctx: columns filtered. tasks for that column removed.<br/>clears any open modal/edit state referencing it
     Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: columns changed)<br/>-> column settings badge list loses the column
-    Ctx-->>Cell: the corresponding ColumnCard instance in<br/>every RowSection unmounts<br/>(BoardData: columns/tasks changed)
+    Ctx-->>Cell: the corresponding ColumnSection instance in<br/>every RowSection unmounts<br/>(BoardData: columns/tasks changed)
 
     Note over User,AI: Pin/unpin column — two independent menus:<br/>Shortcut Menu (#board-menu, lg+, max 3) and<br/>Dock Menu (BoardDock, below lg, max 1).<br/>Each has its own pin button in ColumnSettingsSection.
     alt Shortcut Menu pin
@@ -231,10 +231,10 @@ sequenceDiagram
         Board->>Row: render every RowSection with all columns
     else >=2 selected
         Board->>Row: render every RowSection;<br/>RowSection filters columns to selectedColumnIds
-        Row->>Cell: ColumnCards only for selected columns
+        Row->>Cell: ColumnSections only for selected columns
     else exactly 1 selected
-        Board->>Board: render CondensedColumnBoard<br/>(CondensedColumnBoard.tsx)<br/>-> single section titled with the column;<br/>each row pivots into a horizontal ColumnCard<br/>(column fixed, headerLabel = row.title)
-        Note over Cell: open/edit (TASK/OPEN_EDIT_MODAL) and drag<br/>reuse existing ColumnCard logic; dragging a task<br/>to another project column dispatches<br/>TASK/DROP_ON_CELL {toRowId, toColId: this column}
+        Board->>Board: render CondensedColumnBoard<br/>(CondensedColumnBoard.tsx)<br/>-> single section titled with the column;<br/>each row pivots into a horizontal ColumnSection<br/>(column fixed, headerLabel = row.title)
+        Note over Cell: open/edit (TASK/OPEN_EDIT_MODAL) and drag<br/>reuse existing ColumnSection logic; dragging a task<br/>to another project column dispatches<br/>TASK/DROP_ON_CELL {toRowId, toColId: this column}
     end
     Note over Reducer: COLUMN/DELETE also prunes selectedColumnIds<br/>(columns.remove). selectedColumnIds is ephemeral —<br/>excluded from the autosave snapshot.
 
@@ -268,7 +268,7 @@ sequenceDiagram
     Ctx->>Reducer: columns.setDraggedIndex
     Reducer-->>Ctx: draggedDefaultIndex = null
     Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: columns reordered.<br/>ColumnConfigContext: draggedDefaultIndex=null)<br/>-> column settings badges reorder, dim clears
-    Ctx-->>Cell: ColumnCard instances in every RowSection<br/>re-render in new order<br/>(BoardData: columns reordered)
+    Ctx-->>Cell: ColumnSection instances in every RowSection<br/>re-render in new order<br/>(BoardData: columns reordered)
 
     Note over User,AI: Autosave (debounced, async)
     Ctx->>Ctx: useEffect on rows/columns/tasks (500ms debounce)

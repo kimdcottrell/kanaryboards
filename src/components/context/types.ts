@@ -85,7 +85,7 @@ export interface RowEditState {
   editingRowName: string;
 }
 
-// Inline column title editing (ColumnCard).
+// Inline column title editing (ColumnSection).
 export interface ColumnEditState {
   editingColumnId: string | null;
   editingColumnRowId: string | null;
@@ -130,7 +130,7 @@ export interface ChecklistAIState {
 }
 
 // The task currently being dragged across the board (cross-cell moves). Global
-// because ColumnCard reads it to render drag visuals and route drops.
+// because ColumnSection reads it to render drag visuals and route drops.
 export interface DragState {
   draggedTask: Task | null;
 }

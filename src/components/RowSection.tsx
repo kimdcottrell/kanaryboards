@@ -1,5 +1,5 @@
 import { useState } from "react";
-import ColumnCard from "./ColumnCard.tsx";
+import ColumnSection from "./ColumnSection.tsx";
 import CloseButton from "./shared/CloseButton.tsx";
 import {
   useBoardDataState,
@@ -110,7 +110,7 @@ export default function RowSection({ row }: { row: Row }) {
           <div id={`row-columns-${row.id}`} className="pb-4 overflow-x-scroll">
             <div className="flex gap-3">
               {visibleColumns.map((column) => (
-                <ColumnCard
+                <ColumnSection
                   key={column.id}
                   column={column}
                   row={row}

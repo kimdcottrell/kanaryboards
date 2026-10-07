@@ -14,7 +14,7 @@ import { beforeIdFromOrderedList, useDropTarget } from "@lib/dashboard/drag.ts";
 import type { Column, Row } from "./context/types.ts";
 import type { DragEvent } from "react";
 
-export default function ColumnCard(
+export default function ColumnSection(
   { column, row, headerLabel }: {
     column: Column;
     row: Row;
@@ -57,7 +57,7 @@ export default function ColumnCard(
 
   return (
     <div
-      id={`column-card-${row.id}-${column.id}`}
+      id={`column-section-${row.id}-${column.id}`}
       data-render-count={renderCount}
       className="flex w-xs shrink-0 flex-col rounded gap-3 p-3 shadow-sm shadow-base-300/10"
       style={{
