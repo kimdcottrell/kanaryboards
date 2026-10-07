@@ -25,7 +25,7 @@ import type {
 } from "./types.ts";
 import { boardReducer, createInitialState } from "./reducer.ts";
 import { expiredTrashTaskIds } from "./reducers/board.ts";
-import { deleteAllComments } from "../comments/commentStore.ts";
+import { deleteAllComments } from "../task/comments/commentStore.ts";
 import { STORAGE_KEY } from "./constants.ts";
 import { createDemoBoard } from "../demo/demoBoardData.ts";
 import { computeTasksByCell } from "./selectors.ts";

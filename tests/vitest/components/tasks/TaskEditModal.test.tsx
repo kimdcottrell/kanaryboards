@@ -35,7 +35,7 @@ vi.mock("@components/context/hooks.ts", () => ({
 }));
 
 // Comments have their own tests (TaskComments.test.tsx).
-vi.mock("@components/comments/TaskComments.tsx", () => ({
+vi.mock("@components/task/comments/TaskComments.tsx", () => ({
   default: () => null,
 }));
 
@@ -56,7 +56,7 @@ import {
   useTaskEditActions,
   useTaskEditState,
 } from "@components/context/hooks.ts";
-import TaskEditModal from "@components/TaskEditModal.tsx";
+import TaskEditModal from "@components/task/modal/TaskEditModal.tsx";
 
 const editTask: Task = {
   id: "task-42",
@@ -257,8 +257,7 @@ describe("TaskEditModal", () => {
     expect(trashTask).toHaveBeenCalledWith("task-42");
   });
 
-  test("a trashed task's dock is Delete forever / Cancel / Restore; Delete forever calls deleteTask", () => {
-    const deleteTask = vi.fn();
+  test("stays closed and renders no form for a trashed task (TaskViewOnlyModal opens instead)", () => {
     const trashColumn = {
       ...mockColumn,
       id: "col-trash",
@@ -268,12 +267,7 @@ describe("TaskEditModal", () => {
     vi.mocked(useTaskEditState).mockReturnValue(
       makeTaskEditState({
         taskEditModalOpen: true,
-        editTaskDraft: {
-          ...editTask,
-          colId: "col-trash",
-          trashedAt: new Date().toISOString(),
-          preTrashColId: mockColumn.id,
-        },
+        editTaskDraft: { ...editTask, colId: "col-trash" },
       }),
     );
     vi.mocked(useBoardDataState).mockReturnValue(
@@ -282,18 +276,28 @@ describe("TaskEditModal", () => {
         rows: [mockRow],
       }),
     );
-    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ deleteTask }));
-    render(<TaskEditModal />);
-    expect(
-      screen.queryByRole("button", { name: "Trash", hidden: true }),
-    ).toBeNull();
-    expect(
-      screen.getByRole("button", { name: "Restore", hidden: true }),
-    ).toBeTruthy();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Delete forever", hidden: true }),
+    const { container } = render(<TaskEditModal />);
+    expect(container.querySelector("dialog")?.className).not.toContain(
+      "modal-open",
     );
-    expect(deleteTask).toHaveBeenCalledWith("task-42");
+    expect(container.querySelector("form")).toBeNull();
+    expect(screen.queryByText(/Loading task/)).toBeNull();
+  });
+
+  test("Save calls saveTaskEdit and navigates to /dashboard", () => {
+    const saveTaskEdit = vi.fn();
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
+    );
+    vi.mocked(useBoardDataState).mockReturnValue(
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
+    );
+    vi.mocked(useTaskEditActions).mockReturnValue(
+      makeTaskEditActions({ saveTaskEdit }),
+    );
+    render(<TaskEditModal />);
+    fireEvent.click(screen.getByRole("button", { name: "Save", hidden: true }));
+    expect(saveTaskEdit).toHaveBeenCalledTimes(1);
     expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
   });
 });

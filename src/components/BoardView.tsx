@@ -5,8 +5,9 @@ import BoardDock from "./BoardDock.tsx";
 import BoardMenu from "./BoardMenu.tsx";
 import CreateRowModal from "./config/board/CreateRowModal.tsx";
 import RowBoard from "./RowBoard.tsx";
-import TaskCreateModal from "./TaskCreateModal.tsx";
-import TaskEditModal from "./TaskEditModal.tsx";
+import TaskCreateModal from "./task/modal/TaskCreateModal.tsx";
+import TaskEditModal from "./task/modal/TaskEditModal.tsx";
+import TaskViewOnlyModal from "./task/modal/TaskViewOnlyModal.tsx";
 import { useBoardDataState, useTaskActions } from "./context/hooks.ts";
 
 export default function BoardView() {
@@ -95,6 +96,7 @@ export default function BoardView() {
       <RowBoard data-testid="row-board" />
       <TaskCreateModal data-testid="task-create-modal" />
       <TaskEditModal data-testid="task-edit-modal" />
+      <TaskViewOnlyModal />
     </div>
   );
 }

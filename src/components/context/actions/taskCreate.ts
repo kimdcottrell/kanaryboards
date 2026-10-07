@@ -17,7 +17,7 @@ export function useTaskCreateActions() {
 
   const createTask = useCallback((
     event: Event,
-    content?: { json: string; markdown: string; html: string },
+    description?: string,
   ) => {
     event.preventDefault();
     if (!(event.target as HTMLFormElement).checkValidity()) return;
@@ -31,7 +31,7 @@ export function useTaskCreateActions() {
       colId,
       order: generateKeyBetween(null, firstOrder),
       title: taskDraft.title.trim(),
-      description: content?.json ?? taskDraft.description,
+      description: description ?? taskDraft.description,
       checklist: taskDraft.checklist.filter(
         (item: ChecklistItem) => item.text.trim(),
       ),

@@ -1,6 +1,6 @@
 import { ExtensiveEditor } from "@lyfie/luthor";
 import type { ExtensiveEditorRef, ToolbarLayout } from "@lyfie/luthor";
-import { useLuthorTheme } from "../shared/useLuthorTheme.ts";
+import { useLuthorTheme } from "../useLuthorTheme.ts";
 
 const COMMENT_TOOLBAR_LAYOUT: ToolbarLayout = {
   sections: [

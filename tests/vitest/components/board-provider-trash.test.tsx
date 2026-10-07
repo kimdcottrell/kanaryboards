@@ -3,7 +3,7 @@ import { afterEach, describe, expect, test } from "vitest";
 import { BoardProvider } from "@components/context/BoardContext.tsx";
 import { useBoardDataState } from "@components/context/hooks.ts";
 import { STORAGE_KEY } from "@components/context/constants.ts";
-import { COMMENTS_STORAGE_KEY } from "@components/comments/commentStore.ts";
+import { COMMENTS_STORAGE_KEY } from "@components/task/comments/commentStore.ts";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const daysAgo = (days: number) =>

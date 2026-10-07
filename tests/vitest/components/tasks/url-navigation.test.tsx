@@ -41,12 +41,15 @@ vi.mock("@components/config/board/CreateRowModal.tsx", () => ({
   default: () => null,
 }));
 vi.mock("@components/RowBoard.tsx", () => ({ default: () => null }));
-vi.mock("@components/TaskCreateModal.tsx", () => ({ default: () => null }));
+vi.mock(
+  "@components/task/modal/TaskCreateModal.tsx",
+  () => ({ default: () => null }),
+);
 // TaskEditModal is NOT mocked — it is rendered directly in tests below
 
-// Stub the rich-text editor used inside TaskForm / TaskEditModal
+// Stub the rich-text editor used inside TaskEditModal
 // Comments have their own tests (TaskComments.test.tsx).
-vi.mock("@components/comments/TaskComments.tsx", () => ({
+vi.mock("@components/task/comments/TaskComments.tsx", () => ({
   default: () => null,
 }));
 
@@ -69,8 +72,8 @@ import {
   useTaskEditActions,
   useTaskEditState,
 } from "@components/context/hooks.ts";
-import TaskCard from "@components/TaskCard.tsx";
-import TaskEditModal from "@components/TaskEditModal.tsx";
+import TaskCard from "@components/task/TaskCard.tsx";
+import TaskEditModal from "@components/task/modal/TaskEditModal.tsx";
 import BoardView from "@components/BoardView.tsx";
 import {
   makeBoardDataState,

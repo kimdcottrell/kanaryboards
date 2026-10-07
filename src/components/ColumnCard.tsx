@@ -1,4 +1,4 @@
-import TaskCard from "./TaskCard.tsx";
+import TaskCard from "./task/TaskCard.tsx";
 import DynamicIcon from "./shared/DynamicIcon.tsx";
 import {
   useColumnEditActions,

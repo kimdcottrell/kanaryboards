@@ -1,5 +1,5 @@
 import { createId } from "@lib/db/uuid.ts";
-import type { TaskComment } from "../context/types.ts";
+import type { TaskComment } from "../../context/types.ts";
 
 // Where a board's comments live mirrors where the board itself lives
 // (see BoardContext): the API when signed in, localStorage when signed out,

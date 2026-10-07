@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useBoardDispatch, useBoardMeta } from "../BoardContext.tsx";
-import { deleteAllComments } from "../../comments/commentStore.ts";
+import { deleteAllComments } from "../../task/comments/commentStore.ts";
 import type { Task } from "../types.ts";
 import type { DragEvent } from "react";
 

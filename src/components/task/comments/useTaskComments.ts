@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { useBoardMeta } from "../context/hooks.ts";
-import type { TaskComment } from "../context/types.ts";
+import { useBoardMeta } from "../../context/hooks.ts";
+import type { TaskComment } from "../../context/types.ts";
 import {
   byNewest,
   createComment,

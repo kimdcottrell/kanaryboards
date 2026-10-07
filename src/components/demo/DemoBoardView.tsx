@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import RowBoard from "../RowBoard.tsx";
-import TaskCreateModal from "../TaskCreateModal.tsx";
-import TaskEditModal from "../TaskEditModal.tsx";
+import TaskCreateModal from "../task/modal/TaskCreateModal.tsx";
+import TaskEditModal from "../task/modal/TaskEditModal.tsx";
+import TaskViewOnlyModal from "../task/modal/TaskViewOnlyModal.tsx";
 import { useBoardDataState, useTaskActions } from "../context/hooks.ts";
 
 export default function DemoBoardView() {
@@ -32,6 +33,7 @@ export default function DemoBoardView() {
       <RowBoard data-testid="row-board" />
       <TaskCreateModal data-testid="task-create-modal" />
       <TaskEditModal data-testid="task-edit-modal" />
+      <TaskViewOnlyModal />
     </>
   );
 }

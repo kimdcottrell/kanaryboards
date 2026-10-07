@@ -1,7 +1,13 @@
 import { useEffect, useId, useState } from "react";
 import { beforeIdFromOrderedList, useDropTarget } from "@lib/dashboard/drag.ts";
-import type { ChecklistAIState, ChecklistItem, Task } from "./context/types.ts";
+import type { ChecklistItem, Task } from "../../context/types.ts";
 import type { DragEvent } from "react";
+import {
+  handleChecklistKeyDown,
+  useBoardRefs,
+  useChecklistAIActions,
+  useChecklistAIState,
+} from "../../context/hooks.ts";
 
 export default function ChecklistSection({
   checklist,
@@ -9,8 +15,6 @@ export default function ChecklistSection({
   updateChecklistItem,
   deleteChecklistItem,
   reorderChecklistItem,
-  handleChecklistKeyDown,
-  setChecklistInputRef,
 }: {
   checklist: ChecklistItem[];
   addChecklistItem: (focusNew?: boolean, insertBeforeIndex?: number) => void;
@@ -21,13 +25,8 @@ export default function ChecklistSection({
   ) => void;
   deleteChecklistItem: (id: string) => void;
   reorderChecklistItem: (itemId: string, beforeItemId: string | null) => void;
-  handleChecklistKeyDown: (
-    event: KeyboardEvent,
-    index: number,
-    addItemFn: (focusNew: boolean, insertBeforeIndex?: number) => void,
-  ) => void;
-  setChecklistInputRef: (id: string, el: HTMLInputElement | null) => void;
 }) {
+  const { setChecklistInputRef } = useBoardRefs();
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const { dropTarget, handleDragOver } = useDropTarget(!!draggedId);
 
@@ -153,31 +152,24 @@ export default function ChecklistSection({
   );
 }
 
+// Reads ChecklistAI state itself so typing in the prompt re-renders only this
+// collapse, not the whole task modal. `applyChecklist` differs per modal
+// (create draft vs. edit draft).
 export function ChecklistGenerationCollapse({
   taskDraft,
-  checklistPrompt,
-  checklistPreview,
-  isGeneratingChecklist,
-  checklistModalError,
-  setChecklistPrompt,
-  generateChecklistItems,
   applyChecklist,
-  clearChecklistPreview,
-}:
-  & Pick<
-    ChecklistAIState,
-    | "checklistPrompt"
-    | "checklistPreview"
-    | "isGeneratingChecklist"
-    | "checklistModalError"
-  >
-  & {
-    taskDraft: Task;
-    setChecklistPrompt: (prompt: string) => void;
-    generateChecklistItems: (task?: Task) => void;
-    applyChecklist: () => void;
-    clearChecklistPreview: () => void;
-  }) {
+}: {
+  taskDraft: Task;
+  applyChecklist: () => void;
+}) {
+  const {
+    checklistPrompt,
+    checklistPreview,
+    isGeneratingChecklist,
+    checklistModalError,
+  } = useChecklistAIState();
+  const { setChecklistPrompt, generateChecklistItems, clearChecklistPreview } =
+    useChecklistAIActions();
   const [showError, setShowError] = useState(false);
   const promptId = useId();
 

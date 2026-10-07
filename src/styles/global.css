@@ -360,7 +360,7 @@
       transparent
     );
   }
-  /* Project menu (TaskForm.tsx): the active row gets a simplified version of
+  /* Project menu (task/form-elements/ProjectMenu.tsx): the active row gets a simplified version of
      the board row's look (diagonal gradient + row color tint); hover shows
      it at lower opacity. */
   .menu .row-menu-item.menu-active,
@@ -382,7 +382,7 @@
     --row-tint-from: 15%;
     --row-tint-to: 4%;
   }
-  /* Status steps (TaskForm.tsx): the bar sweeps step-by-step to the new
+  /* Status steps (task/form-elements/StatusSteps.tsx): the bar sweeps step-by-step to the new
      point (staggered by --step-index), pulses while hovering (.step-preview),
      and holds solid once selected (daisyUI's .step-primary). */
   .steps .step:before,
@@ -443,7 +443,7 @@
     @apply text-[14px];
   }
 }
-/* Task description editor (TaskForm.tsx): text ~12% smaller than Luthor's
+/* Task description editor (task/form-elements/DescriptionEditor.tsx): text ~12% smaller than Luthor's
    defaults (16px body, 28–14px headings). */
 .task-description-editor {
   .luthor-content-editable {

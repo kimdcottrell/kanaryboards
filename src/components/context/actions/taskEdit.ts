@@ -14,15 +14,15 @@ export function useTaskEditActions() {
 
   const saveTaskEdit = useCallback((
     event: Event,
-    content?: { json: string; markdown: string; html: string },
+    description?: string,
   ) => {
     event.preventDefault();
     if (!(event.target as HTMLFormElement).checkValidity()) return;
-    if (content !== undefined && editTaskDraft) {
+    if (description !== undefined && editTaskDraft) {
       dispatch({
         type: "TASK/UPDATE_EDIT_DRAFT",
         payload: {
-          draft: { ...editTaskDraft, description: content.json },
+          draft: { ...editTaskDraft, description },
         },
       });
     }

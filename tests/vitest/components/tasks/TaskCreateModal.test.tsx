@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
   makeBoardDataState,
@@ -40,7 +40,7 @@ import {
   useTaskCreateActions,
   useTaskCreateState,
 } from "@components/context/hooks.ts";
-import TaskCreateModal from "@components/TaskCreateModal.tsx";
+import TaskCreateModal from "@components/task/modal/TaskCreateModal.tsx";
 
 beforeEach(() => {
   vi.mocked(useBoardDataState).mockReturnValue(makeBoardDataState());
@@ -84,7 +84,7 @@ describe("TaskCreateModal", () => {
     expect(screen.getByText(/Create a new task/)).toBeTruthy();
   });
 
-  test("does not render TaskForm when closed", () => {
+  test("does not render the form when closed", () => {
     render(<TaskCreateModal />);
     expect(screen.queryByTestId("luthor-editor")).toBeNull();
   });
@@ -175,5 +175,50 @@ describe("TaskCreateModal", () => {
     expect(
       container.querySelector("input[name='row-select-new']:checked"),
     ).toBeNull();
+  });
+
+  test("title field is labeled and required", () => {
+    vi.mocked(useTaskCreateState).mockReturnValue(
+      makeTaskCreateState({
+        taskCreateModalOpen: true,
+        taskDraft: mockTaskDraft,
+      }),
+    );
+    render(<TaskCreateModal />);
+    expect(
+      screen.getByLabelText<HTMLInputElement>("Title").required,
+    ).toBe(true);
+  });
+
+  test("renders the checklist and AI checklist generation", () => {
+    vi.mocked(useTaskCreateState).mockReturnValue(
+      makeTaskCreateState({
+        taskCreateModalOpen: true,
+        taskDraft: mockTaskDraft,
+      }),
+    );
+    render(<TaskCreateModal />);
+    expect(screen.getByText("Checklist items")).toBeTruthy();
+    expect(screen.getByText("Generate checklist items with AI")).toBeTruthy();
+  });
+
+  test("Create task submits the form to createTask", () => {
+    const createTask = vi.fn();
+    vi.mocked(useTaskCreateState).mockReturnValue(
+      makeTaskCreateState({
+        taskCreateModalOpen: true,
+        taskDraft: mockTaskDraft,
+      }),
+    );
+    vi.mocked(useTaskCreateActions).mockReturnValue(
+      makeTaskCreateActions({ createTask }),
+    );
+    render(<TaskCreateModal />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Create task", hidden: true }),
+    );
+    // The mocked editor never calls onReady, so no description is passed and
+    // createTask keeps the draft's description.
+    expect(createTask).toHaveBeenCalledWith(expect.any(Event), undefined);
   });
 });

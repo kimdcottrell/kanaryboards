@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import type { ExtensiveEditorRef } from "@lyfie/luthor";
-import type { TaskComment } from "../context/types.ts";
+import type { TaskComment } from "../../context/types.ts";
 import { hasLexicalText } from "@lib/lexical.ts";
 import CommentEditor from "./CommentEditor.tsx";
 
