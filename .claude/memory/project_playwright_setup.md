@@ -8,13 +8,15 @@ type: project
 
 Playwright runs in a dedicated `playwright` Docker service. Tests are triggered from the `app` container via `deno task e2e-test`, which connects via `PW_TEST_CONNECT_WS_ENDPOINT='ws://playwright:3000'` and starts the dev server (`START_DEV_SERVER=1`).
 
-Config: `playwright.config.ts`. Base URL: `https://kanary.local.dev`. HTTPS errors ignored (self-signed cert). Runs Chromium + Firefox + WebKit. `retries: 1`.
+Config: `playwright.config.ts`. Base URL: `http://localhost:8085` locally, `BASE_URL` env in CI. Runs Chromium + Firefox + WebKit. `retries: 1`.
 
 ## Running tests
 
 ```bash
-deno task e2e-test
+deno task e2e-test   # runs --project=chromium --project=chromium-shared-account
 ```
+
+**`chromium-shared-account` project:** specs that wipe and re-seed the shared Clerk test account's KV board (`board-persistence`, `hero-start-form`, `drawer-row-list-mirror`, `drawer-row-nav`) are listed in `SHARED_ACCOUNT_SPECS` in `playwright.config.ts` and run in their own project with `workers: 1`, so they can't clobber each other's seed. A project-level `testIgnore` replaces the top-level one, so the `chromium` project repeats `**/preview-only/**` alongside `SHARED_ACCOUNT_SPECS`. Any new spec that touches the shared account's KV board belongs in that list.
 
 ## Test files (`tests/playwright/`)
 

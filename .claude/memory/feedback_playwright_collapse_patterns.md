@@ -21,7 +21,7 @@ HTML: `section.collapse > input[type="checkbox"].peer ~ .collapse-title ~ .colla
 - **State assertion:** `toBeChecked()` / `not.toBeChecked()` on the checkbox
 - **Content assertion:** `toBeVisible()` / `not.toBeVisible()` on text inside `#board-config-collapse-content`
 
-## 2. DaisyUI React-state collapse (ChecklistGenerationCollapse in ChecklistSection.jsx)
+## 2. DaisyUI React-state collapse (ChecklistGenerationCollapse in task/form-elements/ChecklistSection.tsx)
 
 HTML: `div#checklist-gen-collapse.collapse[class*="collapse-open"]`; toggle is a `<button>` (not a checkbox).
 

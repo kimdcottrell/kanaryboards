@@ -13,7 +13,7 @@ Fires on push to `feature/**` or `bugfix/**`. Idempotent: checks `gh pr list --h
 Fires on every pull request. Steps:
 1. Poll GitHub Statuses API (`/repos/.../statuses/<sha>`) every 10 s (max 24 × = 4 min) until a status with `context == "deploy/kimdcottrell/kanaryboards"` and `state == "success"` appears.
 2. Extract `REVISION_ID` from the target URL, then poll the Deno Deploy API (`/v2/revisions/<id>/timelines`) every 5 s (max 12 ×) until a `preview` slug domain appears.
-3. Set `BASE_URL=https://<domain>` and run `npx playwright test`.
+3. Set `BASE_URL=https://<domain>` and run `npx playwright test --project=chromium --project=chromium-shared-account` (the jq summary step must list every project name it counts — add new projects there too).
 4. Upload `playwright-report/` as an artifact (30-day retention), even on cancellation.
 
 **Why:** Tests must run against the live Deno Deploy preview, not localhost. The double-poll (deploy status → domain live) is required because the status check fires before the domain is routable.

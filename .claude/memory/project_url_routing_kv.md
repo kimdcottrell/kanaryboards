@@ -1,43 +1,33 @@
 ---
 name: url-routing-and-kv
-description: How URL-based task deep-linking and Deno KV persistence are implemented
+description: How URL-based task deep-linking, Deno KV persistence, task comments storage, and the Trash purge are implemented
 metadata:
   type: project
 ---
 
-Task edit modals are URL-addressable via `/task/:taskId`. Both `/` and `/task/:taskId` render the same `SPA.astro` → `BoardController` React island. There is no SSR task metadata lookup — the `[taskId].astro` page is a pure shell. Task routing is handled entirely client-side by React Router.
+The board lives at `/dashboard`. Tasks are URL-addressable via `/dashboard/task/:taskId` and rows via `/dashboard/row/:id` (pages under `src/pages/dashboard/`). Task routing is handled entirely client-side by React Router; the `[taskId].astro` page is a pure shell with no SSR task lookup.
 
 **Auth-split persistence model:**
-- **Unauthenticated users**: board lives in `localStorage` only (`STORAGE_KEY = "kanary-boards"`). `PUT /api/board` returns 401.
-- **Authenticated users**: board saved to KV via `PUT /api/board`. Board is keyed by a UUID7 `boardId` that is looked up (or created) in KV under `["user_board", clerkUserId]`.
-- **Sign-in migration**: if remote has no data, the full board is read from `STORAGE_KEY` in localStorage → `PUT /api/board` → KV, then localStorage key is removed.
+- **Unauthenticated users**: board lives in `localStorage` only (`STORAGE_KEY = "kanby-v0-1-0"`). `PUT /api/board` returns 401.
+- **Authenticated users**: board saved to KV via `PUT /api/board`. Board is keyed by a UUID7 `boardId` looked up (or created) in KV under `["user_board", clerkUserId]`.
+- **Demo board** (`boardId === "demo"`, landing page): never persisted anywhere.
+- **Sign-in migration**: if remote has no data, the full board is read from `STORAGE_KEY` → `PUT /api/board` → KV, then the localStorage key is removed.
 
-**Middleware (`src/middleware.ts`):**
-- Authenticated users: looks up `getBoardIdForUser(userId)` from KV; creates and stores a new UUID7 `boardId` if none exists. Sets `Astro.locals.boardId`.
-- Unauthenticated users: UUID7 cookie `boardId` (365-day); sets `Astro.locals.boardId`.
-- Order: `clerkMiddleware()` runs first, then `boardMiddleware` (which calls `locals.auth()` to get `userId`).
+**Middleware (`src/middleware.ts`):** authenticated users get `getBoardIdForUser(userId)` from KV (created if missing); unauthenticated users get a 365-day UUID7 `boardId` cookie. Either way it sets `Astro.locals.boardId`. `clerkMiddleware()` runs before `boardMiddleware`.
 
-**KV structure (`src/lib/kv.ts`):**
-- `["user_board", userId]` → `boardId` (UUID7 string) — maps Clerk userId to board
-- `["board", boardId]` → `PersistedBoard { rows, columns, tasks }` — full board blob
+**KV structure (`src/lib/db/kv.ts`):**
+- `["user_board", userId]` → `boardId`
+- `["board", boardId]` → `PersistedBoard { rows, columns, tasks }` — one blob, must stay under KV's 64KiB value limit
+- `["task_comment", boardId, taskId, commentId]` → `TaskComment` — one entry per comment, deliberately outside the board blob so comments don't count toward the 64KiB limit
 
-`PersistedBoard` no longer includes `defaultColumnNames`. `Row`, `Column`, and `Task` all include an `order: string` fractional index field. `Row` and `Column` use `title` not `name`.
+**Task comments (feature/notes, 2026-10):** not in reducer state. `src/components/task/comments/commentStore.ts` picks a backend mirroring the board: API (`/api/task-comments`) when signed in, localStorage (`kanby-comments-v0-1-0`, `{[taskId]: TaskComment[]}`) when signed out, in-memory for demo. Content is Lexical JSON. Edit/delete of a single comment is author-only (403 otherwise). Because comments live outside the board, every path that removes tasks must clean them up separately: `deleteTask` calls `deleteAllComments`, `DELETE /api/board` calls `deleteBoardComments`, purge deletes them per task.
 
-**No task_meta:** `TaskMeta`, `getTaskMeta`, and the `["task_meta", taskId]` KV entries were removed. The `[taskId].astro` page does not fetch task metadata from KV — it renders the same `<SPA />` shell regardless, and task routing is client-side only.
+**Trash purge:** Trash tasks older than 30 days are removed by `POST /api/purge-trash` (Bearer `CRON_SECRET`, scans every `["board", *]` with an atomic versionstamp check, then deletes those tasks' comments) and also client-side in `BOARD/LOAD`. As of 2026-10-07 nothing in the repo schedules the purge call — it must be wired up as an external/Deno Deploy cron.
 
 **API routes:**
-- `GET /api/board` — returns board or 404 `{noData:true}`; auth required
-- `PUT /api/board` — saves board; auth required (401 otherwise)
-- `DELETE /api/board` — clears board; auth required
+- `GET/PUT/DELETE /api/board` — auth required; GET returns 404 `{noData:true}` when empty
+- `GET/POST/PATCH/DELETE /api/task-comments` — auth required; DELETE without `id` removes all comments on a task
+- `POST /api/purge-trash` — cron-only, shared-secret auth
+- Shared helpers `jsonResponse` / `unauthorizedResponse` in `src/lib/http/api-responses.ts` (navigations get a 302 to `/dashboard?unauthorized=1`, fetches get 401)
 
-**React routing (react-router-dom 7.x):**
-- Routes: `/` and `/task/:taskId` both render `<BoardView />`
-- `BoardView` has a `useEffect` watching `[boardLoaded, taskId, tasks]` — finds task and calls `startEditTask(task)`, or `navigate('/', { replace: true })` if not found
-
-**BoardContext save snapshot:**
-```ts
-const boardSnapshot = { rows: state.rows, columns: state.columns, tasks: state.tasks };
-```
-No `defaultColumnNames`.
-
-**How to apply:** When adding new entity types that need URL deep-links, use React Router `useNavigate`/`useParams` and a `useEffect` in `BoardView`. For new KV entities, add to `kv.ts` following the existing patterns. For `boardId` resolution, always read from `Astro.locals.boardId` (set by middleware).
+**How to apply:** For new KV entities, add to `src/lib/db/kv.ts` following the existing patterns and put large/unbounded data in its own keys rather than the board blob. For `boardId` resolution, always read from `Astro.locals.boardId`. When adding a new way to remove tasks/rows/columns, check whether their comments need cleanup too. See [[State architecture and types]].
