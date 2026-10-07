@@ -5,7 +5,10 @@ import {
   deleteBoard,
   getBoard,
   getBoardIdForUser,
+  listTaskComments,
+  purgeExpiredTrash,
   saveBoard,
+  saveTaskComment,
   setBoardIdForUser,
 } from "@lib/db/kv.ts";
 import type { PersistedBoard } from "@lib/db/kv.ts";
@@ -35,6 +38,7 @@ const sampleBoard: PersistedBoard = {
       icon: null,
       iconInBoardMenu: false,
       iconNearColumnTitle: false,
+      isTrash: false,
     },
     {
       id: "col-2",
@@ -45,6 +49,7 @@ const sampleBoard: PersistedBoard = {
       icon: null,
       iconInBoardMenu: false,
       iconNearColumnTitle: false,
+      isTrash: false,
     },
   ],
   tasks: [
@@ -61,6 +66,8 @@ const sampleBoard: PersistedBoard = {
         order: "a0",
         checked: false,
       }],
+      trashedAt: null,
+      preTrashColId: null,
     },
     {
       id: "task-b",
@@ -70,6 +77,8 @@ const sampleBoard: PersistedBoard = {
       title: "Deploy",
       description: "",
       checklist: [],
+      trashedAt: null,
+      preTrashColId: null,
     },
   ],
 };
@@ -166,5 +175,84 @@ describe("getBoardIdForUser / setBoardIdForUser", () => {
     await setBoardIdForUser("user-abc", "old-board");
     await setBoardIdForUser("user-abc", "new-board");
     expect(await getBoardIdForUser("user-abc")).toBe("new-board");
+  });
+});
+
+// ── purgeExpiredTrash ─────────────────────────────────────────────────────────
+
+describe("purgeExpiredTrash", () => {
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const now = Date.parse("2026-10-07T00:00:00.000Z");
+  const daysAgo = (days: number) => new Date(now - days * DAY_MS).toISOString();
+
+  const trashBoard = (): PersistedBoard => ({
+    ...sampleBoard,
+    columns: [
+      ...sampleBoard.columns,
+      {
+        ...sampleBoard.columns[0],
+        id: "trash",
+        title: "Trash",
+        order: "a2",
+        isTrash: true,
+      },
+    ],
+    tasks: [
+      ...sampleBoard.tasks,
+      {
+        ...sampleBoard.tasks[1],
+        id: "expired",
+        colId: "trash",
+        trashedAt: daysAgo(30),
+        preTrashColId: "col-1",
+      },
+      {
+        ...sampleBoard.tasks[1],
+        id: "recent",
+        colId: "trash",
+        trashedAt: daysAgo(29),
+        preTrashColId: "col-1",
+      },
+    ],
+  });
+
+  test("deletes only Trash tasks past retention, with their comments", async () => {
+    await saveBoard(boardId, trashBoard());
+    await saveBoard("untouched-board", sampleBoard);
+    const comment = {
+      id: "c1",
+      taskId: "expired",
+      authorId: null,
+      authorName: "A",
+      authorImageUrl: null,
+      content: "",
+      createdAt: daysAgo(31),
+      updatedAt: null,
+    };
+    await saveTaskComment(boardId, comment);
+
+    const result = await purgeExpiredTrash(now);
+
+    expect(result).toEqual({
+      boardsScanned: 2,
+      boardsUpdated: 1,
+      tasksDeleted: 1,
+      conflicts: 0,
+    });
+    const board = await getBoard(boardId);
+    expect(board?.tasks.map((t) => t.id)).toEqual([
+      "task-a",
+      "task-b",
+      "recent",
+    ]);
+    expect(await listTaskComments(boardId, "expired")).toEqual([]);
+    expect(await getBoard("untouched-board")).toEqual(sampleBoard);
+  });
+
+  test("leaves boards saved before Trash existed alone", async () => {
+    await saveBoard(boardId, sampleBoard);
+    const result = await purgeExpiredTrash(now);
+    expect(result.tasksDeleted).toBe(0);
+    expect(await getBoard(boardId)).toEqual(sampleBoard);
   });
 });

@@ -477,22 +477,26 @@ test.describe("Board CRUD", () => {
       ).toBeVisible();
     });
 
-    test("deletes a task from the edit modal", async ({ page }) => {
-      await page.locator("#row-columns-row-e2e-1").getByText("Drag me", {
-        exact: true,
-      }).click();
+    test("trashes a task, then deletes it from the trash", async ({ page }) => {
+      const row = page.locator("#row-columns-row-e2e-1");
+      await row.getByText("Drag me", { exact: true }).click();
+      const dialog = page.locator("dialog.modal-open");
       await expect(
-        page.locator("dialog.modal-open").getByRole("button", {
-          name: "Save",
-          exact: true,
-        }),
+        dialog.getByRole("button", { name: "Save", exact: true }),
       )
         .toBeVisible();
 
-      await page.locator("dialog").getByRole("button", {
-        name: "Delete",
-        exact: true,
-      }).click();
+      await dialog.getByRole("button", { name: "Trash", exact: true }).click();
+
+      await expect(page).toHaveURL("/dashboard");
+      // Trash is always the last column in the row
+      const trashColumn = row.locator("> div > div").last();
+      await expect(trashColumn.getByText("Drag me", { exact: true }))
+        .toBeVisible();
+
+      await trashColumn.getByText("Drag me", { exact: true }).click();
+      await dialog.getByRole("button", { name: "Delete forever", exact: true })
+        .click();
 
       await expect(page).toHaveURL("/dashboard");
       await expect(page.getByText("Drag me", { exact: true })).toHaveCount(0);

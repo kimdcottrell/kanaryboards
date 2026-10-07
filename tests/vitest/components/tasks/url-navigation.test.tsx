@@ -133,6 +133,7 @@ describe("TaskCard — URL navigation", () => {
     isDropBefore: false,
     isDropAfter: false,
     isDragging: false,
+    isTrash: false,
   };
 
   test("clicking the task title navigates to /dashboard/task/:id", () => {
@@ -188,6 +189,8 @@ const editTask = {
   order: "a0d",
   description: "",
   checklist: [],
+  trashedAt: null,
+  preTrashColId: null,
 };
 
 function setEditState() {
@@ -276,13 +279,13 @@ describe("TaskEditModal — URL updates on save actions", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
   });
 
-  test("deleting the task calls navigate('/dashboard')", () => {
-    const deleteTask = vi.fn();
+  test("trashing the task calls navigate('/dashboard')", () => {
+    const trashTask = vi.fn();
     setEditState();
-    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ deleteTask }));
+    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ trashTask }));
     const { getByRole } = render(<TaskEditModal />);
-    fireEvent.click(getByRole("button", { name: "Delete", hidden: true }));
-    expect(deleteTask).toHaveBeenCalledWith(editTask.id);
+    fireEvent.click(getByRole("button", { name: "Trash", hidden: true }));
+    expect(trashTask).toHaveBeenCalledWith(editTask.id);
     expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
   });
 });
@@ -298,6 +301,8 @@ describe("BoardView — deep-link via useParams", () => {
     order: "a0c",
     description: "",
     checklist: [],
+    trashedAt: null,
+    preTrashColId: null,
   };
 
   test("startEditTask is called with the matching task when boardLoaded=true and task exists", () => {
@@ -367,6 +372,8 @@ describe("BoardView — deep-link via route params", () => {
     order: "a0",
     description: "",
     checklist: [],
+    trashedAt: null,
+    preTrashColId: null,
   };
 
   test("startEditTask is called for a task ID found in useParams", () => {

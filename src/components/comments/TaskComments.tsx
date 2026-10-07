@@ -114,9 +114,11 @@ export default function TaskComments({ taskId }: { taskId: string }) {
         {error && <p className="text-sm text-error" role="alert">{error}</p>}
 
         <div className="shrink-0" data-testid="comment-composer">
-          {/* Enter posts, Shift+Enter is a newline. Capture phase so the
+          {
+            /* Enter posts, Shift+Enter is a newline. Capture phase so the
               editor never sees the Enter; toolbar inputs (link URL) and IME
-              composition keep their own Enter handling. */}
+              composition keep their own Enter handling. */
+          }
           <div
             className="border border-base-content/20 rounded-lg overflow-hidden"
             onKeyDownCapture={(e) => {

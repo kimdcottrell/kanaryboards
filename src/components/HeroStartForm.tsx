@@ -7,7 +7,11 @@ import {
   rowColorOptions,
   STORAGE_KEY,
 } from "./context/constants.ts";
-import { normalizeColumn, reset } from "./context/reducers/board.ts";
+import {
+  normalizeColumn,
+  normalizeTask,
+  reset,
+} from "./context/reducers/board.ts";
 import {
   buildTasksFromTitles,
   fetchGeneratedItems,
@@ -42,7 +46,7 @@ async function loadBoard(
     return {
       rows: existing.rows ?? [],
       columns: existing.columns.map(normalizeColumn),
-      tasks: existing.tasks ?? [],
+      tasks: (existing.tasks ?? []).map(normalizeTask),
     };
   }
   return { rows: [], columns: reset().columns, tasks: [] };

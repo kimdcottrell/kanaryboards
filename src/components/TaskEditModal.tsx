@@ -4,6 +4,7 @@ import Modal from "./shared/Modal.tsx";
 import ActionsDock from "./shared/ActionsDock.tsx";
 import TaskForm from "./TaskForm.tsx";
 import TaskComments from "./comments/TaskComments.tsx";
+import { preventEdits } from "@lib/dashboard/view-only.ts";
 import {
   handleChecklistKeyDown,
   useBoardDataState,
@@ -27,7 +28,8 @@ export default function TaskEditModal() {
     deleteEditChecklistItem,
     reorderEditChecklistItem,
   } = useTaskEditActions();
-  const { cancelEditTask, deleteTask } = useTaskActions();
+  const { cancelEditTask, trashTask, restoreTask, deleteTask } =
+    useTaskActions();
   const { setChecklistInputRef } = useBoardRefs();
   const {
     checklistPrompt,
@@ -43,9 +45,14 @@ export default function TaskEditModal() {
   } = useChecklistAIActions();
 
   // State, not a ref: TaskForm must re-render once the dock exists so it can
-  // portal its Delete/Cancel/Save buttons into it.
+  // portal its dock buttons (Trash/Cancel/Save, or Delete/Cancel/Restore for a
+  // trashed task) into it.
   const [actionsDock, setActionsDock] = useState<HTMLDivElement | null>(null);
   const [titleSlot, setTitleSlot] = useState<HTMLDivElement | null>(null);
+
+  // Tasks in the Trash column are view-only until restored.
+  const isTrashed = !!editTaskDraft &&
+    columns.some((c) => c.id === editTaskDraft.colId && c.isTrash);
 
   const handleClose = () => {
     cancelEditTask();
@@ -83,6 +90,15 @@ export default function TaskEditModal() {
                 onCancel={handleClose}
                 submitLabel="Save"
                 initialMode="visual-only"
+                onTrash={() => {
+                  trashTask(editTaskDraft.id);
+                  navigate("/dashboard");
+                }}
+                readOnly={isTrashed}
+                onRestore={() => {
+                  restoreTask(editTaskDraft.id);
+                  navigate("/dashboard");
+                }}
                 onDelete={() => {
                   deleteTask(editTaskDraft.id);
                   navigate("/dashboard");
@@ -107,7 +123,11 @@ export default function TaskEditModal() {
             )
             : <p className="mt-4 text-sm">Loading task...</p>}
         </div>
-        {editTaskDraft && <TaskComments taskId={editTaskDraft.id} />}
+        {editTaskDraft && (
+          <div className="contents" {...(isTrashed ? preventEdits : {})}>
+            <TaskComments taskId={editTaskDraft.id} />
+          </div>
+        )}
         <ActionsDock
           ref={setActionsDock}
           className="md:absolute md:inset-x-0 md:bottom-0 md:mt-0"

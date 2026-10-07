@@ -24,6 +24,8 @@ import type {
   TaskEditState,
 } from "./types.ts";
 import { boardReducer, createInitialState } from "./reducer.ts";
+import { expiredTrashTaskIds } from "./reducers/board.ts";
+import { deleteAllComments } from "../comments/commentStore.ts";
 import { STORAGE_KEY } from "./constants.ts";
 import { createDemoBoard } from "../demo/demoBoardData.ts";
 import { computeTasksByCell } from "./selectors.ts";
@@ -232,6 +234,18 @@ export function BoardProvider(
           if (stored) {
             try {
               const local = JSON.parse(stored);
+              // BOARD/LOAD drops expired Trash tasks. Their comments live in
+              // separate localStorage, out of reach of /api/purge-trash, so
+              // delete them here.
+              for (
+                const taskId of expiredTrashTaskIds(
+                  local.columns ?? [],
+                  local.tasks ?? [],
+                  Date.now(),
+                )
+              ) {
+                deleteAllComments({ boardId, isAuthenticated }, taskId);
+              }
               dispatch({ type: "BOARD/LOAD", payload: local });
               return;
             } catch {

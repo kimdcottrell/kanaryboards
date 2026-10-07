@@ -144,6 +144,7 @@ sequenceDiagram
     Ctx-->>Row: that RowSection re-renders<br/>(BoardData: row.color changed)<br/>-> background color-mix updates
     Ctx-->>Cell: every ColumnCard in that row re-renders<br/>(BoardData: row.color changed)<br/>-> background/border + add-task button tint update
 
+    Note over Config: The Trash column is left out of the settings badge list,<br/>ColumnReorderList and the add-column reference select,<br/>so it cannot be renamed, deleted or moved, and stays last.<br/>Adding "right of" the last column, or dropping on the trailing<br/>drop zone, places the column before Trash
     Note over User,AI: Add column (ColumnSettingsSection, "Create a new column" form)
     User->>Config: type column name<br/>(defaultColumnInput)
     Config->>Actions: setDefaultColumnInput(value)<br/>(actions/columnConfig.ts)
@@ -172,6 +173,7 @@ sequenceDiagram
     Ctx-->>Cell: every RowSection mounts a new ColumnCard<br/>(BoardData: columns changed)<br/>-> appears to the left/right of the reference column
 
     Note over User,AI: Rename column (per ColumnCard, double-click)
+    Note over Cell: The Trash column (isTrash) has no double-click rename<br/>and no "+" button. It shows a "deleted after 30 days" disclaimer
     User->>Cell: double-click column title
     Cell->>Actions: editColumnTitle(column, row)<br/>(actions/columnEdit.ts)
     Actions->>Ctx: dispatch(COLUMN/RENAME_START, {columnId, rowId, currentName})

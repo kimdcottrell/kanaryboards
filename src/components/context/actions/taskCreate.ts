@@ -35,6 +35,8 @@ export function useTaskCreateActions() {
       checklist: taskDraft.checklist.filter(
         (item: ChecklistItem) => item.text.trim(),
       ),
+      trashedAt: null,
+      preTrashColId: null,
     };
     dispatch({ type: "TASK/CREATE", payload: { task } });
   }, [taskDraft, tasksByCell, dispatch]);

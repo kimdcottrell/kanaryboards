@@ -121,7 +121,7 @@ export default function ColumnSettingsSection() {
                 required
               >
                 <option value="" disabled>Pick a column</option>
-                {columns.map((column) => (
+                {columns.filter((column) => !column.isTrash).map((column) => (
                   <option key={column.id} value={column.id}>
                     {column.title}
                   </option>

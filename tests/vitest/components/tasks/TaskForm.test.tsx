@@ -73,14 +73,14 @@ describe("TaskForm", () => {
     expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull();
   });
 
-  test("Delete button is shown when onDelete is provided", () => {
-    render(<TaskForm {...baseProps} onDelete={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "Delete" })).toBeTruthy();
+  test("Trash button is shown when onTrash is provided", () => {
+    render(<TaskForm {...baseProps} onTrash={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Trash" })).toBeTruthy();
   });
 
-  test("Delete button is absent when onDelete is omitted", () => {
+  test("Trash button is absent when onTrash is omitted", () => {
     render(<TaskForm {...baseProps} />);
-    expect(screen.queryByRole("button", { name: "Delete" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Trash" })).toBeNull();
   });
 
   test("calls onCancel when Cancel button is clicked", () => {
@@ -90,10 +90,116 @@ describe("TaskForm", () => {
     expect(onCancel).toHaveBeenCalled();
   });
 
-  test("calls onDelete when Delete button is clicked", () => {
+  test("calls onTrash when Trash button is clicked", () => {
+    const onTrash = vi.fn();
+    render(<TaskForm {...baseProps} onTrash={onTrash} />);
+    fireEvent.click(screen.getByRole("button", { name: "Trash" }));
+    expect(onTrash).toHaveBeenCalled();
+  });
+});
+
+describe("TaskForm — Trash", () => {
+  const trashColumn = {
+    ...mockColumn,
+    id: "col-trash",
+    title: "Trash",
+    isTrash: true,
+  };
+  const trashedDraft = {
+    ...mockTaskDraft,
+    id: "task-1",
+    title: "Trashed task",
+    colId: "col-trash",
+    trashedAt: new Date().toISOString(),
+    preTrashColId: mockColumn.id,
+  };
+
+  test("Status does not offer the Trash column", () => {
+    render(<TaskForm {...baseProps} columns={[mockColumn, trashColumn]} />);
+    expect(screen.queryByTestId("status-step-col-trash")).toBeNull();
+    expect(screen.getByTestId(`status-step-${mockColumn.id}`)).toBeTruthy();
+  });
+
+  test("readOnly shows the view-only alert and Restore instead of Trash/Submit", () => {
+    const onRestore = vi.fn();
+    render(
+      <TaskForm
+        {...baseProps}
+        columns={[mockColumn, trashColumn]}
+        taskDraft={trashedDraft}
+        readOnly
+        onTrash={vi.fn()}
+        onRestore={onRestore}
+        submitLabel="Save"
+      />,
+    );
+    expect(screen.getByRole("alert").textContent).toBe(
+      "Task is view-only. Restore it to edit.",
+    );
+    expect(screen.queryByRole("button", { name: "Trash" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Save" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Restore" }));
+    expect(onRestore).toHaveBeenCalled();
+  });
+
+  test("readOnly shows Delete forever, which calls onDelete", () => {
     const onDelete = vi.fn();
-    render(<TaskForm {...baseProps} onDelete={onDelete} />);
-    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    render(
+      <TaskForm
+        {...baseProps}
+        columns={[mockColumn, trashColumn]}
+        taskDraft={trashedDraft}
+        readOnly
+        onDelete={onDelete}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Delete forever" }));
     expect(onDelete).toHaveBeenCalled();
+  });
+
+  test("Delete forever is not shown outside readOnly", () => {
+    render(<TaskForm {...baseProps} onTrash={vi.fn()} onDelete={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: "Delete forever" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Trash" })).toBeTruthy();
+  });
+
+  test("readOnly selects the pre-trash column in Status", () => {
+    const { container } = render(
+      <TaskForm
+        {...baseProps}
+        columns={[mockColumn, trashColumn]}
+        taskDraft={trashedDraft}
+        readOnly
+      />,
+    );
+    const checked = container.querySelector<HTMLInputElement>(
+      'input[type="radio"][value="col-1"]',
+    );
+    expect(checked?.checked).toBe(true);
+  });
+
+  test("readOnly blocks edits to Status, Project and title", () => {
+    const setTaskDraft = vi.fn();
+    const { container } = render(
+      <TaskForm
+        {...baseProps}
+        columns={[
+          mockColumn,
+          { ...mockColumn, id: "col-2", title: "Done" },
+          trashColumn,
+        ]}
+        taskDraft={trashedDraft}
+        setTaskDraft={setTaskDraft}
+        readOnly
+      />,
+    );
+    fireEvent.click(screen.getByTestId("status-step-col-2"));
+    fireEvent.click(screen.getByText(mockRow.title));
+    const title = container.querySelector<HTMLInputElement>(
+      'input[type="text"]',
+    )!;
+    expect(title.readOnly).toBe(true);
+    fireEvent.keyDown(title, { key: "a" });
+    expect(setTaskDraft).not.toHaveBeenCalled();
   });
 });

@@ -47,6 +47,7 @@ const BOARD_STATE = {
       icon: null,
       iconInBoardMenu: false,
       iconNearColumnTitle: false,
+      isTrash: false,
     },
   ],
   tasks: [],

@@ -1,6 +1,10 @@
 /// <reference lib="dom" />
 import type { Page } from "@playwright/test";
-import { expect, testAuthed as test } from "../fixtures.ts";
+import {
+  expect,
+  gotoAndWaitForClerk,
+  testAuthed as test,
+} from "../fixtures.ts";
 
 // A "malicious user" suite for /api/board. There's no SQL here — Deno KV is a
 // key-value store keyed by ["board", boardId], not a query engine — so there's
@@ -46,11 +50,11 @@ test.describe("/api/board — malicious input safety", () => {
       "shares one Clerk test account across runs",
     );
     // testAuthed boots with global.setup.ts's storage state, so the session is
-    // already live — no clerk.signIn() round-trip needed here.
-    await page.goto("/dashboard");
-    await page.locator("html[data-board-loaded='true']").waitFor({
-      state: "attached",
-    });
+    // already live — no clerk.signIn() round-trip needed here. Deliberately
+    // NOT /dashboard: that mounts the board island, whose debounced autosave
+    // then races seedBoard() and can overwrite it with the empty loaded board.
+    // /blog boots Clerk (refreshing __session) with no island at all.
+    await gotoAndWaitForClerk(page, "/blog");
     const cleanup = await page.request.get("/api/delete-test-data");
     expect(cleanup.status()).toBe(200);
   });

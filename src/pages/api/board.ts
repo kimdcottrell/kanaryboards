@@ -29,6 +29,7 @@ const ColumnSchema = z.object({
   icon: z.string().nullable(),
   iconInBoardMenu: z.boolean(),
   iconNearColumnTitle: z.boolean(),
+  isTrash: z.boolean(),
 });
 
 const ChecklistItemSchema = z.object({
@@ -46,6 +47,8 @@ const TaskSchema = z.object({
   description: z.string(),
   checklist: z.array(ChecklistItemSchema),
   order: z.string(),
+  trashedAt: z.string().nullable(),
+  preTrashColId: z.string().nullable(),
 });
 
 // Deno KV rejects any single value over 64KiB (see saveBoard in

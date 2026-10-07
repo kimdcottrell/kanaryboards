@@ -15,6 +15,8 @@ const task = (id: string, order: string): Task => ({
   title: id,
   description: "",
   checklist: [],
+  trashedAt: null,
+  preTrashColId: null,
 });
 
 // Three tasks in the same cell (row-1 / col-1), ordered t1 < t2 < t3.
@@ -32,6 +34,7 @@ function stateWithCell(): BoardState {
         icon: null,
         iconInBoardMenu: false,
         iconNearColumnTitle: false,
+        isTrash: false,
       },
     ],
     tasks: [task("t1", "a0"), task("t2", "a1"), task("t3", "a2")],
@@ -129,6 +132,7 @@ function stateWithTwoColumns(): BoardState {
         icon: null,
         iconInBoardMenu: false,
         iconNearColumnTitle: false,
+        isTrash: false,
       },
       {
         id: "col-2",
@@ -139,6 +143,7 @@ function stateWithTwoColumns(): BoardState {
         icon: null,
         iconInBoardMenu: false,
         iconNearColumnTitle: false,
+        isTrash: false,
       },
     ],
     tasks: [
@@ -226,6 +231,7 @@ function stateWithTwoRows(): BoardState {
         icon: null,
         iconInBoardMenu: false,
         iconNearColumnTitle: false,
+        isTrash: false,
       },
       {
         id: "col-2",
@@ -236,6 +242,7 @@ function stateWithTwoRows(): BoardState {
         icon: null,
         iconInBoardMenu: false,
         iconNearColumnTitle: false,
+        isTrash: false,
       },
     ],
     tasks: [

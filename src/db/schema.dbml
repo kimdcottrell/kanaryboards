@@ -29,6 +29,7 @@ Table columns {
   icon varchar [null, note: "iconify hugeicons icon name"]
   icon_in_board_menu boolean [not null, default: false]
   icon_near_column_title boolean [not null, default: false]
+  is_trash boolean [not null, default: false, note: "the fixed, always-last Trash column"]
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: `now()`, note: "updated via trigger"]
 
@@ -47,6 +48,8 @@ Table tasks {
   description varchar
   checklist json
   order varchar [not null, note: "fractional index string, scoped to (col_id, row_id) cell"]
+  trashed_at timestamptz [null, note: "set when moved into Trash; nulled when moved out"]
+  pre_trash_col_id uuid7 [null, note: "column the task was in before Trash; used by Restore. No FK: the column may be deleted later"]
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: `now()`, note: "updated via trigger"]
 }

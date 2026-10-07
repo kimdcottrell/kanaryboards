@@ -34,6 +34,7 @@ const defaultProps = {
   isDropBefore: false,
   isDropAfter: false,
   isDragging: false,
+  isTrash: false,
 };
 
 describe("TaskCard", () => {

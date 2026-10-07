@@ -9,6 +9,7 @@ import type {
 } from "@lyfie/luthor";
 import type { ChecklistAIState, Column, Row, Task } from "./context/types.ts";
 import { useLuthorTheme } from "./shared/useLuthorTheme.ts";
+import { preventEdits } from "@lib/dashboard/view-only.ts";
 
 const MD_TOOLBAR_LAYOUT: ToolbarLayout = {
   sections: [
@@ -63,8 +64,13 @@ interface TaskFormProps extends
   onSubmit: (event: Event, content?: EditorContent) => void;
   onCancel?: () => void;
   submitLabel?: string;
+  onTrash?: () => void;
+  // View-only mode (a task in the Trash column): every field blocks edits and
+  // the dock shows Delete + Cancel + Restore instead of Trash + Submit.
+  readOnly?: boolean;
+  onRestore?: () => void;
   onDelete?: () => void;
-  // When provided (even as null while it mounts), the Delete/Cancel/Submit
+  // When provided (even as null while it mounts), the Trash/Cancel/Submit
   // buttons render into this element (e.g. a modal's docked footer) instead
   // of at the end of the form. The submit button stays tied to the form via
   // its `form` attribute.
@@ -103,6 +109,9 @@ export default function TaskForm({
   onSubmit,
   onCancel,
   submitLabel = "Create task",
+  onTrash,
+  readOnly = false,
+  onRestore,
   onDelete,
   actionsContainer,
   titleContainer,
@@ -131,7 +140,11 @@ export default function TaskForm({
   const formId = useId();
   const luthorTheme = useLuthorTheme();
   const statusName = `column-select-${taskDraft.id || "new"}`;
-  const selectedColIndex = columns.findIndex((c) => c.id === taskDraft.colId);
+  // Trash is only reachable via the Trash button or drag-and-drop. A trashed
+  // task shows the column it will be restored to.
+  const statusColumns = columns.filter((c) => !c.isTrash);
+  const statusColId = readOnly ? taskDraft.preTrashColId : taskDraft.colId;
+  const selectedColIndex = statusColumns.findIndex((c) => c.id === statusColId);
   const [hoveredColIndex, setHoveredColIndex] = useState<number | null>(null);
   function handleSubmit(e: ReactSubmitEvent<HTMLFormElement>) {
     const submitter = (e.nativeEvent as SubmitEvent)?.submitter;
@@ -146,13 +159,13 @@ export default function TaskForm({
     });
   }
 
-  const deleteButton = onDelete && (
+  const trashButton = !readOnly && onTrash && (
     <button
       type="button"
       className="btn btn-error btn-outline"
-      onClick={onDelete}
+      onClick={onTrash}
     >
-      Delete
+      Trash
     </button>
   );
   const cancelButton = onCancel && (
@@ -160,16 +173,33 @@ export default function TaskForm({
       Cancel
     </button>
   );
-  const submitButton = (
-    <button
-      ref={submitButtonRef}
-      type="submit"
-      form={formId}
-      className="btn btn-success"
-    >
-      {submitLabel}
-    </button>
+  const deleteButton = readOnly && onDelete && (
+    <div className="tooltip tooltip-top" data-tip="There is no undo">
+      <button
+        type="button"
+        className="btn btn-error btn-outline"
+        onClick={onDelete}
+      >
+        Delete forever
+      </button>
+    </div>
   );
+  const submitButton = readOnly
+    ? (
+      <button type="button" className="btn btn-success" onClick={onRestore}>
+        Restore
+      </button>
+    )
+    : (
+      <button
+        ref={submitButtonRef}
+        type="submit"
+        form={formId}
+        className="btn btn-success"
+      >
+        {submitLabel}
+      </button>
+    );
 
   return (
     <form
@@ -192,6 +222,8 @@ export default function TaskForm({
                 title: e.currentTarget.value,
               })}
             required
+            readOnly={readOnly}
+            {...(readOnly ? preventEdits : {})}
           />
           <span className="validator-hint hidden">Required</span>
         </fieldset>
@@ -211,11 +243,29 @@ export default function TaskForm({
                 title: e.currentTarget.value,
               })}
             required
+            readOnly={readOnly}
+            {...(readOnly ? preventEdits : {})}
           />,
           titleContainer,
         )}
 
-      <div className="grid md:grid-cols-2 gap-4 items-start">
+      {readOnly && (
+        <div
+          role="alert"
+          className="alert alert-error alert-soft border border-error w-full"
+        >
+          <span className="iconify hugeicons--alert-circle text-lg"></span>
+          <span>
+            Task is{" "}
+            <strong className="font-extrabold">view-only</strong>. Restore it to
+            edit.
+          </span>
+        </div>
+      )}
+      <div
+        className="grid md:grid-cols-2 gap-4 items-start"
+        {...(readOnly ? preventEdits : {})}
+      >
         <fieldset className="fieldset">
           <div className="border border-base-content/20 rounded-lg overflow-hidden">
             <ExtensiveEditor
@@ -226,7 +276,9 @@ export default function TaskForm({
               }}
               initialTheme={luthorTheme}
               initialMode={initialMode}
-              availableModes={["visual-only", "visual-editor", "markdown"]}
+              availableModes={readOnly
+                ? ["visual-only"]
+                : ["visual-only", "visual-editor", "markdown"]}
               markdownSourceOfTruth
               markdownBridgeFlavor="github"
               sourceMetadataMode="none"
@@ -247,7 +299,7 @@ export default function TaskForm({
                 className="steps"
                 onMouseLeave={() => setHoveredColIndex(null)}
               >
-                {columns.map((option, i) => {
+                {statusColumns.map((option, i) => {
                   const stepClass = hoveredColIndex === null
                     ? (i <= selectedColIndex ? " step-primary" : "")
                     : (i <= hoveredColIndex ? " step-preview" : "");
@@ -264,7 +316,7 @@ export default function TaskForm({
                         className="sr-only"
                         name={statusName}
                         value={option.id}
-                        checked={option.id === taskDraft.colId}
+                        checked={option.id === statusColId}
                         onChange={() => {
                           setHoveredColIndex(null);
                           setTaskDraft({ ...taskDraft, colId: option.id });
@@ -355,9 +407,10 @@ export default function TaskForm({
       {actionsContainer === undefined && (
         <div
           className={`flex gap-2 ${
-            onDelete ? "justify-between" : "justify-end"
+            trashButton || deleteButton ? "justify-between" : "justify-end"
           }`}
         >
+          {trashButton}
           {deleteButton}
           <div className="flex gap-2">
             {cancelButton}
@@ -368,6 +421,7 @@ export default function TaskForm({
       {actionsContainer &&
         createPortal(
           <>
+            {trashButton}
             {deleteButton}
             {cancelButton}
             {submitButton}

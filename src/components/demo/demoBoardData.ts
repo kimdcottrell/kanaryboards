@@ -20,6 +20,7 @@ export const createDemoBoard = () => {
     icon: null,
     iconInBoardMenu: title === "In Progress" || title === "Review",
     iconNearColumnTitle: false,
+    isTrash: false,
   }));
   const todoColId = columns[0].id;
   const inProgressColId = columns[1].id;
@@ -28,6 +29,8 @@ export const createDemoBoard = () => {
     id: createId(),
     rowId,
     colId: todoColId,
+    trashedAt: null,
+    preTrashColId: null,
     order: generateKeyBetween(null, null),
     title: "Getting started",
     description: JSON.stringify({
@@ -91,6 +94,8 @@ export const createDemoBoard = () => {
     id: createId(),
     rowId,
     colId: todoColId,
+    trashedAt: null,
+    preTrashColId: null,
     order: generateKeyBetween(task.order, null),
     title: "Sign up to create more than one project row",
     description: JSON.stringify({
@@ -176,6 +181,8 @@ export const createDemoBoard = () => {
     id: createId(),
     rowId,
     colId: inProgressColId,
+    trashedAt: null,
+    preTrashColId: null,
     order: generateKeyBetween(null, null),
     title: "Make your own board",
     description: JSON.stringify({

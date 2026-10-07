@@ -26,6 +26,10 @@ export function useTaskActions() {
         })
       );
     },
+    trashTask: (taskId: string) =>
+      dispatch({ type: "TASK/TRASH", payload: { taskId } }),
+    restoreTask: (taskId: string) =>
+      dispatch({ type: "TASK/RESTORE", payload: { taskId } }),
     toggleTaskChecklist: (taskId: string, itemId: string) =>
       dispatch({
         type: "TASK/TOGGLE_CHECKLIST_ITEM",

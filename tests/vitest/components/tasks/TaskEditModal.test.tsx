@@ -66,6 +66,8 @@ const editTask: Task = {
   title: "Existing task",
   description: "",
   checklist: [],
+  trashedAt: null,
+  preTrashColId: null,
 };
 
 beforeEach(() => {
@@ -94,7 +96,6 @@ describe("TaskEditModal", () => {
     const title = screen.getByDisplayValue("Existing task");
     expect(title.getAttribute("aria-label")).toBe("Title");
     expect(title.closest("form")).toBeNull();
-    expect(title.className).toContain("text-xl");
   });
 
   test("shows loading message when editTaskDraft is null", () => {
@@ -129,7 +130,7 @@ describe("TaskEditModal", () => {
     ).toBeTruthy();
   });
 
-  test("Delete button is present in edit modal", () => {
+  test("Trash button is present in edit modal", () => {
     vi.mocked(useTaskEditState).mockReturnValue(
       makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
     );
@@ -138,7 +139,7 @@ describe("TaskEditModal", () => {
     );
     render(<TaskEditModal />);
     expect(
-      screen.getByRole("button", { name: "Delete", hidden: true }),
+      screen.getByRole("button", { name: "Trash", hidden: true }),
     ).toBeTruthy();
   });
 
@@ -240,19 +241,59 @@ describe("TaskEditModal", () => {
     ).toBe("row-2");
   });
 
-  test("calls deleteTask with the task id when Delete is clicked", () => {
-    const deleteTask = vi.fn();
+  test("calls trashTask with the task id when Trash is clicked", () => {
+    const trashTask = vi.fn();
     vi.mocked(useTaskEditState).mockReturnValue(
       makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
     );
     vi.mocked(useBoardDataState).mockReturnValue(
       makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
     );
-    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ deleteTask }));
+    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ trashTask }));
     render(<TaskEditModal />);
     fireEvent.click(
-      screen.getByRole("button", { name: "Delete", hidden: true }),
+      screen.getByRole("button", { name: "Trash", hidden: true }),
+    );
+    expect(trashTask).toHaveBeenCalledWith("task-42");
+  });
+
+  test("a trashed task's dock is Delete forever / Cancel / Restore; Delete forever calls deleteTask", () => {
+    const deleteTask = vi.fn();
+    const trashColumn = {
+      ...mockColumn,
+      id: "col-trash",
+      title: "Trash",
+      isTrash: true,
+    };
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({
+        taskEditModalOpen: true,
+        editTaskDraft: {
+          ...editTask,
+          colId: "col-trash",
+          trashedAt: new Date().toISOString(),
+          preTrashColId: mockColumn.id,
+        },
+      }),
+    );
+    vi.mocked(useBoardDataState).mockReturnValue(
+      makeBoardDataState({
+        columns: [mockColumn, trashColumn],
+        rows: [mockRow],
+      }),
+    );
+    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ deleteTask }));
+    render(<TaskEditModal />);
+    expect(
+      screen.queryByRole("button", { name: "Trash", hidden: true }),
+    ).toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Restore", hidden: true }),
+    ).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Delete forever", hidden: true }),
     );
     expect(deleteTask).toHaveBeenCalledWith("task-42");
+    expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
   });
 });

@@ -4,6 +4,7 @@ import type {
   Task,
   TaskComment,
 } from "@components/context/types.ts";
+import { isTrashExpired } from "@components/context/constants.ts";
 
 export interface PersistedBoard {
   rows: Row[];
@@ -126,6 +127,53 @@ export function deleteTaskComments(
 
 export function deleteBoardComments(boardId: string): Promise<void> {
   return deleteByPrefix(["task_comment", boardId]);
+}
+
+// Permanently deletes every Trash task whose `trashedAt` is past retention, on
+// every board. Each board is rewritten with an atomic versionstamp check; a
+// board the user saved mid-run is skipped and picked up by the next run.
+export async function purgeExpiredTrash(now = Date.now()): Promise<{
+  boardsScanned: number;
+  boardsUpdated: number;
+  tasksDeleted: number;
+  conflicts: number;
+}> {
+  const kv = await getKv();
+  const result = {
+    boardsScanned: 0,
+    boardsUpdated: 0,
+    tasksDeleted: 0,
+    conflicts: 0,
+  };
+  for await (const entry of kv.list<PersistedBoard>({ prefix: ["board"] })) {
+    result.boardsScanned++;
+    const board = entry.value;
+    const boardId = entry.key[1] as string;
+    const trashIds = new Set(
+      board.columns.filter((c) => c.isTrash).map((c) => c.id),
+    );
+    const expired = board.tasks.filter((t) =>
+      trashIds.has(t.colId) && isTrashExpired(t.trashedAt ?? null, now)
+    );
+    if (expired.length === 0) continue;
+
+    const expiredIds = new Set(expired.map((t) => t.id));
+    const res = await kv.atomic()
+      .check(entry)
+      .set(entry.key, {
+        ...board,
+        tasks: board.tasks.filter((t) => !expiredIds.has(t.id)),
+      })
+      .commit();
+    if (!res.ok) {
+      result.conflicts++;
+      continue;
+    }
+    for (const id of expiredIds) await deleteTaskComments(boardId, id);
+    result.boardsUpdated++;
+    result.tasksDeleted += expired.length;
+  }
+  return result;
 }
 
 /** For unit tests only — injects a KV instance to replace the module singleton. */

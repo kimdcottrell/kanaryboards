@@ -21,6 +21,7 @@ export interface Column {
   icon: string | null;
   iconInBoardMenu: boolean;
   iconNearColumnTitle: boolean;
+  isTrash: boolean;
 }
 
 export interface Task {
@@ -31,7 +32,18 @@ export interface Task {
   description: string;
   checklist: ChecklistItem[];
   order: string;
+  trashedAt: string | null; // ISO timestamp; set while in the Trash column
+  preTrashColId: string | null; // column to return to on Restore
 }
+
+// What BOARD/LOAD accepts: boards saved before the column pin/icon fields or
+// the Trash column existed lack them, and load() backfills them.
+export type StoredColumn =
+  & Pick<Column, "id" | "title" | "order">
+  & Partial<Column>;
+export type StoredTask =
+  & Omit<Task, "trashedAt" | "preTrashColId">
+  & Partial<Task>;
 
 // Stored outside the board blob (one KV entry per comment), so it is not part
 // of PersistedBoard. Mirrors the task_comments table in src/db/schema.dbml.
@@ -200,6 +212,8 @@ export type TaskAction =
   | { type: "TASK/DELETE"; payload: { taskId: string } }
   | { type: "TASK/SAVE_EDIT" }
   | { type: "TASK/MOVE_TO_COLUMN"; payload: { taskId: string; colId: string } }
+  | { type: "TASK/TRASH"; payload: { taskId: string } }
+  | { type: "TASK/RESTORE"; payload: { taskId: string } }
   | {
     type: "TASK/TOGGLE_CHECKLIST_ITEM";
     payload: { taskId: string; itemId: string };
@@ -298,8 +312,8 @@ export type BoardLifecycleAction =
     type: "BOARD/LOAD";
     payload: {
       rows: Row[];
-      columns: Column[];
-      tasks: Task[];
+      columns: StoredColumn[];
+      tasks: StoredTask[];
     };
   };
 

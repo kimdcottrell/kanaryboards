@@ -63,7 +63,7 @@ sequenceDiagram
     TaskModal-->>Form: TaskForm + ChecklistSection mount<br/>(taskDraft = editTaskDraft)
 
     Note over User,AI: Edit task: edit fields & checklist (target = "editDraft")
-    User->>Form: edit title / description / status (colId) / row (rowId)
+    User->>Form: edit title / description / status (colId) / row (rowId)<br/>(Status never lists the Trash column)
     Form->>Actions: setEditTaskDraft(draft)<br/>(actions/taskEdit.ts)
     Actions->>Ctx: dispatch(TASK/UPDATE_EDIT_DRAFT, {draft})
     Ctx->>Reducer: tasks.updateEditDraft(state, payload)
@@ -90,8 +90,30 @@ sequenceDiagram
     Ctx-->>TaskModal: TaskEditModal re-renders<br/>(TaskEditContext: taskEditModalOpen=false)<br/>-> modal closes, unmounts Form
     Ctx-->>Cell: ColumnCard(s) re-render<br/>(TasksByCellContext changed)<br/>-> TaskCard moves to new cell if rowId/colId<br/>changed, otherwise updates in place
 
-    Note over User,AI: Delete task
-    User->>Form: click "Delete" (edit modal only)
+    Note over User,AI: Trash task (edit modal dock, task not in Trash)
+    User->>Form: click "Trash" (edit modal only)
+    Form->>Actions: trashTask(taskId)<br/>(actions/task.ts)
+    Actions->>Ctx: dispatch(TASK/TRASH, {taskId})
+    Ctx->>Reducer: tasks.trash(state, {taskId})
+    Reducer-->>Ctx: colId = Trash column (same row), order = end of Trash cell<br/>trashedAt = now, preTrashColId = old colId<br/>closes edit modal
+    TaskModal->>TaskModal: navigate(/dashboard)
+    Ctx-->>TaskModal: TaskEditModal re-renders<br/>(TaskEditContext: taskEditModalOpen=false)<br/>-> modal closes, unmounts Form
+    Ctx-->>Cell: source + Trash ColumnCard re-render<br/>(TasksByCellContext changed)<br/>-> TaskCard remounts in Trash with<br/>"N days until permanent deletion."
+    Note over Actions,CommentsAPI: Comments are kept. They are deleted with the task by<br/>POST /api/purge-trash (KV) once trashedAt is 30+ days old
+
+    Note over User,AI: Open a trashed task (view-only) and Restore
+    Note over TaskModal,Form: colId is the Trash column -> TaskForm readOnly:<br/>"Task is view-only" alert above Status/Project,<br/>title/description/Status/Project/checklist/comments block<br/>edits (preventEdits: capture-phase preventDefault),<br/>editor limited to "visual-only", dock = Delete forever + Cancel + Restore
+    User->>Form: click "Restore"
+    Form->>Actions: restoreTask(taskId)<br/>(actions/task.ts)
+    Actions->>Ctx: dispatch(TASK/RESTORE, {taskId})
+    Ctx->>Reducer: tasks.restore(state, {taskId})
+    Reducer-->>Ctx: colId = preTrashColId (fallback findTodoColumnId<br/>if that column was deleted), order = end of cell<br/>trashedAt = null, preTrashColId = null<br/>closes edit modal
+    TaskModal->>TaskModal: navigate(/dashboard)
+    Ctx-->>TaskModal: TaskEditModal re-renders -> modal closes
+    Ctx-->>Cell: Trash + destination ColumnCard re-render<br/>(TasksByCellContext changed)
+
+    Note over User,AI: Delete a trashed task permanently (view-only dock)
+    User->>Form: click "Delete forever"
     Form->>Actions: deleteTask(taskId)<br/>(actions/task.ts)
     Actions->>Ctx: dispatch(TASK/DELETE, {taskId})
     Ctx->>Reducer: tasks.remove(state, {taskId})
@@ -100,7 +122,7 @@ sequenceDiagram
     Store->>CommentsAPI: DELETE {taskId}<br/>(or localStorage / in-memory demo)
     TaskModal->>TaskModal: navigate(/dashboard)
     Ctx-->>TaskModal: TaskEditModal re-renders<br/>(TaskEditContext: taskEditModalOpen=false)<br/>-> modal closes, unmounts Form
-    Ctx-->>Cell: ColumnCard re-renders<br/>(TasksByCellContext changed)<br/>-> TaskCard unmounts
+    Ctx-->>Cell: Trash ColumnCard re-renders<br/>(TasksByCellContext changed)<br/>-> TaskCard unmounts
 
     Note over User,CommentsAPI: Task comments (edit modal only; local state, outside the reducer)
     TaskModal->>Comments: render TaskComments(taskId)<br/>(desktop: 30% sidebar; mobile: below form)

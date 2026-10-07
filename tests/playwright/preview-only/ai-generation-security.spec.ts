@@ -152,7 +152,7 @@ test.describe("Checklist AI generation — malicious items render as inert text"
       page.getByRole("cell", { name: MALICIOUS_TITLES[0] }),
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Copy checklist items to task" })
+    await page.getByRole("button", { name: "Add items to checklist" })
       .click();
 
     // Editing a task whose checklist starts empty seeds one blank row of its
