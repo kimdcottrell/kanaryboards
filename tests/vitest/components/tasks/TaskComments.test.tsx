@@ -118,6 +118,19 @@ describe("TaskComments", () => {
     expect(localStorage.getItem(COMMENTS_STORAGE_KEY)).toContain("brand new");
   });
 
+  test("Enter posts the comment; Shift+Enter does not", async () => {
+    render(<TaskComments taskId="task-1" />);
+    await screen.findByText("No comments yet.");
+    const editor = within(screen.getByTestId("comment-composer"))
+      .getByLabelText("comment editor");
+    fireEvent.change(editor, { target: { value: "via enter" } });
+    fireEvent.keyDown(editor, { key: "Enter", shiftKey: true });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(screen.queryAllByTestId("comment")).toHaveLength(0);
+    fireEvent.keyDown(editor, { key: "Enter" });
+    await waitFor(() => expect(bodies()).toEqual(["via enter"]));
+  });
+
   test("an empty comment is not posted", async () => {
     render(<TaskComments taskId="task-1" />);
     await screen.findByText("No comments yet.");

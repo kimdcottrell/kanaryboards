@@ -238,7 +238,11 @@ test.describe("Board menu — column view filter", () => {
     await expect(page.getByRole("heading", { name: "Add task" })).toBeVisible();
 
     // Status = the selected column (In Progress), Row = the pivoted row (Engineering).
-    await expect(page.locator("#column-select-new")).toHaveValue("col-prog");
-    await expect(page.locator("#row-select-new")).toHaveValue("row-eng");
+    await expect(
+      page.getByTestId("status-step-col-prog").getByRole("radio"),
+    ).toBeChecked();
+    await expect(
+      page.locator("#row-select-new input[value='row-eng']"),
+    ).toBeChecked();
   });
 });

@@ -18,7 +18,7 @@ export default function Modal(
       >
         <CloseButton
           onClick={onClose}
-          className="absolute right-2 md:right-6 top-2 md:top-6"
+          className="absolute z-10 right-2 md:right-6 top-2 md:top-6"
         />
 
         <div className="w-full">{children}</div>

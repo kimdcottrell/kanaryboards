@@ -14,7 +14,7 @@ export default function ActionsDock(
     >
       <div
         ref={ref}
-        className="flex gap-2 p-1 rounded-box bg-base-200 border border-base-content/10 shadow-lg pointer-events-auto empty:hidden"
+        className="flex gap-2 p-1 rounded-box bg-base-200 border border-base-content/10 shadow-sm shadow-base-900/5 pointer-events-auto empty:hidden"
         data-testid="task-actions-dock"
       />
     </div>

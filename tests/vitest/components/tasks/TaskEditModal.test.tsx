@@ -168,7 +168,7 @@ describe("TaskEditModal", () => {
     ).toBe("visual-only");
   });
 
-  test("Status dropdown shows all column options", () => {
+  test("Status steps show all column options", () => {
     vi.mocked(useTaskEditState).mockReturnValue(
       makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
     );
@@ -180,10 +180,10 @@ describe("TaskEditModal", () => {
     );
     render(<TaskEditModal />);
     expect(
-      screen.getByRole("option", { name: "To Do", hidden: true }),
+      screen.getByRole("radio", { name: "To Do", hidden: true }),
     ).toBeTruthy();
     expect(
-      screen.getByRole("option", { name: "In Progress", hidden: true }),
+      screen.getByRole("radio", { name: "In Progress", hidden: true }),
     ).toBeTruthy();
   });
 
@@ -196,14 +196,14 @@ describe("TaskEditModal", () => {
     );
     render(<TaskEditModal />);
     expect(
-      screen.getByRole("option", { name: "Feature", hidden: true }),
+      screen.getByRole("radio", { name: "Feature", hidden: true }),
     ).toBeTruthy();
     expect(
-      screen.getByRole("option", { name: "Backend", hidden: true }),
+      screen.getByRole("radio", { name: "Backend", hidden: true }),
     ).toBeTruthy();
   });
 
-  test("Status dropdown reflects the task's current colId", () => {
+  test("Status steps reflect the task's current colId", () => {
     vi.mocked(useTaskEditState).mockReturnValue(
       makeTaskEditState({
         taskEditModalOpen: true,
@@ -217,10 +217,9 @@ describe("TaskEditModal", () => {
       }),
     );
     render(<TaskEditModal />);
-    const [statusSelect] = screen.getAllByRole("combobox", {
-      hidden: true,
-    }) as HTMLSelectElement[];
-    expect(statusSelect.value).toBe("col-2");
+    expect(
+      screen.getByRole("radio", { name: "In Progress", hidden: true }),
+    ).toHaveProperty("checked", true);
   });
 
   test("Row dropdown reflects the task's current rowId", () => {
@@ -233,11 +232,12 @@ describe("TaskEditModal", () => {
     vi.mocked(useBoardDataState).mockReturnValue(
       makeBoardDataState({ columns: [mockColumn], rows: [mockRow, secondRow] }),
     );
-    render(<TaskEditModal />);
-    const selects = screen.getAllByRole("combobox", {
-      hidden: true,
-    }) as HTMLSelectElement[];
-    expect(selects[1].value).toBe("row-2");
+    const { container } = render(<TaskEditModal />);
+    expect(
+      container.querySelector<HTMLInputElement>(
+        "input[name='row-select-task-42']:checked",
+      )?.value,
+    ).toBe("row-2");
   });
 
   test("calls deleteTask with the task id when Delete is clicked", () => {

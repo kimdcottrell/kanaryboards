@@ -195,7 +195,7 @@ export function ChecklistGenerationCollapse({
   return (
     <div
       id="checklist-gen-collapse"
-      className={`collapse collapse-arrow bg-base-content/10 ${
+      className={`collapse collapse-arrow bg-secondary/10 ${
         collapseOpen ? "collapse-open" : ""
       }`}
     >

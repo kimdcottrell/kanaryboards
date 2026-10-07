@@ -121,6 +121,26 @@ test.describe("Task comments", () => {
     await expect(comments.first()).toContainText("Comment 1");
   });
 
+  test("Enter posts a comment; Shift+Enter adds a new line", async ({ page }) => {
+    const modal = await openTask(page, 1);
+    const comments = modal.getByTestId("comment");
+    await expect(comments).toHaveCount(1);
+
+    const composer = modal.getByTestId("comment-composer")
+      .locator("[contenteditable='true']");
+    await composer.click();
+    await page.keyboard.type("line one");
+    await page.keyboard.press("Shift+Enter");
+    await page.keyboard.type("line two");
+    await expect(comments).toHaveCount(1);
+    await page.keyboard.press("Enter");
+
+    await expect(comments).toHaveCount(2);
+    await expect(comments.first()).toContainText("line one");
+    await expect(comments.first()).toContainText("line two");
+    await expect(composer).not.toContainText("line one");
+  });
+
   test("desktop: 30% sidebar with the composer pinned while the list scrolls", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     const modal = await openTask(page, 12);

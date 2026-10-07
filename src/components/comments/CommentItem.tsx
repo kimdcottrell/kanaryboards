@@ -61,7 +61,7 @@ export default function CommentItem({
         <div className="w-10 rounded-full bg-neutral text-neutral-content">
           {comment.authorImageUrl
             ? <img src={comment.authorImageUrl} alt="" />
-            : <span>{comment.authorName.charAt(0)}</span>}
+            : <span className="iconify hugeicons--user-circle text-2xl"></span>}
         </div>
       </div>
       <div className="chat-header">

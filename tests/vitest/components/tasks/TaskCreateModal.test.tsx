@@ -149,14 +149,16 @@ describe("TaskCreateModal", () => {
       }),
     );
     const { container } = render(<TaskCreateModal />);
-    const status = container.querySelector<HTMLSelectElement>(
-      "#column-select-new",
+    const status = container.querySelectorAll<HTMLInputElement>(
+      "input[name='column-select-new']",
     );
-    const row = container.querySelector<HTMLSelectElement>(
-      "#row-select-new",
+    const row = container.querySelectorAll<HTMLInputElement>(
+      "input[name='row-select-new']",
     );
-    expect(status?.required).toBe(true);
-    expect(row?.required).toBe(true);
+    expect(status.length).toBeGreaterThan(0);
+    status.forEach((radio) => expect(radio.required).toBe(true));
+    expect(row.length).toBeGreaterThan(0);
+    row.forEach((radio) => expect(radio.required).toBe(true));
   });
 
   test("Status and Row selects are empty when opened with a blank draft", () => {
@@ -168,11 +170,10 @@ describe("TaskCreateModal", () => {
     );
     const { container } = render(<TaskCreateModal />);
     expect(
-      container.querySelector<HTMLSelectElement>("#column-select-new")
-        ?.value,
-    ).toBe("");
+      container.querySelector("input[name='column-select-new']:checked"),
+    ).toBeNull();
     expect(
-      container.querySelector<HTMLSelectElement>("#row-select-new")?.value,
-    ).toBe("");
+      container.querySelector("input[name='row-select-new']:checked"),
+    ).toBeNull();
   });
 });

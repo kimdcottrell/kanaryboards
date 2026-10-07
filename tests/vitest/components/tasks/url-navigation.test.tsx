@@ -203,32 +203,28 @@ function setEditState() {
 }
 
 describe("TaskEditModal — URL unchanged when status changes", () => {
-  test("changing Status dropdown does not call navigate", () => {
+  test("changing Status step does not call navigate", () => {
     const setEditTaskDraft = vi.fn();
     setEditState();
     vi.mocked(useTaskEditActions).mockReturnValue(
       makeTaskEditActions({ setEditTaskDraft }),
     );
-    const { getAllByRole } = render(<TaskEditModal />);
-    const [statusSelect] = getAllByRole("combobox", {
-      hidden: true,
-    }) as HTMLSelectElement[];
-    fireEvent.change(statusSelect, { target: { value: secondColumn.id } });
+    const { container } = render(<TaskEditModal />);
+    fireEvent.click(
+      container.querySelector(`input[value="${secondColumn.id}"]`)!,
+    );
     expect(mockNavigate).not.toHaveBeenCalled();
     expect(setEditTaskDraft).toHaveBeenCalled();
   });
 
-  test("Status dropdown change calls setEditTaskDraft with updated colId", () => {
+  test("Status step click calls setEditTaskDraft with updated colId", () => {
     const setEditTaskDraft = vi.fn();
     setEditState();
     vi.mocked(useTaskEditActions).mockReturnValue(
       makeTaskEditActions({ setEditTaskDraft }),
     );
-    const { getAllByRole } = render(<TaskEditModal />);
-    const [statusSelect] = getAllByRole("combobox", {
-      hidden: true,
-    }) as HTMLSelectElement[];
-    fireEvent.change(statusSelect, { target: { value: "col-2" } });
+    const { container } = render(<TaskEditModal />);
+    fireEvent.click(container.querySelector("input[value='col-2']")!);
     expect(setEditTaskDraft).toHaveBeenCalledWith(
       expect.objectContaining({ colId: "col-2" }),
     );
@@ -242,11 +238,10 @@ describe("TaskEditModal — URL unchanged when row changes", () => {
     vi.mocked(useTaskEditActions).mockReturnValue(
       makeTaskEditActions({ setEditTaskDraft }),
     );
-    const { getAllByRole } = render(<TaskEditModal />);
-    const selects = getAllByRole("combobox", {
-      hidden: true,
-    }) as HTMLSelectElement[];
-    fireEvent.change(selects[1], { target: { value: secondRow.id } });
+    const { getByRole } = render(<TaskEditModal />);
+    fireEvent.click(
+      getByRole("radio", { name: secondRow.title, hidden: true }),
+    );
     expect(mockNavigate).not.toHaveBeenCalled();
     expect(setEditTaskDraft).toHaveBeenCalled();
   });
@@ -257,11 +252,10 @@ describe("TaskEditModal — URL unchanged when row changes", () => {
     vi.mocked(useTaskEditActions).mockReturnValue(
       makeTaskEditActions({ setEditTaskDraft }),
     );
-    const { getAllByRole } = render(<TaskEditModal />);
-    const selects = getAllByRole("combobox", {
-      hidden: true,
-    }) as HTMLSelectElement[];
-    fireEvent.change(selects[1], { target: { value: "row-2" } });
+    const { getByRole } = render(<TaskEditModal />);
+    fireEvent.click(
+      getByRole("radio", { name: secondRow.title, hidden: true }),
+    );
     expect(setEditTaskDraft).toHaveBeenCalledWith(
       expect.objectContaining({ rowId: "row-2" }),
     );

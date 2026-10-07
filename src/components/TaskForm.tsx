@@ -1,4 +1,4 @@
-import { useId, useRef } from "react";
+import { useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { CSSProperties, SubmitEvent as ReactSubmitEvent } from "react";
 import { ExtensiveEditor } from "@lyfie/luthor";
@@ -130,7 +130,9 @@ export default function TaskForm({
   const titleId = useId();
   const formId = useId();
   const luthorTheme = useLuthorTheme();
-  const selectedRowColor = rows.find((r) => r.id === taskDraft.rowId)?.color;
+  const statusName = `column-select-${taskDraft.id || "new"}`;
+  const selectedColIndex = columns.findIndex((c) => c.id === taskDraft.colId);
+  const [hoveredColIndex, setHoveredColIndex] = useState<number | null>(null);
   function handleSubmit(e: ReactSubmitEvent<HTMLFormElement>) {
     const submitter = (e.nativeEvent as SubmitEvent)?.submitter;
     if (submitter && submitter !== submitButtonRef.current) {
@@ -200,7 +202,7 @@ export default function TaskForm({
             id={titleId}
             form={formId}
             aria-label="Title"
-            className="input input-ghost validator w-full px-0 text-xl font-semibold"
+            className="input input-ghost validator w-full px-0 hover:border-base-content/50 text-2xl font-roboto-slab font-semibold"
             type="text"
             value={taskDraft.title}
             onChange={(e) =>
@@ -235,64 +237,91 @@ export default function TaskForm({
           </div>
         </fieldset>
         <div className="grid grid-cols-2 gap-4 items-start md:col-span-2 md:order-first">
-          <fieldset className="fieldset">
-            <label
-              className={`select select-primary w-full${
-                requireRowColumn ? " validator" : ""
-              }`}
-            >
-              <span className="label text-primary text-[12px] uppercase font-bold">
-                Status
-              </span>
-              <select
-                id={`column-select-${taskDraft.id || "new"}`}
-                value={taskDraft.colId}
-                onChange={(e) =>
-                  setTaskDraft({ ...taskDraft, colId: e.currentTarget.value })}
-                required={requireRowColumn}
+          <fieldset className="fieldset min-w-0">
+            <legend className="fieldset-legend text-primary text-[12px] uppercase font-bold">
+              Status
+            </legend>
+            <div className="overflow-x-auto">
+              <div
+                id={statusName}
+                className="steps"
+                onMouseLeave={() => setHoveredColIndex(null)}
               >
-                {requireRowColumn && <option value="">Select a status</option>}
-                {columns.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.title}
-                  </option>
-                ))}
-              </select>
-            </label>
+                {columns.map((option, i) => {
+                  const stepClass = hoveredColIndex === null
+                    ? (i <= selectedColIndex ? " step-primary" : "")
+                    : (i <= hoveredColIndex ? " step-preview" : "");
+                  return (
+                    <label
+                      key={option.id}
+                      data-testid={`status-step-${option.id}`}
+                      className={`step relative cursor-pointer text-sm has-focus-visible:underline${stepClass}`}
+                      style={{ "--step-index": i } as CSSProperties}
+                      onMouseEnter={() => setHoveredColIndex(i)}
+                    >
+                      <input
+                        type="radio"
+                        className="sr-only"
+                        name={statusName}
+                        value={option.id}
+                        checked={option.id === taskDraft.colId}
+                        onChange={() => {
+                          setHoveredColIndex(null);
+                          setTaskDraft({ ...taskDraft, colId: option.id });
+                        }}
+                        required={requireRowColumn}
+                      />
+                      {option.title}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
             {requireRowColumn && (
               <span className="validator-hint">Required</span>
             )}
           </fieldset>
-          <fieldset className="fieldset">
-            <label
-              className={`select w-full${requireRowColumn ? " validator" : ""}`}
-              style={selectedRowColor
-                ? { "--input-color": selectedRowColor } as CSSProperties
-                : undefined}
+          <fieldset className="fieldset min-w-0">
+            {
+              /* The current project is tinted with its row color
+                (.row-menu-item in global.css). */
+            }
+            <ul
+              id={`row-select-${taskDraft.id || "new"}`}
+              className="menu w-full p-0"
             >
-              <span
-                className="label text-[12px] uppercase font-bold"
-                style={selectedRowColor
-                  ? { color: selectedRowColor }
-                  : undefined}
-              >
-                Project
-              </span>
-              <select
-                id={`row-select-${taskDraft.id || "new"}`}
-                value={taskDraft.rowId}
-                onChange={(e) =>
-                  setTaskDraft({ ...taskDraft, rowId: e.currentTarget.value })}
-                required={requireRowColumn}
-              >
-                {requireRowColumn && <option value="">Select a project</option>}
-                {rows.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.title}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <li>
+                <legend className="p-0 fieldset-legend menu-title text-base-content text-[12px] uppercase font-bold">
+                  Project
+                </legend>
+                <ul className="pt-2 mx-0">
+                  {rows.map((option) => (
+                    <li key={option.id}>
+                      <label
+                        className={`font-roboto-slab font-semibold row-menu-item has-focus-visible:underline${
+                          option.id === taskDraft.rowId ? " menu-active" : ""
+                        }`}
+                        style={{
+                          "--row-tint-color": option.color,
+                        } as CSSProperties}
+                      >
+                        <input
+                          type="radio"
+                          className="sr-only"
+                          name={`row-select-${taskDraft.id || "new"}`}
+                          value={option.id}
+                          checked={option.id === taskDraft.rowId}
+                          onChange={() =>
+                            setTaskDraft({ ...taskDraft, rowId: option.id })}
+                          required={requireRowColumn}
+                        />
+                        {option.title}
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            </ul>
             {requireRowColumn && (
               <span className="validator-hint">Required</span>
             )}

@@ -455,12 +455,10 @@ test.describe("Board CRUD", () => {
         page.getByRole("textbox", { name: "Title" }),
         "Write detailed specs",
       );
-      await page.locator("#column-select-task-e2e-1").selectOption(
-        "col-e2e-2",
-      );
-      await page.locator("#row-select-task-e2e-1").selectOption(
-        "row-e2e-2",
-      );
+      await page.getByTestId("status-step-col-e2e-2").click();
+      await page.locator(
+        "#row-select-task-e2e-1 label:has(input[value='row-e2e-2'])",
+      ).click();
       await page.locator("dialog").getByRole("button", { name: "Save" })
         .click();
 

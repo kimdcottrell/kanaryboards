@@ -44,17 +44,19 @@ test.describe("Board menu — add dropdown", () => {
 
     await expect(page.getByRole("heading", { name: "Add task" })).toBeVisible();
 
-    const statusSelect = page.locator("#column-select-new");
-    const rowSelect = page.locator("#row-select-new");
+    const statusSteps = page.locator("#column-select-new");
+    const statusRadios = statusSteps.locator("input[type='radio']");
+    const rowMenu = page.locator("#row-select-new");
+    const rowRadios = rowMenu.locator("input[type='radio']");
 
-    await expect(statusSelect).toBeVisible();
-    await expect(rowSelect).toBeVisible();
+    await expect(statusSteps).toBeVisible();
+    await expect(rowMenu).toBeVisible();
     // No default cell when opened from the global menu.
-    await expect(statusSelect).toHaveValue("");
-    await expect(rowSelect).toHaveValue("");
-    // Both selects are required so the task can't be created until chosen.
-    await expect(statusSelect).toHaveJSProperty("required", true);
-    await expect(rowSelect).toHaveJSProperty("required", true);
+    await expect(statusSteps.locator("input:checked")).toHaveCount(0);
+    await expect(rowMenu.locator("input:checked")).toHaveCount(0);
+    // Both are required so the task can't be created until chosen.
+    await expect(statusRadios.first()).toHaveJSProperty("required", true);
+    await expect(rowRadios.first()).toHaveJSProperty("required", true);
   });
 
   test('"Add new project row" opens the create-row modal', async ({ page }) => {
