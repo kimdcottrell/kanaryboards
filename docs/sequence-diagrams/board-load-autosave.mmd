@@ -63,9 +63,10 @@ sequenceDiagram
             alt stored data found
                 LS-->>Provider: stored board JSON
                 activate Provider
-                Provider->>LS: expiredTrashTaskIds(columns, tasks, now)<br/>(reducers/board.ts) -> deleteAllComments(taskId)<br/>for each (commentStore.ts, COMMENTS_STORAGE_KEY)
+                Provider->>LS: pruneLocalComments(keepTaskIds) (commentStore.ts)<br/>keepTaskIds = stored task ids minus expiredTrashTaskIds(...)<br/>-> drops comments of any task no longer on the board<br/>(expired, row/column deleted)
                 Provider->>Reducer: dispatch(BOARD/LOAD, local)<br/>-> board.load(state, payload)
             else nothing stored
+                Provider->>LS: pruneLocalComments(empty set)<br/>-> drops all comments (e.g. after a board reset)
                 Provider->>Reducer: dispatch(BOARD/LOAD, createDefaultBoard())<br/>-> board.load(state, payload)
                 deactivate Provider
             end
@@ -97,5 +98,5 @@ sequenceDiagram
 
     Note over User,Purge: Daily trash purge (Deno Deploy cron, no client involved)
     Purge->>Purge: check Authorization: Bearer CRON_SECRET
-    Purge->>KV: purgeExpiredTrash() (lib/kv.ts)<br/>for each ["board", id]: drop Trash tasks with trashedAt 30+ days old<br/>atomic check(versionstamp).set, then deleteTaskComments<br/>conflict -> board skipped, retried on the next run
-    Note over Provider,KV: A tab still holding a purged task may re-PUT it.<br/>board.load drops it again on the next load (and the<br/>next purge does too). localStorage boards never reach<br/>the purge. board.load expires their Trash tasks and<br/>BoardProvider deletes those tasks' localStorage comments.
+    Purge->>KV: purgeExpiredTrash() (lib/kv.ts), for each ["board", id]:<br/>drop Trash tasks with trashedAt 30+ days old<br/>(atomic check(versionstamp).set; conflict -> board skipped, retried next run),<br/>then delete ["task_comment", id, taskId, *] whose taskId is not<br/>on the saved board and createdAt is 24h+ old
+    Note over Provider,KV: A tab still holding a purged task may re-PUT it.<br/>board.load drops it again on the next load (and the<br/>next purge does too). KV boards never prune comments client-side:<br/>comments of any task that leaves the board (purged, expired on load,<br/>row/column deleted) are swept by the next purge. The 24h guard<br/>protects comments posted before their task's autosave lands.<br/>localStorage boards never reach the purge. BoardProvider<br/>prunes their comments on load instead.

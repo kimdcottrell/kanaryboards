@@ -123,6 +123,7 @@ sequenceDiagram
     Actions->>Ctx: dispatch(ROW/DELETE, {rowId})
     Ctx->>Reducer: rows.remove(state, payload)
     Reducer-->>Ctx: rows filtered. tasks for that row removed.<br/>clears any open modal/edit state referencing it
+    Note over Reducer: Comments of the removed tasks are not deleted here:<br/>KV -> swept by the next /api/purge-trash run,<br/>localStorage -> pruned on the next board load
     Ctx-->>Row: that RowSection (+ its ColumnSections/TaskCards)<br/>unmounts (BoardData: rows/tasks changed)
     Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: rows changed)<br/>-> row settings list loses the row
 
@@ -197,6 +198,7 @@ sequenceDiagram
     Actions->>Ctx: dispatch(COLUMN/DELETE, {columnId})
     Ctx->>Reducer: columns.remove(state, payload)
     Reducer-->>Ctx: columns filtered. tasks for that column removed.<br/>clears any open modal/edit state referencing it
+    Note over Reducer: Comments of the removed tasks are not deleted here:<br/>KV -> swept by the next /api/purge-trash run,<br/>localStorage -> pruned on the next board load
     Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: columns changed)<br/>-> column settings badge list loses the column
     Ctx-->>Cell: the corresponding ColumnSection instance in<br/>every RowSection unmounts<br/>(BoardData: columns/tasks changed)
 

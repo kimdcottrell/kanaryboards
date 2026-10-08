@@ -237,6 +237,7 @@ describe("purgeExpiredTrash", () => {
       boardsScanned: 2,
       boardsUpdated: 1,
       tasksDeleted: 1,
+      commentsDeleted: 1,
       conflicts: 0,
     });
     const board = await getBoard(boardId);
@@ -247,6 +248,33 @@ describe("purgeExpiredTrash", () => {
     ]);
     expect(await listTaskComments(boardId, "expired")).toEqual([]);
     expect(await getBoard("untouched-board")).toEqual(sampleBoard);
+  });
+
+  test("deletes comments whose task is no longer on the board, past a day old", async () => {
+    await saveBoard(boardId, sampleBoard);
+    const comment = (id: string, taskId: string, createdAt: string) => ({
+      id,
+      taskId,
+      authorId: null,
+      authorName: "A",
+      authorImageUrl: null,
+      content: "",
+      createdAt,
+      updatedAt: null,
+    });
+    // task-a is on the board; "removed" went with its row/column; "unsaved"
+    // is a new task whose board autosave hasn't landed yet.
+    await saveTaskComment(boardId, comment("c1", "task-a", daysAgo(5)));
+    await saveTaskComment(boardId, comment("c2", "removed", daysAgo(2)));
+    await saveTaskComment(boardId, comment("c3", "unsaved", daysAgo(0.5)));
+
+    const result = await purgeExpiredTrash(now);
+
+    expect(result.commentsDeleted).toBe(1);
+    expect(result.boardsUpdated).toBe(0);
+    expect(await listTaskComments(boardId, "task-a")).toHaveLength(1);
+    expect(await listTaskComments(boardId, "removed")).toEqual([]);
+    expect(await listTaskComments(boardId, "unsaved")).toHaveLength(1);
   });
 
   test("leaves boards saved before Trash existed alone", async () => {

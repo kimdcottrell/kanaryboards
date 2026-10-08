@@ -8,7 +8,7 @@
 - [Drag-and-drop drop indicator style](feedback_drag_drop_indicator.md) — Use row.color for 2px border indicators; transparent default to prevent layout shift; 40% opacity on dragged card
 - [Shared state + autoFocus conflict](feedback_shared_state_autofocus.md) — Don't use shared reducer state for inline editing when multiple components render autoFocus inputs; the later-rendered component wins focus
 - [Project tech stack](project_stack.md) — Deno 2.x, Astro 6.x SSR on Deno Deploy, React 19 + react-router-dom 7, Tailwind 4.x + DaisyUI 5.x, Google GenAI, Deno KV for persistence
-- [URL routing and Deno KV architecture](project_url_routing_kv.md) — /dashboard routes; KV keys incl. ["task_comment", boardId, taskId, commentId]; comment store backends (API/localStorage/demo) + cleanup duty; /api/purge-trash cron (not scheduled in repo)
+- [URL routing and Deno KV architecture](project_url_routing_kv.md) — /dashboard routes; KV keys incl. ["task_comment", boardId, taskId, commentId]; comment store backends (API/localStorage/demo); no KV cascade, orphan comments swept by purge / pruned on load (user chose this over cleanup-on-save); purge cron to be Deno.cron, not yet set up
 - [crypto.randomUUID requires secure context](feedback_crypto_uuid_secure_context.md) — Always add a Math.random fallback; fails silently on network IPs over plain HTTP
 - [Preact to React migration](project_preact_to_react_migration.md) — Full migration history: what was removed, added, and changed across all source files
 - [Shell environment & available tooling](reference_environment.md) — Debian 13, bash 5.2, deno 2.7 only (no npm/yarn/pnpm/bun/python/node/ruby/go)

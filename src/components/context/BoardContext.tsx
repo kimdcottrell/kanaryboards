@@ -25,7 +25,7 @@ import type {
 } from "./types.ts";
 import { boardReducer, createInitialState } from "./reducer.ts";
 import { expiredTrashTaskIds } from "./reducers/board.ts";
-import { deleteAllComments } from "../task/comments/commentStore.ts";
+import { pruneLocalComments } from "../task/comments/commentStore.ts";
 import { STORAGE_KEY } from "./constants.ts";
 import { createDemoBoard } from "../demo/demoBoardData.ts";
 import { computeTasksByCell } from "./selectors.ts";
@@ -234,24 +234,29 @@ export function BoardProvider(
           if (stored) {
             try {
               const local = JSON.parse(stored);
-              // BOARD/LOAD drops expired Trash tasks. Their comments live in
-              // separate localStorage, out of reach of /api/purge-trash, so
-              // delete them here.
-              for (
-                const taskId of expiredTrashTaskIds(
-                  local.columns ?? [],
-                  local.tasks ?? [],
-                  Date.now(),
-                )
-              ) {
-                deleteAllComments({ boardId, isAuthenticated }, taskId);
-              }
+              // Comments live in separate localStorage, out of reach of
+              // /api/purge-trash, so drop those of every task not on the
+              // loaded board: expired Trash tasks (BOARD/LOAD drops them) and
+              // tasks removed with their row or column.
+              const tasks: { id: string }[] = local.tasks ?? [];
+              const expired = expiredTrashTaskIds(
+                local.columns ?? [],
+                tasks,
+                Date.now(),
+              );
+              pruneLocalComments(
+                new Set(
+                  tasks.map((t) => t.id).filter((id) => !expired.has(id)),
+                ),
+              );
               dispatch({ type: "BOARD/LOAD", payload: local });
               return;
             } catch {
               // ignore malformed localStorage
             }
           }
+          // No board (e.g. after a reset), so no comment belongs to one.
+          pruneLocalComments(new Set());
           dispatch({ type: "BOARD/RESET" });
         }
       } catch (error) {

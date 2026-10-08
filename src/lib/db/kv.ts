@@ -129,13 +129,20 @@ export function deleteBoardComments(boardId: string): Promise<void> {
   return deleteByPrefix(["task_comment", boardId]);
 }
 
+// Orphan comments younger than this are kept: a comment posted on a new task
+// can land before the autosave that adds the task to the board.
+const ORPHAN_COMMENT_GRACE_MS = 24 * 60 * 60 * 1000;
+
 // Permanently deletes every Trash task whose `trashedAt` is past retention, on
 // every board. Each board is rewritten with an atomic versionstamp check; a
 // board the user saved mid-run is skipped and picked up by the next run.
+// Then deletes the board's comments whose task is no longer on it (purged here,
+// expired on load, or removed with its row/column) — KV has no cascade.
 export async function purgeExpiredTrash(now = Date.now()): Promise<{
   boardsScanned: number;
   boardsUpdated: number;
   tasksDeleted: number;
+  commentsDeleted: number;
   conflicts: number;
 }> {
   const kv = await getKv();
@@ -143,6 +150,7 @@ export async function purgeExpiredTrash(now = Date.now()): Promise<{
     boardsScanned: 0,
     boardsUpdated: 0,
     tasksDeleted: 0,
+    commentsDeleted: 0,
     conflicts: 0,
   };
   for await (const entry of kv.list<PersistedBoard>({ prefix: ["board"] })) {
@@ -152,26 +160,40 @@ export async function purgeExpiredTrash(now = Date.now()): Promise<{
     const trashIds = new Set(
       board.columns.filter((c) => c.isTrash).map((c) => c.id),
     );
-    const expired = board.tasks.filter((t) =>
-      trashIds.has(t.colId) && isTrashExpired(t.trashedAt ?? null, now)
+    const expiredIds = new Set(
+      board.tasks.filter((t) =>
+        trashIds.has(t.colId) && isTrashExpired(t.trashedAt ?? null, now)
+      ).map((t) => t.id),
     );
-    if (expired.length === 0) continue;
+    const tasks = board.tasks.filter((t) => !expiredIds.has(t.id));
 
-    const expiredIds = new Set(expired.map((t) => t.id));
-    const res = await kv.atomic()
-      .check(entry)
-      .set(entry.key, {
-        ...board,
-        tasks: board.tasks.filter((t) => !expiredIds.has(t.id)),
-      })
-      .commit();
-    if (!res.ok) {
-      result.conflicts++;
-      continue;
+    if (expiredIds.size > 0) {
+      const res = await kv.atomic()
+        .check(entry)
+        .set(entry.key, { ...board, tasks })
+        .commit();
+      // The board changed mid-run, so `tasks` may be stale; skip the comment
+      // sweep too rather than delete comments of a task just added.
+      if (!res.ok) {
+        result.conflicts++;
+        continue;
+      }
+      result.boardsUpdated++;
+      result.tasksDeleted += expiredIds.size;
     }
-    for (const id of expiredIds) await deleteTaskComments(boardId, id);
-    result.boardsUpdated++;
-    result.tasksDeleted += expired.length;
+
+    const taskIds = new Set(tasks.map((t) => t.id));
+    for await (
+      const comment of kv.list<TaskComment>({
+        prefix: ["task_comment", boardId],
+      })
+    ) {
+      const { taskId, createdAt } = comment.value;
+      if (taskIds.has(taskId)) continue;
+      if (now - Date.parse(createdAt) < ORPHAN_COMMENT_GRACE_MS) continue;
+      await kv.delete(comment.key);
+      result.commentsDeleted++;
+    }
   }
   return result;
 }

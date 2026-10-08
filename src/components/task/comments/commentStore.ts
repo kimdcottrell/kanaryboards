@@ -150,6 +150,16 @@ export async function deleteComment(
   );
 }
 
+// Drops localStorage comments of every task not in `keepTaskIds`. KV comments
+// are swept by /api/purge-trash instead.
+export function pruneLocalComments(keepTaskIds: Set<string>): void {
+  const all = readLocal();
+  const taskIds = Object.keys(all);
+  if (taskIds.every((id) => keepTaskIds.has(id))) return;
+  for (const id of taskIds) if (!keepTaskIds.has(id)) delete all[id];
+  localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(all));
+}
+
 export async function deleteAllComments(
   target: CommentStoreTarget,
   taskId: string,

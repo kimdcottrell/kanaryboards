@@ -90,3 +90,54 @@ describe("BoardProvider (signed out) — expired Trash tasks", () => {
     expect(Object.keys(comments).sort()).toEqual(["active", "recent"]);
   });
 });
+
+describe("BoardProvider (signed out) — orphaned comments", () => {
+  test("deletes comments of tasks no longer on the board", async () => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        rows: [{ id: "row-1", title: "A", color: "#000", order: "a0" }],
+        columns: [column("col-1", "a0"), column("trash", "a1", true)],
+        tasks: [task("active", "col-1", null)],
+      }),
+    );
+    // "removed" was deleted along with its row or column.
+    localStorage.setItem(
+      COMMENTS_STORAGE_KEY,
+      JSON.stringify({
+        active: comment("active"),
+        removed: comment("removed"),
+      }),
+    );
+
+    render(
+      <BoardProvider boardId="local-board" isAuthenticated={false}>
+        <Probe />
+      </BoardProvider>,
+    );
+
+    await waitFor(() => expect(loadedTaskIds).toEqual(["active"]));
+    const comments = JSON.parse(localStorage.getItem(COMMENTS_STORAGE_KEY)!);
+    expect(Object.keys(comments)).toEqual(["active"]);
+  });
+
+  test("deletes every comment when there is no board (e.g. after a reset)", async () => {
+    localStorage.setItem(
+      COMMENTS_STORAGE_KEY,
+      JSON.stringify({ old: comment("old") }),
+    );
+
+    render(
+      <BoardProvider boardId="local-board" isAuthenticated={false}>
+        <Probe />
+      </BoardProvider>,
+    );
+
+    await waitFor(() => expect(loadedTaskIds).toEqual([]));
+    await waitFor(() =>
+      expect(JSON.parse(localStorage.getItem(COMMENTS_STORAGE_KEY)!)).toEqual(
+        {},
+      )
+    );
+  });
+});
