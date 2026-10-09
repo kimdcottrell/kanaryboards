@@ -159,12 +159,11 @@ describe("TaskViewOnlyModal", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
   });
 
-  test("Status selects the pre-trash column and doesn't offer Trash", () => {
+  test("Status shows Trash as the selected step", () => {
     renderWith();
     expect(
-      screen.getByRole("radio", { name: "To Do", hidden: true }),
+      screen.getByRole("radio", { name: "Trash", hidden: true }),
     ).toHaveProperty("checked", true);
-    expect(screen.queryByTestId("status-step-col-trash")).toBeNull();
   });
 
   test("editor offers only the visual-only mode", () => {

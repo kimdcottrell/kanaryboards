@@ -90,7 +90,7 @@ test.describe("Task comments", () => {
       .locator("[contenteditable='true']");
     await composer.click();
     await page.keyboard.type("A fresh comment");
-    await modal.getByRole("button", { name: "Comment", exact: true }).click();
+    await page.keyboard.press("Enter");
 
     await expect(comments).toHaveCount(2);
     await expect(comments.first()).toContainText("A fresh comment");
@@ -156,8 +156,6 @@ test.describe("Task comments", () => {
     expect(await list.evaluate((el) => el.scrollHeight > el.clientHeight))
       .toBe(true);
     await expect(modal.getByTestId("comment-composer")).toBeInViewport();
-    await expect(modal.getByRole("button", { name: "Comment", exact: true }))
-      .toBeInViewport();
   });
 
   test("mobile: comments follow the form and show at most 3 before scrolling", async ({ page }) => {

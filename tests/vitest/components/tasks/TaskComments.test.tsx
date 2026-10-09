@@ -109,7 +109,9 @@ describe("TaskComments", () => {
     fireEvent.change(within(composer).getByLabelText("comment editor"), {
       target: { value: "brand new" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Comment" }));
+    fireEvent.keyDown(within(composer).getByLabelText("comment editor"), {
+      key: "Enter",
+    });
     await waitFor(() => expect(bodies()).toEqual(["brand new", "older"]));
     expect(
       (within(composer).getByLabelText("comment editor") as HTMLTextAreaElement)
@@ -134,7 +136,12 @@ describe("TaskComments", () => {
   test("an empty comment is not posted", async () => {
     render(<TaskComments taskId="task-1" />);
     await screen.findByText("No comments yet.");
-    fireEvent.click(screen.getByRole("button", { name: "Comment" }));
+    fireEvent.keyDown(
+      within(screen.getByTestId("comment-composer")).getByLabelText(
+        "comment editor",
+      ),
+      { key: "Enter" },
+    );
     await new Promise((r) => setTimeout(r, 0));
     expect(screen.queryAllByTestId("comment")).toHaveLength(0);
   });

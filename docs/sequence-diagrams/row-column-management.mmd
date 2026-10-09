@@ -53,8 +53,13 @@ sequenceDiagram
     Actions->>Ctx: dispatch(ROW/ADD, {id, title, color: blue, order})
     Ctx->>Reducer: rows.add(state, payload)
     Reducer-->>Ctx: rows = [...rows, newRow]
+    Actions->>Ctx: dispatch(ROW/CLOSE_CREATE_MODAL)<br/>then requestAnimationFrame -> getElementById("row-section-{id}").scrollIntoView({behavior:"smooth", block:"start"})
+    Ctx->>Reducer: rows.closeRowCreateModal
+    Reducer-->>Ctx: createRowModalOpen = false
+    Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: createRowModalOpen=false)<br/>-> modal closes, window scrolls to the new RowSection
     Ctx-->>Config: BoardConfigModal re-renders<br/>(BoardData: rows changed)<br/>-> row settings list shows new row
-    Ctx-->>Row: RowBoard mounts a new RowSection<br/>(BoardData: rows changed)
+    Ctx-->>Row: RowBoard mounts a new RowSection<br/>(BoardData: rows changed)<br/>-> isNew=true (id not in RowBoard seenRowIds ref)
+    Row->>Row: useEffect -> animejs createScope + splitText(title, chars)<br/>+ animate(chars, {y bounce, rotate from -1turn, stagger(50),<br/>autoplay: onScroll({repeat:false})})<br/>-> title chars jump/spin in once when scrolled into view.<br/>RowBoard then marks the id seen, so remounts (e.g. column<br/>filter toggles) never replay it
 
     alt newRowPrompt is non-empty
         Actions->>Ctx: dispatch(TASK_AI/GENERATE_START)
@@ -75,7 +80,7 @@ sequenceDiagram
             Ctx->>Reducer: taskAi.generateFailure
             Reducer-->>Ctx: isGeneratingTasks=false<br/>taskGenerationStatus=error<br/>newRowName="", newRowPrompt="", newRowFormKey++
         end
-        Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: isGeneratingTasks=false)<br/>-> form resets, "Add Row" button reappears<br/>(modal stays open)
+        Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: isGeneratingTasks=false)<br/>-> form resets, "Add Row" button reappears<br/>(modal already closed by ROW/ADD submit; status banner only visible if reopened)
         Ctx-->>Cell: ColumnSection (Todo column, new row)<br/>re-renders (TasksByCellContext changed)<br/>-> new TaskCards mount
     else newRowPrompt empty
         Actions->>Ctx: dispatch(ROW/RESET_FORM)

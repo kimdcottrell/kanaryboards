@@ -79,74 +79,79 @@ export default function TaskComments({ taskId }: { taskId: string }) {
 
   return (
     <aside
-      className="relative mt-6 md:mt-5 pt-6 md:pt-0 border-t md:border-t-0 md:border-l border-base-content/20 md:min-h-[min(24rem,70vh)]"
+      className="relative mt-6 md:mt-5 pt-6 md:pt-0 md:min-h-[min(24rem,70vh)]"
       aria-label="Comments"
       data-testid="task-comments"
     >
-      <div className="md:absolute md:inset-0 md:pl-6 flex flex-col gap-3">
-        <h4 className="font-semibold shrink-0">
-          Comments{comments.length > 0 && ` (${comments.length})`}
-        </h4>
+      <div className="md:absolute md:inset-0 flex flex-col gap-3">
+        <div
+          role="tablist"
+          className="tabs tabs-lift flex-1 min-h-0 flex-col items-start"
+        >
+          <label className="font-inter tab bg-accent/5 text-xs font-bold uppercase">
+            <input type="radio" name="task_modal_tabs" defaultChecked />
+            <span className="iconify hugeicons--comment-01 me-2"></span>
+            Comments
+            {comments.length > 0 && (
+              <span className="badge badge-sm ms-2 border border-base-content/20 font-normal">
+                +{comments.length}
+              </span>
+            )}
+          </label>
+          <div className="tab-content bg-accent/5 flex! flex-col self-stretch flex-1 min-h-0 gap-3 p-4 border-base-300">
+            {comments.length > 0
+              ? (
+                <ul
+                  ref={listRef}
+                  className="flex flex-col gap-4 overflow-y-auto md:flex-1 md:min-h-0 pr-1"
+                  style={{ maxHeight }}
+                  data-testid="comment-list"
+                >
+                  {comments.map((comment) => (
+                    <CommentItem
+                      key={comment.id}
+                      comment={comment}
+                      onEdit={(content) => edit(comment, content)}
+                      onDelete={() => remove(comment)}
+                    />
+                  ))}
+                </ul>
+              )
+              : (
+                <p className="md:flex-1 text-sm text-base-content/60">
+                  {loading ? "Loading..." : "No comments yet."}
+                </p>
+              )}
+            {error && <p className="text-sm text-error" role="alert">{error}
+            </p>}
 
-        {comments.length > 0
-          ? (
-            <ul
-              ref={listRef}
-              className="flex flex-col gap-4 overflow-y-auto md:flex-1 md:min-h-0 pr-1"
-              style={{ maxHeight }}
-              data-testid="comment-list"
-            >
-              {comments.map((comment) => (
-                <CommentItem
-                  key={comment.id}
-                  comment={comment}
-                  onEdit={(content) => edit(comment, content)}
-                  onDelete={() => remove(comment)}
-                />
-              ))}
-            </ul>
-          )
-          : (
-            <p className="md:flex-1 text-sm text-base-content/60">
-              {loading ? "Loading..." : "No comments yet."}
-            </p>
-          )}
-        {error && <p className="text-sm text-error" role="alert">{error}</p>}
-
-        <div className="shrink-0" data-testid="comment-composer">
-          {
-            /* Enter posts, Shift+Enter is a newline. Capture phase so the
+            <div className="shrink-0" data-testid="comment-composer">
+              {
+                /* Enter posts, Shift+Enter is a newline. Capture phase so the
               editor never sees the Enter; toolbar inputs (link URL) and IME
               composition keep their own Enter handling. */
-          }
-          <div
-            className="border border-base-content/20 rounded-lg overflow-hidden"
-            onKeyDownCapture={(e) => {
-              if (
-                e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing ||
-                e.target instanceof HTMLInputElement
-              ) return;
-              e.preventDefault();
-              e.stopPropagation();
-              post();
-            }}
-          >
-            <CommentEditor
-              key={composerKey}
-              onReady={(methods) => {
-                editorRef.current = methods;
-              }}
-            />
-          </div>
-          <div className="flex justify-end mt-2">
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              onClick={post}
-              disabled={posting}
-            >
-              Comment
-            </button>
+              }
+              <div
+                className="border border-base-content/20 rounded-lg overflow-hidden"
+                onKeyDownCapture={(e) => {
+                  if (
+                    e.key !== "Enter" || e.shiftKey ||
+                    e.nativeEvent.isComposing ||
+                    e.target instanceof HTMLInputElement
+                  ) return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  post();
+                }}
+              >
+                <CommentEditor
+                  key={composerKey}
+                  onReady={(methods) => {
+                    editorRef.current = methods;
+                  }}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

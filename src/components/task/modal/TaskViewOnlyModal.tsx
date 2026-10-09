@@ -87,7 +87,7 @@ export default function TaskViewOnlyModal() {
             <StatusSteps
               taskId={draft.id}
               columns={columns}
-              selectedColId={draft.preTrashColId}
+              selectedColId={draft.colId}
             />
           }
           project={

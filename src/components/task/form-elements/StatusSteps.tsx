@@ -16,8 +16,11 @@ export default function StatusSteps({
   required?: boolean;
 }) {
   const name = `column-select-${taskId || "new"}`;
-  // Trash is only reachable via the Trash button or drag-and-drop.
-  const statusColumns = columns.filter((c) => !c.isTrash);
+  // Trash is only reachable via the Trash button or drag-and-drop, so it is
+  // shown only for a task that is already in it.
+  const statusColumns = columns.filter((c) =>
+    !c.isTrash || c.id === selectedColId
+  );
   const selectedColIndex = statusColumns.findIndex((c) =>
     c.id === selectedColId
   );

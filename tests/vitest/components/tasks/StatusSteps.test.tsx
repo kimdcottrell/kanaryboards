@@ -11,7 +11,7 @@ const trashColumn = {
 };
 
 describe("StatusSteps", () => {
-  test("does not offer the Trash column", () => {
+  test("hides the Trash column unless the task is in it", () => {
     render(
       <StatusSteps
         taskId="task-1"
@@ -21,6 +21,17 @@ describe("StatusSteps", () => {
     );
     expect(screen.queryByTestId("status-step-col-trash")).toBeNull();
     expect(screen.getByTestId(`status-step-${mockColumn.id}`)).toBeTruthy();
+  });
+
+  test("shows the Trash column when it is selected", () => {
+    render(
+      <StatusSteps
+        taskId="task-1"
+        columns={[mockColumn, trashColumn]}
+        selectedColId={trashColumn.id}
+      />,
+    );
+    expect(screen.getByTestId("status-step-col-trash")).toBeTruthy();
   });
 
   test("checks the selected column and reports a new selection", () => {

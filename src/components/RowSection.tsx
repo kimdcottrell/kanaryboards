@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { animate, createScope, onScroll, splitText, stagger } from "animejs";
 import ColumnSection from "./ColumnSection.tsx";
 import CloseButton from "./shared/CloseButton.tsx";
 import {
@@ -12,8 +13,34 @@ import {
 import { useRenderCount } from "@lib/dashboard/use-render-count.ts";
 import type { Row } from "./context/types.ts";
 
-export default function RowSection({ row }: { row: Row }) {
+export default function RowSection(
+  { row, isNew = false }: { row: Row; isNew?: boolean },
+) {
   const [collapsed, setCollapsed] = useState(false);
+  // Captured on mount so later re-renders (isNew -> false) don't revert the
+  // animation mid-play.
+  const [animateTitle] = useState(isNew);
+  const root = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    if (!animateTitle || !titleRef.current) return;
+    const title = titleRef.current;
+    const scope = createScope({ root }).add(() => {
+      const { chars } = splitText(title, { words: false, chars: true });
+      animate(chars, {
+        y: [
+          { to: "-1rem", ease: "outExpo", duration: 600 },
+          { to: 0, ease: "outBounce", duration: 800, delay: 100 },
+        ],
+        rotate: { from: "-1turn", delay: 0 },
+        delay: stagger(50),
+        ease: "inOutCirc",
+        autoplay: onScroll({ target: title, repeat: false }),
+      });
+    });
+    return () => scope.revert();
+  }, [animateTitle]);
   const { columns } = useBoardDataState();
   const { selectedColumnIds } = useColumnFilterState();
   const visibleColumns = selectedColumnIds.length
@@ -26,7 +53,7 @@ export default function RowSection({ row }: { row: Row }) {
   const renderCount = useRenderCount();
 
   return (
-    <div className="relative w-full overflow-hidden">
+    <div ref={root} className="relative w-full overflow-hidden">
       <div className="absolute z-0 min-h-[calc(100vh-50%)] w-full pink-purple-gradient">
       </div>
       <section
@@ -60,6 +87,7 @@ export default function RowSection({ row }: { row: Row }) {
               )
               : (
                 <h3
+                  ref={titleRef}
                   className="text-2xl font-roboto-slab font-semibold"
                   title="Double-click to edit"
                   onDoubleClick={() => editRowTitle(row)}

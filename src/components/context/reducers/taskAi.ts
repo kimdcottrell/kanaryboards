@@ -22,7 +22,7 @@ export function generateSuccess(
     tasks: [...payload.tasks, ...state.tasks],
     taskGenerationStatus: `Added ${count} task${
       count !== 1 ? "s" : ""
-    } to Todo`,
+    } to first column.`,
     newRowName: "",
     newRowPrompt: "",
     newRowFormKey: state.newRowFormKey + 1,

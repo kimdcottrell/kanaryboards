@@ -58,6 +58,13 @@ export function useRowFormActions() {
           order: generateKeyBetween(lastRow?.order ?? null, null),
         },
       });
+      dispatch({ type: "ROW/CLOSE_CREATE_MODAL" });
+      requestAnimationFrame(() => {
+        document.getElementById(`row-section-${newRowId}`)?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
       if (newRowPrompt.trim()) {
         await generateTasksForRow(newRowId);
       } else {
