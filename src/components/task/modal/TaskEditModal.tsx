@@ -12,6 +12,13 @@ import ChecklistSection, {
 } from "../form-elements/ChecklistSection.tsx";
 import TaskComments from "../comments/TaskComments.tsx";
 import { useTaskFormSubmit } from "./useTaskFormSubmit.ts";
+import PostEditPreSaveAlert from "./PostEditPreSaveAlert.tsx";
+import {
+  clearEditDraft,
+  editableFields,
+  readEditDraft,
+  writeEditDraft,
+} from "../editDraftStore.ts";
 import { isTaskTrashed } from "@lib/dashboard/view-only.ts";
 import {
   useBoardDataState,
@@ -23,7 +30,7 @@ import {
 
 export default function TaskEditModal() {
   const formId = useId();
-  const { columns, rows } = useBoardDataState();
+  const { columns, rows, tasks } = useBoardDataState();
   const { taskEditModalOpen, editTaskDraft: draft } = useTaskEditState();
   const {
     setEditTaskDraft,
@@ -36,9 +43,8 @@ export default function TaskEditModal() {
   const { trashTask } = useTaskActions();
   const { applyChecklistPreview } = useChecklistAIActions();
   const { close, closeAfter } = useCloseTaskDetails();
-  const { handleSubmit, submitButtonRef, onEditorReady } = useTaskFormSubmit(
-    closeAfter(saveTaskEdit),
-  );
+  const { handleSubmit, submitButtonRef, onEditorReady, getDescription } =
+    useTaskFormSubmit(closeAfter(saveTaskEdit));
 
   // Trashed tasks open in TaskViewOnlyModal instead.
   const isTrashed = isTaskTrashed(draft, columns);
@@ -51,9 +57,30 @@ export default function TaskEditModal() {
     );
   }
 
+  // Closing without saving keeps any changes for next time; changes that
+  // match the saved task are dropped instead.
+  function closeWithStash() {
+    const saved = tasks.find((t) => t.id === draft!.id);
+    if (saved) {
+      const current = {
+        ...draft!,
+        description: getDescription() ?? draft!.description,
+      };
+      const fields = editableFields(current);
+      const stored = readEditDraft(current.id);
+      if (fields === editableFields(saved)) clearEditDraft(current.id);
+      else if (!stored || editableFields(stored.draft) !== fields) {
+        writeEditDraft(current);
+      }
+    }
+    close();
+  }
+
   return (
     <ExistingTaskModalWrapper
       open={taskEditModalOpen}
+      onClose={closeWithStash}
+      alert={<PostEditPreSaveAlert taskId={draft.id} />}
       title={
         <TitleInput
           variant="heading"
@@ -72,7 +99,11 @@ export default function TaskEditModal() {
           >
             Trash
           </button>
-          <button type="button" className="btn btn-ghost" onClick={close}>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={closeWithStash}
+          >
             Cancel
           </button>
           <button

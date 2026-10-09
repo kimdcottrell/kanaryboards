@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useBoardDispatch, useBoardMeta } from "../BoardContext.tsx";
 import { deleteAllComments } from "../../task/comments/commentStore.ts";
+import { clearEditDraft, readEditDraft } from "../../task/editDraftStore.ts";
 import type { Task } from "../types.ts";
 import type { DragEvent } from "react";
 
@@ -12,11 +13,29 @@ export function useTaskActions() {
     openTaskForm: (rowId: string, colId: string) =>
       dispatch({ type: "TASK/OPEN_CREATE_MODAL", payload: { rowId, colId } }),
     closeTaskCreateModal: () => dispatch({ type: "TASK/CLOSE_CREATE_MODAL" }),
-    startEditTask: (task: Task) =>
-      dispatch({ type: "TASK/OPEN_EDIT_MODAL", payload: { task } }),
+    startEditTask: (task: Task) => {
+      // Reapply changes left unsaved when the modal was last closed.
+      const stored = readEditDraft(task.id)?.draft;
+      dispatch({
+        type: "TASK/OPEN_EDIT_MODAL",
+        payload: {
+          task: stored
+            ? {
+              ...task,
+              title: stored.title,
+              description: stored.description,
+              rowId: stored.rowId,
+              colId: stored.colId,
+              checklist: stored.checklist,
+            }
+            : task,
+        },
+      });
+    },
     cancelEditTask: () => dispatch({ type: "TASK/CLOSE_EDIT_MODAL" }),
     deleteTask: (taskId: string) => {
       dispatch({ type: "TASK/DELETE", payload: { taskId } });
+      clearEditDraft(taskId);
       // Comments are stored outside the board, so they need their own cleanup.
       deleteAllComments({ boardId, isAuthenticated }, taskId).catch((error) =>
         console.error({
@@ -26,8 +45,10 @@ export function useTaskActions() {
         })
       );
     },
-    trashTask: (taskId: string) =>
-      dispatch({ type: "TASK/TRASH", payload: { taskId } }),
+    trashTask: (taskId: string) => {
+      dispatch({ type: "TASK/TRASH", payload: { taskId } });
+      clearEditDraft(taskId);
+    },
     restoreTask: (taskId: string) =>
       dispatch({ type: "TASK/RESTORE", payload: { taskId } }),
     toggleTaskChecklist: (taskId: string, itemId: string) =>

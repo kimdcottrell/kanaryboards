@@ -17,7 +17,11 @@ export default function ChecklistSection({
   reorderChecklistItem,
 }: {
   checklist: ChecklistItem[];
-  addChecklistItem: (focusNew?: boolean, insertBeforeIndex?: number) => void;
+  addChecklistItem: (
+    focusNew?: boolean,
+    insertBeforeIndex?: number,
+    text?: string,
+  ) => void;
   updateChecklistItem: (
     id: string,
     field: string,
@@ -58,7 +62,10 @@ export default function ChecklistSection({
       <p className="text-[12px] uppercase font-bold">
         Checklist items
       </p>
-      <div className="space-y-3" onDrop={handleDrop}>
+      <div
+        className="space-y-3"
+        onDrop={handleDrop}
+      >
         {checklist.map((item, index) => (
           <div
             key={item.id}
@@ -130,6 +137,17 @@ export default function ChecklistSection({
                   if (item.text.trim()) addChecklistItem(false, 0);
                 }
                 : undefined}
+              onPaste={(e) => {
+                // Multi-line paste: each non-blank line becomes its own item,
+                // inserted in order below this row; this input is left as-is.
+                const lines = e.clipboardData.getData("text").split(/\r?\n/)
+                  .map((line) => line.trim()).filter(Boolean);
+                if (lines.length < 2) return;
+                e.preventDefault();
+                lines.forEach((line, i) =>
+                  addChecklistItem(false, index + 1 + i, line)
+                );
+              }}
               ref={(el) => setChecklistInputRef(item.id, el)}
               placeholder="Shift+Enter for a new line, Enter to commit"
             />

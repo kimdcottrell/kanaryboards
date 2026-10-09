@@ -105,7 +105,11 @@ export default function DescriptionEditor({
           sourceMetadataMode="none"
           isListStyleDropdownEnabled={false}
           toolbarLayout={MD_TOOLBAR_LAYOUT}
-          featureFlags={{ codeIntelligence: false, iframeEmbed: false }}
+          featureFlags={{
+            codeIntelligence: true,
+            iframeEmbed: false,
+            draggableBlock: false,
+          }}
         />
       </div>
     </fieldset>

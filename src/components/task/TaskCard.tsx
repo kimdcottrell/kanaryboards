@@ -4,6 +4,7 @@ import { useRenderCount } from "@lib/dashboard/use-render-count.ts";
 import type { Row, Task } from "../context/types.ts";
 import { hasLexicalText } from "@lib/lexical.ts";
 import { daysUntilPurge } from "../context/constants.ts";
+import { useHasEditDraft } from "./editDraftStore.ts";
 import type { DragEvent } from "react";
 
 export default function TaskCard({
@@ -32,6 +33,7 @@ export default function TaskCard({
   } = useTaskActions();
   const renderCount = useRenderCount();
   const daysLeft = isTrash ? daysUntilPurge(task.trashedAt, Date.now()) : 0;
+  const hasEditDraft = useHasEditDraft(task.id);
 
   return (
     <article
@@ -41,22 +43,27 @@ export default function TaskCard({
       onDragStart={handleTaskDragStart(task)}
       onDragEnd={handleTaskDragEnd}
       onDragOver={onDragOver}
-      className="group rounded shadow-sm shadow-base-900/5"
+      onClick={() => {
+        startEditTask(task);
+        navigate(`/dashboard/task/${task.id}`);
+      }}
+      className={`group rounded shadow-sm shadow-base-900/5 cursor-grab${
+        hasEditDraft ? " indicator flex flex-col w-full" : ""
+      }`}
       style={{
         opacity: isDragging ? 0.4 : 1,
         borderTop: `2px solid ${isDropBefore ? row.color : "transparent"}`,
         borderBottom: `2px solid ${isDropAfter ? row.color : "transparent"}`,
       }}
     >
+      {hasEditDraft && (
+        <span className="indicator-item indicator-center badge badge-warning font-bold">
+          Edited but not saved
+        </span>
+      )}
       <div className="block">
         <div className="bg-base-200 p-3">
-          <div
-            onClick={() => {
-              startEditTask(task);
-              navigate(`/dashboard/task/${task.id}`);
-            }}
-            className="flex items-center justify-between gap-3 cursor-grab"
-          >
+          <div className="flex items-center justify-between gap-3">
             <h5 className="text-base font-semibold">
               {task.title}
             </h5>
@@ -105,7 +112,10 @@ export default function TaskCard({
                       .checklist.length}
                   </div>
 
-                  <div className="space-y-2">
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="checklist-container w-fit space-y-2"
+                  >
                     {task.checklist.map((item) => (
                       <label
                         key={item.id}

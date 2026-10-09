@@ -6,6 +6,7 @@ import {
 } from "../BoardContext.tsx";
 import { createId } from "../constants.ts";
 import type { Task } from "../types.ts";
+import { clearEditDraft } from "../../task/editDraftStore.ts";
 
 export function useTaskEditActions() {
   const dispatch = useBoardDispatch();
@@ -27,14 +28,16 @@ export function useTaskEditActions() {
       });
     }
     dispatch({ type: "TASK/SAVE_EDIT" });
+    if (editTaskDraft) clearEditDraft(editTaskDraft.id);
   }, [editTaskDraft, dispatch]);
 
   const addEditChecklistItem = useCallback((
     focusNew = false,
     insertBeforeIndex?: number,
+    text = "",
   ) => {
     // order is assigned by the reducer from the insert position's neighbors.
-    const item = { id: createId(), text: "", checked: false, order: "" };
+    const item = { id: createId(), text, checked: false, order: "" };
     dispatch({
       type: "CHECKLIST/ADD_ITEM",
       payload: { target: "editDraft", item, insertBeforeIndex },

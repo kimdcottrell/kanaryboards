@@ -23,6 +23,7 @@ export function useTaskFormSubmit(
   return {
     handleSubmit,
     submitButtonRef,
+    getDescription: () => editorRef.current?.getJSON(),
     onEditorReady: (methods: ExtensiveEditorRef) => {
       editorRef.current = methods;
     },

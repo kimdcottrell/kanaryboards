@@ -8,6 +8,7 @@ sequenceDiagram
     participant TaskModal as TaskCreateModal /<br/>TaskEditModal / TaskViewOnlyModal<br/>(task/modal/; Edit + ViewOnly share<br/>ExistingTaskModalWrapper)
     participant Form as task fields<br/>(FieldsGrid: TitleInput,<br/>DescriptionEditor, StatusSteps,<br/>ProjectMenu, ChecklistSection)
     participant Actions as action hooks<br/>(actions/task*.ts, checklistAi.ts)
+    participant Drafts as editDraftStore<br/>(task/editDraftStore.ts,<br/>localStorage `task+${id}`)
     participant Reducer as reducers<br/>(tasks.ts, checklist.ts, checklistAi.ts)
     participant Ctx as BoardContext<br/>(TaskCreate/TaskEdit/ChecklistAI/<br/>BoardData/TasksByCell)
     participant AI as /api/generate-tasks<br/>(Google GenAI)
@@ -40,6 +41,7 @@ sequenceDiagram
     Reducer-->>Ctx: taskDraft.checklist updated
     Ctx-->>Form: ChecklistSection re-renders<br/>(TaskCreateContext: taskDraft.checklist changed)<br/>-> item list updates
     Note over Form,Reducer: Top item is always an empty entry row (no trash/drag).<br/>Enter / blur / Shift+Enter on it with text, or a checklist<br/>change leaving checklist[0] non-empty and unfocused<br/>(useEffect), calls addChecklistItem(_, 0) -> CHECKLIST/ADD_ITEM<br/>with insertBeforeIndex 0. Same for the edit modal below.
+    Note over Form,Reducer: Multi-line paste into any item input: each non-blank<br/>line -> addChecklistItem(false, index + 1 + i, line)<br/>-> one CHECKLIST/ADD_ITEM per line (item.text = line),<br/>inserted in order below that row. Same for the edit modal.
 
     Note over User,AI: Create task: submit
     User->>Form: submit form
@@ -55,12 +57,15 @@ sequenceDiagram
     Note over User,AI: Edit task: open modal
     User->>Card: click title
     Card->>Actions: startEditTask(task)<br/>(actions/task.ts)
-    Actions->>Ctx: dispatch(TASK/OPEN_EDIT_MODAL, {task})
+    Actions->>Drafts: readEditDraft(task.id)
+    Drafts-->>Actions: {draft, updatedAt} | null
+    Actions->>Ctx: dispatch(TASK/OPEN_EDIT_MODAL, {task})<br/>(task = {...task, stored title/description/<br/>rowId/colId/checklist} if stored)
     Ctx->>Reducer: tasks.openEditModal(state, {task})
     Reducer-->>Ctx: editingTaskId = task.id<br/>editTaskDraft = normalized clone<br/>taskEditModalOpen = true
     Card->>Card: navigate(/dashboard/task/:id)
     Ctx-->>TaskModal: TaskEditModal re-renders<br/>(TaskEditContext: taskEditModalOpen=true)<br/>-> opens (task not in Trash)
     TaskModal-->>Form: task fields + ChecklistSection mount<br/>(taskDraft = editTaskDraft)
+    Note over TaskModal,Drafts: TaskEditModal passes PostEditPreSaveAlert(taskId) to the<br/>ExistingTaskModalWrapper alert slot; it reads updatedAt<br/>once per task id -> "last edited …" alert
 
     Note over User,AI: Edit task: edit fields & checklist (target = "editDraft")
     User->>Form: edit title / description / status (colId) / row (rowId)<br/>(Status never lists the Trash column)
@@ -77,6 +82,18 @@ sequenceDiagram
     Reducer-->>Ctx: editTaskDraft.checklist updated
     Ctx-->>Form: ChecklistSection re-renders<br/>(TaskEditContext: editTaskDraft.checklist changed)<br/>-> item list updates<br/>(empty top entry row kept as in create)
 
+    Note over User,AI: Edit task: close without saving (Cancel / X / backdrop)
+    User->>TaskModal: close modal
+    TaskModal->>TaskModal: compare {...editTaskDraft, description: getDescription()}<br/>with saved task (title/description/rowId/colId/non-empty checklist)
+    alt changed
+        TaskModal->>Drafts: writeEditDraft(draft) (updatedAt = now;<br/>skipped if content equals stored draft)
+    else unchanged
+        TaskModal->>Drafts: clearEditDraft(task.id)
+    end
+    Drafts-->>Card: TaskCard re-renders if its entry appeared/disappeared<br/>(useHasEditDraft: useSyncExternalStore on "edit-draft-change")<br/>-> "Edited but not saved" badge-warning indicator shown/hidden
+    TaskModal->>Actions: cancelEditTask() -> dispatch(TASK/CLOSE_EDIT_MODAL)
+    TaskModal->>TaskModal: navigate(/dashboard)
+
     Note over User,AI: Edit task: save
     User->>Form: submit form
     Form->>Actions: saveTaskEdit(event, description)<br/>(actions/taskEdit.ts)
@@ -85,6 +102,8 @@ sequenceDiagram
     Actions->>Ctx: dispatch(TASK/SAVE_EDIT)
     Ctx->>Reducer: tasks.saveEdit(state)
     Reducer-->>Ctx: tasks updated (title/description/rowId/colId/checklist)<br/>editingTaskId = null, editTaskDraft = null<br/>taskEditModalOpen = false
+    Actions->>Drafts: clearEditDraft(task.id) -> alert gone on next open
+    Drafts-->>Card: TaskCard re-renders (useHasEditDraft) -> indicator removed
     TaskModal->>TaskModal: navigate(/dashboard)
     Ctx->>Ctx: computeTasksByCell(tasks)
     Ctx-->>TaskModal: TaskEditModal re-renders<br/>(TaskEditContext: taskEditModalOpen=false)<br/>-> modal closes, unmounts Form
@@ -94,6 +113,7 @@ sequenceDiagram
     User->>Form: click "Trash" (edit modal only)
     Form->>Actions: trashTask(taskId)<br/>(actions/task.ts)
     Actions->>Ctx: dispatch(TASK/TRASH, {taskId})
+    Actions->>Drafts: clearEditDraft(taskId)
     Ctx->>Reducer: tasks.trash(state, {taskId})
     Reducer-->>Ctx: colId = Trash column (same row), order = end of Trash cell<br/>trashedAt = now, preTrashColId = old colId<br/>closes edit modal
     TaskModal->>TaskModal: navigate(/dashboard)
@@ -117,6 +137,7 @@ sequenceDiagram
     User->>Form: click "Delete forever"
     Form->>Actions: deleteTask(taskId)<br/>(actions/task.ts)
     Actions->>Ctx: dispatch(TASK/DELETE, {taskId})
+    Actions->>Drafts: clearEditDraft(taskId)
     Ctx->>Reducer: tasks.remove(state, {taskId})
     Reducer-->>Ctx: tasks filtered<br/>closes edit modal if it was the edited task
     Actions->>Store: deleteAllComments(taskId) (fire-and-forget)

@@ -506,3 +506,6 @@
 .luthor-select-option {
   @apply text-xs p-1.5;
 }
+.luthor-mode-tab.active {
+  @apply bg-primary/15;
+}

@@ -44,9 +44,10 @@ export function useTaskCreateActions() {
   const addChecklistItem = useCallback((
     focusNew = false,
     insertBeforeIndex?: number,
+    text = "",
   ) => {
     // order is assigned by the reducer from the insert position's neighbors.
-    const item = { id: createId(), text: "", checked: false, order: "" };
+    const item = { id: createId(), text, checked: false, order: "" };
     dispatch({
       type: "CHECKLIST/ADD_ITEM",
       payload: { target: "draft", item, insertBeforeIndex },
