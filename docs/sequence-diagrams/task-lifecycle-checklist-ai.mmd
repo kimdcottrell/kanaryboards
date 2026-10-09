@@ -20,7 +20,7 @@ sequenceDiagram
     Cell->>Actions: openTaskForm(rowId, colId)<br/>(actions/task.ts)
     Actions->>Ctx: dispatch(TASK/OPEN_CREATE_MODAL, {rowId, colId})
     Ctx->>Reducer: tasks.openCreateModal(state, payload)
-    Reducer-->>Ctx: taskCreateModalOpen = true<br/>taskDraft = emptyTaskDraft(rowId, colId)<br/>resets ChecklistAI slice
+    Reducer-->>Ctx: taskCreateModalOpen = true<br/>taskDraft = emptyTaskDraft(rowId, colId)<br/>(empty colId -> first non-Trash column)<br/>resets ChecklistAI slice
     Ctx-->>TaskModal: TaskCreateModal re-renders<br/>(TaskCreateContext: taskCreateModalOpen=true)<br/>-> opens
     TaskModal-->>Form: task fields + ChecklistSection mount<br/>(taskDraft = empty draft)
 

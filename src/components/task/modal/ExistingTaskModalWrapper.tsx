@@ -49,7 +49,7 @@ export default function ExistingTaskModalWrapper({
           clear of it), sticky in the scrolling modal on mobile. Mobile: one
           column, comments after the body. */
       }
-      <div className="grid md:grid-cols-[7fr_3fr] md:grid-rows-[auto_minmax(0,1fr)] md:relative md:gap-x-6 md:max-h-[calc(100dvh*11/12-3rem)]">
+      <div className="grid md:grid-cols-[7fr_3fr] md:grid-rows-[auto_minmax(0,1fr)] md:relative md:gap-x-2 md:max-h-[calc(100dvh*11/12-3rem)]">
         <div className="pr-10 md:col-span-2" {...lock}>{title}</div>
         <div
           className="md:overflow-y-auto md:min-h-0 md:pr-2 md:pb-16"

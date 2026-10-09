@@ -7,13 +7,11 @@ export default function StatusSteps({
   columns,
   selectedColId,
   onSelect,
-  required = false,
 }: {
   taskId: string;
   columns: Column[];
   selectedColId: string | null;
   onSelect?: (colId: string) => void;
-  required?: boolean;
 }) {
   const name = `column-select-${taskId || "new"}`;
   // Trash is only reachable via the Trash button or drag-and-drop, so it is
@@ -28,7 +26,7 @@ export default function StatusSteps({
 
   return (
     <fieldset className="fieldset min-w-0">
-      <legend className="fieldset-legend text-primary text-[12px] uppercase font-bold">
+      <legend className="fieldset-legend text-[12px] uppercase font-bold">
         Status
       </legend>
       <div className="overflow-x-auto">
@@ -59,7 +57,6 @@ export default function StatusSteps({
                     setHoveredColIndex(null);
                     onSelect?.(option.id);
                   }}
-                  required={required}
                 />
                 {option.title}
               </label>
@@ -67,7 +64,6 @@ export default function StatusSteps({
           })}
         </div>
       </div>
-      {required && <span className="validator-hint">Required</span>}
     </fieldset>
   );
 }

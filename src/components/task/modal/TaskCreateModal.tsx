@@ -69,7 +69,6 @@ export default function TaskCreateModal() {
                   columns={columns}
                   selectedColId={draft.colId}
                   onSelect={(colId) => setTaskDraft({ ...draft, colId })}
-                  required
                 />
               }
               project={

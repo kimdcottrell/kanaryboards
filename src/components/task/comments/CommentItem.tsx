@@ -64,12 +64,12 @@ export default function CommentItem({
             : <span className="iconify hugeicons--user-circle text-2xl"></span>}
         </div>
       </div>
-      <div className="chat-header">
+      <div className="chat-header text-xs">
         {comment.authorName}
         <time
           dateTime={comment.createdAt}
           title={new Date(comment.createdAt).toLocaleString()}
-          className="text-xs opacity-50"
+          className="opacity-80"
         >
           {relativeTime(comment.createdAt)}
         </time>
@@ -77,17 +77,18 @@ export default function CommentItem({
 
       {mode === "edit"
         ? (
-          <div className="chat-bubble w-full p-0 overflow-hidden">
-            <CommentEditor
-              defaultContent={comment.content}
-              onReady={(methods) => {
-                editorRef.current = methods;
-              }}
-            />
-          </div>
+          <CommentEditor
+            defaultContent={comment.content}
+            onReady={(methods) => {
+              editorRef.current = methods;
+            }}
+          />
         )
         : (
-          <div className="chat-bubble text-sm" data-testid="comment-body">
+          <div
+            className="chat-bubble chat-bubble-secondary text-sm"
+            data-testid="comment-body"
+          >
             <CommentEditor
               key={comment.updatedAt ?? comment.createdAt}
               defaultContent={comment.content}
@@ -100,7 +101,7 @@ export default function CommentItem({
         {mode === "view" && (
           <>
             {comment.updatedAt && (
-              <span className="text-xs opacity-50 mr-1">(edited)</span>
+              <span className="text-xs opacity-70 mr-1">(edited)</span>
             )}
             <button
               type="button"

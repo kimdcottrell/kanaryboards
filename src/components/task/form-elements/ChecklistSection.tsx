@@ -105,6 +105,7 @@ export default function ChecklistSection({
             <input
               className="input w-10/12 mx-auto"
               type="text"
+              data-testid="checklist-item-awaiting-input"
               value={item.text}
               onChange={(e) =>
                 updateChecklistItem(
@@ -113,7 +114,7 @@ export default function ChecklistSection({
                   e.currentTarget.value,
                 )}
               onKeyDown={(e) => {
-                if (index === 0 && e.key === "Enter" && e.shiftKey) {
+                if (index === 0 && e.key === "Enter") {
                   e.preventDefault();
                   if (item.text.trim()) addChecklistItem(true, 0);
                 } else {
@@ -130,7 +131,7 @@ export default function ChecklistSection({
                 }
                 : undefined}
               ref={(el) => setChecklistInputRef(item.id, el)}
-              placeholder="Shift+Enter to add more"
+              placeholder="Shift+Enter for a new line, Enter to commit"
             />
             {index === 0
               ? <span className="btn-sm btn-square shrink-0 ml-auto"></span>

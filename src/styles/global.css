@@ -477,6 +477,9 @@
       @apply text-[0px] after:text-[12px] after:content-['Task_Details'];
     }
   }
+  &.task-description-editor--tabs-hidden .luthor-mode-tab:not(:first-child) {
+    @apply hidden;
+  }
 }
 /* Read-only comments take their container's (the chat bubble's) background
    and text color. */
@@ -492,4 +495,14 @@
     @apply text-inherit [--luthor-editor-content-padding-x:0px]
       [--luthor-editor-content-padding-y:0px] [--luthor-first-block-offset:0px];
   }
+}
+.luthor-select-trigger {
+  height: auto;
+  padding: 6px;
+  span {
+    @apply text-xs;
+  }
+}
+.luthor-select-option {
+  @apply text-xs p-1.5;
 }

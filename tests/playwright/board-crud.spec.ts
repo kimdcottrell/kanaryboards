@@ -521,7 +521,7 @@ test.describe("Board CRUD", () => {
       await expect(modal.getByRole("button", { name: "Save", exact: true }))
         .toBeVisible();
 
-      const fields = modal.getByPlaceholder("Shift+Enter to add more");
+      const fields = modal.getByTestId("checklist-item-awaiting-input");
       const deleteButtons = modal.getByRole("button", {
         name: "Delete checklist item",
       });
@@ -713,7 +713,7 @@ test.describe("Board CRUD", () => {
       await expect(modal.getByRole("button", { name: "Save", exact: true }))
         .toBeVisible();
 
-      const fields = modal.getByPlaceholder("Shift+Enter to add more");
+      const fields = modal.getByTestId("checklist-item-awaiting-input");
       await fillStable(fields.nth(0), "Top item");
       await fields.nth(0).press("Enter");
       await expect(fields).toHaveCount(3);

@@ -21,11 +21,23 @@ export default function ProjectMenu({
         /* The current project is tinted with its row color
           (.row-menu-item in global.css). */
       }
-      <ul id={name} className="menu w-full p-0">
+      {
+        /* After a failed submit (:user-invalid), the legend turns error-colored
+          and shows the "Required" hint. */
+      }
+      <ul id={name} className="menu validator group/project w-full p-0">
         <li>
-          <legend className="p-0 fieldset-legend menu-title text-base-content text-[12px] uppercase font-bold">
+          <legend className="p-0 fieldset-legend menu-title text-base-content group-has-user-invalid/project:text-error text-[12px] uppercase font-bold">
             Project
           </legend>
+          {
+            /* menu-title keeps the hint from getting menu-item styling. */
+          }
+          {required && (
+            <span className="validator-hint p-0 text-error hidden group-has-user-invalid/project:block group-has-user-invalid/project:visible">
+              Required
+            </span>
+          )}
           <ul className="pt-2 mx-0">
             {rows.map((option) => (
               <li key={option.id}>
@@ -53,7 +65,6 @@ export default function ProjectMenu({
           </ul>
         </li>
       </ul>
-      {required && <span className="validator-hint">Required</span>}
     </fieldset>
   );
 }

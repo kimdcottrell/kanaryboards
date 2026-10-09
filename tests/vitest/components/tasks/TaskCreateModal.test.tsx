@@ -141,7 +141,7 @@ describe("TaskCreateModal", () => {
     ).toBeNull();
   });
 
-  test("renders required Status and Row selects", () => {
+  test("renders a required Row select and an optional Status select", () => {
     vi.mocked(useTaskCreateState).mockReturnValue(
       makeTaskCreateState({
         taskCreateModalOpen: true,
@@ -156,7 +156,7 @@ describe("TaskCreateModal", () => {
       "input[name='row-select-new']",
     );
     expect(status.length).toBeGreaterThan(0);
-    status.forEach((radio) => expect(radio.required).toBe(true));
+    status.forEach((radio) => expect(radio.required).toBe(false));
     expect(row.length).toBeGreaterThan(0);
     row.forEach((radio) => expect(radio.required).toBe(true));
   });
@@ -200,6 +200,30 @@ describe("TaskCreateModal", () => {
     render(<TaskCreateModal />);
     expect(screen.getByText("Checklist items")).toBeTruthy();
     expect(screen.getByText("Generate checklist items with AI")).toBeTruthy();
+  });
+
+  test("Enter in the checklist entry row adds and focuses a new item", () => {
+    const addChecklistItem = vi.fn();
+    vi.mocked(useTaskCreateState).mockReturnValue(
+      makeTaskCreateState({
+        taskCreateModalOpen: true,
+        taskDraft: {
+          ...mockTaskDraft,
+          checklist: [{
+            id: "c1",
+            text: "Buy milk",
+            checked: false,
+            order: "a",
+          }],
+        },
+      }),
+    );
+    vi.mocked(useTaskCreateActions).mockReturnValue(
+      makeTaskCreateActions({ addChecklistItem }),
+    );
+    render(<TaskCreateModal />);
+    fireEvent.keyDown(screen.getByDisplayValue("Buy milk"), { key: "Enter" });
+    expect(addChecklistItem).toHaveBeenCalledWith(true, 0);
   });
 
   test("Create task submits the form to createTask", () => {

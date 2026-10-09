@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
 
 // Layout shared by every task modal. Mobile: Status/Project, AI generation,
-// checklist, description. Desktop: Status/Project across the top, then the
-// description beside the checklist column.
+// checklist, description — the column wrappers are `contents`, so each field
+// sits directly in the grid and `order` sets the sequence. Desktop: two
+// independent columns (Status over description, Project over checklist), so
+// a tall project list never pushes the description down.
 export default function FieldsGrid({
   description,
   status,
@@ -17,16 +19,18 @@ export default function FieldsGrid({
   checklistGeneration?: ReactNode;
 }) {
   return (
-    <div className="grid md:grid-cols-2 gap-4 items-start">
-      {description}
-      <div className="grid grid-cols-2 gap-4 items-start md:col-span-2 md:order-first">
+    <div className="grid grid-cols-2 gap-4 items-start">
+      <div className="contents md:flex md:flex-col md:gap-4">
         {status}
-        {project}
+        <div className="col-span-2 order-last md:order-0">{description}</div>
       </div>
-      <div className="flex flex-col gap-4">
-        {checklist}
+      <div className="contents md:flex md:flex-col md:gap-4">
+        {project}
+        <div className="col-span-2 order-2 md:order-0">{checklist}</div>
         {checklistGeneration && (
-          <div className="order-first md:order-0">{checklistGeneration}</div>
+          <div className="col-span-2 order-1 md:order-last">
+            {checklistGeneration}
+          </div>
         )}
       </div>
     </div>

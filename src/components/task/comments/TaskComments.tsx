@@ -88,7 +88,7 @@ export default function TaskComments({ taskId }: { taskId: string }) {
           role="tablist"
           className="tabs tabs-lift flex-1 min-h-0 flex-col items-start"
         >
-          <label className="font-inter tab bg-accent/5 text-xs font-bold uppercase">
+          <label className="font-inter tab bg-primary/5 text-xs font-bold uppercase">
             <input type="radio" name="task_modal_tabs" defaultChecked />
             <span className="iconify hugeicons--comment-01 me-2"></span>
             Comments
@@ -98,7 +98,7 @@ export default function TaskComments({ taskId }: { taskId: string }) {
               </span>
             )}
           </label>
-          <div className="tab-content bg-accent/5 flex! flex-col self-stretch flex-1 min-h-0 gap-3 p-4 border-base-300">
+          <div className="tab-content bg-primary/5 flex! flex-col self-stretch flex-1 min-h-0 gap-3 p-4 border-base-300">
             {comments.length > 0
               ? (
                 <ul

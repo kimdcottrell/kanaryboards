@@ -39,12 +39,26 @@ vi.mock("@components/task/comments/TaskComments.tsx", () => ({
   default: () => null,
 }));
 
+const { taskDetailsTabClick } = vi.hoisted(() => ({
+  taskDetailsTabClick: vi.fn(),
+}));
+
 vi.mock("@lyfie/luthor", () => ({
-  ExtensiveEditor: (props: { initialMode?: string }) =>
-    React.createElement("div", {
-      "data-testid": "luthor-editor",
-      "data-initial-mode": props.initialMode,
-    }),
+  ExtensiveEditor: (props: { initialMode?: string; className?: string }) =>
+    React.createElement(
+      "div",
+      {
+        "data-testid": "luthor-editor",
+        "data-initial-mode": props.initialMode,
+        className: props.className,
+        tabIndex: 0,
+      },
+      React.createElement("button", {
+        type: "button",
+        className: "luthor-mode-tab",
+        onClick: taskDetailsTabClick,
+      }),
+    ),
 }));
 
 import {
@@ -167,6 +181,39 @@ describe("TaskEditModal", () => {
     expect(
       screen.getByTestId("luthor-editor").getAttribute("data-initial-mode"),
     ).toBe("visual-only");
+  });
+
+  test("hides the editor's other mode tabs until the description is focused", () => {
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
+    );
+    vi.mocked(useBoardDataState).mockReturnValue(
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
+    );
+    render(<TaskEditModal />);
+    const editor = screen.getByTestId("luthor-editor");
+    expect(editor.className).toContain("task-description-editor--tabs-hidden");
+    fireEvent.focus(editor);
+    expect(editor.className).not.toContain(
+      "task-description-editor--tabs-hidden",
+    );
+  });
+
+  test("leaving the description switches back to Task Details and hides the other tabs", () => {
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
+    );
+    vi.mocked(useBoardDataState).mockReturnValue(
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
+    );
+    render(<TaskEditModal />);
+    const editor = screen.getByTestId("luthor-editor");
+    fireEvent.focus(editor);
+    fireEvent.pointerDown(editor);
+    expect(taskDetailsTabClick).not.toHaveBeenCalled();
+    fireEvent.pointerDown(document.body);
+    expect(taskDetailsTabClick).toHaveBeenCalledTimes(1);
+    expect(editor.className).toContain("task-description-editor--tabs-hidden");
   });
 
   test("Status steps show all column options", () => {

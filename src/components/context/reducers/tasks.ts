@@ -199,7 +199,11 @@ export function openCreateModal(
   return {
     ...state,
     taskCreateModalOpen: true,
-    taskDraft: emptyTaskDraft(payload.rowId, payload.colId),
+    // Without a column (e.g. the "new task" shortcut), default to the first.
+    taskDraft: emptyTaskDraft(
+      payload.rowId,
+      payload.colId || (state.columns.find((c) => !c.isTrash)?.id ?? ""),
+    ),
     checklistModalTaskId: null,
     checklistPrompt: "",
     checklistPreview: [],
