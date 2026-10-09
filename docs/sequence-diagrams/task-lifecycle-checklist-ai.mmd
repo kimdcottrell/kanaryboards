@@ -96,13 +96,18 @@ sequenceDiagram
 
     Note over User,AI: Edit task: save
     User->>Form: submit form
-    Form->>Actions: saveTaskEdit(event, description)<br/>(actions/taskEdit.ts)
+    Form->>Actions: saveTaskEdit(event, description)<br/>(actions/taskEdit.ts, wrapped in closeAfter)
+    alt form.checkValidity() fails (e.g. Project empty because its row<br/>was deleted in another tab)
+        Actions->>Actions: return early: no dispatch, nothing saved
+        TaskModal->>TaskModal: closeAfter still runs navigate(/dashboard)
+        Note over TaskModal,Ctx: Intended: taskEditModalOpen stays true, so the modal stays<br/>open with the draft while the URL is now /dashboard.<br/>Picking a project and saving again completes the save below.
+    end
     Actions->>Ctx: dispatch(TASK/UPDATE_EDIT_DRAFT,<br/>{draft: {...editTaskDraft, description}}<br/>(skipped if description undefined))
     Ctx->>Reducer: tasks.updateEditDraft
     Actions->>Ctx: dispatch(TASK/SAVE_EDIT)
     Ctx->>Reducer: tasks.saveEdit(state)
     Reducer-->>Ctx: tasks updated (title/description/rowId/colId/checklist)<br/>editingTaskId = null, editTaskDraft = null<br/>taskEditModalOpen = false
-    Note over Reducer: Task deleted in another tab while being edited (BOARD/SYNC):<br/>saveEdit adds it back from editTaskDraft at the end of its cell.<br/>Project is required, so a draft whose row was deleted<br/>can't be submitted until a new project is picked.
+    Note over Reducer: Task deleted in another tab while being edited (BOARD/SYNC):<br/>saveEdit adds it back from editTaskDraft at the end of its cell.<br/>Project is required, so a draft whose row was deleted<br/>isn't saved until a new project is picked (see the alt above).
     Actions->>Drafts: clearEditDraft(task.id) -> alert gone on next open
     Drafts-->>Card: TaskCard re-renders (useHasEditDraft) -> indicator removed
     TaskModal->>TaskModal: navigate(/dashboard)

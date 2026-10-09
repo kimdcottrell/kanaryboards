@@ -4,7 +4,7 @@ title: Row & Column Management
 sequenceDiagram
     actor User
     participant BoardMenu as BoardMenu / BoardDock<br/>(BoardMenu.tsx #board-menu = lg+,<br/>BoardDock.tsx dock = below lg)
-    participant Config as BoardConfigModal<br/>(BoardConfigModal.tsx +<br/>config/board/*Section.tsx.<br/>Column drag-to-reorder scaffolding lives in<br/>config/board/ColumnReorderList.tsx, shared with<br/>the homepage DemoExperience demo)
+    participant Config as BoardConfigModal<br/>(BoardConfigModal.tsx +<br/>config/board/*Section.tsx.<br/>Column drag-to-reorder scaffolding lives in<br/>shared/ColumnReorderList.tsx, shared with<br/>the homepage DemoExperience demo)
     participant RowModal as CreateRowModal<br/>(config/board/CreateRowModal.tsx +<br/>CreateRowSection.tsx)
     participant Board as RowBoard<br/>(RowBoard.tsx)
     participant Row as RowSection<br/>(RowSection.tsx)
@@ -74,7 +74,7 @@ sequenceDiagram
             Ctx-->>Row: RowBoard mounts a new RowSection<br/>(BoardData: rows changed)<br/>-> isNew=true (id not in RowBoard seenRowIds ref)
             Row->>Row: useEffect -> animejs createScope + splitText(title, chars)<br/>+ animate(chars, {y bounce, rotate from -1turn, stagger(50),<br/>autoplay: onScroll({repeat:false})})<br/>-> title chars jump/spin in once when scrolled into view.<br/>RowBoard then marks the id seen, so remounts (e.g. column<br/>filter toggles) never replay it
             Ctx-->>Cell: ColumnSection (Todo column, new row)<br/>re-renders (TasksByCellContext changed)<br/>-> new TaskCards mount
-            Actions->>Actions: await 3000ms (CLOSE_AFTER_GENERATE_MS)
+            Actions->>Actions: await 1000ms (CLOSE_AFTER_GENERATE_MS)
             Actions->>Ctx: dispatch(ROW/CLOSE_CREATE_MODAL)<br/>then scrollToRow -> requestAnimationFrame -><br/>getElementById("row-section-{id}").scrollIntoView({behavior:"smooth", block:"start"})
             Ctx->>Reducer: rows.closeRowCreateModal
             Reducer-->>Ctx: createRowModalOpen = false<br/>taskGenerationStatus = "", taskGenerationFailed = false
@@ -144,7 +144,7 @@ sequenceDiagram
     Reducer-->>Ctx: rows filtered. tasks for that row removed.<br/>clears any open modal/edit state referencing it
     Note over Reducer: Comments of the removed tasks are not deleted here:<br/>KV -> swept by the next /api/purge-trash run,<br/>localStorage -> pruned on the next board load
     Ctx-->>Row: that RowSection (+ its ColumnSections/TaskCards)<br/>unmounts (BoardData: rows/tasks changed)
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: rows changed)<br/>-> row settings list loses the row
+    Ctx-->>Config: RowSettingsSection re-renders<br/>(BoardData: rows changed)<br/>-> row settings list loses the row
     Note over Ctx: Other tabs receive the new board via BOARD/SYNC<br/>(see board-load-autosave). If no rows are left there,<br/>their task modals close.
 
     Note over User,AI: Reorder row (move up / down, RowSettingsSection only)
@@ -153,7 +153,7 @@ sequenceDiagram
     Actions->>Ctx: dispatch(ROW/MOVE, {fromIndex, toIndex})
     Ctx->>Reducer: rows.move(state, payload)
     Reducer-->>Ctx: rows array reordered.<br/>moved row's order = generateKeyBetween(prev, next)
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: rows reordered)<br/>-> row settings list shows new order
+    Ctx-->>Config: RowSettingsSection re-renders<br/>(BoardData: rows reordered)<br/>-> row settings list shows new order
     Ctx-->>Row: RowSection instances re-render in new order<br/>(BoardData: rows reordered)<br/>-> RowBoard re-maps them by row.id
 
     Note over User,AI: Update row color (RowSettingsSection)
@@ -172,7 +172,7 @@ sequenceDiagram
     Actions->>Ctx: dispatch(COLUMN/SET_INPUT, {value})
     Ctx->>Reducer: columns.setInput
     Reducer-->>Ctx: defaultColumnInput = value
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(ColumnConfigContext: defaultColumnInput changed)
+    Ctx-->>Config: ColumnSettingsSection re-renders<br/>(ColumnConfigContext: defaultColumnInput changed)
 
     User->>Config: pick direction (left/right) +<br/>reference column from the two selects
     Note over Config: direction + referenceColumnId are local<br/>component useState — no dispatch
@@ -190,7 +190,7 @@ sequenceDiagram
     Ctx->>Reducer: columns.setInput
     Reducer-->>Ctx: defaultColumnInput = ""
     Config->>Config: reset local direction + referenceColumnId to ""
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: columns changed)<br/>-> reference select lists the new column, name input clears
+    Ctx-->>Config: ColumnSettingsSection re-renders<br/>(BoardData: columns changed)<br/>-> reference select lists the new column, name input clears
     Ctx-->>Cell: every RowSection mounts a new ColumnSection<br/>(BoardData: columns changed)<br/>-> appears to the left/right of the reference column
 
     Note over User,AI: Rename column (per ColumnSection, double-click)
@@ -219,7 +219,7 @@ sequenceDiagram
     Ctx->>Reducer: columns.remove(state, payload)
     Reducer-->>Ctx: columns filtered. tasks for that column removed.<br/>clears any open modal/edit state referencing it
     Note over Reducer: Comments of the removed tasks are not deleted here:<br/>KV -> swept by the next /api/purge-trash run,<br/>localStorage -> pruned on the next board load
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: columns changed)<br/>-> column settings badge list loses the column
+    Ctx-->>Config: ColumnSettingsSection re-renders<br/>(BoardData: columns changed)<br/>-> column settings badge list loses the column
     Ctx-->>Cell: the corresponding ColumnSection instance in<br/>every RowSection unmounts<br/>(BoardData: columns/tasks changed)
 
     Note over User,AI: Pin/unpin column — two independent menus:<br/>Shortcut Menu (#board-menu, lg+, max 3) and<br/>Dock Menu (BoardDock, below lg, max 1).<br/>Each has its own pin button in ColumnSettingsSection.
@@ -238,7 +238,7 @@ sequenceDiagram
         Reducer-->>Ctx: columns[columnId].pinnedToDock = !pinnedToDock
         Ctx-->>BoardMenu: BoardView re-renders<br/>(BoardData: columns changed)<br/>-> BoardDock shows/clears its single<br/>dock-pinned column item (below lg only)
     end
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: column pin flags changed)<br/>-> pin icons + N/3 and N/1 counters update
+    Ctx-->>Config: ColumnSettingsSection re-renders<br/>(BoardData: column pin flags changed)<br/>-> pin icons + N/3 and N/1 counters update
     Note over Reducer: Unpinning from either menu prunes the column<br/>from selectedColumnIds only if it is no longer pinned<br/>to the other menu, so the view filter never references<br/>a column absent from both menus.
 
     Note over User,AI: Filter board by pinned column<br/>(shared view filter — Shortcut Menu item or Dock Menu item)
@@ -266,7 +266,7 @@ sequenceDiagram
     Actions->>Ctx: dispatch(COLUMN/TOGGLE_ICON_IN_BOARD_MENU, {columnId})
     Ctx->>Reducer: columns.toggleIconInBoardMenu(state, payload)
     Reducer-->>Ctx: columns[columnId].iconInBoardMenu = !iconInBoardMenu
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: column.iconInBoardMenu changed)<br/>-> checkbox toggles
+    Ctx-->>Config: ColumnSettingsSection re-renders<br/>(BoardData: column.iconInBoardMenu changed)<br/>-> checkbox toggles
     Ctx-->>BoardMenu: BoardView re-renders<br/>(BoardData: columns changed)<br/>-> that column's item shows/hides its icon in<br/>#board-menu and (if dock-pinned) BoardDock<br/>(title+count badge unaffected)
 
     Note over User,AI: Reorder column (drag, ColumnSettingsSection column badges.<br/>Drag scaffolding + drop zones live in the shared<br/>ColumnReorderList.tsx; same dispatches whether rendered<br/>by ColumnSettingsSection or the homepage DemoExperience)
@@ -275,7 +275,7 @@ sequenceDiagram
     Actions->>Ctx: dispatch(COLUMN/SET_DRAGGED_INDEX, {index})
     Ctx->>Reducer: columns.setDraggedIndex
     Reducer-->>Ctx: draggedDefaultIndex = index
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(ColumnConfigContext: draggedDefaultIndex set)<br/>-> dragged badge dims to opacity 0.4
+    Ctx-->>Config: ColumnSettingsSection re-renders<br/>(ColumnConfigContext: draggedDefaultIndex set)<br/>-> dragged badge dims to opacity 0.4
 
     User->>Config: dragover badge
     Config->>Config: preventDefault()<br/>setDragHoverIndex(index) (local state)
@@ -289,7 +289,7 @@ sequenceDiagram
     Actions->>Ctx: dispatch(COLUMN/SET_DRAGGED_INDEX, {index: null})
     Ctx->>Reducer: columns.setDraggedIndex
     Reducer-->>Ctx: draggedDefaultIndex = null
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: columns reordered.<br/>ColumnConfigContext: draggedDefaultIndex=null)<br/>-> column settings badges reorder, dim clears
+    Ctx-->>Config: ColumnSettingsSection re-renders<br/>(BoardData: columns reordered.<br/>ColumnConfigContext: draggedDefaultIndex=null)<br/>-> column settings badges reorder, dim clears
     Ctx-->>Cell: ColumnSection instances in every RowSection<br/>re-render in new order<br/>(BoardData: columns reordered)
 
     Note over User,AI: Autosave (debounced, async)

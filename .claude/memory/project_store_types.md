@@ -13,6 +13,7 @@ State lives under `src/components/context/`:
 - `actions/` — per-domain action hooks (`task.ts`, `taskCreate.ts`, `taskEdit.ts`, `row*.ts`, `column*.ts`, `boardConfig.ts`, `view.ts`, …); `shared.ts` has `buildTasksFromTitles`. (The old `useBoard.ts` / `useAsyncActions.ts` are gone.)
 - `selectors.ts` — `computeTasksByCell` (groups + sorts tasks by `order`), `findTodoColumnId`
 - `constants.ts` — `STORAGE_KEY` (`"kanby-v0-1-0"`), `createId`, `emptyTaskDraft()`, `TRASH_RETENTION_DAYS` (30), `isTrashExpired`, `daysUntilPurge`
+- `effects/` — side-effect hooks `BoardProvider` calls: `useBoardPersistence.ts` (load/migrate on mount, 500ms debounced autosave, cross-tab sync), `useDrawerRowMirror.ts` (rebuilds the Astro drawer's `#drawer-row-list` DOM), `useChecklistInputRefs.ts` (checklist input focus refs → `BoardRefsContext`)
 - `BoardContext.tsx` — `BoardProvider` plus many fine-grained contexts (BoardData, TasksByCell, Drag, TaskEdit, ColumnEdit, BoardMeta `{boardId, isAuthenticated}`, …) so components only re-render on their slice; consumers import hooks from `hooks.ts`
 
 **Key interfaces (all in `types.ts`):**
@@ -25,6 +26,12 @@ interface Task   { id; rowId; colId; title; description; checklist: ChecklistIte
 
 **Trash column (added on feature/notes, 2026-10):** a fixed `isTrash` column, always sorted last, auto-created on `BOARD/LOAD` if missing and in `BOARD/RESET`. Excluded from settings/reorder/rename UIs. `TASK/TRASH` moves a task to the Trash cell of the same row and stamps `trashedAt` + `preTrashColId`; `TASK/RESTORE` returns it to `preTrashColId` (or the To Do column if that was deleted). `withTrashState` in `reducers/tasks.ts` applies the same stamping/clearing to `TASK/MOVE_TO_COLUMN` and drag drops. Trashed tasks open in `TaskViewOnlyModal` (`isTaskTrashed` + `preventEdits` in `src/lib/dashboard/view-only.ts`). Expired Trash tasks (30 days) are dropped in `load()` and by `POST /api/purge-trash` — see [[url-routing-and-kv]].
 
+**Load paths (`useBoardPersistence`):** demo → `BOARD/LOAD createDemoBoard()`, never persisted. No saved board (KV 404 with no local board, or empty localStorage) → `BOARD/RESET` (default columns + Trash, no rows). A non-404 API error dispatches nothing (board stays unloaded); a thrown error → `BOARD/RESET`.
+
+**Cross-tab sync (feature/notes, 2026-10):** every autosave also posts `{rows, columns, tasks}` on a `BroadcastChannel` (`board-sync:kv` signed in, `board-sync:local` signed out; none for demo). Receivers dispatch `BOARD/SYNC` → `board.sync` (last write wins, no normalize). Echo guard: the received JSON is kept in `lastSyncedRef`, and the autosave skips save + broadcast when its snapshot equals it. The first save after load is not broadcast (`loadedSnapshotRef`) so a freshly opened tab can't overwrite newer state in other tabs. If sync leaves no rows, task modals close; if a draft's row is gone, its `rowId` becomes `""` and the modal stays open. `saveEdit` re-adds a task deleted in another tab while it was being edited.
+
+**Unsaved edit drafts:** `src/components/task/editDraftStore.ts`, outside the reducer. Closing `TaskEditModal` without saving writes the draft to localStorage `task+${id}` (or clears it if it matches the saved task); `startEditTask` reapplies it on next open; save/trash/delete clear it. `useHasEditDraft` (useSyncExternalStore on a same-tab event + `storage`) drives the TaskCard "edited but not saved" badge.
+
 **Ordering — `fractional-indexing` package:**
 Import `generateKeyBetween` and `generateNKeysBetween` directly from `"fractional-indexing"` (helpers in `ordering.ts`, e.g. `reorderKey`). Sort with native `<`/`>` comparison, NOT `localeCompare()`. Used everywhere ordering mutates state (row move, column reorder, task reorder/drop, `BOARD/LOAD` sort, `computeTasksByCell`).
 
@@ -32,7 +39,7 @@ Import `generateKeyBetween` and `generateNKeysBetween` directly from `"fractiona
 
 **Inline editing patterns (two distinct approaches):**
 - `RowSection` (board view): shared reducer state via `ROW/EDIT_START` / `ROW/EDIT_CHANGE` / `ROW/EDIT_SAVE` / `ROW/EDIT_CANCEL`
-- `BoardConfiguration` row settings: local `useState` + `ROW/RENAME` (one-shot dispatch)
+- `RowSettingsSection` (in `BoardConfigModal`): local `useState` + `ROW/RENAME` (one-shot dispatch)
 - `ColumnSection`: shared state via `COLUMN/RENAME_*`; `editingColumnRowId` scopes the input to the clicked row (prevents multi-row autoFocus conflict)
 
 **`BoardView.tsx` URL↔modal sync gotcha:** A `useEffect` keyed on `[boardLoaded, taskId, tasks]` opens the task modal via `startEditTask(task)` whenever `/dashboard/task/:taskId` matches a task. Because `tasks` is in the deps, saving an edit (which mutates `state.tasks`) used to re-fire this effect *while still on the same URL* and re-open the just-closed modal. Fixed with a `syncedTaskId` ref: `startEditTask` only fires once per distinct `taskId`. Closing the modal (`ExistingTaskModalWrapper`, shared by Edit + ViewOnly) navigates to `/dashboard`. **If you add new reactive deps to that effect, re-check this interaction.**

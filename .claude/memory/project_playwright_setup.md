@@ -6,9 +6,9 @@ type: project
 
 ## Architecture
 
-Playwright runs in a dedicated `playwright` Docker service. Tests are triggered from the `app` container via `deno task e2e-test`, which connects via `PW_TEST_CONNECT_WS_ENDPOINT='ws://playwright:3000'` and starts the dev server (`START_DEV_SERVER=1`).
+Playwright runs in a dedicated `playwright` Docker service. Tests are triggered from the `app` container via `deno task e2e-test`, which connects via `PW_TEST_CONNECT_WS_ENDPOINT='ws://playwright:3000'` and (outside CI) Playwright's `webServer` runs `deno task build && deno task preview` on `localhost:8085` unless something is already serving there.
 
-Config: `playwright.config.ts`. Base URL: `http://localhost:8085` locally, `BASE_URL` env in CI. Runs Chromium + Firefox + WebKit. `retries: 1`.
+Config: `playwright.config.ts`. Base URL: `http://localhost:8085` locally, `BASE_URL` env in CI. `retries: 2`. Firefox/WebKit projects exist in the config, but neither `deno task e2e-test` nor CI (`e2e.yml`) runs them — both run only `chromium` + `chromium-shared-account`.
 
 ## Running tests
 
@@ -21,13 +21,15 @@ deno task e2e-test   # runs --project=chromium --project=chromium-shared-account
 ## Test files (`tests/playwright/`)
 
 - `global.setup.ts` — one-time Clerk setup via `clerkSetup()` (runs as "setup" project, others depend on it)
-- `fixtures.ts` — exports `test` (with auto Clerk fixture) and `testNoClerk` (plain base, no Clerk)
-- `theme-toggle.spec.ts` — theme switching, localStorage persistence
-- `board-config.spec.ts` — board configuration / create-row flow
+- `fixtures.ts` — exports `test` (with auto Clerk fixture), `testNoClerk` (plain base, no Clerk), and `openSecondTab(page)` (a second page in the same context — shared localStorage + BroadcastChannel — with the same Clerk token and analytics blocking; used for cross-tab tests)
+- `board-crud.spec.ts` — column/row/task CRUD, checklist toggle, drag-and-drop, Trash/restore (seeds `kanby-v0-1-0` localStorage directly)
+- `board-cross-tab-sync.spec.ts` — BroadcastChannel / `BOARD/SYNC` between two tabs (uses `openSecondTab`)
+- `task-comments.spec.ts` — comment post/edit/delete in the task modals
+- `task-edit-drafts.spec.ts` — unsaved edit drafts (`task+${id}` localStorage), "edited but not saved" indicator, PostEditPreSaveAlert
 - `task-url.spec.ts` — task deep-link URL behaviour
-- `generate-tasks-api.spec.ts` — live POST /api/generate-tasks API call
-- `board-persistence.spec.ts` — localStorage→KV migration on sign-in (chromium-only, shared Clerk account)
-- `board-crud.spec.ts` — column/row/task CRUD, checklist toggle, drag-and-drop (testNoClerk, seeds `kanby-v0-1-0` localStorage directly)
+- `board-persistence.spec.ts` — localStorage→KV migration on sign-in (shared Clerk account; the only spec using the Clerk-wrapped `test`)
+- `board-config.spec.ts`, `board-menu*.spec.ts`, `board-dock.spec.ts`, `dashboard-empty-state.spec.ts`, `drawer-row-*.spec.ts`, `render-isolation.spec.ts`, `hero-start-form.spec.ts`, `theme-toggle.spec.ts`, `generate-tasks-api.spec.ts`, plus non-board specs (blog, cookie consent, Clerk sign-up, unauth `/api/board`)
+- `preview-only/` — security specs; excluded by `testIgnore` in every project, so neither `e2e-test` nor CI currently runs them
 
 ## Fixtures and Clerk
 
@@ -46,7 +48,7 @@ export const test = base.extend<{ clerkSetup: void }>({
 export const testNoClerk = base;
 ```
 
-**All 4 current spec files use `testNoClerk`** because none of them test authenticated flows. `setupClerkTestingToken` hits `https://guided-bream-79.clerk.accounts.dev/v1/client` on every test; with 4 parallel browser workers it rate-limits (429) and causes React hydration delays in Firefox/WebKit, producing flaky or failing tests.
+**Every spec except `board-persistence.spec.ts` uses `testNoClerk`**, because only that one tests a signed-in flow. `setupClerkTestingToken` hits `https://guided-bream-79.clerk.accounts.dev/v1/client` on every test; with 4 parallel browser workers it rate-limits (429) and causes React hydration delays in Firefox/WebKit, producing flaky or failing tests.
 
 **Rule:** only import `test` (Clerk-wrapped) from `fixtures.ts` in specs that actually test signed-in behaviour. Everything else uses `testNoClerk`.
 
@@ -59,7 +61,7 @@ await page.goto("/");
 ```
 Clears localStorage before React initializes → predictable state.
 
-**Board config panel:**
+**Board config modal (gear button in BoardMenu):**
 ```ts
 await page.locator("#board-config-collapse-toggle").click();
 await expect(page.locator("#board-config-create-new-row")).toBeVisible();
@@ -107,7 +109,7 @@ This requires `CLERK_SECRET_KEY` (Backend API creates a sign-in token).
 
 ## localStorage → KV migration on sign-in
 
-`BoardContext`'s migration effect runs once on mount keyed on
+The load/migration effect (`effects/useBoardPersistence.ts`) runs once on mount keyed on
 `[boardId, isAuthenticated]` — it is NOT reactive. After `clerk.signIn`,
 `page.reload()` is required for SSR to recompute `isAuthenticated` and trigger
 migration. Migration only fires if `GET /api/board` 404s, so delete any

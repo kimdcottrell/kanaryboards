@@ -89,6 +89,8 @@ cp .env.sample .env
 
 Open `.env` and fill in the values indicated as REQUIRED in the comments.
 
+`CRON_SECRET` is only needed in production. It's the shared secret for `POST /api/purge-trash`, which permanently deletes Trash tasks older than 30 days, along with the comments of tasks that no longer exist on a board. The caller must send `Authorization: Bearer <CRON_SECRET>`. The daily schedule isn't set up yet (the plan is a `Deno.cron()` on Deno Deploy). Until it is, expired Trash tasks are only dropped when a board is loaded.
+
 ### 4. Generate a Claude OAuth token
 
 The dev container disables the Claude Code login prompt, so you must generate an OAuth token on your **local machine** and paste it into `.env`.
@@ -169,8 +171,9 @@ The app will be available at [http://localhost:4321](http://localhost:4321).
 | `deno task astro` | Wrapper for the Astro CLI |
 | `deno task build` | Clear `.astro`/`dist` and build for production |
 | `deno task dev` | Start the Astro dev server with hot reload |
-| `deno task e2e-test` | Auto-start dev server if needed, trigger the Playwright E2E suite, then shut it down |
+| `deno task e2e-test` | Build + preview the app if nothing is serving `localhost:8085`, run the Playwright `chromium` and `chromium-shared-account` projects, then shut the server down |
 | `deno task e2e-test:ui` | Same as `e2e-test`, but opens the Playwright UI mode |
+| `deno task e2e-security` | Local-only security-header suite (`playwright.security.config.ts`) against a production build |
 | `deno task husky` | Wrapper for the Husky git hooks CLI |
 | `deno task playwright` | Wrapper for the Playwright CLI, configured to connect to the remote `playwright` container |
 | `deno task preview` | Serve the production build from `dist/server/entry.mjs` |
@@ -184,6 +187,7 @@ These run on your **host machine** (not inside the container).
 |---|---|
 | `make setup-ssh-agent` | One-time host setup — adds `ssh_agent_reload` to `~/.bash_profile` and `SSH_AUTH_SOCK` export to `~/.bashrc`, then starts the agent immediately, assigning your ssh-keys to it |
 | `make codegen` | Open a browser to record a Playwright test; saves the generated script to `tests/playwright/generated.spec.ts` |
+| `make dev` | Start the dev server with `deno task --tunnel dev`, tunneling to a "local" Deno Deploy instance |
 | `make nuke` | Kill all running Docker containers and prune all containers, images, and volumes |
 | `make help` | List all available make targets with descriptions |
 
@@ -207,12 +211,13 @@ app container
   └─ deno task e2e-test
        └─ playwright test (PW_TEST_CONNECT_WS_ENDPOINT=ws://playwright:3000)
              └─ connects to remote browsers in the playwright container
-                    └─ https://kanary.local.dev  ← via Traefik reverse proxy
+                    └─ http://localhost:8085  ← the app container's loopback,
+                                                 reached via connectOptions.exposeNetwork
 ```
 
 The `playwright` container runs `npx playwright run-server`, hosting Chromium, Firefox, and WebKit for remote use. Its entrypoint (`images/playwright/entrypoint.sh`) resolves the Traefik container IP at runtime and writes it to `/etc/hosts` so `kanary.local.dev` resolves inside the container. `gosu` is used to drop back from root to the `node` user after that write.
 
-`deno task e2e-test` auto-starts the Astro dev server if it is not already running (via Playwright's `webServer` config), triggers the test suite, then shuts the server back down if it started it.
+`deno task e2e-test` runs a production build + `deno task preview` on `localhost:8085` if nothing is already serving there (via Playwright's `webServer` config), triggers the test suite, then shuts the server back down if it started it. A production build is used so `src/middleware.ts` emits its security headers.
 
 ### Running locally
 
@@ -220,7 +225,7 @@ The `playwright` container runs `npx playwright run-server`, hosting Chromium, F
 deno task e2e-test
 ```
 
-Tests run in Chromium, Firefox, and WebKit. The base URL is `https://kanary.local.dev` with HTTPS errors ignored (self-signed cert from the local proxy).
+Tests run in Chromium only, as two projects: `chromium` and `chromium-shared-account`. The second holds the specs that wipe and re-seed the shared Clerk test account's KV board, and runs them one at a time so they can't clobber each other. Firefox and WebKit projects exist in `playwright.config.ts` but aren't run by default. The base URL is `http://localhost:8085`. Specs under `tests/playwright/preview-only/` are excluded by `testIgnore` in every project, so neither `e2e-test` nor CI runs them.
 
 ### Generating tests (codegen)
 
@@ -252,7 +257,7 @@ Four workflows run automatically:
 |---|---|---|
 | `auto-create-pr.yml` | Push to `feature/**` or `bugfix/**` | Creates a PR automatically, titled `WIP: <branch>` and labeled `enhancement` (idempotent — skips if one already exists) |
 | `vitest.yml` | Pull request | Runs the Vitest unit test suite |
-| `e2e.yml` | Pull request | Waits for the Deno Deploy preview URL, then runs the full Playwright suite against it; uploads the HTML report as an artifact |
+| `e2e.yml` | Pull request | Waits for the Deno Deploy preview URL, then runs the `chromium` and `chromium-shared-account` Playwright projects against it; uploads the HTML report as an artifact |
 | `dependabot-auto-merge.yml` | Pull request | Enables auto-merge (squash) on pull requests opened by Dependabot |
 
 The `e2e.yml` workflow polls the GitHub Statuses API until the Deno Deploy build URL appears, then polls the Deno Deploy API until the preview domain is live before handing it to `npx playwright test`.
@@ -309,9 +314,9 @@ Runs [mcpdoc](https://github.com/lancedb/mcpdoc) as a Docker service, configured
 
 | File | Covers |
 |---|---|
-| `task-drag-and-drop.mmd` | Dragging tasks (and checklist items) between rows/columns |
-| `task-lifecycle-checklist-ai.mmd` | Creating, editing, and deleting tasks, plus AI checklist generation |
-| `board-load-autosave.mmd` | Initial board load and debounced autosave |
-| `row-column-management.mmd` | Adding, renaming, reordering, and deleting rows/columns |
+| `task-drag-and-drop.mmd` | Dragging tasks within and between cells, including into and out of Trash |
+| `task-lifecycle-checklist-ai.mmd` | Creating and editing tasks, unsaved edit drafts, Trash / restore / delete forever, the view-only modal, task comments, and AI checklist generation |
+| `board-load-autosave.mmd` | Initial board load (KV, localStorage, demo), localStorage → KV migration, debounced autosave, cross-tab sync, and the Trash purge |
+| `row-column-management.mmd` | Board config and create-row modals, adding rows with AI-generated tasks, renaming / reordering / deleting rows and columns, pinning and filtering columns, and the drawer row list |
 
 These use [Mermaid](https://mermaid.js.org/) sequence diagram syntax — paste a file's contents into [mermaid.live](https://mermaid.live/) to render it visually, or preview with a Mermaid-compatible editor extension.

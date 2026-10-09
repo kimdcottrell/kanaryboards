@@ -4,7 +4,7 @@ description: How to select, click, and assert against the three collapse mechani
 type: feedback
 ---
 
-Three collapse mechanisms exist; each needs a different Playwright approach.
+Two collapse mechanisms exist (a third, the board-config checkbox collapse, was replaced by a modal); each needs a different Playwright approach.
 
 **Why:** Discovered during manual MCP-browser walkthrough of collapse.spec.ts (2026-04-29).
 
@@ -12,14 +12,9 @@ Three collapse mechanisms exist; each needs a different Playwright approach.
 
 ---
 
-## 1. DaisyUI checkbox-based collapse (BoardConfiguration.jsx)
+## 1. Board config — no longer a collapse
 
-HTML: `section.collapse > input[type="checkbox"].peer ~ .collapse-title ~ .collapse-content`
-
-- **Do NOT click the `.collapse-title` or heading** — the invisible checkbox overlay intercepts pointer events and Playwright times out.
-- **Click the checkbox directly:** `page.locator("#board-config-collapse-toggle").click()`
-- **State assertion:** `toBeChecked()` / `not.toBeChecked()` on the checkbox
-- **Content assertion:** `toBeVisible()` / `not.toBeVisible()` on text inside `#board-config-collapse-content`
+The old DaisyUI checkbox collapse (`BoardConfiguration.jsx`) is gone. `#board-config-collapse-toggle` is now the gear button in `BoardMenu.tsx` that opens `BoardConfigModal` (content root `#board-config`). Click it like any button and assert the modal content is visible; there is no checkbox or `#board-config-collapse-content` anymore. The ID kept its old name.
 
 ## 2. DaisyUI React-state collapse (ChecklistGenerationCollapse in task/form-elements/ChecklistSection.tsx)
 
@@ -29,7 +24,7 @@ HTML: `div#checklist-gen-collapse.collapse[class*="collapse-open"]`; toggle is a
 - **State assertion:** `toHaveClass(/collapse-open/)` / `not.toHaveClass(/collapse-open/)` on `#checklist-gen-collapse`
 - **Content assertion:** `toBeVisible()` / `not.toBeVisible()` on text inside `#checklist-gen-collapse-content`
 
-## 3. Custom React conditional-render collapse (RowSection.jsx)
+## 3. Custom React conditional-render collapse (RowSection.tsx)
 
 HTML: the columns `div` is conditionally rendered — it is absent from the DOM entirely when collapsed.
 
@@ -52,6 +47,6 @@ HTML: the columns `div` is conditionally rendered — it is absent from the DOM 
 | Component wrapper | `{component}` | `board-config` |
 | Collapse wrapper | `{component}-collapse` | `checklist-gen-collapse` |
 | Collapse toggle | `{component}-collapse-toggle` | `board-config-collapse-toggle`, `checklist-gen-collapse-toggle` |
-| Collapse content | `{component}-collapse-content` | `board-config-collapse-content`, `checklist-gen-collapse-content` |
+| Collapse content | `{component}-collapse-content` | `checklist-gen-collapse-content` |
 | Sub-sections | `{component}-{subsection}` | `board-config-create-new-row`, `board-config-danger-zone` |
 | Dynamic (per-row) | `{component}-{rowId}` | `row-section-{id}`, `row-collapse-btn-{id}`, `row-columns-{id}` |
