@@ -363,6 +363,7 @@ export function BoardProvider(
       newRowFormKey: state.newRowFormKey,
       isGeneratingTasks: state.isGeneratingTasks,
       taskGenerationStatus: state.taskGenerationStatus,
+      taskGenerationFailed: state.taskGenerationFailed,
       createRowModalOpen: state.createRowModalOpen,
     }),
     [
@@ -371,6 +372,7 @@ export function BoardProvider(
       state.newRowFormKey,
       state.isGeneratingTasks,
       state.taskGenerationStatus,
+      state.taskGenerationFailed,
       state.createRowModalOpen,
     ],
   );

@@ -151,5 +151,10 @@ export function openRowCreateModal(state: BoardState): BoardState {
 }
 
 export function closeRowCreateModal(state: BoardState): BoardState {
-  return { ...state, createRowModalOpen: false };
+  return {
+    ...state,
+    createRowModalOpen: false,
+    taskGenerationStatus: "",
+    taskGenerationFailed: false,
+  };
 }

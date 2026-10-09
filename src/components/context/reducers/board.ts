@@ -36,6 +36,7 @@ export const createInitialState = (): BoardState => {
     checklistModalError: "",
     isGeneratingTasks: false,
     taskGenerationStatus: "",
+    taskGenerationFailed: false,
     defaultColumnInput: "",
     defaultColumnIcon: null,
     draggedDefaultIndex: null,

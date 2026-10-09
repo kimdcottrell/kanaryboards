@@ -38,7 +38,7 @@ sequenceDiagram
     Ctx->>Reducer: rows.openRowCreateModal
     Reducer-->>Ctx: createRowModalOpen = true
     Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: createRowModalOpen=true)<br/>-> modal opens, CreateRowSection visible
-    Note over RowModal: Close (X / backdrop) -> closeCreateRowModal()<br/>-> ROW/CLOSE_CREATE_MODAL -> rows.closeRowCreateModal<br/>-> createRowModalOpen=false
+    Note over RowModal: Close (X / backdrop) -> closeCreateRowModal()<br/>-> ROW/CLOSE_CREATE_MODAL -> rows.closeRowCreateModal<br/>-> createRowModalOpen=false,<br/>taskGenerationStatus="", taskGenerationFailed=false
 
     Note over User,AI: Add row with AI task generation<br/>(CreateRowSection, inside CreateRowModal)
     User->>RowModal: type row name + AI prompt
@@ -49,40 +49,53 @@ sequenceDiagram
     Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: newRowName/newRowPrompt changed)
 
     User->>RowModal: submit "Add row" form
-    RowModal->>Actions: addRow(event)<br/>(actions/rowForm.ts)
-    Actions->>Ctx: dispatch(ROW/ADD, {id, title, color: blue, order})
-    Ctx->>Reducer: rows.add(state, payload)
-    Reducer-->>Ctx: rows = [...rows, newRow]
-    Actions->>Ctx: dispatch(ROW/CLOSE_CREATE_MODAL)<br/>then requestAnimationFrame -> getElementById("row-section-{id}").scrollIntoView({behavior:"smooth", block:"start"})
-    Ctx->>Reducer: rows.closeRowCreateModal
-    Reducer-->>Ctx: createRowModalOpen = false
-    Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: createRowModalOpen=false)<br/>-> modal closes, window scrolls to the new RowSection
-    Ctx-->>Config: BoardConfigModal re-renders<br/>(BoardData: rows changed)<br/>-> row settings list shows new row
-    Ctx-->>Row: RowBoard mounts a new RowSection<br/>(BoardData: rows changed)<br/>-> isNew=true (id not in RowBoard seenRowIds ref)
-    Row->>Row: useEffect -> animejs createScope + splitText(title, chars)<br/>+ animate(chars, {y bounce, rotate from -1turn, stagger(50),<br/>autoplay: onScroll({repeat:false})})<br/>-> title chars jump/spin in once when scrolled into view.<br/>RowBoard then marks the id seen, so remounts (e.g. column<br/>filter toggles) never replay it
+    RowModal->>Actions: addRow(event)<br/>(actions/rowForm.ts)<br/>builds newRow = {id, title, color: blue, order}
 
     alt newRowPrompt is non-empty
+        Note over Actions: generateTasksForRow(newRow) — the row is only<br/>created once tasks come back, so the modal stays open
         Actions->>Ctx: dispatch(TASK_AI/GENERATE_START)
         Ctx->>Reducer: taskAi.generateStart
-        Reducer-->>Ctx: isGeneratingTasks = true<br/>taskGenerationStatus = "Generating tasks..."
-        Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: isGeneratingTasks=true)<br/>-> shows status banner, disables inputs
+        Reducer-->>Ctx: isGeneratingTasks = true, taskGenerationFailed = false<br/>taskGenerationStatus = "Generating tasks..."
+        Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: isGeneratingTasks=true)<br/>-> modal stays open, GeneratingTasksAlert (info),<br/>inputs disabled, Add Row hidden
 
         Actions->>AI: fetchGeneratedItems(prompt, 10)<br/>(actions/shared.ts)<br/>POST /api/generate-tasks
         AI-->>Actions: {response: string[]} (task titles)
 
         alt titles returned
-            Actions->>Actions: todoColId = findTodoColumnId(columns)<br/>(selectors.ts)<br/>orders = generateNKeysBetween(null, null, n)<br/>build Task[] (empty description/checklist)
+            Actions->>Actions: buildTasksFromTitles(titles, newRow.id, columns)<br/>(todoColId = findTodoColumnId(columns),<br/>orders = generateNKeysBetween(null, null, n))
+            Actions->>Ctx: dispatch(ROW/ADD, newRow)
+            Ctx->>Reducer: rows.add(state, payload)
+            Reducer-->>Ctx: rows = [...rows, newRow]
             Actions->>Ctx: dispatch(TASK_AI/GENERATE_SUCCESS, {tasks})
             Ctx->>Reducer: taskAi.generateSuccess
-            Reducer-->>Ctx: tasks = [...newTasks, ...tasks]<br/>isGeneratingTasks=false<br/>taskGenerationStatus = "Added N task(s) to Todo"<br/>newRowName="", newRowPrompt="", newRowFormKey++
+            Reducer-->>Ctx: tasks = [...newTasks, ...tasks]<br/>isGeneratingTasks=false, taskGenerationFailed=false<br/>taskGenerationStatus = "Added N task(s) to first column."<br/>newRowName="", newRowPrompt="", newRowFormKey++
+            Ctx-->>RowModal: CreateRowModal re-renders<br/>-> form resets, GeneratingTasksAlert (success, green)<br/>shows the completion status
+            Ctx-->>Config: BoardConfigModal re-renders<br/>(BoardData: rows changed)<br/>-> row settings list shows new row
+            Ctx-->>Row: RowBoard mounts a new RowSection<br/>(BoardData: rows changed)<br/>-> isNew=true (id not in RowBoard seenRowIds ref)
+            Row->>Row: useEffect -> animejs createScope + splitText(title, chars)<br/>+ animate(chars, {y bounce, rotate from -1turn, stagger(50),<br/>autoplay: onScroll({repeat:false})})<br/>-> title chars jump/spin in once when scrolled into view.<br/>RowBoard then marks the id seen, so remounts (e.g. column<br/>filter toggles) never replay it
+            Ctx-->>Cell: ColumnSection (Todo column, new row)<br/>re-renders (TasksByCellContext changed)<br/>-> new TaskCards mount
+            Actions->>Actions: await 3000ms (CLOSE_AFTER_GENERATE_MS)
+            Actions->>Ctx: dispatch(ROW/CLOSE_CREATE_MODAL)<br/>then scrollToRow -> requestAnimationFrame -><br/>getElementById("row-section-{id}").scrollIntoView({behavior:"smooth", block:"start"})
+            Ctx->>Reducer: rows.closeRowCreateModal
+            Reducer-->>Ctx: createRowModalOpen = false<br/>taskGenerationStatus = "", taskGenerationFailed = false
+            Ctx-->>RowModal: CreateRowModal re-renders<br/>-> modal closes, window scrolls to the new RowSection
         else no titles / fetch error
             Actions->>Ctx: dispatch(TASK_AI/GENERATE_FAILURE, {error})
             Ctx->>Reducer: taskAi.generateFailure
-            Reducer-->>Ctx: isGeneratingTasks=false<br/>taskGenerationStatus=error<br/>newRowName="", newRowPrompt="", newRowFormKey++
+            Reducer-->>Ctx: isGeneratingTasks=false, taskGenerationFailed=true<br/>taskGenerationStatus=error<br/>(newRowName/newRowPrompt kept; no ROW/ADD)
+            Ctx-->>RowModal: CreateRowModal re-renders<br/>-> modal stays open, GeneratingTasksAlert (error),<br/>inputs re-enabled, Add Row reappears for retry
         end
-        Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: isGeneratingTasks=false)<br/>-> form resets, "Add Row" button reappears<br/>(modal already closed by ROW/ADD submit; status banner only visible if reopened)
-        Ctx-->>Cell: ColumnSection (Todo column, new row)<br/>re-renders (TasksByCellContext changed)<br/>-> new TaskCards mount
+        Note over Board,RowModal: In RowBoard's inline empty state there is no modal:<br/>ROW/ADD swaps the empty state for the board, and the<br/>delayed ROW/CLOSE_CREATE_MODAL is a no-op.
     else newRowPrompt empty
+        Actions->>Ctx: dispatch(ROW/ADD, newRow)
+        Ctx->>Reducer: rows.add(state, payload)
+        Reducer-->>Ctx: rows = [...rows, newRow]
+        Actions->>Ctx: dispatch(ROW/CLOSE_CREATE_MODAL)<br/>then scrollToRow -> requestAnimationFrame -><br/>getElementById("row-section-{id}").scrollIntoView({behavior:"smooth", block:"start"})
+        Ctx->>Reducer: rows.closeRowCreateModal
+        Reducer-->>Ctx: createRowModalOpen = false<br/>taskGenerationStatus = "", taskGenerationFailed = false
+        Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: createRowModalOpen=false)<br/>-> modal closes, window scrolls to the new RowSection
+        Ctx-->>Config: BoardConfigModal re-renders<br/>(BoardData: rows changed)<br/>-> row settings list shows new row
+        Ctx-->>Row: RowBoard mounts a new RowSection<br/>(BoardData: rows changed)<br/>-> isNew=true, title entrance animation (as above)
         Actions->>Ctx: dispatch(ROW/RESET_FORM)
         Ctx->>Reducer: rows.resetForm
         Reducer-->>Ctx: newRowName="", newRowPrompt="", newRowFormKey++

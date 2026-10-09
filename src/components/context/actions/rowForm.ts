@@ -8,13 +8,30 @@ import { createId, rowColorOptions } from "../constants.ts";
 import { buildTasksFromTitles, fetchGeneratedItems } from "./shared.ts";
 import { generateKeyBetween } from "fractional-indexing";
 import type { SubmitEvent } from "react";
+import type { RowAction } from "../types.ts";
+
+type NewRow = Extract<RowAction, { type: "ROW/ADD" }>["payload"];
+
+// How long the completed status stays visible before the modal closes.
+const CLOSE_AFTER_GENERATE_MS = 1000;
+
+const scrollToRow = (rowId: string) => {
+  requestAnimationFrame(() => {
+    document.getElementById(`row-section-${rowId}`)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  });
+};
 
 export function useRowFormActions() {
   const dispatch = useBoardDispatch();
   const { newRowName, newRowPrompt } = useRowFormState();
   const { rows, columns } = useBoardDataState();
 
-  const generateTasksForRow = useCallback(async (rowId: string) => {
+  // The row is only created once tasks come back; on failure no row is added
+  // and the modal stays open showing the error.
+  const generateTasksForRow = useCallback(async (newRow: NewRow) => {
     const prompt = newRowPrompt.trim();
     if (!prompt) return;
 
@@ -22,10 +39,16 @@ export function useRowFormActions() {
 
     try {
       const titles = await fetchGeneratedItems(prompt, 10);
-      const tasks = buildTasksFromTitles(titles, rowId, columns);
+      const tasks = buildTasksFromTitles(titles, newRow.id, columns);
 
       if (tasks.length > 0) {
+        dispatch({ type: "ROW/ADD", payload: newRow });
         dispatch({ type: "TASK_AI/GENERATE_SUCCESS", payload: { tasks } });
+        await new Promise((resolve) =>
+          setTimeout(resolve, CLOSE_AFTER_GENERATE_MS)
+        );
+        dispatch({ type: "ROW/CLOSE_CREATE_MODAL" });
+        scrollToRow(newRow.id);
       } else {
         dispatch({
           type: "TASK_AI/GENERATE_FAILURE",
@@ -47,29 +70,21 @@ export function useRowFormActions() {
     async (event: SubmitEvent<HTMLFormElement>) => {
       event.preventDefault();
       if (!newRowName.trim()) return;
-      const newRowId = createId();
       const lastRow = rows[rows.length - 1];
-      dispatch({
-        type: "ROW/ADD",
-        payload: {
-          id: newRowId,
-          title: newRowName.trim(),
-          color: rowColorOptions[0].value,
-          order: generateKeyBetween(lastRow?.order ?? null, null),
-        },
-      });
-      dispatch({ type: "ROW/CLOSE_CREATE_MODAL" });
-      requestAnimationFrame(() => {
-        document.getElementById(`row-section-${newRowId}`)?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      });
+      const newRow: NewRow = {
+        id: createId(),
+        title: newRowName.trim(),
+        color: rowColorOptions[0].value,
+        order: generateKeyBetween(lastRow?.order ?? null, null),
+      };
       if (newRowPrompt.trim()) {
-        await generateTasksForRow(newRowId);
-      } else {
-        dispatch({ type: "ROW/RESET_FORM" });
+        await generateTasksForRow(newRow);
+        return;
       }
+      dispatch({ type: "ROW/ADD", payload: newRow });
+      dispatch({ type: "ROW/CLOSE_CREATE_MODAL" });
+      scrollToRow(newRow.id);
+      dispatch({ type: "ROW/RESET_FORM" });
     },
     [newRowName, newRowPrompt, rows, dispatch, generateTasksForRow],
   );

@@ -27,12 +27,16 @@ const MOCK_TASKS_RESPONSE = {
  *   - Row name input (required, no id, identified by placeholder)
  *   - AI prompt input (#newRowPrompt, optional)
  *   - "Add Row" submit button (hidden while isGeneratingTasks)
- *   - .alert-info status block (visible only while isGeneratingTasks)
+ *   - GeneratingTasksAlert status block (.alert-info while generating,
+ *     .alert-success on completion, .alert-error on failure), visible
+ *     whenever taskGenerationStatus is set
  *
- * The form calls addRow() on submit, which dispatches ROW/ADD and optionally
- * fetches /api/generate-tasks when a prompt is provided.
- * After completion, ROW/RESET_FORM resets state (newRowFormKey changes,
- * unmounting/remounting the form to clear inputs).
+ * The form calls addRow() on submit. Without a prompt it dispatches ROW/ADD,
+ * closes the modal, then ROW/RESET_FORM resets state (newRowFormKey changes,
+ * unmounting/remounting the form to clear inputs). With a prompt it fetches
+ * /api/generate-tasks first and only adds the row on success, closing the
+ * modal 3s after the completed status shows; on failure no row is added and
+ * the modal stays open with the error and the inputs kept.
  */
 // A dashboard with no rows renders CreateRowSection inline (empty state), which
 // would duplicate the modal's copy. Seed one row so only the modal form renders.
@@ -218,7 +222,7 @@ test.describe("Board Configuration — Create New Row section", () => {
       ).toBeVisible({ timeout: 10000 });
     });
 
-    test("restores Add Row button after AI generation completes", async ({ page }) => {
+    test("keeps the modal open with the completed status, then closes it 1s later", async ({ page }) => {
       await page.route("/api/generate-tasks", (route) =>
         route.fulfill({
           status: 200,
@@ -235,33 +239,46 @@ test.describe("Board Configuration — Create New Row section", () => {
       await fillStable(promptInput, "Steps to make a pizza");
       await section.getByRole("button", { name: "Add Row" }).click();
 
-      await expect(
-        section.getByRole("button", { name: "Add Row" }),
-      ).toBeVisible({ timeout: 5000 });
+      // Green completion status shows while the modal is still open...
+      await expect(section.locator(".alert-success")).toContainText(
+        "to first column",
+      );
+      await expect(section.locator(".alert-info")).toHaveCount(0);
+      await page.waitForTimeout(1000);
+      await expect(section).toBeVisible();
+      // ...then the modal closes after the 1s delay.
+      await expect(section).not.toBeVisible({ timeout: 5000 });
     });
 
-    test("resets the form fields after AI generation completes", async ({ page }) => {
+    test("does not create the row and keeps the modal open when generation fails", async ({ page }) => {
       await page.route("/api/generate-tasks", (route) =>
         route.fulfill({
-          status: 200,
+          status: 500,
           contentType: "application/json",
-          body: JSON.stringify(MOCK_TASKS_RESPONSE),
+          body: JSON.stringify({ error: "AI is unavailable" }),
         }));
 
       const section = page.locator("[data-testid='create-new-row']");
-      const rowNameInput = section.getByPlaceholder(
+      const nameInput = section.getByPlaceholder(
         "A project name, a category for large project tasks, etc.",
       );
       const promptInput = section.locator("#newRowPrompt");
-
-      await fillStable(rowNameInput, "Pizza Making");
+      await fillStable(nameInput, "Pizza Making");
       await fillStable(promptInput, "Steps to make a pizza");
       await section.getByRole("button", { name: "Add Row" }).click();
 
+      await expect(section.locator(".alert-error")).toContainText(
+        "AI is unavailable",
+      );
+      await expect(section.locator(".alert-info")).toHaveCount(0);
+      // Wait past the (success-only) 1s auto-close to make sure it never fires.
+      await page.waitForTimeout(1500);
+      await expect(section).toBeVisible();
       await expect(section.getByRole("button", { name: "Add Row" }))
-        .toBeVisible({ timeout: 5000 });
-      await expect(rowNameInput).toHaveValue("");
-      await expect(promptInput).toHaveValue("");
+        .toBeVisible();
+      await expect(nameInput).toHaveValue("Pizza Making");
+      await expect(promptInput).toHaveValue("Steps to make a pizza");
+      await expect(page.locator("[id^='row-section-']")).toHaveCount(1);
     });
   });
 });

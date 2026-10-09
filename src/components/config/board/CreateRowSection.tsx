@@ -11,6 +11,7 @@ export default function CreateRowSection() {
     newRowFormKey,
     isGeneratingTasks,
     taskGenerationStatus,
+    taskGenerationFailed,
   } = useRowFormState();
   const { setNewRowName, setNewRowPrompt, addRow } = useRowFormActions();
 
@@ -63,13 +64,20 @@ export default function CreateRowSection() {
         </div>
 
         <div className="flex flex-col gap-3">
+          {taskGenerationStatus && (
+            <GeneratingTasksAlert
+              status={taskGenerationStatus}
+              variant={taskGenerationFailed
+                ? "error"
+                : isGeneratingTasks
+                ? "info"
+                : "success"}
+            />
+          )}
           {!isGeneratingTasks && (
             <button className="btn  btn-secondary w-fit" type="submit">
               Add Row
             </button>
-          )}
-          {isGeneratingTasks && (
-            <GeneratingTasksAlert status={taskGenerationStatus} />
           )}
         </div>
       </form>

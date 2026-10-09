@@ -76,6 +76,7 @@ export interface RowFormState {
   newRowFormKey: number;
   isGeneratingTasks: boolean;
   taskGenerationStatus: string;
+  taskGenerationFailed: boolean;
   createRowModalOpen: boolean;
 }
 

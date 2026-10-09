@@ -77,6 +77,9 @@ setup-ssh-agent: ## Add ssh_agent_reload function and SSH_AUTH_SOCK export to yo
 coffee: ## Get your terminal caffeinated
 	@echo -e '(ﾉ ^ヮ^)ﾉ *:･ﾟ✧ \342\230\225\012'
 
+dev: ## Start the dev server and tunnel to "local" Deno Deploy instance
+	deno task --tunnel dev
+
 # This will output the help for each task
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help: ## Magic terminal on my screen, what is the fairest help menu of them all?
