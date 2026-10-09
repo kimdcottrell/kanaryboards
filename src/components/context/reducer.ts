@@ -220,6 +220,9 @@ export function boardReducer(
     case "BOARD/LOAD":
       return board.load(state, action.payload);
 
+    case "BOARD/SYNC":
+      return board.sync(state, action.payload);
+
     case "BOARD/RESET":
       return board.reset();
 

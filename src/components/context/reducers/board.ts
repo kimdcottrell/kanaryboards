@@ -143,6 +143,45 @@ export function load(
   };
 }
 
+// Another tab's board replaces ours. Task modals stay open (unsaved edits are
+// kept) unless no rows are left; a draft whose row is gone loses its project.
+export function sync(
+  state: BoardState,
+  payload: Extract<BoardLifecycleAction, { type: "BOARD/SYNC" }>["payload"],
+): BoardState {
+  const { rows, columns, tasks } = payload;
+  if (rows.length === 0) {
+    return {
+      ...state,
+      rows,
+      columns,
+      tasks,
+      taskCreateModalOpen: false,
+      taskEditModalOpen: false,
+      editingTaskId: null,
+      editTaskDraft: null,
+      checklistModalTaskId: null,
+      checklistPrompt: "",
+      checklistPreview: [],
+      checklistModalError: "",
+    };
+  }
+  const rowIds = new Set(rows.map((r) => r.id));
+  const { taskDraft, editTaskDraft } = state;
+  return {
+    ...state,
+    rows,
+    columns,
+    tasks,
+    taskDraft: rowIds.has(taskDraft.rowId)
+      ? taskDraft
+      : { ...taskDraft, rowId: "" },
+    editTaskDraft: editTaskDraft && !rowIds.has(editTaskDraft.rowId)
+      ? { ...editTaskDraft, rowId: "" }
+      : editTaskDraft,
+  };
+}
+
 export function reset(): BoardState {
   const columnOrders = generateNKeysBetween(null, null, 5);
   return {

@@ -273,10 +273,42 @@ export function BoardProvider(
   // Persist board on state changes (after initial load).
   // Authenticated: save to API (KV). Unauthenticated: save to localStorage only.
   // boardId === "demo": never write anywhere — the demo board is ephemeral.
+  // Each save is also broadcast to this browser's other tabs, which apply it
+  // with BOARD/SYNC. lastSyncedRef holds the last received board so applying
+  // it doesn't trigger a save + broadcast back (an endless echo between tabs).
+  const channelRef = useRef<BroadcastChannel | null>(null);
+  const lastSyncedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (boardId === "demo") return;
+    const channel = new BroadcastChannel(
+      `board-sync:${isAuthenticated ? "kv" : "local"}`,
+    );
+    channel.onmessage = (
+      e: MessageEvent<Pick<BoardData, "rows" | "columns" | "tasks">>,
+    ) => {
+      const { rows, columns, tasks } = e.data;
+      lastSyncedRef.current = JSON.stringify({ rows, columns, tasks });
+      dispatch({ type: "BOARD/SYNC", payload: { rows, columns, tasks } });
+    };
+    channelRef.current = channel;
+    return () => {
+      channel.close();
+      channelRef.current = null;
+    };
+  }, [boardId, isAuthenticated]);
+
+  // The board as first loaded. Its post-load save isn't broadcast: other tabs
+  // already have it, or something newer that it would overwrite.
+  const loadedSnapshotRef = useRef<string | null>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (boardId === "demo") return;
     if (!state.boardLoaded) return;
+    loadedSnapshotRef.current ??= JSON.stringify({
+      rows: state.rows,
+      columns: state.columns,
+      tasks: state.tasks,
+    });
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
       const boardSnapshot = {
@@ -284,18 +316,21 @@ export function BoardProvider(
         columns: state.columns,
         tasks: state.tasks,
       };
+      const body = JSON.stringify(boardSnapshot);
+      if (body === lastSyncedRef.current) return;
       if (isAuthenticated) {
         fetch("/api/board", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(boardSnapshot),
+          body,
         });
       } else {
-        globalThis.localStorage?.setItem(
-          STORAGE_KEY,
-          JSON.stringify(boardSnapshot),
-        );
+        globalThis.localStorage?.setItem(STORAGE_KEY, body);
       }
+      if (body !== loadedSnapshotRef.current) {
+        channelRef.current?.postMessage(boardSnapshot);
+      }
+      loadedSnapshotRef.current = ""; // only the first save is skipped
     }, 500);
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);

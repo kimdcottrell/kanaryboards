@@ -132,23 +132,33 @@ export function remove(
 }
 
 export function saveEdit(state: BoardState): BoardState {
-  if (!state.editTaskDraft?.title.trim()) return state;
+  const draft = state.editTaskDraft;
+  if (!draft?.title.trim()) return state;
+  const edits = {
+    title: draft.title.trim(),
+    description: draft.description,
+    rowId: draft.rowId,
+    colId: draft.colId,
+    checklist: draft.checklist.filter((i) => i.text.trim()),
+  };
+  // Deleted in another tab (BOARD/SYNC) while being edited: add it back at
+  // the end of its cell rather than dropping the user's changes.
+  const exists = state.tasks.some((t) => t.id === state.editingTaskId);
+  const tasks = exists
+    ? state.tasks.map((t) =>
+      t.id === state.editingTaskId ? { ...t, ...edits } : t
+    )
+    : [
+      ...state.tasks,
+      {
+        ...draft,
+        ...edits,
+        order: endOfCellKey(state, draft.id, draft.rowId, draft.colId)!,
+      },
+    ];
   return {
     ...state,
-    tasks: state.tasks.map((t) =>
-      t.id === state.editingTaskId
-        ? {
-          ...t,
-          title: state.editTaskDraft!.title.trim(),
-          description: state.editTaskDraft!.description,
-          rowId: state.editTaskDraft!.rowId,
-          colId: state.editTaskDraft!.colId,
-          checklist: state.editTaskDraft!.checklist.filter((i) =>
-            i.text.trim()
-          ),
-        }
-        : t
-    ),
+    tasks,
     editingTaskId: null,
     editTaskDraft: null,
     taskEditModalOpen: false,

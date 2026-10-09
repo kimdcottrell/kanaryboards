@@ -102,6 +102,7 @@ sequenceDiagram
     Actions->>Ctx: dispatch(TASK/SAVE_EDIT)
     Ctx->>Reducer: tasks.saveEdit(state)
     Reducer-->>Ctx: tasks updated (title/description/rowId/colId/checklist)<br/>editingTaskId = null, editTaskDraft = null<br/>taskEditModalOpen = false
+    Note over Reducer: Task deleted in another tab while being edited (BOARD/SYNC):<br/>saveEdit adds it back from editTaskDraft at the end of its cell.<br/>Project is required, so a draft whose row was deleted<br/>can't be submitted until a new project is picked.
     Actions->>Drafts: clearEditDraft(task.id) -> alert gone on next open
     Drafts-->>Card: TaskCard re-renders (useHasEditDraft) -> indicator removed
     TaskModal->>TaskModal: navigate(/dashboard)

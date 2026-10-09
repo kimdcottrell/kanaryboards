@@ -316,6 +316,11 @@ export type BoardLifecycleAction =
       columns: StoredColumn[];
       tasks: StoredTask[];
     };
+  }
+  // Another tab's autosaved board, received over BroadcastChannel.
+  | {
+    type: "BOARD/SYNC";
+    payload: { rows: Row[]; columns: Column[]; tasks: Task[] };
   };
 
 export type BoardAction =

@@ -144,6 +144,7 @@ export default function TaskEditModal() {
               rows={rows}
               selectedRowId={draft.rowId}
               onSelect={(rowId) => setEditTaskDraft({ ...draft, rowId })}
+              required
             />
           }
           checklist={

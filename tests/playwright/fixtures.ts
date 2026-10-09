@@ -170,6 +170,18 @@ async function withoutClerkTestingToken(
   await use();
 }
 
+// A second tab in `page`'s context (shared localStorage + BroadcastChannel),
+// given the same Clerk testing token and analytics blocking as the fixture page.
+export async function openSecondTab(page: Page): Promise<Page> {
+  const second = await page.context().newPage();
+  await setupClerkTestingToken({
+    page: second,
+    options: { frontendApiUrl: process.env.CLERK_FAPI ?? fapiFromKey },
+  });
+  await blockAnalytics(second);
+  return second;
+}
+
 // Auto-fixture: runs before every test without needing to be listed in the
 // test signature. Registers Clerk FAPI route interception + retry-on-429 logic.
 export const test = base.extend<{ clerkSetup: void }>({

@@ -103,6 +103,7 @@ sequenceDiagram
     end
 
     Note over User,AI: Create task from board menu (TaskCreateModal)
+    Note over BoardMenu: "Create new task" is only in addActions<br/>when rows.length > 0 (useSharedMenuActions)
     User->>BoardMenu: click "Create new task"
     BoardMenu->>Actions: openTaskForm("", "")<br/>(actions/task.ts)
     Actions->>Ctx: dispatch(TASK/OPEN_CREATE_MODAL, {rowId:"", colId:""})
@@ -144,6 +145,7 @@ sequenceDiagram
     Note over Reducer: Comments of the removed tasks are not deleted here:<br/>KV -> swept by the next /api/purge-trash run,<br/>localStorage -> pruned on the next board load
     Ctx-->>Row: that RowSection (+ its ColumnSections/TaskCards)<br/>unmounts (BoardData: rows/tasks changed)
     Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: rows changed)<br/>-> row settings list loses the row
+    Note over Ctx: Other tabs receive the new board via BOARD/SYNC<br/>(see board-load-autosave). If no rows are left there,<br/>their task modals close.
 
     Note over User,AI: Reorder row (move up / down, RowSettingsSection only)
     User->>Config: click move-up / move-down arrow

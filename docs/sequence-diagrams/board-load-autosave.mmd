@@ -11,6 +11,7 @@ sequenceDiagram
     participant KV@{ "type" : "database" } as Deno KV<br/>(lib/kv.ts)
     participant LS@{ "type" : "database" } as localStorage
     participant Purge@{ "type" : "boundary" } as /api/purge-trash<br/>(pages/api/purge-trash.ts)
+    participant Tab as other tabs<br/>(BroadcastChannel<br/>board-sync:kv / board-sync:local)
 
     Note over User,LS: Initial mount
     User->>Router: navigate to "/dashboard"<br/>(or deep-link "/dashboard/row/:rowId"<br/>from the drawer's project-row list)
@@ -84,17 +85,37 @@ sequenceDiagram
 
     Note over User,LS: Autosave (on every state.{rows,columns,tasks} change)
     Note over Provider: useEffect deps: [rows, columns, tasks, boardLoaded]<br/>guarded by boardLoaded === true
-    Provider->>Provider: clearTimeout(prev)<br/>setTimeout(..., 500ms)
-    alt isAuthenticated
-        rect rgba(38, 240, 58, 0.25)
-            Provider->>API: PUT /api/board {rows, columns, tasks}
-            API->>KV: saveBoard(boardId, body)
+    Provider->>Provider: loadedSnapshotRef ??= JSON of the first loaded board<br/>clearTimeout(prev)<br/>setTimeout(..., 500ms)
+    alt snapshot === lastSyncedRef (state came from BOARD/SYNC)
+        Note over Provider: skip save + broadcast (prevents an echo loop between tabs)
+    else local change
+        alt isAuthenticated
+            rect rgba(38, 240, 58, 0.25)
+                Provider->>API: PUT /api/board {rows, columns, tasks}
+                API->>KV: saveBoard(boardId, body)
+            end
+        else not authenticated
+            rect rgba(240, 38, 38, 0.25)
+                Provider->>LS: localStorage.setItem(STORAGE_KEY, JSON.stringify({rows,columns,tasks}))
+            end
         end
-    else not authenticated
-        rect rgba(240, 38, 38, 0.25)
-            Provider->>LS: localStorage.setItem(STORAGE_KEY, JSON.stringify({rows,columns,tasks}))
+        opt snapshot !== loadedSnapshotRef
+            Provider->>Tab: channel.postMessage({rows, columns, tasks})
         end
+        Note over Provider: The post-load save is not broadcast: other tabs<br/>already hold that board, or a newer one it would undo.<br/>loadedSnapshotRef is cleared after the first save.
     end
+
+    Note over User,Tab: Cross-tab sync (same browser; skipped for boardId "demo")
+    Tab->>Provider: channel message {rows, columns, tasks}
+    Provider->>Provider: lastSyncedRef = JSON.stringify(snapshot)
+    Provider->>Reducer: dispatch(BOARD/SYNC, snapshot) -> board.sync
+    Reducer-->>Provider: rows/columns/tasks replaced (last write wins)
+    alt rows.length === 0
+        Reducer-->>Provider: taskCreateModalOpen=false, taskEditModalOpen=false,<br/>editingTaskId/editTaskDraft=null, checklist AI state cleared
+    else a draft's row is missing
+        Reducer-->>Provider: taskDraft.rowId / editTaskDraft.rowId = ""<br/>(modal stays open with unsaved edits, Project shows no selection)
+    end
+    Provider->>View: re-render (BoardData changed)<br/>BoardMenu / BoardDock drop "Create new task" when rows is empty
 
     Note over User,Purge: Daily trash purge (Deno Deploy cron, no client involved)
     Purge->>Purge: check Authorization: Bearer CRON_SECRET
