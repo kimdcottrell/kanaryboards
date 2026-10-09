@@ -58,5 +58,5 @@ sequenceDiagram
     Reducer-->>Ctx: draggedTask = null<br/>(no-op if already cleared by a drop)
 
     Note over User,Ctx: Autosave (debounced, async)
-    Ctx->>Ctx: useEffect on tasks/rows/columns (500ms debounce)
+    Ctx->>Ctx: useBoardPersistence: useEffect on tasks/rows/columns (500ms debounce)
     Ctx->>Ctx: PUT /api/board {rows, columns, tasks}<br/>(or localStorage if unauthenticated)

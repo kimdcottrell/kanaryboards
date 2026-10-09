@@ -4,7 +4,7 @@ title: Board Load & Autosave
 sequenceDiagram
     actor User
     participant Router as spa-router<br/>(BoardController -> RouterProvider)
-    participant Provider as BoardProvider<br/>(BoardContext.tsx)
+    participant Provider as BoardProvider<br/>(BoardContext.tsx -><br/>effects/useBoardPersistence.ts)
     participant Reducer as board reducer<br/>(reducers/board.ts)
     participant View as BoardView /<br/>RowBoard / BoardConfigModal
     participant API@{ "type" : "boundary" } as /api/board<br/>(pages/api/board.ts)

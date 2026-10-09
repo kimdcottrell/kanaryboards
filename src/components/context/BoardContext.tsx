@@ -1,12 +1,5 @@
 import { createContext } from "react";
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useReducer,
-  useRef,
-} from "react";
+import { useContext, useMemo, useReducer } from "react";
 import type { Dispatch, ReactNode } from "react";
 import type {
   BoardAction,
@@ -24,12 +17,10 @@ import type {
   TaskEditState,
 } from "./types.ts";
 import { boardReducer, createInitialState } from "./reducer.ts";
-import { expiredTrashTaskIds } from "./reducers/board.ts";
-import { pruneLocalComments } from "../task/comments/commentStore.ts";
-import { STORAGE_KEY } from "./constants.ts";
-import { createDemoBoard } from "../demo/demoBoardData.ts";
 import { computeTasksByCell } from "./selectors.ts";
-import { byOrder } from "./ordering.ts";
+import { useBoardPersistence } from "./effects/useBoardPersistence.ts";
+import { useDrawerRowMirror } from "./effects/useDrawerRowMirror.ts";
+import { useChecklistInputRefs } from "./effects/useChecklistInputRefs.ts";
 
 export const BoardDispatchContext = createContext<Dispatch<BoardAction> | null>(
   null,
@@ -186,200 +177,9 @@ export function BoardProvider(
     createInitialState,
   );
 
-  // Load board on mount. Authenticated: load from API, migrate localStorage if needed.
-  // Unauthenticated: load from localStorage (falling back to API for legacy KV data).
-  // boardId === "demo" (landing-page demo): always seed from createDemoBoard(), skip storage entirely.
-  useEffect(() => {
-    async function load() {
-      try {
-        if (boardId === "demo") {
-          dispatch({ type: "BOARD/LOAD", payload: createDemoBoard() });
-          return;
-        }
-        if (isAuthenticated) {
-          const res = await fetch("/api/board");
-          // Non-404 errors are unexpected — bail out and leave the board unloaded.
-          if (!res.ok && res.status !== 404) return;
-          const hasRemoteData = res.ok;
-          const remote = hasRemoteData ? await res.json() : null;
-
-          // Migrate full board from localStorage if the server has no data yet.
-          if (!hasRemoteData) {
-            const stored = globalThis.localStorage?.getItem(STORAGE_KEY);
-            if (stored) {
-              try {
-                const local = JSON.parse(stored);
-                const putRes = await fetch("/api/board", {
-                  method: "PUT",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(local),
-                });
-                if (putRes.ok) {
-                  globalThis.localStorage?.removeItem(STORAGE_KEY);
-                }
-                dispatch({ type: "BOARD/LOAD", payload: local });
-                return;
-              } catch {
-                // ignore malformed localStorage
-              }
-            }
-            dispatch({ type: "BOARD/RESET" });
-            return;
-          }
-
-          dispatch({ type: "BOARD/LOAD", payload: remote });
-        } else {
-          // Unauthenticated: board lives in localStorage only, no KV interaction.
-          const stored = globalThis.localStorage?.getItem(STORAGE_KEY);
-          if (stored) {
-            try {
-              const local = JSON.parse(stored);
-              // Comments live in separate localStorage, out of reach of
-              // /api/purge-trash, so drop those of every task not on the
-              // loaded board: expired Trash tasks (BOARD/LOAD drops them) and
-              // tasks removed with their row or column.
-              const tasks: { id: string }[] = local.tasks ?? [];
-              const expired = expiredTrashTaskIds(
-                local.columns ?? [],
-                tasks,
-                Date.now(),
-              );
-              pruneLocalComments(
-                new Set(
-                  tasks.map((t) => t.id).filter((id) => !expired.has(id)),
-                ),
-              );
-              dispatch({ type: "BOARD/LOAD", payload: local });
-              return;
-            } catch {
-              // ignore malformed localStorage
-            }
-          }
-          // No board (e.g. after a reset), so no comment belongs to one.
-          pruneLocalComments(new Set());
-          dispatch({ type: "BOARD/RESET" });
-        }
-      } catch (error) {
-        // Whatever failed (fetch rejection, res.json() on a non-JSON body,
-        // etc.), don't leave boardLoaded stuck false with no visible error.
-        console.error("Failed to load board:", error);
-        dispatch({ type: "BOARD/RESET" });
-      }
-    }
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [boardId, isAuthenticated]);
-
-  // Persist board on state changes (after initial load).
-  // Authenticated: save to API (KV). Unauthenticated: save to localStorage only.
-  // boardId === "demo": never write anywhere — the demo board is ephemeral.
-  // Each save is also broadcast to this browser's other tabs, which apply it
-  // with BOARD/SYNC. lastSyncedRef holds the last received board so applying
-  // it doesn't trigger a save + broadcast back (an endless echo between tabs).
-  const channelRef = useRef<BroadcastChannel | null>(null);
-  const lastSyncedRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (boardId === "demo") return;
-    const channel = new BroadcastChannel(
-      `board-sync:${isAuthenticated ? "kv" : "local"}`,
-    );
-    channel.onmessage = (
-      e: MessageEvent<Pick<BoardData, "rows" | "columns" | "tasks">>,
-    ) => {
-      const { rows, columns, tasks } = e.data;
-      lastSyncedRef.current = JSON.stringify({ rows, columns, tasks });
-      dispatch({ type: "BOARD/SYNC", payload: { rows, columns, tasks } });
-    };
-    channelRef.current = channel;
-    return () => {
-      channel.close();
-      channelRef.current = null;
-    };
-  }, [boardId, isAuthenticated]);
-
-  // The board as first loaded. Its post-load save isn't broadcast: other tabs
-  // already have it, or something newer that it would overwrite.
-  const loadedSnapshotRef = useRef<string | null>(null);
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (boardId === "demo") return;
-    if (!state.boardLoaded) return;
-    loadedSnapshotRef.current ??= JSON.stringify({
-      rows: state.rows,
-      columns: state.columns,
-      tasks: state.tasks,
-    });
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = setTimeout(() => {
-      const boardSnapshot = {
-        rows: state.rows,
-        columns: state.columns,
-        tasks: state.tasks,
-      };
-      const body = JSON.stringify(boardSnapshot);
-      if (body === lastSyncedRef.current) return;
-      if (isAuthenticated) {
-        fetch("/api/board", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body,
-        });
-      } else {
-        globalThis.localStorage?.setItem(STORAGE_KEY, body);
-      }
-      if (body !== loadedSnapshotRef.current) {
-        channelRef.current?.postMessage(boardSnapshot);
-      }
-      loadedSnapshotRef.current = ""; // only the first save is skipped
-    }, 500);
-    return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    };
-  }, [
-    state.rows,
-    state.columns,
-    state.tasks,
-    state.boardLoaded,
-    isAuthenticated,
-    boardId,
-  ]);
-
-  // DrawerMenu.astro renders its row list outside this React island (an Astro
-  // server island, hydrated once at load), so it never learns about client-side
-  // row changes on its own. Mirror state.rows into its DOM here instead.
-  // boardId === "demo": this provider's rows are the landing-page demo board,
-  // not the visitor's real rows — never let it overwrite the shared drawer.
-  useEffect(() => {
-    if (boardId === "demo") return;
-    if (!state.boardLoaded) return;
-    const list = document.getElementById("drawer-row-list");
-    if (!list) return;
-    list.replaceChildren(
-      ...[...state.rows].sort(byOrder).map((row) => {
-        const li = document.createElement("li");
-        const a = document.createElement("a");
-        a.href = `/dashboard/row/${row.id}`;
-        a.dataset.boardLink = "";
-        a.textContent = row.title;
-        li.appendChild(a);
-        return li;
-      }),
-    );
-  }, [state.rows, state.boardLoaded]);
-
-  const checklistInputRefs = useRef<Record<string, HTMLInputElement>>({});
-
-  const setChecklistInputRef = useCallback(
-    (id: string, el: HTMLInputElement | null) => {
-      if (el) checklistInputRefs.current[id] = el;
-      else delete checklistInputRefs.current[id];
-    },
-    [],
-  );
-
-  const focusChecklistInput = useCallback((id: string) => {
-    checklistInputRefs.current[id]?.focus();
-  }, []);
+  useBoardPersistence(state, dispatch, boardId, isAuthenticated);
+  useDrawerRowMirror(state.rows, state.boardLoaded, boardId);
+  const checklistInputRefs = useChecklistInputRefs();
 
   const boardData = useMemo(
     () => ({
@@ -506,9 +306,7 @@ export function BoardProvider(
 
   return (
     <BoardDispatchContext.Provider value={dispatch}>
-      <BoardRefsContext.Provider
-        value={{ setChecklistInputRef, focusChecklistInput }}
-      >
+      <BoardRefsContext.Provider value={checklistInputRefs}>
         <BoardMetaContext.Provider value={boardMeta}>
           <BoardDataContext.Provider value={boardData}>
             <RowFormContext.Provider value={rowFormState}>

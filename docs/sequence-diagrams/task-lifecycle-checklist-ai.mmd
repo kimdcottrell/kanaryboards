@@ -220,5 +220,5 @@ sequenceDiagram
     Ctx-->>Form: ChecklistGenerationCollapse re-renders<br/>(reads ChecklistAIContext itself reset)<br/>-> reverts to empty-prompt "Generate" state
 
     Note over User,AI: Autosave (debounced, async)
-    Ctx->>Ctx: useEffect on tasks (500ms debounce)
+    Ctx->>Ctx: useBoardPersistence: useEffect on tasks (500ms debounce)
     Ctx->>Ctx: PUT /api/board {rows, columns, tasks}<br/>(or localStorage if unauthenticated)
