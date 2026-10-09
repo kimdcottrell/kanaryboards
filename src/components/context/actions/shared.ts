@@ -18,6 +18,8 @@ export const buildTasksFromTitles = (
     title,
     description: "",
     checklist: [],
+    trashedAt: null,
+    preTrashColId: null,
   }));
 };
 

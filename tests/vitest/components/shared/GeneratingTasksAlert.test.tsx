@@ -13,4 +13,20 @@ describe("GeneratingTasksAlert", () => {
     const { container } = render(<GeneratingTasksAlert status="Working" />);
     expect(container.querySelector(".alert.alert-info")).not.toBeNull();
   });
+
+  test("uses the alert-success style for the success variant", () => {
+    const { container } = render(
+      <GeneratingTasksAlert status="Done" variant="success" />,
+    );
+    expect(container.querySelector(".alert.alert-success")).not.toBeNull();
+    expect(container.querySelector(".alert-info")).toBeNull();
+  });
+
+  test("uses the alert-error style for the error variant", () => {
+    const { container } = render(
+      <GeneratingTasksAlert status="Failed" variant="error" />,
+    );
+    expect(container.querySelector(".alert.alert-error")).not.toBeNull();
+    expect(container.querySelector(".alert-info")).toBeNull();
+  });
 });

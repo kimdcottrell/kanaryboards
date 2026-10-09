@@ -1,4 +1,4 @@
-import ColumnCard from "./ColumnCard.tsx";
+import ColumnSection from "./ColumnSection.tsx";
 import type { Column, Row } from "./context/types.ts";
 
 // Shown when exactly one column is selected from the BoardMenu. Pivots the
@@ -25,7 +25,7 @@ export default function CondensedColumnBoard(
         <div className="pb-4">
           <div className="flex gap-3">
             {rows.map((row) => (
-              <ColumnCard
+              <ColumnSection
                 key={row.id}
                 column={column}
                 row={row}

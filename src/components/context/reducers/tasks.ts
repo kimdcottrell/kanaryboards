@@ -1,6 +1,13 @@
-import type { BoardState, ChecklistItem, TaskAction } from "../types.ts";
+import type {
+  BoardState,
+  ChecklistItem,
+  Column,
+  Task,
+  TaskAction,
+} from "../types.ts";
 import { createId, emptyTaskDraft } from "../constants.ts";
 import { reorderKey } from "../ordering.ts";
+import { findTodoColumnId } from "../selectors.ts";
 import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
 
 // Regenerate fractional orders for a loaded checklist, preserving its current
@@ -9,6 +16,85 @@ import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
 function withChecklistOrders(checklist: ChecklistItem[]): ChecklistItem[] {
   const orders = generateNKeysBetween(null, null, checklist.length);
   return checklist.map((item, i) => ({ ...item, order: orders[i] }));
+}
+
+// Moving into Trash stamps when and where from (kept on a Trash -> Trash move
+// between rows); moving out clears both.
+function withTrashState(prev: Task, next: Task, columns: Column[]): Task {
+  const isTrash = (colId: string) =>
+    columns.some((c) => c.id === colId && c.isTrash);
+  if (!isTrash(next.colId)) {
+    return { ...next, trashedAt: null, preTrashColId: null };
+  }
+  if (isTrash(prev.colId)) return next;
+  return {
+    ...next,
+    trashedAt: new Date().toISOString(),
+    preTrashColId: prev.colId,
+  };
+}
+
+// Fractional key placing `taskId` at the end of the (rowId, colId) cell.
+function endOfCellKey(
+  state: BoardState,
+  taskId: string,
+  rowId: string,
+  colId: string,
+): string | null {
+  const cellTasks = state.tasks.filter((t) =>
+    t.rowId === rowId && t.colId === colId
+  );
+  return reorderKey(cellTasks, taskId, null);
+}
+
+const closedEditModal = {
+  editingTaskId: null,
+  editTaskDraft: null,
+  taskEditModalOpen: false,
+};
+
+export function trash(
+  state: BoardState,
+  payload: Extract<TaskAction, { type: "TASK/TRASH" }>["payload"],
+): BoardState {
+  const task = state.tasks.find((t) => t.id === payload.taskId);
+  const trashCol = state.columns.find((c) => c.isTrash);
+  if (!task || !trashCol) return state;
+  const order = endOfCellKey(state, task.id, task.rowId, trashCol.id);
+  if (order === null) return state;
+  return {
+    ...state,
+    tasks: state.tasks.map((t) =>
+      t.id === task.id
+        ? withTrashState(t, { ...t, colId: trashCol.id, order }, state.columns)
+        : t
+    ),
+    ...closedEditModal,
+  };
+}
+
+export function restore(
+  state: BoardState,
+  payload: Extract<TaskAction, { type: "TASK/RESTORE" }>["payload"],
+): BoardState {
+  const task = state.tasks.find((t) => t.id === payload.taskId);
+  if (!task) return state;
+  // The pre-trash column may have been deleted since.
+  const colId =
+    state.columns.some((c) => c.id === task.preTrashColId && !c.isTrash)
+      ? task.preTrashColId!
+      : findTodoColumnId(state.columns.filter((c) => !c.isTrash));
+  const order = endOfCellKey(state, task.id, task.rowId, colId);
+  if (order === null) return state;
+  return {
+    ...state,
+    tasks: state.tasks.map((t) =>
+      t.id === task.id
+        ? withTrashState(t, { ...t, colId, order }, state.columns)
+        : t
+    ),
+    ...closedEditModal,
+  };
 }
 
 export function create(
@@ -46,23 +132,33 @@ export function remove(
 }
 
 export function saveEdit(state: BoardState): BoardState {
-  if (!state.editTaskDraft?.title.trim()) return state;
+  const draft = state.editTaskDraft;
+  if (!draft?.title.trim()) return state;
+  const edits = {
+    title: draft.title.trim(),
+    description: draft.description,
+    rowId: draft.rowId,
+    colId: draft.colId,
+    checklist: draft.checklist.filter((i) => i.text.trim()),
+  };
+  // Deleted in another tab (BOARD/SYNC) while being edited: add it back at
+  // the end of its cell rather than dropping the user's changes.
+  const exists = state.tasks.some((t) => t.id === state.editingTaskId);
+  const tasks = exists
+    ? state.tasks.map((t) =>
+      t.id === state.editingTaskId ? { ...t, ...edits } : t
+    )
+    : [
+      ...state.tasks,
+      {
+        ...draft,
+        ...edits,
+        order: endOfCellKey(state, draft.id, draft.rowId, draft.colId)!,
+      },
+    ];
   return {
     ...state,
-    tasks: state.tasks.map((t) =>
-      t.id === state.editingTaskId
-        ? {
-          ...t,
-          title: state.editTaskDraft!.title.trim(),
-          description: state.editTaskDraft!.description,
-          rowId: state.editTaskDraft!.rowId,
-          colId: state.editTaskDraft!.colId,
-          checklist: state.editTaskDraft!.checklist.filter((i) =>
-            i.text.trim()
-          ),
-        }
-        : t
-    ),
+    tasks,
     editingTaskId: null,
     editTaskDraft: null,
     taskEditModalOpen: false,
@@ -76,7 +172,9 @@ export function moveToColumn(
   return {
     ...state,
     tasks: state.tasks.map((t) =>
-      t.id === payload.taskId ? { ...t, colId: payload.colId } : t
+      t.id === payload.taskId
+        ? withTrashState(t, { ...t, colId: payload.colId }, state.columns)
+        : t
     ),
   };
 }
@@ -111,7 +209,11 @@ export function openCreateModal(
   return {
     ...state,
     taskCreateModalOpen: true,
-    taskDraft: emptyTaskDraft(payload.rowId, payload.colId),
+    // Without a column (e.g. the "new task" shortcut), default to the first.
+    taskDraft: emptyTaskDraft(
+      payload.rowId,
+      payload.colId || (state.columns.find((c) => !c.isTrash)?.id ?? ""),
+    ),
     checklistModalTaskId: null,
     checklistPrompt: "",
     checklistPreview: [],
@@ -231,7 +333,11 @@ export function dropOnCell(
     ...state,
     tasks: state.tasks.map((t) =>
       t.id === state.draggedTask!.id
-        ? { ...t, rowId: toRowId, colId: toColId, order: newOrder }
+        ? withTrashState(
+          t,
+          { ...t, rowId: toRowId, colId: toColId, order: newOrder },
+          state.columns,
+        )
         : t
     ),
     draggedTask: null,

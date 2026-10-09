@@ -39,6 +39,7 @@ export const mockColumn: Column = {
   icon: null,
   iconInBoardMenu: false,
   iconNearColumnTitle: false,
+  isTrash: false,
 };
 export const secondColumn: Column = {
   id: "col-2",
@@ -49,6 +50,7 @@ export const secondColumn: Column = {
   icon: null,
   iconInBoardMenu: false,
   iconNearColumnTitle: false,
+  isTrash: false,
 };
 export const secondRow: Row = {
   id: "row-2",
@@ -65,6 +67,8 @@ export const mockTask: Task = {
   title: "Test task",
   description: "",
   checklist: [],
+  trashedAt: null,
+  preTrashColId: null,
 };
 
 export const mockTaskDraft: Task = {
@@ -73,6 +77,8 @@ export const mockTaskDraft: Task = {
   title: "",
   description: "",
   checklist: [],
+  trashedAt: null,
+  preTrashColId: null,
   rowId: "row-1",
   colId: "col-1",
 };
@@ -182,6 +188,8 @@ export function makeTaskActions(
     toggleTaskChecklist: vi.fn(),
     cancelEditTask: vi.fn(),
     deleteTask: vi.fn(),
+    trashTask: vi.fn(),
+    restoreTask: vi.fn(),
     openTaskForm: vi.fn(),
     closeTaskCreateModal: vi.fn(),
     reorderTaskInCell: vi.fn(),

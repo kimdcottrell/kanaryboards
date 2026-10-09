@@ -53,4 +53,21 @@ test.describe("Task URL", () => {
     // URL is now /dashboard/task/:id
     await expect(page).toHaveURL(/\/dashboard\/task\/.+/);
   });
+
+  test("edit modal closes via the X button", async ({ page }) => {
+    await page.waitForSelector("button:has(.hugeicons--add-01)");
+    await page.locator("button:has(.hugeicons--add-01)").first().click();
+    await page.getByRole("textbox", { name: "Title" }).fill("Closable Task");
+    await page.locator("dialog").getByRole("button", { name: "Create task" })
+      .click();
+
+    await page.getByRole("heading", { name: "Closable Task" }).click();
+    await expect(page).toHaveURL(/\/dashboard\/task\/.+/);
+
+    await page.locator(".modal-open button:has(.hugeicons--cancel-01)")
+      .click();
+
+    await expect(page.locator(".modal-open")).toHaveCount(0);
+    expect(new URL(page.url()).pathname).toBe("/dashboard");
+  });
 });

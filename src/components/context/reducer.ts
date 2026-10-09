@@ -120,6 +120,12 @@ export function boardReducer(
     case "TASK/MOVE_TO_COLUMN":
       return tasks.moveToColumn(state, action.payload);
 
+    case "TASK/TRASH":
+      return tasks.trash(state, action.payload);
+
+    case "TASK/RESTORE":
+      return tasks.restore(state, action.payload);
+
     case "TASK/TOGGLE_CHECKLIST_ITEM":
       return tasks.toggleChecklistItem(state, action.payload);
 
@@ -213,6 +219,9 @@ export function boardReducer(
 
     case "BOARD/LOAD":
       return board.load(state, action.payload);
+
+    case "BOARD/SYNC":
+      return board.sync(state, action.payload);
 
     case "BOARD/RESET":
       return board.reset();

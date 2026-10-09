@@ -64,7 +64,7 @@ jobs:
         # `html` must be listed explicitly: a CLI --reporter replaces the
         # config's `reporter` array outright, so omitting it means no
         # playwright-report/ for the artifact upload and Pages deploy below.
-        run: npx playwright test --project=chromium --reporter=list,json,html
+        run: npx playwright test --project=chromium --project=chromium-shared-account --reporter=list,json,html
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: results.json
           BASE_URL: ${{ steps.preview-url.outputs.base_url }}
@@ -131,7 +131,7 @@ jobs:
             | [$root.suites[]? | collect([])] as $specs
             | ($specs
                 | map(.title as $t | .file as $f | .tests[] | {title: $t, file: $f, project: .projectName, status: .status, retries: ((.results // []) | length), error: ((((.results // []) | last) // {}) | .error.message // "")})
-                | map(select(.project == "chromium" or .project == "firefox" or .project == "webkit"))
+                | map(select(.project == "chromium" or .project == "chromium-shared-account" or .project == "firefox" or .project == "webkit"))
               ) as $tests
             | ($tests | map(select(.status=="expected")) | length) as $passed
             | ($tests | map(select(.status=="flaky")) | length) as $flaky

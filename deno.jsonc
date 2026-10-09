@@ -58,8 +58,8 @@
     // astro.config.mjs), so node_modules can go once the build is done.
     // package.json goes too, or the compile reinstalls every dependency.
     "build:deploy": "deno task build && rm -rf node_modules package.json",
-    "dev": "deno run -A astro dev",
-    "e2e-test": "deno task playwright test --project=chromium",
+    "dev": "astro dev",
+    "e2e-test": "deno task playwright test --project=chromium --project=chromium-shared-account",
     "e2e-test:ui": "deno task playwright test --ui-port=8080 --ui-host=0.0.0.0",
     // Local-only "malicious user" security-header suite. Builds on `playwright`
     // (remote browser server + .env) but points at its own config, which forces

@@ -4,6 +4,7 @@ export function generateStart(state: BoardState): BoardState {
   return {
     ...state,
     isGeneratingTasks: true,
+    taskGenerationFailed: false,
     taskGenerationStatus: "Generating tasks...",
   };
 }
@@ -19,16 +20,18 @@ export function generateSuccess(
   return {
     ...state,
     isGeneratingTasks: false,
+    taskGenerationFailed: false,
     tasks: [...payload.tasks, ...state.tasks],
     taskGenerationStatus: `Added ${count} task${
       count !== 1 ? "s" : ""
-    } to Todo`,
+    } to first column.`,
     newRowName: "",
     newRowPrompt: "",
     newRowFormKey: state.newRowFormKey + 1,
   };
 }
 
+// Row is not created on failure, so keep name/prompt for a retry.
 export function generateFailure(
   state: BoardState,
   payload: Extract<
@@ -39,9 +42,7 @@ export function generateFailure(
   return {
     ...state,
     isGeneratingTasks: false,
+    taskGenerationFailed: true,
     taskGenerationStatus: payload.error,
-    newRowName: "",
-    newRowPrompt: "",
-    newRowFormKey: state.newRowFormKey + 1,
   };
 }

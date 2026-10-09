@@ -15,6 +15,7 @@ export function add(
         pinnedToDock: false,
         iconInBoardMenu: false,
         iconNearColumnTitle: false,
+        isTrash: false,
       },
     ],
   };

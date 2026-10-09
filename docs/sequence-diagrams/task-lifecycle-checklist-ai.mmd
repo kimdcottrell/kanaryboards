@@ -3,23 +3,27 @@ title: Task Lifecycle & Checklist AI Generation
 ---
 sequenceDiagram
     actor User
-    participant Cell as ColumnCard<br/>(ColumnCard.tsx)
-    participant Card as TaskCard<br/>(TaskCard.tsx)
-    participant TaskModal as TaskCreateModal /<br/>TaskEditModal
-    participant Form as TaskForm +<br/>ChecklistSection
+    participant Cell as ColumnSection<br/>(ColumnSection.tsx)
+    participant Card as TaskCard<br/>(task/TaskCard.tsx)
+    participant TaskModal as TaskCreateModal /<br/>TaskEditModal / TaskViewOnlyModal<br/>(task/modal/; Edit + ViewOnly share<br/>ExistingTaskModalWrapper)
+    participant Form as task fields<br/>(FieldsGrid: TitleInput,<br/>DescriptionEditor, StatusSteps,<br/>ProjectMenu, ChecklistSection)
     participant Actions as action hooks<br/>(actions/task*.ts, checklistAi.ts)
+    participant Drafts as editDraftStore<br/>(task/editDraftStore.ts,<br/>localStorage `task+${id}`)
     participant Reducer as reducers<br/>(tasks.ts, checklist.ts, checklistAi.ts)
     participant Ctx as BoardContext<br/>(TaskCreate/TaskEdit/ChecklistAI/<br/>BoardData/TasksByCell)
     participant AI as /api/generate-tasks<br/>(Google GenAI)
+    participant Comments as TaskComments<br/>(task/comments/TaskComments.tsx,<br/>useTaskComments.ts)
+    participant Store as commentStore<br/>(task/comments/commentStore.ts)
+    participant CommentsAPI as /api/task-comments<br/>(Deno KV task_comment entries)
 
     Note over User,AI: Create task: open modal
     User->>Cell: click "add task"
     Cell->>Actions: openTaskForm(rowId, colId)<br/>(actions/task.ts)
     Actions->>Ctx: dispatch(TASK/OPEN_CREATE_MODAL, {rowId, colId})
     Ctx->>Reducer: tasks.openCreateModal(state, payload)
-    Reducer-->>Ctx: taskCreateModalOpen = true<br/>taskDraft = emptyTaskDraft(rowId, colId)<br/>resets ChecklistAI slice
+    Reducer-->>Ctx: taskCreateModalOpen = true<br/>taskDraft = emptyTaskDraft(rowId, colId)<br/>(empty colId -> first non-Trash column)<br/>resets ChecklistAI slice
     Ctx-->>TaskModal: TaskCreateModal re-renders<br/>(TaskCreateContext: taskCreateModalOpen=true)<br/>-> opens
-    TaskModal-->>Form: TaskForm + ChecklistSection mount<br/>(taskDraft = empty draft)
+    TaskModal-->>Form: task fields + ChecklistSection mount<br/>(taskDraft = empty draft)
 
     Note over User,AI: Create task: edit fields
     User->>Form: edit title / description
@@ -27,7 +31,7 @@ sequenceDiagram
     Actions->>Ctx: dispatch(TASK/UPDATE_DRAFT, {draft})
     Ctx->>Reducer: tasks.updateDraft(state, payload)
     Reducer-->>Ctx: taskDraft = draft
-    Ctx-->>Form: TaskForm re-renders<br/>(TaskCreateContext: taskDraft changed)
+    Ctx-->>Form: task fields re-render<br/>(TaskCreateContext: taskDraft changed)
 
     Note over User,AI: Create task: checklist editing (target = "draft")
     User->>Form: add / edit / delete / reorder checklist item<br/>(ChecklistSection)
@@ -36,65 +40,135 @@ sequenceDiagram
     Ctx->>Reducer: checklist.addItem / updateItem /<br/>removeItem / reorderItem<br/>(insertKey / reorderKey from ordering.ts)
     Reducer-->>Ctx: taskDraft.checklist updated
     Ctx-->>Form: ChecklistSection re-renders<br/>(TaskCreateContext: taskDraft.checklist changed)<br/>-> item list updates
+    Note over Form,Reducer: Top item is always an empty entry row (no trash/drag).<br/>Enter / blur / Shift+Enter on it with text, or a checklist<br/>change leaving checklist[0] non-empty and unfocused<br/>(useEffect), calls addChecklistItem(_, 0) -> CHECKLIST/ADD_ITEM<br/>with insertBeforeIndex 0. Same for the edit modal below.
+    Note over Form,Reducer: Multi-line paste into any item input: each non-blank<br/>line -> addChecklistItem(false, index + 1 + i, line)<br/>-> one CHECKLIST/ADD_ITEM per line (item.text = line),<br/>inserted in order below that row. Same for the edit modal.
 
     Note over User,AI: Create task: submit
     User->>Form: submit form
-    Form->>Actions: createTask(event, content)<br/>(actions/taskCreate.ts)
-    Actions->>Actions: task = {id: createId(),<br/>order: generateKeyBetween(null, firstOrder),<br/>title, description: content.json,<br/>checklist: non-empty items}
+    Form->>Actions: createTask(event, description)<br/>(description = editor getJSON();<br/>actions/taskCreate.ts)
+    Actions->>Actions: task = {id: createId(),<br/>order: generateKeyBetween(null, firstOrder),<br/>title, description (falls back to draft),<br/>checklist: non-empty items}
     Actions->>Ctx: dispatch(TASK/CREATE, {task})
     Ctx->>Reducer: tasks.create(state, {task})
     Reducer-->>Ctx: tasks = [task, ...tasks]<br/>taskCreateModalOpen = false<br/>resets ChecklistAI slice
     Ctx->>Ctx: computeTasksByCell(tasks)
     Ctx-->>TaskModal: TaskCreateModal re-renders<br/>(TaskCreateContext: taskCreateModalOpen=false)<br/>-> modal closes, unmounts Form
-    Ctx-->>Cell: ColumnCard (target cell) re-renders<br/>(TasksByCellContext changed)<br/>-> new TaskCard mounts as child
+    Ctx-->>Cell: ColumnSection (target cell) re-renders<br/>(TasksByCellContext changed)<br/>-> new TaskCard mounts as child
 
     Note over User,AI: Edit task: open modal
     User->>Card: click title
     Card->>Actions: startEditTask(task)<br/>(actions/task.ts)
-    Actions->>Ctx: dispatch(TASK/OPEN_EDIT_MODAL, {task})
+    Actions->>Drafts: readEditDraft(task.id)
+    Drafts-->>Actions: {draft, updatedAt} | null
+    Actions->>Ctx: dispatch(TASK/OPEN_EDIT_MODAL, {task})<br/>(task = {...task, stored title/description/<br/>rowId/colId/checklist} if stored)
     Ctx->>Reducer: tasks.openEditModal(state, {task})
     Reducer-->>Ctx: editingTaskId = task.id<br/>editTaskDraft = normalized clone<br/>taskEditModalOpen = true
     Card->>Card: navigate(/dashboard/task/:id)
-    Ctx-->>TaskModal: TaskEditModal re-renders<br/>(TaskEditContext: taskEditModalOpen=true)<br/>-> opens
-    TaskModal-->>Form: TaskForm + ChecklistSection mount<br/>(taskDraft = editTaskDraft)
+    Ctx-->>TaskModal: TaskEditModal re-renders<br/>(TaskEditContext: taskEditModalOpen=true)<br/>-> opens (task not in Trash)
+    TaskModal-->>Form: task fields + ChecklistSection mount<br/>(taskDraft = editTaskDraft)
+    Note over TaskModal,Drafts: TaskEditModal passes PostEditPreSaveAlert(taskId) to the<br/>ExistingTaskModalWrapper alert slot; it reads updatedAt<br/>once per task id -> "last edited …" alert
 
     Note over User,AI: Edit task: edit fields & checklist (target = "editDraft")
-    User->>Form: edit title / description / status (colId) / row (rowId)
+    User->>Form: edit title / description / status (colId) / row (rowId)<br/>(Status never lists the Trash column)
     Form->>Actions: setEditTaskDraft(draft)<br/>(actions/taskEdit.ts)
     Actions->>Ctx: dispatch(TASK/UPDATE_EDIT_DRAFT, {draft})
     Ctx->>Reducer: tasks.updateEditDraft(state, payload)
     Reducer-->>Ctx: editTaskDraft = draft
-    Ctx-->>Form: TaskForm re-renders<br/>(TaskEditContext: editTaskDraft changed)
+    Ctx-->>Form: task fields re-render<br/>(TaskEditContext: editTaskDraft changed)
 
     User->>Form: add / edit / delete / reorder checklist item<br/>(ChecklistSection)
     Form->>Actions: addEditChecklistItem / updateEditChecklistItem /<br/>deleteEditChecklistItem / reorderEditChecklistItem<br/>(actions/taskEdit.ts)
     Actions->>Ctx: dispatch(CHECKLIST/..., {target:"editDraft", ...})
     Ctx->>Reducer: checklist.* (editTaskDraft branch)
     Reducer-->>Ctx: editTaskDraft.checklist updated
-    Ctx-->>Form: ChecklistSection re-renders<br/>(TaskEditContext: editTaskDraft.checklist changed)<br/>-> item list updates
+    Ctx-->>Form: ChecklistSection re-renders<br/>(TaskEditContext: editTaskDraft.checklist changed)<br/>-> item list updates<br/>(empty top entry row kept as in create)
+
+    Note over User,AI: Edit task: close without saving (Cancel / X / backdrop)
+    User->>TaskModal: close modal
+    TaskModal->>TaskModal: compare {...editTaskDraft, description: getDescription()}<br/>with saved task (title/description/rowId/colId/non-empty checklist)
+    alt changed
+        TaskModal->>Drafts: writeEditDraft(draft) (updatedAt = now;<br/>skipped if content equals stored draft)
+    else unchanged
+        TaskModal->>Drafts: clearEditDraft(task.id)
+    end
+    Drafts-->>Card: TaskCard re-renders if its entry appeared/disappeared<br/>(useHasEditDraft: useSyncExternalStore on "edit-draft-change"<br/>in this tab, "storage" for task+ keys in other tabs)<br/>-> "Edited but not saved" badge-warning indicator shown/hidden
+    TaskModal->>Actions: cancelEditTask() -> dispatch(TASK/CLOSE_EDIT_MODAL)
+    TaskModal->>TaskModal: navigate(/dashboard)
 
     Note over User,AI: Edit task: save
     User->>Form: submit form
-    Form->>Actions: saveTaskEdit(event, content)<br/>(actions/taskEdit.ts)
-    Actions->>Ctx: dispatch(TASK/UPDATE_EDIT_DRAFT,<br/>{draft: {...editTaskDraft, description: content.json}})
+    Form->>Actions: saveTaskEdit(event, description)<br/>(actions/taskEdit.ts, wrapped in closeAfter)
+    alt form.checkValidity() fails (e.g. Project empty because its row<br/>was deleted in another tab)
+        Actions->>Actions: return early: no dispatch, nothing saved
+        TaskModal->>TaskModal: closeAfter still runs navigate(/dashboard)
+        Note over TaskModal,Ctx: Intended: taskEditModalOpen stays true, so the modal stays<br/>open with the draft while the URL is now /dashboard.<br/>Picking a project and saving again completes the save below.
+    end
+    Actions->>Ctx: dispatch(TASK/UPDATE_EDIT_DRAFT,<br/>{draft: {...editTaskDraft, description}}<br/>(skipped if description undefined))
     Ctx->>Reducer: tasks.updateEditDraft
     Actions->>Ctx: dispatch(TASK/SAVE_EDIT)
     Ctx->>Reducer: tasks.saveEdit(state)
     Reducer-->>Ctx: tasks updated (title/description/rowId/colId/checklist)<br/>editingTaskId = null, editTaskDraft = null<br/>taskEditModalOpen = false
+    Note over Reducer: Task deleted in another tab while being edited (BOARD/SYNC):<br/>saveEdit adds it back from editTaskDraft at the end of its cell.<br/>Project is required, so a draft whose row was deleted<br/>isn't saved until a new project is picked (see the alt above).
+    Actions->>Drafts: clearEditDraft(task.id) -> alert gone on next open
+    Drafts-->>Card: TaskCard re-renders (useHasEditDraft) -> indicator removed
     TaskModal->>TaskModal: navigate(/dashboard)
     Ctx->>Ctx: computeTasksByCell(tasks)
     Ctx-->>TaskModal: TaskEditModal re-renders<br/>(TaskEditContext: taskEditModalOpen=false)<br/>-> modal closes, unmounts Form
-    Ctx-->>Cell: ColumnCard(s) re-render<br/>(TasksByCellContext changed)<br/>-> TaskCard moves to new cell if rowId/colId<br/>changed, otherwise updates in place
+    Ctx-->>Cell: ColumnSection(s) re-render<br/>(TasksByCellContext changed)<br/>-> TaskCard moves to new cell if rowId/colId<br/>changed, otherwise updates in place
 
-    Note over User,AI: Delete task
-    User->>Form: click "Delete" (edit modal only)
-    Form->>Actions: deleteTask(taskId)<br/>(actions/task.ts)
-    Actions->>Ctx: dispatch(TASK/DELETE, {taskId})
-    Ctx->>Reducer: tasks.remove(state, {taskId})
-    Reducer-->>Ctx: tasks filtered<br/>closes edit modal if it was the edited task
+    Note over User,AI: Trash task (edit modal dock, task not in Trash)
+    User->>Form: click "Trash" (edit modal only)
+    Form->>Actions: trashTask(taskId)<br/>(actions/task.ts)
+    Actions->>Ctx: dispatch(TASK/TRASH, {taskId})
+    Actions->>Drafts: clearEditDraft(taskId)
+    Ctx->>Reducer: tasks.trash(state, {taskId})
+    Reducer-->>Ctx: colId = Trash column (same row), order = end of Trash cell<br/>trashedAt = now, preTrashColId = old colId<br/>closes edit modal
     TaskModal->>TaskModal: navigate(/dashboard)
     Ctx-->>TaskModal: TaskEditModal re-renders<br/>(TaskEditContext: taskEditModalOpen=false)<br/>-> modal closes, unmounts Form
-    Ctx-->>Cell: ColumnCard re-renders<br/>(TasksByCellContext changed)<br/>-> TaskCard unmounts
+    Ctx-->>Cell: source + Trash ColumnSection re-render<br/>(TasksByCellContext changed)<br/>-> TaskCard remounts in Trash with<br/>"N days until permanent deletion."
+    Note over Actions,CommentsAPI: Comments are kept. They are deleted with the task by<br/>POST /api/purge-trash (KV) once trashedAt is 30+ days old
+
+    Note over User,AI: Open a trashed task (view-only) and Restore
+    Ctx-->>TaskModal: TaskViewOnlyModal re-renders<br/>(TaskEditContext: taskEditModalOpen=true,<br/>colId is the Trash column; isTaskTrashed)<br/>-> opens; TaskEditModal stays closed
+    Note over TaskModal,Form: "Task is view-only" alert above Status/Project.<br/>ExistingTaskModalWrapper viewOnly wraps title/fields/comments<br/>in preventEdits (capture-phase preventDefault).<br/>Editor limited to "visual-only", Status shows preTrashColId,<br/>no AI checklist generation.<br/>Dock = Delete forever + Cancel + Restore
+    User->>Form: click "Restore"
+    Form->>Actions: restoreTask(taskId)<br/>(actions/task.ts)
+    Actions->>Ctx: dispatch(TASK/RESTORE, {taskId})
+    Ctx->>Reducer: tasks.restore(state, {taskId})
+    Reducer-->>Ctx: colId = preTrashColId (fallback findTodoColumnId<br/>if that column was deleted), order = end of cell<br/>trashedAt = null, preTrashColId = null<br/>closes edit modal
+    TaskModal->>TaskModal: navigate(/dashboard)
+    Ctx-->>TaskModal: TaskViewOnlyModal re-renders -> modal closes
+    Ctx-->>Cell: Trash + destination ColumnSection re-render<br/>(TasksByCellContext changed)
+
+    Note over User,AI: Delete a trashed task permanently (view-only dock)
+    User->>Form: click "Delete forever"
+    Form->>Actions: deleteTask(taskId)<br/>(actions/task.ts)
+    Actions->>Ctx: dispatch(TASK/DELETE, {taskId})
+    Actions->>Drafts: clearEditDraft(taskId)
+    Ctx->>Reducer: tasks.remove(state, {taskId})
+    Reducer-->>Ctx: tasks filtered<br/>closes edit modal if it was the edited task
+    Actions->>Store: deleteAllComments(taskId) (fire-and-forget)
+    Store->>CommentsAPI: DELETE {taskId}<br/>(or localStorage / in-memory demo)
+    TaskModal->>TaskModal: navigate(/dashboard)
+    Ctx-->>TaskModal: TaskViewOnlyModal re-renders<br/>(TaskEditContext: taskEditModalOpen=false)<br/>-> modal closes, unmounts Form
+    Ctx-->>Cell: Trash ColumnSection re-renders<br/>(TasksByCellContext changed)<br/>-> TaskCard unmounts
+
+    Note over User,CommentsAPI: Task comments (edit + view-only modals; local state, outside the reducer)
+    TaskModal->>Comments: render TaskComments(taskId)<br/>(desktop: 30% sidebar; mobile: below form)
+    Comments->>Ctx: useBoardMeta() -> {boardId, isAuthenticated}
+    Comments->>Store: listComments(taskId)
+    alt isAuthenticated
+        Store->>CommentsAPI: GET ?taskId
+    else anonymous
+        Store->>Store: read localStorage kanby-comments-v0-1-0
+    else demo board
+        Store->>Store: in-memory Map
+    end
+    Store-->>Comments: TaskComment[] (newest first)
+    User->>Comments: post / edit / delete a comment
+    Comments->>Store: createComment / updateComment / deleteComment
+    Store->>CommentsAPI: POST / PATCH / DELETE<br/>(or localStorage / in-memory demo)
+    Comments->>Comments: setState -> only TaskComments re-renders
+    Note over Comments,Ctx: no dispatch; board autosave unaffected
 
     Note over User,AI: Checklist AI: generate suggestions
     User->>Form: open "Generate checklist" panel,<br/>edit prompt (ChecklistSection)
@@ -102,14 +176,14 @@ sequenceDiagram
     Actions->>Ctx: dispatch(CHECKLIST_AI/SET_PROMPT, {prompt})
     Ctx->>Reducer: checklistAi.setPrompt
     Reducer-->>Ctx: checklistPrompt = prompt
-    Ctx-->>Form: ChecklistSection re-renders<br/>(ChecklistAIContext: checklistPrompt changed)
+    Ctx-->>Form: ChecklistGenerationCollapse re-renders<br/>(reads ChecklistAIContext itself: checklistPrompt changed)
 
     User->>Form: click "Generate Checklist Items"
     Form->>Actions: generateChecklistItems(taskDraft)<br/>(actions/checklistAi.ts)
     Actions->>Ctx: dispatch(CHECKLIST_AI/GENERATE_START, {taskId})
     Ctx->>Reducer: checklistAi.generateStart
     Reducer-->>Ctx: isGeneratingChecklist = true<br/>checklistModalTaskId = taskId
-    Ctx-->>Form: ChecklistSection re-renders<br/>(ChecklistAIContext: isGeneratingChecklist=true)<br/>-> "Generate" button disabled, shows "Generating..."
+    Ctx-->>Form: ChecklistGenerationCollapse re-renders<br/>(reads ChecklistAIContext itself: isGeneratingChecklist=true)<br/>-> "Generate" button disabled, shows "Generating..."
 
     Actions->>AI: fetchGeneratedItems(prompt, 10)<br/>(actions/shared.ts)<br/>POST /api/generate-tasks {prompt, maxTasks:10}
     AI->>AI: GoogleGenAI.generateContentStream(...)<br/>normalizeTaskLines(fullText)
@@ -124,7 +198,7 @@ sequenceDiagram
         Ctx->>Reducer: checklistAi.generateFailure
         Reducer-->>Ctx: isGeneratingChecklist = false<br/>checklistModalError = error
     end
-    Ctx-->>Form: ChecklistSection re-renders<br/>(ChecklistAIContext: checklistPreview /<br/>checklistModalError changed)<br/>-> shows preview list or error message
+    Ctx-->>Form: ChecklistGenerationCollapse re-renders<br/>(reads ChecklistAIContext itself: checklistPreview /<br/>checklistModalError changed)<br/>-> shows preview list or error message
 
     Note over User,AI: Checklist AI: apply suggestions
     User->>Form: click "Copy checklist items to task"
@@ -139,7 +213,7 @@ sequenceDiagram
         Ctx->>Reducer: checklistAi.applyToEditDraft<br/>(guards checklistModalTaskId === editTaskDraft.id)
         Reducer-->>Ctx: editTaskDraft.checklist += items<br/>resets ChecklistAI slice
     end
-    Ctx-->>Form: ChecklistSection re-renders<br/>(ChecklistAIContext: checklistPreview=[])<br/>-> preview hides, "Generate" button reappears
+    Ctx-->>Form: ChecklistGenerationCollapse re-renders<br/>(reads ChecklistAIContext itself: checklistPreview=[])<br/>-> preview hides, "Generate" button reappears
     Ctx-->>Form: ChecklistSection item list re-renders<br/>(TaskCreateContext / TaskEditContext:<br/>draft.checklist changed)<br/>-> new items appear
 
     Note over User,AI: Checklist AI: discard suggestions
@@ -148,8 +222,8 @@ sequenceDiagram
     Actions->>Ctx: dispatch(CHECKLIST_AI/RESET)
     Ctx->>Reducer: checklistAi.reset
     Reducer-->>Ctx: ChecklistAI slice reset
-    Ctx-->>Form: ChecklistSection re-renders<br/>(ChecklistAIContext reset)<br/>-> reverts to empty-prompt "Generate" state
+    Ctx-->>Form: ChecklistGenerationCollapse re-renders<br/>(reads ChecklistAIContext itself reset)<br/>-> reverts to empty-prompt "Generate" state
 
     Note over User,AI: Autosave (debounced, async)
-    Ctx->>Ctx: useEffect on tasks (500ms debounce)
+    Ctx->>Ctx: useBoardPersistence: useEffect on tasks (500ms debounce)
     Ctx->>Ctx: PUT /api/board {rows, columns, tasks}<br/>(or localStorage if unauthenticated)

@@ -1,6 +1,20 @@
-export default function GeneratingTasksAlert({ status }: { status: string }) {
+// Literal class names so Tailwind keeps them.
+const VARIANT_CLASSES = {
+  info: "alert-info",
+  success: "alert-success",
+  error: "alert-error",
+};
+
+export default function GeneratingTasksAlert(
+  { status, variant = "info" }: {
+    status: string;
+    variant?: "info" | "success" | "error";
+  },
+) {
   return (
-    <div className="alert alert-info">
+    <div
+      className={`alert ${VARIANT_CLASSES[variant]}`}
+    >
       <svg
         xmlns="http://www.w3.org/2000/svg"
         fill="none"

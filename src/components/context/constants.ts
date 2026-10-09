@@ -28,7 +28,24 @@ export const emptyTaskDraft = (rowId: string, colId: string): Task => ({
   }],
   rowId,
   colId,
+  trashedAt: null,
+  preTrashColId: null,
 });
+
+// Tasks in the Trash column are permanently deleted this long after
+// `trashedAt`, by /api/purge-trash (KV boards) and on board load (all boards).
+export const TRASH_RETENTION_DAYS = 30;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export const isTrashExpired = (trashedAt: string | null, now: number) =>
+  trashedAt !== null &&
+  now - Date.parse(trashedAt) >= TRASH_RETENTION_DAYS * DAY_MS;
+
+export const daysUntilPurge = (trashedAt: string | null, now: number) =>
+  trashedAt === null ? TRASH_RETENTION_DAYS : Math.max(
+    0,
+    Math.ceil(TRASH_RETENTION_DAYS - (now - Date.parse(trashedAt)) / DAY_MS),
+  );
 
 export const loadPersistedState = () => {
   if (typeof globalThis.localStorage === "undefined") return null;

@@ -129,8 +129,8 @@ test.describe("Board menu — column view filter", () => {
 
     // Each project row pivots into a column whose header is the row title,
     // holding that row's In-Progress tasks.
-    const engCol = page.locator("#column-card-row-eng-col-prog");
-    const mktCol = page.locator("#column-card-row-mkt-col-prog");
+    const engCol = page.locator("#column-section-row-eng-col-prog");
+    const mktCol = page.locator("#column-section-row-mkt-col-prog");
     await expect(engCol.getByText("Engineering", { exact: true }))
       .toBeVisible();
     await expect(mktCol.getByText("Marketing", { exact: true })).toBeVisible();
@@ -168,8 +168,8 @@ test.describe("Board menu — column view filter", () => {
   test("a task can be dragged between pivoted columns in the condensed view", async ({ page }) => {
     await menuItem(page, "In Progress").click();
 
-    const engCol = page.locator("#column-card-row-eng-col-prog");
-    const mktCol = page.locator("#column-card-row-mkt-col-prog");
+    const engCol = page.locator("#column-section-row-eng-col-prog");
+    const mktCol = page.locator("#column-section-row-mkt-col-prog");
     await expect(engCol.locator("article#task-prog-eng")).toBeVisible();
 
     // Dispatch the HTML5 drag events directly (real OS drags are flaky in CI).
@@ -187,7 +187,9 @@ test.describe("Board menu — column view filter", () => {
     }, dataTransfer);
 
     await page.evaluate((dataTransfer) => {
-      const target = document.querySelector("#column-card-row-mkt-col-prog")!;
+      const target = document.querySelector(
+        "#column-section-row-mkt-col-prog",
+      )!;
       const fire = (el: Element, type: string) =>
         el.dispatchEvent(
           new DragEvent(type, {
@@ -215,11 +217,19 @@ test.describe("Board menu — column view filter", () => {
   test("a task can be edited from the condensed view", async ({ page }) => {
     await menuItem(page, "In Progress").click();
 
-    await page.locator("#column-card-row-eng-col-prog").getByText("Build API", {
-      exact: true,
-    }).click();
+    await page.locator("#column-section-row-eng-col-prog").getByText(
+      "Build API",
+      {
+        exact: true,
+      },
+    ).click();
 
-    await expect(page.getByRole("heading", { name: "Edit task" }))
+    await expect(
+      page.locator("dialog.modal-open").getByRole("button", {
+        name: "Save",
+        exact: true,
+      }),
+    )
       .toBeVisible();
     await expect(page).toHaveURL(/\/dashboard\/task\/task-prog-eng/);
   });
@@ -228,12 +238,17 @@ test.describe("Board menu — column view filter", () => {
     await menuItem(page, "In Progress").click();
 
     // The "+" add-task button on the Engineering pivoted column.
-    await page.locator("#column-card-row-eng-col-prog button").first().click();
+    await page.locator("#column-section-row-eng-col-prog button").first()
+      .click();
 
     await expect(page.getByRole("heading", { name: "Add task" })).toBeVisible();
 
     // Status = the selected column (In Progress), Row = the pivoted row (Engineering).
-    await expect(page.locator("#column-select-new")).toHaveValue("col-prog");
-    await expect(page.locator("#row-select-new")).toHaveValue("row-eng");
+    await expect(
+      page.getByTestId("status-step-col-prog").getByRole("radio"),
+    ).toBeChecked();
+    await expect(
+      page.locator("#row-select-new input[value='row-eng']"),
+    ).toBeChecked();
   });
 });

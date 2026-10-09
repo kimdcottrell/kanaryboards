@@ -7,6 +7,7 @@ vi.mock("@lib/db/kv.ts", () => ({
   getBoard: vi.fn(async () => {}),
   saveBoard: vi.fn(async () => {}),
   deleteBoard: vi.fn(async () => {}),
+  deleteBoardComments: vi.fn(async () => {}),
 }));
 
 const { GET, PUT, DELETE } = await import("@pages/api/board.ts");

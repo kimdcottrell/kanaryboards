@@ -4,12 +4,14 @@ title: Board Load & Autosave
 sequenceDiagram
     actor User
     participant Router as spa-router<br/>(BoardController -> RouterProvider)
-    participant Provider as BoardProvider<br/>(BoardContext.tsx)
+    participant Provider as BoardProvider<br/>(BoardContext.tsx -><br/>effects/useBoardPersistence.ts)
     participant Reducer as board reducer<br/>(reducers/board.ts)
     participant View as BoardView /<br/>RowBoard / BoardConfigModal
     participant API@{ "type" : "boundary" } as /api/board<br/>(pages/api/board.ts)
-    participant KV@{ "type" : "database" } as Deno KV<br/>(lib/kv.ts)
+    participant KV@{ "type" : "database" } as Deno KV<br/>(lib/db/kv.ts)
     participant LS@{ "type" : "database" } as localStorage
+    participant Purge@{ "type" : "boundary" } as /api/purge-trash<br/>(pages/api/purge-trash.ts)
+    participant Tab as other tabs<br/>(BroadcastChannel<br/>board-sync:kv / board-sync:local)
 
     Note over User,LS: Initial mount
     User->>Router: navigate to "/dashboard"<br/>(or deep-link "/dashboard/row/:rowId"<br/>from the drawer's project-row list)
@@ -18,6 +20,7 @@ sequenceDiagram
     Provider->>View: initial render, boardLoaded = false
 
     Note over User,LS: Load on mount (useEffect)
+    Note over Provider,Reducer: boardId === "demo" (landing-page demo): dispatch(BOARD/LOAD, createDemoBoard())<br/>and nothing else — no API, no localStorage, no autosave, no cross-tab sync.<br/>If loading throws (fetch rejects, non-JSON body), it logs and dispatches BOARD/RESET.
     rect rgba(38, 240, 58, 0.25)
         critical isAuthenticated
             Provider->>API: GET /api/board
@@ -43,15 +46,20 @@ sequenceDiagram
                                 LS-->>Provider: stored JSON
                                 Provider->>API: PUT /api/board (migrate local -> remote)
                                 API->>KV: saveBoard(boardId, body)
-                                Provider->>LS: localStorage.removeItem(STORAGE_KEY)
+                                opt PUT ok
+                                    Provider->>LS: localStorage.removeItem(STORAGE_KEY)
+                                end
                                 Provider->>Reducer: dispatch(BOARD/LOAD, local)<br/>-> board.load(state, payload)
                             end
                         end
                         opt no local data
-                            Provider->>Reducer: dispatch(BOARD/LOAD, createDefaultBoard())<br/>-> board.load(state, payload)
+                            Provider->>Reducer: dispatch(BOARD/RESET)<br/>-> board.reset() (default columns + Trash, no rows)
                         end
-                    end 
+                    end
                     deactivate Provider
+                else any other error status
+                    API--xProvider: non-404 error
+                    Note over Provider: no dispatch: board stays unloaded (boardLoaded = false)
                 end
             end
         end
@@ -62,9 +70,11 @@ sequenceDiagram
             alt stored data found
                 LS-->>Provider: stored board JSON
                 activate Provider
+                Provider->>LS: pruneLocalComments(keepTaskIds) (commentStore.ts)<br/>keepTaskIds = stored task ids minus expiredTrashTaskIds(...)<br/>-> drops comments of any task no longer on the board<br/>(expired, row/column deleted)
                 Provider->>Reducer: dispatch(BOARD/LOAD, local)<br/>-> board.load(state, payload)
             else nothing stored
-                Provider->>Reducer: dispatch(BOARD/LOAD, createDefaultBoard())<br/>-> board.load(state, payload)
+                Provider->>LS: pruneLocalComments(empty set)<br/>-> drops all comments (e.g. after a board reset)
+                Provider->>Reducer: dispatch(BOARD/RESET)<br/>-> board.reset() (default columns + Trash, no rows)
                 deactivate Provider
             end
         end
@@ -72,23 +82,49 @@ sequenceDiagram
 
     Note right of Provider: There is now enough data to start to initialize the app.<br />All logic above is just bootstrapping to get to this point, where we have rows/columns/tasks data.
 
-    Reducer-->>Provider: columns backfilled (normalizeColumn: legacy<br/>boards missing pin/icon fields), rows/columns<br/>sorted by order (byOrder), tasks set, boardLoaded = true
+    Note over Reducer: The step below is board.load. board.reset instead returns a fresh<br/>state (To Do / In Progress / Review / Done + Trash, no rows/tasks),<br/>boardLoaded = true.
+    Reducer-->>Provider: columns backfilled (normalizeColumn: legacy<br/>boards missing pin/icon/isTrash fields), Trash column<br/>appended if missing, rows/columns sorted by order<br/>(Trash forced last), tasks backfilled (normalizeTask:<br/>trashedAt/preTrashColId = null), expired Trash tasks<br/>(trashedAt 30+ days old) dropped, boardLoaded = true
     Provider->>View: BoardView, RowBoard, BoardConfigModal<br/>all re-render (BoardDataContext: rows/columns/<br/>tasks/boardLoaded changed)<br/>-> RowBoard mounts one RowSection per row<br/>(or, when rows is empty e.g. after BOARD/RESET,<br/>the empty state: prompt + inline CreateRowSection),<br/>BoardConfigModal's sections render row/column settings
-    Provider->>Provider: document.documentElement.dataset.boardLoaded = "true"<br/>(BoardView.tsx, for e2e hydration gating)
+    View->>View: BoardView useEffect[boardLoaded]<br/>-> document.documentElement.dataset.boardLoaded = "true"<br/>(for e2e hydration gating)
     opt rowId param present (entered via "/dashboard/row/:rowId")
         View->>View: BoardView finds row by id, then<br/>requestAnimationFrame -> document.getElementById<br/>("row-section-{rowId}").scrollIntoView({block:"start"})<br/>(unknown id -> navigate("/dashboard", replace))
     end
 
     Note over User,LS: Autosave (on every state.{rows,columns,tasks} change)
     Note over Provider: useEffect deps: [rows, columns, tasks, boardLoaded]<br/>guarded by boardLoaded === true
-    Provider->>Provider: clearTimeout(prev)<br/>setTimeout(..., 500ms)
-    alt isAuthenticated
-        rect rgba(38, 240, 58, 0.25)
-            Provider->>API: PUT /api/board {rows, columns, tasks}
-            API->>KV: saveBoard(boardId, body)
+    Provider->>Provider: loadedSnapshotRef ??= JSON of the first loaded board<br/>clearTimeout(prev)<br/>setTimeout(..., 500ms)
+    alt snapshot === lastSyncedRef (state came from BOARD/SYNC)
+        Note over Provider: skip save + broadcast (prevents an echo loop between tabs)
+    else local change
+        alt isAuthenticated
+            rect rgba(38, 240, 58, 0.25)
+                Provider->>API: PUT /api/board {rows, columns, tasks}
+                API->>KV: saveBoard(boardId, body)
+            end
+        else not authenticated
+            rect rgba(240, 38, 38, 0.25)
+                Provider->>LS: localStorage.setItem(STORAGE_KEY, JSON.stringify({rows,columns,tasks}))
+            end
         end
-    else not authenticated
-        rect rgba(240, 38, 38, 0.25)
-            Provider->>LS: localStorage.setItem(STORAGE_KEY, JSON.stringify({rows,columns,tasks}))
+        opt snapshot !== loadedSnapshotRef
+            Provider->>Tab: channel.postMessage({rows, columns, tasks})
         end
+        Note over Provider: The post-load save is not broadcast: other tabs<br/>already hold that board, or a newer one it would undo.<br/>loadedSnapshotRef is cleared after the first save.
     end
+
+    Note over User,Tab: Cross-tab sync (same browser; skipped for boardId "demo")
+    Tab->>Provider: channel message {rows, columns, tasks}
+    Provider->>Provider: lastSyncedRef = JSON.stringify(snapshot)
+    Provider->>Reducer: dispatch(BOARD/SYNC, snapshot) -> board.sync
+    Reducer-->>Provider: rows/columns/tasks replaced (last write wins)
+    alt rows.length === 0
+        Reducer-->>Provider: taskCreateModalOpen=false, taskEditModalOpen=false,<br/>editingTaskId/editTaskDraft=null, checklist AI state cleared
+    else a draft's row is missing
+        Reducer-->>Provider: taskDraft.rowId / editTaskDraft.rowId = ""<br/>(modal stays open with unsaved edits, Project shows no selection)
+    end
+    Provider->>View: re-render (BoardData changed)<br/>BoardMenu / BoardDock drop "Create new task" when rows is empty
+
+    Note over User,Purge: Daily trash purge (no client involved). Planned as a Deno.cron() on<br/>Deno Deploy, NOT scheduled yet: until then only board.load drops expired tasks.
+    Purge->>Purge: check Authorization: Bearer CRON_SECRET
+    Purge->>KV: purgeExpiredTrash() (lib/db/kv.ts), for each ["board", id]:<br/>drop Trash tasks with trashedAt 30+ days old<br/>(atomic check(versionstamp).set; conflict -> board skipped, retried next run),<br/>then delete ["task_comment", id, taskId, *] whose taskId is not<br/>on the saved board and createdAt is 24h+ old
+    Note over Provider,KV: A tab still holding a purged task may re-PUT it.<br/>board.load drops it again on the next load (and the<br/>next purge does too). KV boards never prune comments client-side:<br/>comments of any task that leaves the board (purged, expired on load,<br/>row/column deleted) are swept by the next purge. The 24h guard<br/>protects comments posted before their task's autosave lands.<br/>localStorage boards never reach the purge. BoardProvider<br/>prunes their comments on load instead.

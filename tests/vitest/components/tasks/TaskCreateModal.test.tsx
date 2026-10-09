@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
   makeBoardDataState,
@@ -40,7 +40,7 @@ import {
   useTaskCreateActions,
   useTaskCreateState,
 } from "@components/context/hooks.ts";
-import TaskCreateModal from "@components/TaskCreateModal.tsx";
+import TaskCreateModal from "@components/task/modal/TaskCreateModal.tsx";
 
 beforeEach(() => {
   vi.mocked(useBoardDataState).mockReturnValue(makeBoardDataState());
@@ -84,7 +84,7 @@ describe("TaskCreateModal", () => {
     expect(screen.getByText(/Create a new task/)).toBeTruthy();
   });
 
-  test("does not render TaskForm when closed", () => {
+  test("does not render the form when closed", () => {
     render(<TaskCreateModal />);
     expect(screen.queryByTestId("luthor-editor")).toBeNull();
   });
@@ -141,7 +141,7 @@ describe("TaskCreateModal", () => {
     ).toBeNull();
   });
 
-  test("renders required Status and Row selects", () => {
+  test("renders a required Row select and an optional Status select", () => {
     vi.mocked(useTaskCreateState).mockReturnValue(
       makeTaskCreateState({
         taskCreateModalOpen: true,
@@ -149,14 +149,16 @@ describe("TaskCreateModal", () => {
       }),
     );
     const { container } = render(<TaskCreateModal />);
-    const status = container.querySelector<HTMLSelectElement>(
-      "#column-select-new",
+    const status = container.querySelectorAll<HTMLInputElement>(
+      "input[name='column-select-new']",
     );
-    const row = container.querySelector<HTMLSelectElement>(
-      "#row-select-new",
+    const row = container.querySelectorAll<HTMLInputElement>(
+      "input[name='row-select-new']",
     );
-    expect(status?.required).toBe(true);
-    expect(row?.required).toBe(true);
+    expect(status.length).toBeGreaterThan(0);
+    status.forEach((radio) => expect(radio.required).toBe(false));
+    expect(row.length).toBeGreaterThan(0);
+    row.forEach((radio) => expect(radio.required).toBe(true));
   });
 
   test("Status and Row selects are empty when opened with a blank draft", () => {
@@ -168,11 +170,79 @@ describe("TaskCreateModal", () => {
     );
     const { container } = render(<TaskCreateModal />);
     expect(
-      container.querySelector<HTMLSelectElement>("#column-select-new")
-        ?.value,
-    ).toBe("");
+      container.querySelector("input[name='column-select-new']:checked"),
+    ).toBeNull();
     expect(
-      container.querySelector<HTMLSelectElement>("#row-select-new")?.value,
-    ).toBe("");
+      container.querySelector("input[name='row-select-new']:checked"),
+    ).toBeNull();
+  });
+
+  test("title field is labeled and required", () => {
+    vi.mocked(useTaskCreateState).mockReturnValue(
+      makeTaskCreateState({
+        taskCreateModalOpen: true,
+        taskDraft: mockTaskDraft,
+      }),
+    );
+    render(<TaskCreateModal />);
+    expect(
+      screen.getByLabelText<HTMLInputElement>("Title").required,
+    ).toBe(true);
+  });
+
+  test("renders the checklist and AI checklist generation", () => {
+    vi.mocked(useTaskCreateState).mockReturnValue(
+      makeTaskCreateState({
+        taskCreateModalOpen: true,
+        taskDraft: mockTaskDraft,
+      }),
+    );
+    render(<TaskCreateModal />);
+    expect(screen.getByText("Checklist items")).toBeTruthy();
+    expect(screen.getByText("Generate checklist items with AI")).toBeTruthy();
+  });
+
+  test("Enter in the checklist entry row adds and focuses a new item", () => {
+    const addChecklistItem = vi.fn();
+    vi.mocked(useTaskCreateState).mockReturnValue(
+      makeTaskCreateState({
+        taskCreateModalOpen: true,
+        taskDraft: {
+          ...mockTaskDraft,
+          checklist: [{
+            id: "c1",
+            text: "Buy milk",
+            checked: false,
+            order: "a",
+          }],
+        },
+      }),
+    );
+    vi.mocked(useTaskCreateActions).mockReturnValue(
+      makeTaskCreateActions({ addChecklistItem }),
+    );
+    render(<TaskCreateModal />);
+    fireEvent.keyDown(screen.getByDisplayValue("Buy milk"), { key: "Enter" });
+    expect(addChecklistItem).toHaveBeenCalledWith(true, 0);
+  });
+
+  test("Create task submits the form to createTask", () => {
+    const createTask = vi.fn();
+    vi.mocked(useTaskCreateState).mockReturnValue(
+      makeTaskCreateState({
+        taskCreateModalOpen: true,
+        taskDraft: mockTaskDraft,
+      }),
+    );
+    vi.mocked(useTaskCreateActions).mockReturnValue(
+      makeTaskCreateActions({ createTask }),
+    );
+    render(<TaskCreateModal />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Create task", hidden: true }),
+    );
+    // The mocked editor never calls onReady, so no description is passed and
+    // createTask keeps the draft's description.
+    expect(createTask).toHaveBeenCalledWith(expect.any(Event), undefined);
   });
 });

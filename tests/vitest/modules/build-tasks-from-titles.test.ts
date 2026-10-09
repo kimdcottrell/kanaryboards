@@ -11,6 +11,7 @@ const col = (id: string, title: string, order: string): Column => ({
   icon: null,
   iconInBoardMenu: false,
   iconNearColumnTitle: false,
+  isTrash: false,
 });
 
 const columns = [

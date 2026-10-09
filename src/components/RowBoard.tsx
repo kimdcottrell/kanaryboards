@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import RowSection from "./RowSection.tsx";
 import CondensedColumnBoard from "./CondensedColumnBoard.tsx";
 import CreateRowSection from "./config/board/CreateRowSection.tsx";
@@ -6,6 +7,14 @@ import { useBoardDataState, useColumnFilterState } from "./context/hooks.ts";
 export default function RowBoard() {
   const { rows, columns } = useBoardDataState();
   const { selectedColumnIds } = useColumnFilterState();
+
+  // Rows present on load (or already rendered once) are "seen". Anything else
+  // was just created, so its RowSection plays the title entrance animation.
+  const seenRowIds = useRef<Set<string> | null>(null);
+  seenRowIds.current ??= new Set(rows.map((r) => r.id));
+  useEffect(() => {
+    rows.forEach((r) => seenRowIds.current!.add(r.id));
+  }, [rows]);
 
   // No projects yet -> prompt the user to create their first row inline.
   if (rows.length === 0) {
@@ -40,7 +49,13 @@ export default function RowBoard() {
   // 0 selected (all columns) or >=2 selected (filtered normal layout).
   return (
     <>
-      {rows.map((row) => <RowSection key={row.id} row={row} />)}
+      {rows.map((row) => (
+        <RowSection
+          key={row.id}
+          row={row}
+          isNew={!seenRowIds.current!.has(row.id)}
+        />
+      ))}
     </>
   );
 }

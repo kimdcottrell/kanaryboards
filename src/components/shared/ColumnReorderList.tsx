@@ -16,7 +16,11 @@ import type { Column } from "../context/types.ts";
 export default function ColumnReorderList(
   { renderCard }: { renderCard: (column: Column, index: number) => ReactNode },
 ) {
-  const { columns } = useBoardDataState();
+  const { columns: allColumns } = useBoardDataState();
+  // Trash is fixed and always last, so it is left out and the indices of the
+  // remaining columns still match the full list's.
+  const columns = allColumns.filter((c) => !c.isTrash);
+  const trashColumnId = allColumns.find((c) => c.isTrash)?.id ?? null;
   const { draggedDefaultIndex } = useColumnConfigState();
   const {
     setDraggedDefaultIndex,
@@ -100,7 +104,7 @@ export default function ColumnReorderList(
           onDrop={(e) => {
             e.preventDefault();
             const draggedId = columns[draggedDefaultIndex]?.id;
-            if (draggedId) reorderColumn(draggedId, null);
+            if (draggedId) reorderColumn(draggedId, trashColumnId);
             setDraggedDefaultIndex(null);
             setDragHoverIndex(null);
           }}

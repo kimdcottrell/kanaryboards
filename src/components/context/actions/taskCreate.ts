@@ -17,7 +17,7 @@ export function useTaskCreateActions() {
 
   const createTask = useCallback((
     event: Event,
-    content?: { json: string; markdown: string; html: string },
+    description?: string,
   ) => {
     event.preventDefault();
     if (!(event.target as HTMLFormElement).checkValidity()) return;
@@ -31,10 +31,12 @@ export function useTaskCreateActions() {
       colId,
       order: generateKeyBetween(null, firstOrder),
       title: taskDraft.title.trim(),
-      description: content?.json ?? taskDraft.description,
+      description: description ?? taskDraft.description,
       checklist: taskDraft.checklist.filter(
         (item: ChecklistItem) => item.text.trim(),
       ),
+      trashedAt: null,
+      preTrashColId: null,
     };
     dispatch({ type: "TASK/CREATE", payload: { task } });
   }, [taskDraft, tasksByCell, dispatch]);
@@ -42,9 +44,10 @@ export function useTaskCreateActions() {
   const addChecklistItem = useCallback((
     focusNew = false,
     insertBeforeIndex?: number,
+    text = "",
   ) => {
     // order is assigned by the reducer from the insert position's neighbors.
-    const item = { id: createId(), text: "", checked: false, order: "" };
+    const item = { id: createId(), text, checked: false, order: "" };
     dispatch({
       type: "CHECKLIST/ADD_ITEM",
       payload: { target: "draft", item, insertBeforeIndex },

@@ -14,7 +14,7 @@ vi.mock("@components/context/hooks.ts", () => ({
 }));
 
 import { useTaskActions } from "@components/context/hooks.ts";
-import TaskCard from "@components/TaskCard.tsx";
+import TaskCard from "@components/task/TaskCard.tsx";
 
 const taskActions = makeTaskActions();
 
@@ -34,6 +34,7 @@ const defaultProps = {
   isDropBefore: false,
   isDropAfter: false,
   isDragging: false,
+  isTrash: false,
 };
 
 describe("TaskCard", () => {

@@ -129,7 +129,12 @@ test.describe("Checklist AI generation — malicious items render as inert text"
     await page.locator("#row-columns-row-e2e-1").getByText("Write specs", {
       exact: true,
     }).click();
-    await expect(page.getByRole("heading", { name: "Edit task" }))
+    await expect(
+      page.locator("dialog.modal-open").getByRole("button", {
+        name: "Save",
+        exact: true,
+      }),
+    )
       .toBeVisible();
     await waitForChecklistCollapseOpen(page);
 
@@ -147,7 +152,7 @@ test.describe("Checklist AI generation — malicious items render as inert text"
       page.getByRole("cell", { name: MALICIOUS_TITLES[0] }),
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Copy checklist items to task" })
+    await page.getByRole("button", { name: "Add items to checklist" })
       .click();
 
     // Editing a task whose checklist starts empty seeds one blank row of its

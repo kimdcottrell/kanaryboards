@@ -6,7 +6,7 @@ import { expect, openCreateRowModal, testNoClerk as test } from "./fixtures.ts";
  * Verifies improved rendering: modal-only state (ChecklistAIState,
  * TaskCreateState, TaskEditState, RowFormState) is isolated into its own
  * context, so typing into those fields no longer re-renders the board-shell
- * components (RowSection, ColumnCard, TaskCard, BoardConfiguration). Each
+ * components (RowSection, ColumnSection, TaskCard, BoardConfiguration). Each
  * board-shell component exposes its render count via `data-render-count`
  * (see src/lib/dashboard/use-render-count.ts, non-production-only).
  */
@@ -67,7 +67,7 @@ test.describe("Render isolation (individual components render on use, instead of
       row: await page.locator("#row-section-row-e2e-1").getAttribute(
         "data-render-count",
       ),
-      column: await page.locator("#column-card-row-e2e-1-col-e2e-1")
+      column: await page.locator("#column-section-row-e2e-1-col-e2e-1")
         .getAttribute("data-render-count"),
       task: await page.locator("article#task-e2e-1").getAttribute(
         "data-render-count",
@@ -82,7 +82,12 @@ test.describe("Render isolation (individual components render on use, instead of
     await page.locator("#row-columns-row-e2e-1").getByText("Write specs", {
       exact: true,
     }).click();
-    await expect(page.getByRole("heading", { name: "Edit task" }))
+    await expect(
+      page.locator("dialog.modal-open").getByRole("button", {
+        name: "Save",
+        exact: true,
+      }),
+    )
       .toBeVisible();
     // The AI checklist collapse is open by default (see
     // ChecklistGenerationCollapse) — wait for its content to finish laying out
@@ -103,7 +108,7 @@ test.describe("Render isolation (individual components render on use, instead of
   });
 
   test("typing in the create-task checklist AI prompt does not re-render board-shell components", async ({ page }) => {
-    await page.locator("#column-card-row-e2e-1-col-e2e-1").locator(
+    await page.locator("#column-section-row-e2e-1-col-e2e-1").locator(
       "button:has(.hugeicons--add-01)",
     ).click();
     await expect(page.getByRole("heading", { name: "Add task" }))

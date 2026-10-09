@@ -6,7 +6,7 @@ type: feedback
 
 When a UI block is duplicated across two components, extract it as a named export from the most semantically related existing file — don't always create a new file.
 
-Example from this project: `ChecklistGenerationCollapse` was duplicated in `TaskCreateModal` and `TaskEditModal`. Rather than creating `ChecklistGenerationCollapse.jsx`, it was added as a named export to `ChecklistSection.jsx` because they're conceptually the same domain (checklist management).
+Example from this project: `ChecklistGenerationCollapse` was duplicated in `TaskCreateModal` and `TaskEditModal`. Rather than creating `ChecklistGenerationCollapse.jsx`, it was added as a named export to `ChecklistSection` (now `src/components/task/form-elements/ChecklistSection.tsx`) because they're conceptually the same domain (checklist management).
 
 Also: pure UI state (e.g. a collapse open/closed toggle) belongs inside the component that owns the UI, not in a parent modal. Moving `checklistCollapseOpen` into `ChecklistGenerationCollapse` eliminated it from both modals.
 

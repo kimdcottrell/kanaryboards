@@ -2,7 +2,13 @@ export const prerender = false;
 
 import type { APIRoute } from "astro";
 import { z } from "astro/zod";
-import { deleteBoard, getBoard, saveBoard } from "@lib/db/kv.ts";
+import {
+  deleteBoard,
+  deleteBoardComments,
+  getBoard,
+  saveBoard,
+} from "@lib/db/kv.ts";
+import { jsonResponse, unauthorizedResponse } from "@lib/http/api-responses.ts";
 
 // Mirrors Row/Column/Task in @components/context/types.ts (required fields,
 // not schema.dbml's looser nullability — nothing downstream of this validator
@@ -23,6 +29,7 @@ const ColumnSchema = z.object({
   icon: z.string().nullable(),
   iconInBoardMenu: z.boolean(),
   iconNearColumnTitle: z.boolean(),
+  isTrash: z.boolean(),
 });
 
 const ChecklistItemSchema = z.object({
@@ -40,6 +47,8 @@ const TaskSchema = z.object({
   description: z.string(),
   checklist: z.array(ChecklistItemSchema),
   order: z.string(),
+  trashedAt: z.string().nullable(),
+  preTrashColId: z.string().nullable(),
 });
 
 // Deno KV rejects any single value over 64KiB (see saveBoard in
@@ -53,30 +62,6 @@ const PersistedBoardSchema = z.object({
   (board) => new TextEncoder().encode(JSON.stringify(board)).length < 65000,
   { error: "Board payload is too large." },
 );
-
-function jsonResponse(body: object, status: number): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-// Reject an unauthenticated request. A top-level browser navigation (someone
-// typing /api/board into the address bar) is bounced to the dashboard's
-// friendly "you must be logged in" alert; every programmatic fetch — how the
-// app actually calls this endpoint — gets a plain 401.
-function unauthorizedResponse(request: Request): Response {
-  if (request.headers.get("Sec-Fetch-Mode") === "navigate") {
-    return new Response(null, {
-      status: 302,
-      headers: {
-        Location: "/dashboard?unauthorized=1",
-        "x-authenticated": "false",
-      },
-    });
-  }
-  return jsonResponse({ error: "Unauthorized" }, 401);
-}
 
 export const GET: APIRoute = async ({ locals, request }) => {
   const { userId } = locals.auth();
@@ -146,5 +131,6 @@ export const DELETE: APIRoute = async ({ locals, request }) => {
     auth: locals.auth(),
   });
   await deleteBoard(boardId);
+  await deleteBoardComments(boardId);
   return jsonResponse({ ok: true }, 200);
 };

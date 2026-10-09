@@ -1,4 +1,4 @@
-import TaskCard from "./TaskCard.tsx";
+import TaskCard from "./task/TaskCard.tsx";
 import DynamicIcon from "./shared/DynamicIcon.tsx";
 import {
   useColumnEditActions,
@@ -14,7 +14,7 @@ import { beforeIdFromOrderedList, useDropTarget } from "@lib/dashboard/drag.ts";
 import type { Column, Row } from "./context/types.ts";
 import type { DragEvent } from "react";
 
-export default function ColumnCard(
+export default function ColumnSection(
   { column, row, headerLabel }: {
     column: Column;
     row: Row;
@@ -57,7 +57,7 @@ export default function ColumnCard(
 
   return (
     <div
-      id={`column-card-${row.id}-${column.id}`}
+      id={`column-section-${row.id}-${column.id}`}
       data-render-count={renderCount}
       className="flex w-xs shrink-0 flex-col rounded gap-3 p-3 shadow-sm shadow-base-300/10"
       style={{
@@ -67,8 +67,8 @@ export default function ColumnCard(
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
     >
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0 flex-1">
+      <div className="flex min-h-8 items-center justify-between gap-3">
+        <div className="relative min-w-0 flex-1">
           {headerLabel !== undefined
             ? (
               <h4 className="text-xl font-semibold font-roboto-slab flex items-center gap-2">
@@ -100,8 +100,10 @@ export default function ColumnCard(
             : (
               <h4
                 className="text-xl font-semibold cursor-text font-roboto-slab flex items-center gap-2"
-                onDoubleClick={() => editColumnTitle(column, row.id)}
-                title="Double-click to edit"
+                onDoubleClick={column.isTrash
+                  ? undefined
+                  : () => editColumnTitle(column, row.id)}
+                title={column.isTrash ? undefined : "Double-click to edit"}
               >
                 {column.iconNearColumnTitle && column.icon && (
                   <DynamicIcon name={column.icon} className="h-5 w-5" />
@@ -112,19 +114,26 @@ export default function ColumnCard(
                 </div>
               </h4>
             )}
+          {column.isTrash && (
+            <p className="absolute left-0 top-full text-xs leading-none opacity-70 whitespace-nowrap">
+              Tasks in the trash are deleted after 30 days.
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          <button
-            className="btn btn-square btn-sm"
-            type="button"
-            style={{
-              backgroundColor: `${row.color}`,
-            }}
-            onClick={() => openTaskForm(row.id, column.id)}
-          >
-            <span className="iconify hugeicons--add-01 text-xl text-base-100">
-            </span>
-          </button>
+          {!column.isTrash && (
+            <button
+              className="btn btn-square btn-sm"
+              type="button"
+              style={{
+                backgroundColor: `${row.color}`,
+              }}
+              onClick={() => openTaskForm(row.id, column.id)}
+            >
+              <span className="iconify hugeicons--add-01 text-xl text-base-100">
+              </span>
+            </button>
+          )}
         </div>
       </div>
       <div className="space-y-3 rounded">
@@ -143,6 +152,7 @@ export default function ColumnCard(
             isDropAfter={dropTarget?.id === task.id &&
               dropTarget?.position === "after"}
             isDragging={draggedTask?.id === task.id}
+            isTrash={column.isTrash}
           />
         ))}
       </div>

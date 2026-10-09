@@ -7,6 +7,13 @@ const BASE_URL = process.env.CI
   ? process.env.BASE_URL!
   : "http://localhost:8085";
 
+const SHARED_ACCOUNT_SPECS = [
+  "**/board-persistence.spec.ts",
+  "**/hero-start-form.spec.ts",
+  "**/drawer-row-list-mirror.spec.ts",
+  "**/drawer-row-nav.spec.ts",
+];
+
 export default defineConfig({
   testDir: "tests/playwright",
   testIgnore: "**/preview-only/**",
@@ -60,6 +67,17 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
       dependencies: ["setup"],
+      // A project-level testIgnore replaces the top-level one, so repeat it.
+      testIgnore: ["**/preview-only/**", ...SHARED_ACCOUNT_SPECS],
+    },
+    {
+      // These specs wipe and re-seed the shared Clerk test account's KV board,
+      // so running them in parallel lets one clobber another's seed mid-test.
+      name: "chromium-shared-account",
+      use: { ...devices["Desktop Chrome"] },
+      dependencies: ["setup"],
+      testMatch: SHARED_ACCOUNT_SPECS,
+      workers: 1,
     },
     {
       name: "firefox",

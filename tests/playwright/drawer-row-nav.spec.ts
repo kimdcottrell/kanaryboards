@@ -39,6 +39,7 @@ const BOARD_STATE = {
       icon: null,
       iconInBoardMenu: false,
       iconNearColumnTitle: false,
+      isTrash: false,
     },
     {
       id: "col-e2e-2",
@@ -49,6 +50,7 @@ const BOARD_STATE = {
       icon: null,
       iconInBoardMenu: false,
       iconNearColumnTitle: false,
+      isTrash: false,
     },
     {
       id: "col-e2e-3",
@@ -59,6 +61,7 @@ const BOARD_STATE = {
       icon: null,
       iconInBoardMenu: false,
       iconNearColumnTitle: false,
+      isTrash: false,
     },
   ],
   tasks: [
@@ -70,6 +73,8 @@ const BOARD_STATE = {
       description: "",
       checklist: [],
       order: "a0",
+      trashedAt: null,
+      preTrashColId: null,
     },
     {
       id: "task-e2e-2",
@@ -79,6 +84,8 @@ const BOARD_STATE = {
       description: "",
       checklist: [],
       order: "a0",
+      trashedAt: null,
+      preTrashColId: null,
     },
   ],
 };

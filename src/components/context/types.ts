@@ -21,6 +21,7 @@ export interface Column {
   icon: string | null;
   iconInBoardMenu: boolean;
   iconNearColumnTitle: boolean;
+  isTrash: boolean;
 }
 
 export interface Task {
@@ -31,6 +32,30 @@ export interface Task {
   description: string;
   checklist: ChecklistItem[];
   order: string;
+  trashedAt: string | null; // ISO timestamp; set while in the Trash column
+  preTrashColId: string | null; // column to return to on Restore
+}
+
+// What BOARD/LOAD accepts: boards saved before the column pin/icon fields or
+// the Trash column existed lack them, and load() backfills them.
+export type StoredColumn =
+  & Pick<Column, "id" | "title" | "order">
+  & Partial<Column>;
+export type StoredTask =
+  & Omit<Task, "trashedAt" | "preTrashColId">
+  & Partial<Task>;
+
+// Stored outside the board blob (one KV entry per comment), so it is not part
+// of PersistedBoard. Mirrors the task_comments table in src/db/schema.dbml.
+export interface TaskComment {
+  id: string;
+  taskId: string;
+  authorId: string | null; // Clerk userId; null when stored in localStorage
+  authorName: string;
+  authorImageUrl: string | null;
+  content: string; // Lexical JSON from ExtensiveEditorRef.getJSON()
+  createdAt: string; // ISO timestamp
+  updatedAt: string | null; // ISO timestamp; set once the comment is edited
 }
 
 // ── BOARD STATE ────────────────────────────────────────────────────────────────
@@ -51,6 +76,7 @@ export interface RowFormState {
   newRowFormKey: number;
   isGeneratingTasks: boolean;
   taskGenerationStatus: string;
+  taskGenerationFailed: boolean;
   createRowModalOpen: boolean;
 }
 
@@ -60,7 +86,7 @@ export interface RowEditState {
   editingRowName: string;
 }
 
-// Inline column title editing (ColumnCard).
+// Inline column title editing (ColumnSection).
 export interface ColumnEditState {
   editingColumnId: string | null;
   editingColumnRowId: string | null;
@@ -105,7 +131,7 @@ export interface ChecklistAIState {
 }
 
 // The task currently being dragged across the board (cross-cell moves). Global
-// because ColumnCard reads it to render drag visuals and route drops.
+// because ColumnSection reads it to render drag visuals and route drops.
 export interface DragState {
   draggedTask: Task | null;
 }
@@ -187,6 +213,8 @@ export type TaskAction =
   | { type: "TASK/DELETE"; payload: { taskId: string } }
   | { type: "TASK/SAVE_EDIT" }
   | { type: "TASK/MOVE_TO_COLUMN"; payload: { taskId: string; colId: string } }
+  | { type: "TASK/TRASH"; payload: { taskId: string } }
+  | { type: "TASK/RESTORE"; payload: { taskId: string } }
   | {
     type: "TASK/TOGGLE_CHECKLIST_ITEM";
     payload: { taskId: string; itemId: string };
@@ -285,9 +313,14 @@ export type BoardLifecycleAction =
     type: "BOARD/LOAD";
     payload: {
       rows: Row[];
-      columns: Column[];
-      tasks: Task[];
+      columns: StoredColumn[];
+      tasks: StoredTask[];
     };
+  }
+  // Another tab's autosaved board, received over BroadcastChannel.
+  | {
+    type: "BOARD/SYNC";
+    payload: { rows: Row[]; columns: Column[]; tasks: Task[] };
   };
 
 export type BoardAction =

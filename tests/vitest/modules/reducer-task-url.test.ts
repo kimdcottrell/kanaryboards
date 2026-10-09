@@ -24,6 +24,7 @@ function stateWithTask(task: Task): BoardState {
         icon: null,
         iconInBoardMenu: false,
         iconNearColumnTitle: false,
+        isTrash: false,
       },
       {
         id: "col-2",
@@ -34,6 +35,7 @@ function stateWithTask(task: Task): BoardState {
         icon: null,
         iconInBoardMenu: false,
         iconNearColumnTitle: false,
+        isTrash: false,
       },
     ],
     tasks: [task],
@@ -48,6 +50,8 @@ const baseTask: Task = {
   title: "Original title",
   description: "some desc",
   checklist: [],
+  trashedAt: null,
+  preTrashColId: null,
 };
 
 // ── Task URL established on creation ─────────────────────────────────────────
@@ -63,6 +67,8 @@ describe("Task URL established on creation", () => {
       title: "New task",
       description: "",
       checklist: [],
+      trashedAt: null,
+      preTrashColId: null,
     };
     const next = boardReducer(state, {
       type: "TASK/CREATE",
@@ -81,6 +87,8 @@ describe("Task URL established on creation", () => {
       title: "Second",
       description: "",
       checklist: [],
+      trashedAt: null,
+      preTrashColId: null,
     };
     const next = boardReducer(state, {
       type: "TASK/CREATE",

@@ -4,11 +4,11 @@ title: Row & Column Management
 sequenceDiagram
     actor User
     participant BoardMenu as BoardMenu / BoardDock<br/>(BoardMenu.tsx #board-menu = lg+,<br/>BoardDock.tsx dock = below lg)
-    participant Config as BoardConfigModal<br/>(BoardConfigModal.tsx +<br/>config/board/*Section.tsx.<br/>Column drag-to-reorder scaffolding lives in<br/>config/board/ColumnReorderList.tsx, shared with<br/>the homepage DemoExperience demo)
+    participant Config as BoardConfigModal<br/>(BoardConfigModal.tsx +<br/>config/board/*Section.tsx.<br/>Column drag-to-reorder scaffolding lives in<br/>shared/ColumnReorderList.tsx, shared with<br/>the homepage DemoExperience demo)
     participant RowModal as CreateRowModal<br/>(config/board/CreateRowModal.tsx +<br/>CreateRowSection.tsx)
     participant Board as RowBoard<br/>(RowBoard.tsx)
     participant Row as RowSection<br/>(RowSection.tsx)
-    participant Cell as ColumnCard<br/>(ColumnCard.tsx)
+    participant Cell as ColumnSection<br/>(ColumnSection.tsx)
     participant Actions as action hooks<br/>(actions/boardConfig.ts,<br/>row*.ts, column*.ts, view.ts)
     participant Reducer as reducers<br/>(board.ts, rows.ts, columns.ts, taskAi.ts, view.ts)
     participant Ctx as BoardContext<br/>(BoardConfig/BoardData/RowForm/<br/>RowEdit/ColumnEdit/ColumnConfig/ColumnFilter)
@@ -38,7 +38,7 @@ sequenceDiagram
     Ctx->>Reducer: rows.openRowCreateModal
     Reducer-->>Ctx: createRowModalOpen = true
     Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: createRowModalOpen=true)<br/>-> modal opens, CreateRowSection visible
-    Note over RowModal: Close (X / backdrop) -> closeCreateRowModal()<br/>-> ROW/CLOSE_CREATE_MODAL -> rows.closeRowCreateModal<br/>-> createRowModalOpen=false
+    Note over RowModal: Close (X / backdrop) -> closeCreateRowModal()<br/>-> ROW/CLOSE_CREATE_MODAL -> rows.closeRowCreateModal<br/>-> createRowModalOpen=false,<br/>taskGenerationStatus="", taskGenerationFailed=false
 
     Note over User,AI: Add row with AI task generation<br/>(CreateRowSection, inside CreateRowModal)
     User->>RowModal: type row name + AI prompt
@@ -49,35 +49,53 @@ sequenceDiagram
     Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: newRowName/newRowPrompt changed)
 
     User->>RowModal: submit "Add row" form
-    RowModal->>Actions: addRow(event)<br/>(actions/rowForm.ts)
-    Actions->>Ctx: dispatch(ROW/ADD, {id, title, color: blue, order})
-    Ctx->>Reducer: rows.add(state, payload)
-    Reducer-->>Ctx: rows = [...rows, newRow]
-    Ctx-->>Config: BoardConfigModal re-renders<br/>(BoardData: rows changed)<br/>-> row settings list shows new row
-    Ctx-->>Row: RowBoard mounts a new RowSection<br/>(BoardData: rows changed)
+    RowModal->>Actions: addRow(event)<br/>(actions/rowForm.ts)<br/>builds newRow = {id, title, color: blue, order}
 
     alt newRowPrompt is non-empty
+        Note over Actions: generateTasksForRow(newRow) — the row is only<br/>created once tasks come back, so the modal stays open
         Actions->>Ctx: dispatch(TASK_AI/GENERATE_START)
         Ctx->>Reducer: taskAi.generateStart
-        Reducer-->>Ctx: isGeneratingTasks = true<br/>taskGenerationStatus = "Generating tasks..."
-        Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: isGeneratingTasks=true)<br/>-> shows status banner, disables inputs
+        Reducer-->>Ctx: isGeneratingTasks = true, taskGenerationFailed = false<br/>taskGenerationStatus = "Generating tasks..."
+        Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: isGeneratingTasks=true)<br/>-> modal stays open, GeneratingTasksAlert (info),<br/>inputs disabled, Add Row hidden
 
         Actions->>AI: fetchGeneratedItems(prompt, 10)<br/>(actions/shared.ts)<br/>POST /api/generate-tasks
         AI-->>Actions: {response: string[]} (task titles)
 
         alt titles returned
-            Actions->>Actions: todoColId = findTodoColumnId(columns)<br/>(selectors.ts)<br/>orders = generateNKeysBetween(null, null, n)<br/>build Task[] (empty description/checklist)
+            Actions->>Actions: buildTasksFromTitles(titles, newRow.id, columns)<br/>(todoColId = findTodoColumnId(columns),<br/>orders = generateNKeysBetween(null, null, n))
+            Actions->>Ctx: dispatch(ROW/ADD, newRow)
+            Ctx->>Reducer: rows.add(state, payload)
+            Reducer-->>Ctx: rows = [...rows, newRow]
             Actions->>Ctx: dispatch(TASK_AI/GENERATE_SUCCESS, {tasks})
             Ctx->>Reducer: taskAi.generateSuccess
-            Reducer-->>Ctx: tasks = [...newTasks, ...tasks]<br/>isGeneratingTasks=false<br/>taskGenerationStatus = "Added N task(s) to Todo"<br/>newRowName="", newRowPrompt="", newRowFormKey++
+            Reducer-->>Ctx: tasks = [...newTasks, ...tasks]<br/>isGeneratingTasks=false, taskGenerationFailed=false<br/>taskGenerationStatus = "Added N task(s) to first column."<br/>newRowName="", newRowPrompt="", newRowFormKey++
+            Ctx-->>RowModal: CreateRowModal re-renders<br/>-> form resets, GeneratingTasksAlert (success, green)<br/>shows the completion status
+            Ctx-->>Config: BoardConfigModal re-renders<br/>(BoardData: rows changed)<br/>-> row settings list shows new row
+            Ctx-->>Row: RowBoard mounts a new RowSection<br/>(BoardData: rows changed)<br/>-> isNew=true (id not in RowBoard seenRowIds ref)
+            Row->>Row: useEffect -> animejs createScope + splitText(title, chars)<br/>+ animate(chars, {y bounce, rotate from -1turn, stagger(50),<br/>autoplay: onScroll({repeat:false})})<br/>-> title chars jump/spin in once when scrolled into view.<br/>RowBoard then marks the id seen, so remounts (e.g. column<br/>filter toggles) never replay it
+            Ctx-->>Cell: ColumnSection (Todo column, new row)<br/>re-renders (TasksByCellContext changed)<br/>-> new TaskCards mount
+            Actions->>Actions: await 1000ms (CLOSE_AFTER_GENERATE_MS)
+            Actions->>Ctx: dispatch(ROW/CLOSE_CREATE_MODAL)<br/>then scrollToRow -> requestAnimationFrame -><br/>getElementById("row-section-{id}").scrollIntoView({behavior:"smooth", block:"start"})
+            Ctx->>Reducer: rows.closeRowCreateModal
+            Reducer-->>Ctx: createRowModalOpen = false<br/>taskGenerationStatus = "", taskGenerationFailed = false
+            Ctx-->>RowModal: CreateRowModal re-renders<br/>-> modal closes, window scrolls to the new RowSection
         else no titles / fetch error
             Actions->>Ctx: dispatch(TASK_AI/GENERATE_FAILURE, {error})
             Ctx->>Reducer: taskAi.generateFailure
-            Reducer-->>Ctx: isGeneratingTasks=false<br/>taskGenerationStatus=error<br/>newRowName="", newRowPrompt="", newRowFormKey++
+            Reducer-->>Ctx: isGeneratingTasks=false, taskGenerationFailed=true<br/>taskGenerationStatus=error<br/>(newRowName/newRowPrompt kept; no ROW/ADD)
+            Ctx-->>RowModal: CreateRowModal re-renders<br/>-> modal stays open, GeneratingTasksAlert (error),<br/>inputs re-enabled, Add Row reappears for retry
         end
-        Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: isGeneratingTasks=false)<br/>-> form resets, "Add Row" button reappears<br/>(modal stays open)
-        Ctx-->>Cell: ColumnCard (Todo column, new row)<br/>re-renders (TasksByCellContext changed)<br/>-> new TaskCards mount
+        Note over Board,RowModal: In RowBoard's inline empty state there is no modal:<br/>ROW/ADD swaps the empty state for the board, and the<br/>delayed ROW/CLOSE_CREATE_MODAL is a no-op.
     else newRowPrompt empty
+        Actions->>Ctx: dispatch(ROW/ADD, newRow)
+        Ctx->>Reducer: rows.add(state, payload)
+        Reducer-->>Ctx: rows = [...rows, newRow]
+        Actions->>Ctx: dispatch(ROW/CLOSE_CREATE_MODAL)<br/>then scrollToRow -> requestAnimationFrame -><br/>getElementById("row-section-{id}").scrollIntoView({behavior:"smooth", block:"start"})
+        Ctx->>Reducer: rows.closeRowCreateModal
+        Reducer-->>Ctx: createRowModalOpen = false<br/>taskGenerationStatus = "", taskGenerationFailed = false
+        Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: createRowModalOpen=false)<br/>-> modal closes, window scrolls to the new RowSection
+        Ctx-->>Config: BoardConfigModal re-renders<br/>(BoardData: rows changed)<br/>-> row settings list shows new row
+        Ctx-->>Row: RowBoard mounts a new RowSection<br/>(BoardData: rows changed)<br/>-> isNew=true, title entrance animation (as above)
         Actions->>Ctx: dispatch(ROW/RESET_FORM)
         Ctx->>Reducer: rows.resetForm
         Reducer-->>Ctx: newRowName="", newRowPrompt="", newRowFormKey++
@@ -85,6 +103,7 @@ sequenceDiagram
     end
 
     Note over User,AI: Create task from board menu (TaskCreateModal)
+    Note over BoardMenu: "Create new task" is only in addActions<br/>when rows.length > 0 (useSharedMenuActions)
     User->>BoardMenu: click "Create new task"
     BoardMenu->>Actions: openTaskForm("", "")<br/>(actions/task.ts)
     Actions->>Ctx: dispatch(TASK/OPEN_CREATE_MODAL, {rowId:"", colId:""})
@@ -123,8 +142,10 @@ sequenceDiagram
     Actions->>Ctx: dispatch(ROW/DELETE, {rowId})
     Ctx->>Reducer: rows.remove(state, payload)
     Reducer-->>Ctx: rows filtered. tasks for that row removed.<br/>clears any open modal/edit state referencing it
-    Ctx-->>Row: that RowSection (+ its ColumnCards/TaskCards)<br/>unmounts (BoardData: rows/tasks changed)
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: rows changed)<br/>-> row settings list loses the row
+    Note over Reducer: Comments of the removed tasks are not deleted here:<br/>KV -> swept by the next /api/purge-trash run,<br/>localStorage -> pruned on the next board load
+    Ctx-->>Row: that RowSection (+ its ColumnSections/TaskCards)<br/>unmounts (BoardData: rows/tasks changed)
+    Ctx-->>Config: RowSettingsSection re-renders<br/>(BoardData: rows changed)<br/>-> row settings list loses the row
+    Note over Ctx: Other tabs receive the new board via BOARD/SYNC<br/>(see board-load-autosave). If no rows are left there,<br/>their task modals close.
 
     Note over User,AI: Reorder row (move up / down, RowSettingsSection only)
     User->>Config: click move-up / move-down arrow
@@ -132,7 +153,7 @@ sequenceDiagram
     Actions->>Ctx: dispatch(ROW/MOVE, {fromIndex, toIndex})
     Ctx->>Reducer: rows.move(state, payload)
     Reducer-->>Ctx: rows array reordered.<br/>moved row's order = generateKeyBetween(prev, next)
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: rows reordered)<br/>-> row settings list shows new order
+    Ctx-->>Config: RowSettingsSection re-renders<br/>(BoardData: rows reordered)<br/>-> row settings list shows new order
     Ctx-->>Row: RowSection instances re-render in new order<br/>(BoardData: rows reordered)<br/>-> RowBoard re-maps them by row.id
 
     Note over User,AI: Update row color (RowSettingsSection)
@@ -142,15 +163,16 @@ sequenceDiagram
     Ctx->>Reducer: rows.updateColor
     Reducer-->>Ctx: rows[rowId].color = color
     Ctx-->>Row: that RowSection re-renders<br/>(BoardData: row.color changed)<br/>-> background color-mix updates
-    Ctx-->>Cell: every ColumnCard in that row re-renders<br/>(BoardData: row.color changed)<br/>-> background/border + add-task button tint update
+    Ctx-->>Cell: every ColumnSection in that row re-renders<br/>(BoardData: row.color changed)<br/>-> background/border + add-task button tint update
 
+    Note over Config: The Trash column is left out of the settings badge list,<br/>ColumnReorderList and the add-column reference select,<br/>so it cannot be renamed, deleted or moved, and stays last.<br/>Adding "right of" the last column, or dropping on the trailing<br/>drop zone, places the column before Trash
     Note over User,AI: Add column (ColumnSettingsSection, "Create a new column" form)
     User->>Config: type column name<br/>(defaultColumnInput)
     Config->>Actions: setDefaultColumnInput(value)<br/>(actions/columnConfig.ts)
     Actions->>Ctx: dispatch(COLUMN/SET_INPUT, {value})
     Ctx->>Reducer: columns.setInput
     Reducer-->>Ctx: defaultColumnInput = value
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(ColumnConfigContext: defaultColumnInput changed)
+    Ctx-->>Config: ColumnSettingsSection re-renders<br/>(ColumnConfigContext: defaultColumnInput changed)
 
     User->>Config: pick direction (left/right) +<br/>reference column from the two selects
     Note over Config: direction + referenceColumnId are local<br/>component useState — no dispatch
@@ -168,26 +190,27 @@ sequenceDiagram
     Ctx->>Reducer: columns.setInput
     Reducer-->>Ctx: defaultColumnInput = ""
     Config->>Config: reset local direction + referenceColumnId to ""
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: columns changed)<br/>-> reference select lists the new column, name input clears
-    Ctx-->>Cell: every RowSection mounts a new ColumnCard<br/>(BoardData: columns changed)<br/>-> appears to the left/right of the reference column
+    Ctx-->>Config: ColumnSettingsSection re-renders<br/>(BoardData: columns changed)<br/>-> reference select lists the new column, name input clears
+    Ctx-->>Cell: every RowSection mounts a new ColumnSection<br/>(BoardData: columns changed)<br/>-> appears to the left/right of the reference column
 
-    Note over User,AI: Rename column (per ColumnCard, double-click)
+    Note over User,AI: Rename column (per ColumnSection, double-click)
+    Note over Cell: The Trash column (isTrash) has no double-click rename<br/>and no "+" button. It shows a "deleted after 30 days" disclaimer
     User->>Cell: double-click column title
     Cell->>Actions: editColumnTitle(column, row)<br/>(actions/columnEdit.ts)
     Actions->>Ctx: dispatch(COLUMN/RENAME_START, {columnId, rowId, currentName})
     Ctx->>Reducer: columns.renameStart
     Reducer-->>Ctx: editingColumnId, editingColumnRowId, editingColumnName set
-    Ctx-->>Cell: the matching ColumnCard (columnId, rowId)<br/>re-renders (ColumnEditContext changed)<br/>-> shows input
+    Ctx-->>Cell: the matching ColumnSection (columnId, rowId)<br/>re-renders (ColumnEditContext changed)<br/>-> shows input
 
     User->>Cell: type name, Enter / blur
     Cell->>Actions: setEditingColumnName(name) -> saveColumnTitle(columnId)
     Actions->>Ctx: dispatch(COLUMN/RENAME_CHANGE, {name})<br/>dispatch(COLUMN/RENAME_SAVE, {columnId})
     Ctx->>Reducer: columns.renameChange / renameSave
     Reducer-->>Ctx: columns[columnId].title = trimmed (if non-empty)<br/>editingColumnId/editingColumnRowId = null
-    Ctx-->>Cell: every ColumnCard for this column<br/>(across all rows) re-renders<br/>(BoardData: column.title changed)<br/>-> shows new title
-    Ctx-->>Cell: the editing ColumnCard re-renders<br/>(ColumnEditContext: editingColumnId=null)<br/>-> input reverts to text
+    Ctx-->>Cell: every ColumnSection for this column<br/>(across all rows) re-renders<br/>(BoardData: column.title changed)<br/>-> shows new title
+    Ctx-->>Cell: the editing ColumnSection re-renders<br/>(ColumnEditContext: editingColumnId=null)<br/>-> input reverts to text
 
-    Note over Cell: Escape → COLUMN/RENAME_CANCEL → columns.renameCancel<br/>(editing ColumnCard re-renders via ColumnEditContext,<br/>no title change)
+    Note over Cell: Escape → COLUMN/RENAME_CANCEL → columns.renameCancel<br/>(editing ColumnSection re-renders via ColumnEditContext,<br/>no title change)
 
     Note over User,AI: Delete column (ColumnSettingsSection)
     User->>Config: click delete on column badge
@@ -195,8 +218,9 @@ sequenceDiagram
     Actions->>Ctx: dispatch(COLUMN/DELETE, {columnId})
     Ctx->>Reducer: columns.remove(state, payload)
     Reducer-->>Ctx: columns filtered. tasks for that column removed.<br/>clears any open modal/edit state referencing it
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: columns changed)<br/>-> column settings badge list loses the column
-    Ctx-->>Cell: the corresponding ColumnCard instance in<br/>every RowSection unmounts<br/>(BoardData: columns/tasks changed)
+    Note over Reducer: Comments of the removed tasks are not deleted here:<br/>KV -> swept by the next /api/purge-trash run,<br/>localStorage -> pruned on the next board load
+    Ctx-->>Config: ColumnSettingsSection re-renders<br/>(BoardData: columns changed)<br/>-> column settings badge list loses the column
+    Ctx-->>Cell: the corresponding ColumnSection instance in<br/>every RowSection unmounts<br/>(BoardData: columns/tasks changed)
 
     Note over User,AI: Pin/unpin column — two independent menus:<br/>Shortcut Menu (#board-menu, lg+, max 3) and<br/>Dock Menu (BoardDock, below lg, max 1).<br/>Each has its own pin button in ColumnSettingsSection.
     alt Shortcut Menu pin
@@ -214,7 +238,7 @@ sequenceDiagram
         Reducer-->>Ctx: columns[columnId].pinnedToDock = !pinnedToDock
         Ctx-->>BoardMenu: BoardView re-renders<br/>(BoardData: columns changed)<br/>-> BoardDock shows/clears its single<br/>dock-pinned column item (below lg only)
     end
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: column pin flags changed)<br/>-> pin icons + N/3 and N/1 counters update
+    Ctx-->>Config: ColumnSettingsSection re-renders<br/>(BoardData: column pin flags changed)<br/>-> pin icons + N/3 and N/1 counters update
     Note over Reducer: Unpinning from either menu prunes the column<br/>from selectedColumnIds only if it is no longer pinned<br/>to the other menu, so the view filter never references<br/>a column absent from both menus.
 
     Note over User,AI: Filter board by pinned column<br/>(shared view filter — Shortcut Menu item or Dock Menu item)
@@ -229,10 +253,10 @@ sequenceDiagram
         Board->>Row: render every RowSection with all columns
     else >=2 selected
         Board->>Row: render every RowSection;<br/>RowSection filters columns to selectedColumnIds
-        Row->>Cell: ColumnCards only for selected columns
+        Row->>Cell: ColumnSections only for selected columns
     else exactly 1 selected
-        Board->>Board: render CondensedColumnBoard<br/>(CondensedColumnBoard.tsx)<br/>-> single section titled with the column;<br/>each row pivots into a horizontal ColumnCard<br/>(column fixed, headerLabel = row.title)
-        Note over Cell: open/edit (TASK/OPEN_EDIT_MODAL) and drag<br/>reuse existing ColumnCard logic; dragging a task<br/>to another project column dispatches<br/>TASK/DROP_ON_CELL {toRowId, toColId: this column}
+        Board->>Board: render CondensedColumnBoard<br/>(CondensedColumnBoard.tsx)<br/>-> single section titled with the column;<br/>each row pivots into a horizontal ColumnSection<br/>(column fixed, headerLabel = row.title)
+        Note over Cell: open/edit (TASK/OPEN_EDIT_MODAL) and drag<br/>reuse existing ColumnSection logic; dragging a task<br/>to another project column dispatches<br/>TASK/DROP_ON_CELL {toRowId, toColId: this column}
     end
     Note over Reducer: COLUMN/DELETE also prunes selectedColumnIds<br/>(columns.remove). selectedColumnIds is ephemeral —<br/>excluded from the autosave snapshot.
 
@@ -242,7 +266,7 @@ sequenceDiagram
     Actions->>Ctx: dispatch(COLUMN/TOGGLE_ICON_IN_BOARD_MENU, {columnId})
     Ctx->>Reducer: columns.toggleIconInBoardMenu(state, payload)
     Reducer-->>Ctx: columns[columnId].iconInBoardMenu = !iconInBoardMenu
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: column.iconInBoardMenu changed)<br/>-> checkbox toggles
+    Ctx-->>Config: ColumnSettingsSection re-renders<br/>(BoardData: column.iconInBoardMenu changed)<br/>-> checkbox toggles
     Ctx-->>BoardMenu: BoardView re-renders<br/>(BoardData: columns changed)<br/>-> that column's item shows/hides its icon in<br/>#board-menu and (if dock-pinned) BoardDock<br/>(title+count badge unaffected)
 
     Note over User,AI: Reorder column (drag, ColumnSettingsSection column badges.<br/>Drag scaffolding + drop zones live in the shared<br/>ColumnReorderList.tsx; same dispatches whether rendered<br/>by ColumnSettingsSection or the homepage DemoExperience)
@@ -251,7 +275,7 @@ sequenceDiagram
     Actions->>Ctx: dispatch(COLUMN/SET_DRAGGED_INDEX, {index})
     Ctx->>Reducer: columns.setDraggedIndex
     Reducer-->>Ctx: draggedDefaultIndex = index
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(ColumnConfigContext: draggedDefaultIndex set)<br/>-> dragged badge dims to opacity 0.4
+    Ctx-->>Config: ColumnSettingsSection re-renders<br/>(ColumnConfigContext: draggedDefaultIndex set)<br/>-> dragged badge dims to opacity 0.4
 
     User->>Config: dragover badge
     Config->>Config: preventDefault()<br/>setDragHoverIndex(index) (local state)
@@ -265,14 +289,14 @@ sequenceDiagram
     Actions->>Ctx: dispatch(COLUMN/SET_DRAGGED_INDEX, {index: null})
     Ctx->>Reducer: columns.setDraggedIndex
     Reducer-->>Ctx: draggedDefaultIndex = null
-    Ctx-->>Config: BoardConfiguration re-renders<br/>(BoardData: columns reordered.<br/>ColumnConfigContext: draggedDefaultIndex=null)<br/>-> column settings badges reorder, dim clears
-    Ctx-->>Cell: ColumnCard instances in every RowSection<br/>re-render in new order<br/>(BoardData: columns reordered)
+    Ctx-->>Config: ColumnSettingsSection re-renders<br/>(BoardData: columns reordered.<br/>ColumnConfigContext: draggedDefaultIndex=null)<br/>-> column settings badges reorder, dim clears
+    Ctx-->>Cell: ColumnSection instances in every RowSection<br/>re-render in new order<br/>(BoardData: columns reordered)
 
     Note over User,AI: Autosave (debounced, async)
-    Ctx->>Ctx: useEffect on rows/columns/tasks (500ms debounce)
+    Ctx->>Ctx: useBoardPersistence: useEffect on rows/columns/tasks (500ms debounce)
     Ctx->>Ctx: PUT /api/board {rows, columns, tasks}<br/>(or localStorage if unauthenticated)
 
     Note over User,AI: Sync drawer row list (DrawerMenu.astro,<br/>an Astro server island rendered outside the React tree —<br/>see BoardController's document-click-delegation note above)
-    Ctx->>Ctx: useEffect on rows (after boardLoaded, skipped when boardId === "demo")
+    Ctx->>Ctx: useDrawerRowMirror (effects/useDrawerRowMirror.ts):<br/>useEffect on rows (after boardLoaded, skipped when boardId === "demo")
     Ctx->>Ctx: rebuild #drawer-row-list DOM via replaceChildren<br/>(li/a[data-board-link] per row, sorted by order)
     Note over Ctx: Runs on ROW/ADD, ROW/DELETE, ROW/EDIT_SAVE, ROW/MOVE —<br/>any change to state.rows. New anchors are picked up by<br/>BoardController's existing document click-delegation,<br/>so they still route through the SPA router.<br/>Skipped entirely for the homepage DemoExperience's<br/>BoardProvider (boardId === "demo"), whose rows are never<br/>the visitor's real rows and must not overwrite the shared<br/>#drawer-row-list.

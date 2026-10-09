@@ -34,12 +34,31 @@ vi.mock("@components/context/hooks.ts", () => ({
   handleChecklistKeyDown: vi.fn(),
 }));
 
+// Comments have their own tests (TaskComments.test.tsx).
+vi.mock("@components/task/comments/TaskComments.tsx", () => ({
+  default: () => null,
+}));
+
+const { taskDetailsTabClick } = vi.hoisted(() => ({
+  taskDetailsTabClick: vi.fn(),
+}));
+
 vi.mock("@lyfie/luthor", () => ({
-  ExtensiveEditor: (props: { initialMode?: string }) =>
-    React.createElement("div", {
-      "data-testid": "luthor-editor",
-      "data-initial-mode": props.initialMode,
-    }),
+  ExtensiveEditor: (props: { initialMode?: string; className?: string }) =>
+    React.createElement(
+      "div",
+      {
+        "data-testid": "luthor-editor",
+        "data-initial-mode": props.initialMode,
+        className: props.className,
+        tabIndex: 0,
+      },
+      React.createElement("button", {
+        type: "button",
+        className: "luthor-mode-tab",
+        onClick: taskDetailsTabClick,
+      }),
+    ),
 }));
 
 import {
@@ -51,7 +70,7 @@ import {
   useTaskEditActions,
   useTaskEditState,
 } from "@components/context/hooks.ts";
-import TaskEditModal from "@components/TaskEditModal.tsx";
+import TaskEditModal from "@components/task/modal/TaskEditModal.tsx";
 
 const editTask: Task = {
   id: "task-42",
@@ -61,6 +80,8 @@ const editTask: Task = {
   title: "Existing task",
   description: "",
   checklist: [],
+  trashedAt: null,
+  preTrashColId: null,
 };
 
 beforeEach(() => {
@@ -79,9 +100,16 @@ afterEach(() => {
 });
 
 describe("TaskEditModal", () => {
-  test("shows 'Edit task' heading", () => {
+  test("renders the title input in place of a heading, without a visible label", () => {
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
+    );
     render(<TaskEditModal />);
-    expect(screen.getByText("Edit task")).toBeTruthy();
+    expect(screen.queryByText("Edit task")).toBeNull();
+    expect(screen.queryByText("Title")).toBeNull();
+    const title = screen.getByDisplayValue("Existing task");
+    expect(title.getAttribute("aria-label")).toBe("Title");
+    expect(title.closest("form")).toBeNull();
   });
 
   test("shows loading message when editTaskDraft is null", () => {
@@ -116,7 +144,7 @@ describe("TaskEditModal", () => {
     ).toBeTruthy();
   });
 
-  test("Delete button is present in edit modal", () => {
+  test("Trash button is present in edit modal", () => {
     vi.mocked(useTaskEditState).mockReturnValue(
       makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
     );
@@ -125,7 +153,7 @@ describe("TaskEditModal", () => {
     );
     render(<TaskEditModal />);
     expect(
-      screen.getByRole("button", { name: "Delete", hidden: true }),
+      screen.getByRole("button", { name: "Trash", hidden: true }),
     ).toBeTruthy();
   });
 
@@ -155,7 +183,40 @@ describe("TaskEditModal", () => {
     ).toBe("visual-only");
   });
 
-  test("Status dropdown shows all column options", () => {
+  test("hides the editor's other mode tabs until the description is focused", () => {
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
+    );
+    vi.mocked(useBoardDataState).mockReturnValue(
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
+    );
+    render(<TaskEditModal />);
+    const editor = screen.getByTestId("luthor-editor");
+    expect(editor.className).toContain("task-description-editor--tabs-hidden");
+    fireEvent.focus(editor);
+    expect(editor.className).not.toContain(
+      "task-description-editor--tabs-hidden",
+    );
+  });
+
+  test("leaving the description switches back to Task Details and hides the other tabs", () => {
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
+    );
+    vi.mocked(useBoardDataState).mockReturnValue(
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
+    );
+    render(<TaskEditModal />);
+    const editor = screen.getByTestId("luthor-editor");
+    fireEvent.focus(editor);
+    fireEvent.pointerDown(editor);
+    expect(taskDetailsTabClick).not.toHaveBeenCalled();
+    fireEvent.pointerDown(document.body);
+    expect(taskDetailsTabClick).toHaveBeenCalledTimes(1);
+    expect(editor.className).toContain("task-description-editor--tabs-hidden");
+  });
+
+  test("Status steps show all column options", () => {
     vi.mocked(useTaskEditState).mockReturnValue(
       makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
     );
@@ -167,10 +228,10 @@ describe("TaskEditModal", () => {
     );
     render(<TaskEditModal />);
     expect(
-      screen.getByRole("option", { name: "To Do", hidden: true }),
+      screen.getByRole("radio", { name: "To Do", hidden: true }),
     ).toBeTruthy();
     expect(
-      screen.getByRole("option", { name: "In Progress", hidden: true }),
+      screen.getByRole("radio", { name: "In Progress", hidden: true }),
     ).toBeTruthy();
   });
 
@@ -183,14 +244,14 @@ describe("TaskEditModal", () => {
     );
     render(<TaskEditModal />);
     expect(
-      screen.getByRole("option", { name: "Feature", hidden: true }),
+      screen.getByRole("radio", { name: "Feature", hidden: true }),
     ).toBeTruthy();
     expect(
-      screen.getByRole("option", { name: "Backend", hidden: true }),
+      screen.getByRole("radio", { name: "Backend", hidden: true }),
     ).toBeTruthy();
   });
 
-  test("Status dropdown reflects the task's current colId", () => {
+  test("Status steps reflect the task's current colId", () => {
     vi.mocked(useTaskEditState).mockReturnValue(
       makeTaskEditState({
         taskEditModalOpen: true,
@@ -204,10 +265,9 @@ describe("TaskEditModal", () => {
       }),
     );
     render(<TaskEditModal />);
-    const [statusSelect] = screen.getAllByRole("combobox", {
-      hidden: true,
-    }) as HTMLSelectElement[];
-    expect(statusSelect.value).toBe("col-2");
+    expect(
+      screen.getByRole("radio", { name: "In Progress", hidden: true }),
+    ).toHaveProperty("checked", true);
   });
 
   test("Row dropdown reflects the task's current rowId", () => {
@@ -220,26 +280,71 @@ describe("TaskEditModal", () => {
     vi.mocked(useBoardDataState).mockReturnValue(
       makeBoardDataState({ columns: [mockColumn], rows: [mockRow, secondRow] }),
     );
-    render(<TaskEditModal />);
-    const selects = screen.getAllByRole("combobox", {
-      hidden: true,
-    }) as HTMLSelectElement[];
-    expect(selects[1].value).toBe("row-2");
+    const { container } = render(<TaskEditModal />);
+    expect(
+      container.querySelector<HTMLInputElement>(
+        "input[name='row-select-task-42']:checked",
+      )?.value,
+    ).toBe("row-2");
   });
 
-  test("calls deleteTask with the task id when Delete is clicked", () => {
-    const deleteTask = vi.fn();
+  test("calls trashTask with the task id when Trash is clicked", () => {
+    const trashTask = vi.fn();
     vi.mocked(useTaskEditState).mockReturnValue(
       makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
     );
     vi.mocked(useBoardDataState).mockReturnValue(
       makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
     );
-    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ deleteTask }));
+    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ trashTask }));
     render(<TaskEditModal />);
     fireEvent.click(
-      screen.getByRole("button", { name: "Delete", hidden: true }),
+      screen.getByRole("button", { name: "Trash", hidden: true }),
     );
-    expect(deleteTask).toHaveBeenCalledWith("task-42");
+    expect(trashTask).toHaveBeenCalledWith("task-42");
+  });
+
+  test("stays closed and renders no form for a trashed task (TaskViewOnlyModal opens instead)", () => {
+    const trashColumn = {
+      ...mockColumn,
+      id: "col-trash",
+      title: "Trash",
+      isTrash: true,
+    };
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({
+        taskEditModalOpen: true,
+        editTaskDraft: { ...editTask, colId: "col-trash" },
+      }),
+    );
+    vi.mocked(useBoardDataState).mockReturnValue(
+      makeBoardDataState({
+        columns: [mockColumn, trashColumn],
+        rows: [mockRow],
+      }),
+    );
+    const { container } = render(<TaskEditModal />);
+    expect(container.querySelector("dialog")?.className).not.toContain(
+      "modal-open",
+    );
+    expect(container.querySelector("form")).toBeNull();
+    expect(screen.queryByText(/Loading task/)).toBeNull();
+  });
+
+  test("Save calls saveTaskEdit and navigates to /dashboard", () => {
+    const saveTaskEdit = vi.fn();
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
+    );
+    vi.mocked(useBoardDataState).mockReturnValue(
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
+    );
+    vi.mocked(useTaskEditActions).mockReturnValue(
+      makeTaskEditActions({ saveTaskEdit }),
+    );
+    render(<TaskEditModal />);
+    fireEvent.click(screen.getByRole("button", { name: "Save", hidden: true }));
+    expect(saveTaskEdit).toHaveBeenCalledTimes(1);
+    expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
   });
 });

@@ -2,7 +2,7 @@ import { expect, testNoClerk as test } from "./fixtures.ts";
 
 /**
  * BoardMenu.tsx — the "+" dropdown (#board-menu) wires three items:
- *   - "Create new task"           -> TaskCreateModal (with required Status/Row selects)
+ *   - "Create new task"           -> TaskCreateModal (first Status preselected, required Row select)
  *   - "Add new project row"       -> CreateRowModal ([data-testid='create-new-row'])
  *   - "Add new column to all rows"-> BoardConfigModal scrolled to #create-new-column
  */
@@ -39,22 +39,25 @@ test.describe("Board menu — add dropdown", () => {
     ).click();
   });
 
-  test('"Create new task" opens the task modal with empty required Status/Row selects', async ({ page }) => {
+  test('"Create new task" opens the task modal with the first Status preselected and an empty required Row select', async ({ page }) => {
     await page.locator("#board-menu").getByText("Create new task").click();
 
     await expect(page.getByRole("heading", { name: "Add task" })).toBeVisible();
 
-    const statusSelect = page.locator("#column-select-new");
-    const rowSelect = page.locator("#row-select-new");
+    const statusSteps = page.locator("#column-select-new");
+    const statusRadios = statusSteps.locator("input[type='radio']");
+    const rowMenu = page.locator("#row-select-new");
+    const rowRadios = rowMenu.locator("input[type='radio']");
 
-    await expect(statusSelect).toBeVisible();
-    await expect(rowSelect).toBeVisible();
-    // No default cell when opened from the global menu.
-    await expect(statusSelect).toHaveValue("");
-    await expect(rowSelect).toHaveValue("");
-    // Both selects are required so the task can't be created until chosen.
-    await expect(statusSelect).toHaveJSProperty("required", true);
-    await expect(rowSelect).toHaveJSProperty("required", true);
+    await expect(statusSteps).toBeVisible();
+    await expect(rowMenu).toBeVisible();
+    // Status defaults to the first column; no row is preselected.
+    await expect(statusSteps.locator("input:checked")).toHaveCount(1);
+    await expect(statusRadios.first()).toBeChecked();
+    await expect(statusRadios.first()).toHaveValue("col-todo");
+    await expect(rowMenu.locator("input:checked")).toHaveCount(0);
+    // Row is required so the task can't be created until chosen.
+    await expect(rowRadios.first()).toHaveJSProperty("required", true);
   });
 
   test('"Add new project row" opens the create-row modal', async ({ page }) => {

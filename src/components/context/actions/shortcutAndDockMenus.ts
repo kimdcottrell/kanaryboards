@@ -46,12 +46,15 @@ export function useSharedMenuActions(isPreview?: boolean) {
     action?.();
   };
 
+  // A task needs a row, so "Create new task" is only offered once one exists.
   const addActions = [
-    {
-      icon: "hugeicons--insert-center-image",
-      label: "Create new task",
-      run: () => openTaskForm("", ""),
-    },
+    ...(rows.length > 0
+      ? [{
+        icon: "hugeicons--insert-center-image",
+        label: "Create new task",
+        run: () => openTaskForm("", ""),
+      }]
+      : []),
     {
       icon: "hugeicons--row-insert",
       label: "Add new project row",

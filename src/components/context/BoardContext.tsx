@@ -1,12 +1,5 @@
 import { createContext } from "react";
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useReducer,
-  useRef,
-} from "react";
+import { useContext, useMemo, useReducer } from "react";
 import type { Dispatch, ReactNode } from "react";
 import type {
   BoardAction,
@@ -24,10 +17,10 @@ import type {
   TaskEditState,
 } from "./types.ts";
 import { boardReducer, createInitialState } from "./reducer.ts";
-import { STORAGE_KEY } from "./constants.ts";
-import { createDemoBoard } from "../demo/demoBoardData.ts";
 import { computeTasksByCell } from "./selectors.ts";
-import { byOrder } from "./ordering.ts";
+import { useBoardPersistence } from "./effects/useBoardPersistence.ts";
+import { useDrawerRowMirror } from "./effects/useDrawerRowMirror.ts";
+import { useChecklistInputRefs } from "./effects/useChecklistInputRefs.ts";
 
 export const BoardDispatchContext = createContext<Dispatch<BoardAction> | null>(
   null,
@@ -160,9 +153,12 @@ export function useTasksByCell(): Record<string, Task[]> {
 }
 
 const BoardMetaContext = createContext<
-  { boardId: string | undefined } | null
+  { boardId: string | undefined; isAuthenticated: boolean } | null
 >(null);
-export function useBoardMeta(): { boardId: string | undefined } {
+export function useBoardMeta(): {
+  boardId: string | undefined;
+  isAuthenticated: boolean;
+} {
   const v = useContext(BoardMetaContext);
   if (!v) throw new Error("useBoardMeta must be used within a BoardProvider");
   return v;
@@ -181,148 +177,9 @@ export function BoardProvider(
     createInitialState,
   );
 
-  // Load board on mount. Authenticated: load from API, migrate localStorage if needed.
-  // Unauthenticated: load from localStorage (falling back to API for legacy KV data).
-  // boardId === "demo" (landing-page demo): always seed from createDemoBoard(), skip storage entirely.
-  useEffect(() => {
-    async function load() {
-      try {
-        if (boardId === "demo") {
-          dispatch({ type: "BOARD/LOAD", payload: createDemoBoard() });
-          return;
-        }
-        if (isAuthenticated) {
-          const res = await fetch("/api/board");
-          // Non-404 errors are unexpected — bail out and leave the board unloaded.
-          if (!res.ok && res.status !== 404) return;
-          const hasRemoteData = res.ok;
-          const remote = hasRemoteData ? await res.json() : null;
-
-          // Migrate full board from localStorage if the server has no data yet.
-          if (!hasRemoteData) {
-            const stored = globalThis.localStorage?.getItem(STORAGE_KEY);
-            if (stored) {
-              try {
-                const local = JSON.parse(stored);
-                const putRes = await fetch("/api/board", {
-                  method: "PUT",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(local),
-                });
-                if (putRes.ok) {
-                  globalThis.localStorage?.removeItem(STORAGE_KEY);
-                }
-                dispatch({ type: "BOARD/LOAD", payload: local });
-                return;
-              } catch {
-                // ignore malformed localStorage
-              }
-            }
-            dispatch({ type: "BOARD/RESET" });
-            return;
-          }
-
-          dispatch({ type: "BOARD/LOAD", payload: remote });
-        } else {
-          // Unauthenticated: board lives in localStorage only, no KV interaction.
-          const stored = globalThis.localStorage?.getItem(STORAGE_KEY);
-          if (stored) {
-            try {
-              const local = JSON.parse(stored);
-              dispatch({ type: "BOARD/LOAD", payload: local });
-              return;
-            } catch {
-              // ignore malformed localStorage
-            }
-          }
-          dispatch({ type: "BOARD/RESET" });
-        }
-      } catch (error) {
-        // Whatever failed (fetch rejection, res.json() on a non-JSON body,
-        // etc.), don't leave boardLoaded stuck false with no visible error.
-        console.error("Failed to load board:", error);
-        dispatch({ type: "BOARD/RESET" });
-      }
-    }
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [boardId, isAuthenticated]);
-
-  // Persist board on state changes (after initial load).
-  // Authenticated: save to API (KV). Unauthenticated: save to localStorage only.
-  // boardId === "demo": never write anywhere — the demo board is ephemeral.
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (boardId === "demo") return;
-    if (!state.boardLoaded) return;
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = setTimeout(() => {
-      const boardSnapshot = {
-        rows: state.rows,
-        columns: state.columns,
-        tasks: state.tasks,
-      };
-      if (isAuthenticated) {
-        fetch("/api/board", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(boardSnapshot),
-        });
-      } else {
-        globalThis.localStorage?.setItem(
-          STORAGE_KEY,
-          JSON.stringify(boardSnapshot),
-        );
-      }
-    }, 500);
-    return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    };
-  }, [
-    state.rows,
-    state.columns,
-    state.tasks,
-    state.boardLoaded,
-    isAuthenticated,
-    boardId,
-  ]);
-
-  // DrawerMenu.astro renders its row list outside this React island (an Astro
-  // server island, hydrated once at load), so it never learns about client-side
-  // row changes on its own. Mirror state.rows into its DOM here instead.
-  // boardId === "demo": this provider's rows are the landing-page demo board,
-  // not the visitor's real rows — never let it overwrite the shared drawer.
-  useEffect(() => {
-    if (boardId === "demo") return;
-    if (!state.boardLoaded) return;
-    const list = document.getElementById("drawer-row-list");
-    if (!list) return;
-    list.replaceChildren(
-      ...[...state.rows].sort(byOrder).map((row) => {
-        const li = document.createElement("li");
-        const a = document.createElement("a");
-        a.href = `/dashboard/row/${row.id}`;
-        a.dataset.boardLink = "";
-        a.textContent = row.title;
-        li.appendChild(a);
-        return li;
-      }),
-    );
-  }, [state.rows, state.boardLoaded]);
-
-  const checklistInputRefs = useRef<Record<string, HTMLInputElement>>({});
-
-  const setChecklistInputRef = useCallback(
-    (id: string, el: HTMLInputElement | null) => {
-      if (el) checklistInputRefs.current[id] = el;
-      else delete checklistInputRefs.current[id];
-    },
-    [],
-  );
-
-  const focusChecklistInput = useCallback((id: string) => {
-    checklistInputRefs.current[id]?.focus();
-  }, []);
+  useBoardPersistence(state, dispatch, boardId, isAuthenticated);
+  useDrawerRowMirror(state.rows, state.boardLoaded, boardId);
+  const checklistInputRefs = useChecklistInputRefs();
 
   const boardData = useMemo(
     () => ({
@@ -341,6 +198,7 @@ export function BoardProvider(
       newRowFormKey: state.newRowFormKey,
       isGeneratingTasks: state.isGeneratingTasks,
       taskGenerationStatus: state.taskGenerationStatus,
+      taskGenerationFailed: state.taskGenerationFailed,
       createRowModalOpen: state.createRowModalOpen,
     }),
     [
@@ -349,6 +207,7 @@ export function BoardProvider(
       state.newRowFormKey,
       state.isGeneratingTasks,
       state.taskGenerationStatus,
+      state.taskGenerationFailed,
       state.createRowModalOpen,
     ],
   );
@@ -440,13 +299,14 @@ export function BoardProvider(
     [state.tasks],
   );
 
-  const boardMeta = useMemo(() => ({ boardId }), [boardId]);
+  const boardMeta = useMemo(
+    () => ({ boardId, isAuthenticated }),
+    [boardId, isAuthenticated],
+  );
 
   return (
     <BoardDispatchContext.Provider value={dispatch}>
-      <BoardRefsContext.Provider
-        value={{ setChecklistInputRef, focusChecklistInput }}
-      >
+      <BoardRefsContext.Provider value={checklistInputRefs}>
         <BoardMetaContext.Provider value={boardMeta}>
           <BoardDataContext.Provider value={boardData}>
             <RowFormContext.Provider value={rowFormState}>

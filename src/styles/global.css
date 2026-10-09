@@ -360,4 +360,152 @@
       transparent
     );
   }
+  /* Project menu (task/form-elements/ProjectMenu.tsx): the active row gets a simplified version of
+     the board row's look (diagonal gradient + row color tint); hover shows
+     it at lower opacity. */
+  .menu .row-menu-item.menu-active,
+  .menu .row-menu-item:not(.menu-active):hover {
+    color: var(--color-base-content);
+    background-color: transparent;
+    background-image: linear-gradient(
+      to bottom right,
+      color-mix(in srgb, var(--row-tint-color) var(--row-tint-from),
+      transparent),
+      color-mix(in srgb, var(--row-tint-color) var(--row-tint-to), transparent)
+    );
+  }
+  .menu .row-menu-item.menu-active {
+    --row-tint-from: 40%;
+    --row-tint-to: 10%;
+  }
+  .menu .row-menu-item:not(.menu-active):hover {
+    --row-tint-from: 15%;
+    --row-tint-to: 4%;
+  }
+  /* Status steps (task/form-elements/StatusSteps.tsx): the bar sweeps step-by-step to the new
+     point (staggered by --step-index), pulses while hovering (.step-preview),
+     and holds solid once selected (daisyUI's .step-primary). */
+  .steps .step:before,
+  .steps .step:after {
+    transition-property: color, background-color, border-color;
+    transition-duration: 150ms;
+    transition-delay: calc(var(--step-index, 0) * 40ms);
+  }
+  .steps .step-preview + .step-preview:before,
+  .steps .step-preview:after {
+    --step-bg: var(--color-primary);
+    --step-fg: var(--color-primary-content);
+    animation: step-pulse 1.2s ease-in-out infinite;
+    animation-delay: calc(var(--step-index, 0) * 40ms);
+  }
+}
+
+@keyframes step-pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* Compact Luthor editors for task comments (CommentEditor.tsx). Unlayered so
+   they beat @lyfie/luthor's own unlayered styles; the extra class adds the
+   specificity. */
+.luthor-preset-extensive.luthor-editor-wrapper.comment-editor {
+  @apply min-h-0 rounded-none border-none;
+}
+/* Luthor portals its dialogs/dropdowns to <body>, copying these z-index vars
+   from the editor wrapper. Inside a daisyUI modal (z-index 999) they must sit
+   above it, or they open hidden behind the modal. */
+.modal .luthor-preset-extensive.luthor-editor-wrapper {
+  --luthor-z-dropdown: 1000;
+  --luthor-z-popover: 1004;
+  --luthor-z-menu: 1008;
+  --luthor-z-overlay: 1012;
+  --luthor-z-modal: 1016;
+}
+.luthor-toolbar-button {
+  @apply h-4 w-4;
+}
+.luthor-dropdown {
+  @apply inline;
+}
+.comment-editor {
+  .luthor-editor {
+    @apply min-h-20;
+  }
+  .luthor-toolbar {
+    @apply min-h-0 p-1;
+  }
+  .luthor-richtext-container {
+    @apply [--luthor-editor-content-padding-x:12px]
+      [--luthor-editor-content-padding-y:8px];
+  }
+  .luthor-content-editable {
+    @apply text-[14px];
+  }
+}
+/* Task description editor (task/form-elements/DescriptionEditor.tsx): text ~12% smaller than Luthor's
+   defaults (16px body, 28–14px headings). */
+.task-description-editor {
+  .luthor-content-editable {
+    @apply text-[14px];
+  }
+  .luthor-heading-h1 {
+    @apply text-[24px];
+  }
+  .luthor-heading-h2 {
+    @apply text-[21px];
+  }
+  .luthor-heading-h3 {
+    @apply text-[17.5px];
+  }
+  .luthor-heading-h4 {
+    @apply text-[16px];
+  }
+  .luthor-heading-h5 {
+    @apply text-[14px];
+  }
+  .luthor-heading-h6 {
+    @apply text-[12px];
+  }
+  .luthor-mode-tab {
+    @apply text-[12px] font-semibold uppercase;
+
+    /* Relabel the first ("Visual Only") tab; ExtensiveEditor doesn't forward
+       its mode-tab `labels` prop. Visual only — the accessible name is
+       unchanged. */
+    &:first-child {
+      @apply text-[0px] after:text-[12px] after:content-['Task_Details'];
+    }
+  }
+  &.task-description-editor--tabs-hidden .luthor-mode-tab:not(:first-child) {
+    @apply hidden;
+  }
+}
+/* Read-only comments take their container's (the chat bubble's) background
+   and text color. */
+.luthor-preset-extensive.luthor-editor-wrapper.comment-editor--readonly {
+  @apply bg-transparent text-inherit;
+}
+.comment-editor--readonly {
+  .luthor-editor {
+    @apply min-h-0 text-inherit [--luthor-bg:transparent];
+  }
+  .luthor-richtext-container,
+  .luthor-content-editable {
+    @apply text-inherit [--luthor-editor-content-padding-x:0px]
+      [--luthor-editor-content-padding-y:0px] [--luthor-first-block-offset:0px];
+  }
+}
+.luthor-select-trigger {
+  height: auto;
+  padding: 6px;
+  span {
+    @apply text-xs;
+  }
+}
+.luthor-select-option {
+  @apply text-xs p-1.5;
+}
+.luthor-mode-tab.active {
+  @apply bg-primary/15;
 }

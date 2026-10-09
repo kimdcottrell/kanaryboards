@@ -41,10 +41,18 @@ vi.mock("@components/config/board/CreateRowModal.tsx", () => ({
   default: () => null,
 }));
 vi.mock("@components/RowBoard.tsx", () => ({ default: () => null }));
-vi.mock("@components/TaskCreateModal.tsx", () => ({ default: () => null }));
+vi.mock(
+  "@components/task/modal/TaskCreateModal.tsx",
+  () => ({ default: () => null }),
+);
 // TaskEditModal is NOT mocked — it is rendered directly in tests below
 
-// Stub the rich-text editor used inside TaskForm / TaskEditModal
+// Stub the rich-text editor used inside TaskEditModal
+// Comments have their own tests (TaskComments.test.tsx).
+vi.mock("@components/task/comments/TaskComments.tsx", () => ({
+  default: () => null,
+}));
+
 vi.mock("@lyfie/luthor", () => ({
   ExtensiveEditor: () =>
     React.createElement("div", { "data-testid": "luthor-editor" }),
@@ -64,8 +72,8 @@ import {
   useTaskEditActions,
   useTaskEditState,
 } from "@components/context/hooks.ts";
-import TaskCard from "@components/TaskCard.tsx";
-import TaskEditModal from "@components/TaskEditModal.tsx";
+import TaskCard from "@components/task/TaskCard.tsx";
+import TaskEditModal from "@components/task/modal/TaskEditModal.tsx";
 import BoardView from "@components/BoardView.tsx";
 import {
   makeBoardDataState,
@@ -128,6 +136,7 @@ describe("TaskCard — URL navigation", () => {
     isDropBefore: false,
     isDropAfter: false,
     isDragging: false,
+    isTrash: false,
   };
 
   test("clicking the task title navigates to /dashboard/task/:id", () => {
@@ -183,6 +192,8 @@ const editTask = {
   order: "a0d",
   description: "",
   checklist: [],
+  trashedAt: null,
+  preTrashColId: null,
 };
 
 function setEditState() {
@@ -198,32 +209,28 @@ function setEditState() {
 }
 
 describe("TaskEditModal — URL unchanged when status changes", () => {
-  test("changing Status dropdown does not call navigate", () => {
+  test("changing Status step does not call navigate", () => {
     const setEditTaskDraft = vi.fn();
     setEditState();
     vi.mocked(useTaskEditActions).mockReturnValue(
       makeTaskEditActions({ setEditTaskDraft }),
     );
-    const { getAllByRole } = render(<TaskEditModal />);
-    const [statusSelect] = getAllByRole("combobox", {
-      hidden: true,
-    }) as HTMLSelectElement[];
-    fireEvent.change(statusSelect, { target: { value: secondColumn.id } });
+    const { container } = render(<TaskEditModal />);
+    fireEvent.click(
+      container.querySelector(`input[value="${secondColumn.id}"]`)!,
+    );
     expect(mockNavigate).not.toHaveBeenCalled();
     expect(setEditTaskDraft).toHaveBeenCalled();
   });
 
-  test("Status dropdown change calls setEditTaskDraft with updated colId", () => {
+  test("Status step click calls setEditTaskDraft with updated colId", () => {
     const setEditTaskDraft = vi.fn();
     setEditState();
     vi.mocked(useTaskEditActions).mockReturnValue(
       makeTaskEditActions({ setEditTaskDraft }),
     );
-    const { getAllByRole } = render(<TaskEditModal />);
-    const [statusSelect] = getAllByRole("combobox", {
-      hidden: true,
-    }) as HTMLSelectElement[];
-    fireEvent.change(statusSelect, { target: { value: "col-2" } });
+    const { container } = render(<TaskEditModal />);
+    fireEvent.click(container.querySelector("input[value='col-2']")!);
     expect(setEditTaskDraft).toHaveBeenCalledWith(
       expect.objectContaining({ colId: "col-2" }),
     );
@@ -237,11 +244,10 @@ describe("TaskEditModal — URL unchanged when row changes", () => {
     vi.mocked(useTaskEditActions).mockReturnValue(
       makeTaskEditActions({ setEditTaskDraft }),
     );
-    const { getAllByRole } = render(<TaskEditModal />);
-    const selects = getAllByRole("combobox", {
-      hidden: true,
-    }) as HTMLSelectElement[];
-    fireEvent.change(selects[1], { target: { value: secondRow.id } });
+    const { getByRole } = render(<TaskEditModal />);
+    fireEvent.click(
+      getByRole("radio", { name: secondRow.title, hidden: true }),
+    );
     expect(mockNavigate).not.toHaveBeenCalled();
     expect(setEditTaskDraft).toHaveBeenCalled();
   });
@@ -252,11 +258,10 @@ describe("TaskEditModal — URL unchanged when row changes", () => {
     vi.mocked(useTaskEditActions).mockReturnValue(
       makeTaskEditActions({ setEditTaskDraft }),
     );
-    const { getAllByRole } = render(<TaskEditModal />);
-    const selects = getAllByRole("combobox", {
-      hidden: true,
-    }) as HTMLSelectElement[];
-    fireEvent.change(selects[1], { target: { value: "row-2" } });
+    const { getByRole } = render(<TaskEditModal />);
+    fireEvent.click(
+      getByRole("radio", { name: secondRow.title, hidden: true }),
+    );
     expect(setEditTaskDraft).toHaveBeenCalledWith(
       expect.objectContaining({ rowId: "row-2" }),
     );
@@ -277,13 +282,13 @@ describe("TaskEditModal — URL updates on save actions", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
   });
 
-  test("deleting the task calls navigate('/dashboard')", () => {
-    const deleteTask = vi.fn();
+  test("trashing the task calls navigate('/dashboard')", () => {
+    const trashTask = vi.fn();
     setEditState();
-    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ deleteTask }));
+    vi.mocked(useTaskActions).mockReturnValue(makeTaskActions({ trashTask }));
     const { getByRole } = render(<TaskEditModal />);
-    fireEvent.click(getByRole("button", { name: "Delete", hidden: true }));
-    expect(deleteTask).toHaveBeenCalledWith(editTask.id);
+    fireEvent.click(getByRole("button", { name: "Trash", hidden: true }));
+    expect(trashTask).toHaveBeenCalledWith(editTask.id);
     expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
   });
 });
@@ -299,6 +304,8 @@ describe("BoardView — deep-link via useParams", () => {
     order: "a0c",
     description: "",
     checklist: [],
+    trashedAt: null,
+    preTrashColId: null,
   };
 
   test("startEditTask is called with the matching task when boardLoaded=true and task exists", () => {
@@ -368,6 +375,8 @@ describe("BoardView — deep-link via route params", () => {
     order: "a0",
     description: "",
     checklist: [],
+    trashedAt: null,
+    preTrashColId: null,
   };
 
   test("startEditTask is called for a task ID found in useParams", () => {

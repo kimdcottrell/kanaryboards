@@ -6,6 +6,7 @@ import {
 } from "../BoardContext.tsx";
 import { createId } from "../constants.ts";
 import type { Task } from "../types.ts";
+import { clearEditDraft } from "../../task/editDraftStore.ts";
 
 export function useTaskEditActions() {
   const dispatch = useBoardDispatch();
@@ -14,27 +15,29 @@ export function useTaskEditActions() {
 
   const saveTaskEdit = useCallback((
     event: Event,
-    content?: { json: string; markdown: string; html: string },
+    description?: string,
   ) => {
     event.preventDefault();
     if (!(event.target as HTMLFormElement).checkValidity()) return;
-    if (content !== undefined && editTaskDraft) {
+    if (description !== undefined && editTaskDraft) {
       dispatch({
         type: "TASK/UPDATE_EDIT_DRAFT",
         payload: {
-          draft: { ...editTaskDraft, description: content.json },
+          draft: { ...editTaskDraft, description },
         },
       });
     }
     dispatch({ type: "TASK/SAVE_EDIT" });
+    if (editTaskDraft) clearEditDraft(editTaskDraft.id);
   }, [editTaskDraft, dispatch]);
 
   const addEditChecklistItem = useCallback((
     focusNew = false,
     insertBeforeIndex?: number,
+    text = "",
   ) => {
     // order is assigned by the reducer from the insert position's neighbors.
-    const item = { id: createId(), text: "", checked: false, order: "" };
+    const item = { id: createId(), text, checked: false, order: "" };
     dispatch({
       type: "CHECKLIST/ADD_ITEM",
       payload: { target: "editDraft", item, insertBeforeIndex },
