@@ -90,7 +90,7 @@ sequenceDiagram
     else unchanged
         TaskModal->>Drafts: clearEditDraft(task.id)
     end
-    Drafts-->>Card: TaskCard re-renders if its entry appeared/disappeared<br/>(useHasEditDraft: useSyncExternalStore on "edit-draft-change")<br/>-> "Edited but not saved" badge-warning indicator shown/hidden
+    Drafts-->>Card: TaskCard re-renders if its entry appeared/disappeared<br/>(useHasEditDraft: useSyncExternalStore on "edit-draft-change"<br/>in this tab, "storage" for task+ keys in other tabs)<br/>-> "Edited but not saved" badge-warning indicator shown/hidden
     TaskModal->>Actions: cancelEditTask() -> dispatch(TASK/CLOSE_EDIT_MODAL)
     TaskModal->>TaskModal: navigate(/dashboard)
 

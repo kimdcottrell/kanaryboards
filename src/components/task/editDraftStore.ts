@@ -12,12 +12,21 @@ export interface StoredEditDraft {
 const keyFor = (taskId: string) => `task+${taskId}`;
 
 // Fired on write/clear so useHasEditDraft subscribers re-check their task.
+// Other tabs learn of the change from the storage event instead (a null key
+// means localStorage was cleared).
 const CHANGE_EVENT = "edit-draft-change";
 const notify = () => globalThis.dispatchEvent(new Event(CHANGE_EVENT));
 
 function subscribe(onChange: () => void) {
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === null || e.key.startsWith("task+")) onChange();
+  };
   globalThis.addEventListener(CHANGE_EVENT, onChange);
-  return () => globalThis.removeEventListener(CHANGE_EVENT, onChange);
+  globalThis.addEventListener("storage", onStorage);
+  return () => {
+    globalThis.removeEventListener(CHANGE_EVENT, onChange);
+    globalThis.removeEventListener("storage", onStorage);
+  };
 }
 
 export function useHasEditDraft(taskId: string): boolean {
