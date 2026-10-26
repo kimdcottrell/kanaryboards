@@ -11,7 +11,7 @@
     "@clerk/backend": "3.25.0",
     "@clerk/ui": "1.40.2",
     "@deno/astro-adapter": "0.6.0",
-    "@google/genai": "2.30.0",
+    "@google/genai": "2.31.0",
     "@iconify-json/basil": "1.2.4",
     "@iconify-json/hugeicons": "1.2.35",
     "@iconify-json/mingcute": "1.2.8",
@@ -40,7 +40,7 @@
     "typescript": "6.0.3"
   },
   "devDependencies": {
-    "@anthropic-ai/claude-code": "2.1.302",
+    "@anthropic-ai/claude-code": "2.1.309",
     "@astrojs/check": "0.9.10",
     "@astrojs/ts-content-mapper": "^0.2.0",
     "@clerk/testing": "2.2.47",
