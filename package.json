@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@astrojs/react": "7.1.0",
+    "@astrojs/react": "7.1.1",
     "@astrojs/sitemap": "3.7.4",
     "@catppuccin/tailwindcss": "1.0.0",
     "@clerk/astro": "4.1.14",
@@ -23,7 +23,7 @@
     "@tailwindcss/typography": "0.5.20",
     "@tailwindcss/vite": "4.3.3",
     "animejs": "^4.5.0",
-    "astro": "7.4.0",
+    "astro": "7.4.2",
     "astro-seo": "1.2.0",
     "astro-seo-schema": "7.0.1",
     "dayjs": "1.11.23",
@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "2.1.309",
-    "@astrojs/check": "0.9.10",
+    "@astrojs/check": "0.9.12",
     "@astrojs/ts-content-mapper": "^0.2.0",
     "@clerk/testing": "2.2.47",
     "@playwright/test": "1.64.1",
