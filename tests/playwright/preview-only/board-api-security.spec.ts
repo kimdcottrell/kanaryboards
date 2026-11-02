@@ -7,17 +7,18 @@ import {
 } from "../fixtures.ts";
 
 // A "malicious user" suite for /api/board. There's no SQL here — Deno KV is a
-// key-value store keyed by ["board", boardId], not a query engine — so there's
-// no query-injection surface to test. What matters instead:
+// key-value store keyed by ["row" | "column" | "task", boardId, id], not a
+// query engine — so there's no query-injection surface to test. What matters
+// instead:
 //
 // 1. boardId is derived server-side from the Clerk session in
 //    protectedRequestMiddleware (middleware.ts), never from client input, so a
 //    spoofed "boardId" cookie can't redirect an authenticated user's reads or
 //    writes at another board.
-// 2. PUT /api/board validates the body against a zod schema (board.ts) before
-//    it ever reaches saveBoard, so malformed or oversized bodies fail cleanly
-//    with a 400 instead of crashing with an unhandled 500 or silently
-//    overwriting the board with garbage.
+// 2. PATCH /api/board validates the body against a zod schema (board.ts)
+//    before it ever reaches applyBoardChanges, so malformed or oversized
+//    bodies fail cleanly with a 400 instead of crashing with an unhandled 500
+//    or silently writing garbage to the board.
 //
 // Runs against the shared E2E Clerk test account's real board in KV — like
 // board-persistence.spec.ts, this is chromium-only (a single shared account
@@ -27,13 +28,17 @@ import {
 // live server should be reachable via `deno task e2e-test`, whose BASE_URL
 // can point at a real deployed environment.
 
+const noDeletes = { rowIds: [], columnIds: [], taskIds: [] };
+const upserts = (changes: Record<string, unknown[]>) => ({
+  upserts: { rows: [], columns: [], tasks: [], ...changes },
+  deletes: noDeletes,
+});
+
 async function seedBoard(page: Page, title: string) {
-  const res = await page.request.put("/api/board", {
-    data: {
+  const res = await page.request.patch("/api/board", {
+    data: upserts({
       rows: [{ id: "row-1", title, color: "blue", order: "a0" }],
-      columns: [],
-      tasks: [],
-    },
+    }),
   });
   expect(res.status()).toBe(200);
 }
@@ -93,18 +98,36 @@ test.describe("/api/board — malicious input safety", () => {
     expect(body.rows[0].title).toBe(marker);
   });
 
-  test.describe("PUT payload validation", () => {
+  test.describe("PATCH payload validation", () => {
     const MALFORMED_CASES: [string, unknown][] = [
       [
-        "rows is a string instead of an array",
-        { rows: "not-an-array", columns: [], tasks: [] },
+        "upserts.rows is a string instead of an array",
+        {
+          upserts: { rows: "not-an-array", columns: [], tasks: [] },
+          deletes: noDeletes,
+        },
       ],
       ["empty object", {}],
-      ["rows is null", { rows: null, columns: [], tasks: [] }],
+      ["deletes is missing", { upserts: { rows: [], columns: [], tasks: [] } }],
+      ["a whole board instead of changes", {
+        rows: [],
+        columns: [],
+        tasks: [],
+      }],
       ["unrelated shape entirely", { foo: "bar" }],
       [
         "a column missing required fields",
-        { rows: [], columns: [{ id: "c1", title: "x" }], tasks: [] },
+        upserts({ columns: [{ id: "c1", title: "x" }] }),
+      ],
+      [
+        "more than 1000 changes",
+        {
+          upserts: { rows: [], columns: [], tasks: [] },
+          deletes: {
+            ...noDeletes,
+            taskIds: Array.from({ length: 1001 }, (_, i) => `t${i}`),
+          },
+        },
       ],
     ];
 
@@ -113,7 +136,7 @@ test.describe("/api/board — malicious input safety", () => {
         const marker = `E2E marker ${crypto.randomUUID()}`;
         await seedBoard(page, marker);
 
-        const res = await page.request.put("/api/board", { data });
+        const res = await page.request.patch("/api/board", { data });
         expect(res.status()).toBe(400);
         expect(await res.json()).toEqual({ error: "Invalid request body." });
 
@@ -123,13 +146,11 @@ test.describe("/api/board — malicious input safety", () => {
       });
     }
 
-    test("a payload over Deno KV's 64KiB value limit is rejected with 400, not a 500", async ({ page }) => {
+    test("an entity over Deno KV's 64KiB value limit is rejected with 400, not a 500", async ({ page }) => {
       const marker = `E2E marker ${crypto.randomUUID()}`;
       await seedBoard(page, marker);
 
-      const oversized = {
-        rows: [],
-        columns: [],
+      const oversized = upserts({
         tasks: [{
           id: "task-1",
           rowId: "row-1",
@@ -138,15 +159,46 @@ test.describe("/api/board — malicious input safety", () => {
           description: "",
           checklist: [],
           order: "a0",
+          trashedAt: null,
+          preTrashColId: null,
         }],
-      };
-      const res = await page.request.put("/api/board", { data: oversized });
+      });
+      const res = await page.request.patch("/api/board", { data: oversized });
       expect(res.status()).toBe(400);
       expect(await res.json()).toEqual({ error: "Invalid request body." });
 
       const get = await page.request.get("/api/board");
       const body = await get.json();
       expect(body.rows[0].title).toBe(marker);
+      expect(body.tasks).toEqual([]);
     });
+  });
+
+  test("PATCHes touching different tasks both persist", async ({ page }) => {
+    const task = (id: string, title: string) => ({
+      id,
+      rowId: "row-1",
+      colId: "col-1",
+      title,
+      description: "",
+      checklist: [],
+      order: "a0",
+      trashedAt: null,
+      preTrashColId: null,
+    });
+    await seedBoard(page, `E2E marker ${crypto.randomUUID()}`);
+    for (const [id, title] of [["task-1", "one"], ["task-2", "two"]]) {
+      const res = await page.request.patch("/api/board", {
+        data: upserts({ tasks: [task(id, title)] }),
+      });
+      expect(res.status()).toBe(200);
+    }
+
+    const get = await page.request.get("/api/board");
+    const body = await get.json();
+    expect(body.tasks.map((t: { title: string }) => t.title).sort()).toEqual([
+      "one",
+      "two",
+    ]);
   });
 });

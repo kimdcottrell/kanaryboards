@@ -87,10 +87,19 @@ export default function HeroStartForm() {
       };
 
       if (isSignedIn) {
+        // Only what this adds (plus the columns, which may be newly seeded or
+        // backfilled), so it can't overwrite tasks saved from another device.
         const res = await fetch("/api/board", {
-          method: "PUT",
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(merged),
+          body: JSON.stringify({
+            upserts: {
+              rows: [newRow],
+              columns: board.columns,
+              tasks: newTasks,
+            },
+            deletes: { rowIds: [], columnIds: [], taskIds: [] },
+          }),
         });
         if (!res.ok) {
           throw new Error(`Saving the board failed (${res.status}).`);

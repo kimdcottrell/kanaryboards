@@ -21,6 +21,7 @@ import { computeTasksByCell } from "./selectors.ts";
 import { useBoardPersistence } from "./effects/useBoardPersistence.ts";
 import { useDrawerRowMirror } from "./effects/useDrawerRowMirror.ts";
 import { useChecklistInputRefs } from "./effects/useChecklistInputRefs.ts";
+import SaveErrorAlert from "../shared/SaveErrorAlert.tsx";
 
 export const BoardDispatchContext = createContext<Dispatch<BoardAction> | null>(
   null,
@@ -177,7 +178,12 @@ export function BoardProvider(
     createInitialState,
   );
 
-  useBoardPersistence(state, dispatch, boardId, isAuthenticated);
+  const { saveRejected, dismissSaveRejected } = useBoardPersistence(
+    state,
+    dispatch,
+    boardId,
+    isAuthenticated,
+  );
   useDrawerRowMirror(state.rows, state.boardLoaded, boardId);
   const checklistInputRefs = useChecklistInputRefs();
 
@@ -324,6 +330,11 @@ export function BoardProvider(
                                 <TasksByCellContext.Provider
                                   value={tasksByCell}
                                 >
+                                  {saveRejected && (
+                                    <SaveErrorAlert
+                                      onDismiss={dismissSaveRejected}
+                                    />
+                                  )}
                                   {children}
                                 </TasksByCellContext.Provider>
                               </ColumnFilterContext.Provider>

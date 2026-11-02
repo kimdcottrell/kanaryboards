@@ -129,7 +129,12 @@ test.describe("Drawer/BoardMenu row-list parity (authenticated)", () => {
 
     const cleared = await page.request.get("/api/delete-test-data");
     expect(cleared.status()).toBe(200);
-    const seeded = await page.request.put("/api/board", { data: BOARD_STATE });
+    const seeded = await page.request.patch("/api/board", {
+      data: {
+        upserts: BOARD_STATE,
+        deletes: { rowIds: [], columnIds: [], taskIds: [] },
+      },
+    });
     expect(seeded.ok()).toBeTruthy();
   });
 

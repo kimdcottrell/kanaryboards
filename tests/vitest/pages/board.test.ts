@@ -5,12 +5,12 @@ import type { APIContext } from "astro";
 // Avoid touching Deno KV — these tests only exercise the auth gate.
 vi.mock("@lib/db/kv.ts", () => ({
   getBoard: vi.fn(async () => {}),
-  saveBoard: vi.fn(async () => {}),
+  applyBoardChanges: vi.fn(async () => {}),
   deleteBoard: vi.fn(async () => {}),
   deleteBoardComments: vi.fn(async () => {}),
 }));
 
-const { GET, PUT, DELETE } = await import("@pages/api/board.ts");
+const { GET, PATCH, DELETE } = await import("@pages/api/board.ts");
 
 function makeContext(
   { userId, boardId, method = "GET", navigate = false, body }: {
@@ -37,10 +37,10 @@ function makeContext(
 }
 
 describe("/api/board auth gate", () => {
-  const handlers = { GET, PUT, DELETE };
+  const handlers = { GET, PATCH, DELETE };
 
   describe("when unauthenticated", () => {
-    test.each(["GET", "PUT", "DELETE"] as const)(
+    test.each(["GET", "PATCH", "DELETE"] as const)(
       "%s from a programmatic fetch returns 401",
       async (method) => {
         const res = await handlers[method](
@@ -69,26 +69,80 @@ describe("/api/board auth gate", () => {
       expect(res.status).toBe(404);
     });
 
-    test("PUT with an invalid board logs the zod issues and returns 400", async () => {
-      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      const res = await PUT(makeContext({
+    const noDeletes = { rowIds: [], columnIds: [], taskIds: [] };
+    const patch = (body: unknown) =>
+      PATCH(makeContext({
         userId: "user_123",
         boardId: "board_1",
-        method: "PUT",
-        body: JSON.stringify({
+        method: "PATCH",
+        body: JSON.stringify(body),
+      }));
+
+    test("PATCH with an invalid entity logs the zod issues and returns 400", async () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const res = await patch({
+        upserts: {
           rows: [],
           columns: [{ id: "col-1", title: "To Do", order: "a0" }],
           tasks: [],
-        }),
-      }));
+        },
+        deletes: noDeletes,
+      });
       expect(res.status).toBe(400);
       expect(errorSpy).toHaveBeenCalledWith(expect.objectContaining({
-        event: "Rejected PUT /api/board: invalid request body",
+        event: "Rejected PATCH /api/board: invalid request body",
         issues: expect.arrayContaining([
-          expect.objectContaining({ path: ["columns", 0, "pinnedToShortcut"] }),
+          expect.objectContaining({
+            path: ["upserts", "columns", 0, "pinnedToShortcut"],
+          }),
         ]),
       }));
       errorSpy.mockRestore();
+    });
+
+    test("PATCH with an entity over the KV value limit returns 400", async () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const res = await patch({
+        upserts: {
+          rows: [{
+            id: "r",
+            title: "a".repeat(70_000),
+            color: "",
+            order: "a0",
+          }],
+          columns: [],
+          tasks: [],
+        },
+        deletes: noDeletes,
+      });
+      expect(res.status).toBe(400);
+      errorSpy.mockRestore();
+    });
+
+    test("PATCH with more than 1000 changes returns 400", async () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const res = await patch({
+        upserts: { rows: [], columns: [], tasks: [] },
+        deletes: {
+          ...noDeletes,
+          taskIds: Array.from({ length: 1001 }, (_, i) => `t${i}`),
+        },
+      });
+      expect(res.status).toBe(400);
+      errorSpy.mockRestore();
+    });
+
+    test("PATCH with valid changes returns 200", async () => {
+      vi.spyOn(console, "debug").mockImplementation(() => {});
+      const res = await patch({
+        upserts: {
+          rows: [{ id: "r", title: "Project", color: "", order: "a0" }],
+          columns: [],
+          tasks: [],
+        },
+        deletes: { ...noDeletes, taskIds: ["t1"] },
+      });
+      expect(res.status).toBe(200);
     });
   });
 });

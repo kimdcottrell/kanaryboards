@@ -166,24 +166,24 @@ test.describe("Homepage hero form — authenticated", () => {
       await fillControlled(heroInput(page), goal);
 
       const genRequest = page.waitForRequest("**/api/generate-tasks");
-      const putRequest = page.waitForRequest(
-        (r) => r.url().includes("/api/board") && r.method() === "PUT",
+      const patchRequest = page.waitForRequest(
+        (r) => r.url().includes("/api/board") && r.method() === "PATCH",
       );
       await getStarted(page).click();
       await genRequest;
-      const put = await putRequest;
+      const patch = await patchRequest;
 
       await page.waitForURL("**/dashboard");
 
-      // Assert persistence on the PUT payload itself rather than re-reading it
+      // Assert persistence on the PATCH payload itself rather than re-reading it
       // through the live, autosaving dashboard: this account is shared across
       // specs, so a dashboard round-trip would race with a stale autosave.
-      const body = put.postDataJSON();
-      expect(body.rows.some((r: { title: string }) => r.title === goal)).toBe(
-        true,
-      );
+      const { upserts } = patch.postDataJSON();
       expect(
-        body.tasks.some((t: { title: string }) =>
+        upserts.rows.some((r: { title: string }) => r.title === goal),
+      ).toBe(true);
+      expect(
+        upserts.tasks.some((t: { title: string }) =>
           t.title === "Prepare pizza dough"
         ),
       ).toBe(true);

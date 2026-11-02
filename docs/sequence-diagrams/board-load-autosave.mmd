@@ -28,8 +28,9 @@ sequenceDiagram
             rect rgba(255, 255, 255, 0.5)
                 alt board exists (200)
                     rect rgba(38, 240, 58, 0.25)
-                        KV-->>API: PersistedBoard {rows, columns, tasks}
-                        API-->>Provider: 200 board JSON
+                        KV-->>API: list ["row"|"column"|"task", boardId]<br/>(no entities but a legacy ["board", id] entry: one atomic<br/>check(versionstamp) commit writes its entities + deletes it;<br/>conflict -> another request migrated it, re-list)
+                        API-->>Provider: 200 {rows, columns, tasks}
+                        Provider->>Provider: savedRef = per-entity JSON of the response
                         Provider->>Reducer: dispatch(BOARD/LOAD, remote)<br/>-> board.load(state, payload)
                     end
                 else no data (404)
@@ -44,10 +45,11 @@ sequenceDiagram
                         break legacy local data found
                             rect rgba(38, 240, 58, 0.25)
                                 LS-->>Provider: stored JSON
-                                Provider->>API: PUT /api/board (migrate local -> remote)
-                                API->>KV: saveBoard(boardId, body)
-                                opt PUT ok
+                                Provider->>API: PATCH /api/board {upserts: local, deletes: none}<br/>(migrate local -> remote; split into chunks of 1000 like autosave)
+                                API->>KV: applyBoardChanges(boardId, changes)
+                                opt PATCH ok
                                     Provider->>LS: localStorage.removeItem(STORAGE_KEY)
+                                    Provider->>Provider: savedRef = per-entity JSON of local<br/>(not ok: savedRef stays empty, so the<br/>first autosave sends everything)
                                 end
                                 Provider->>Reducer: dispatch(BOARD/LOAD, local)<br/>-> board.load(state, payload)
                             end
@@ -83,7 +85,7 @@ sequenceDiagram
     Note right of Provider: There is now enough data to start to initialize the app.<br />All logic above is just bootstrapping to get to this point, where we have rows/columns/tasks data.
 
     Note over Reducer: The step below is board.load. board.reset instead returns a fresh<br/>state (To Do / In Progress / Review / Done + Trash, no rows/tasks),<br/>boardLoaded = true.
-    Reducer-->>Provider: columns backfilled (normalizeColumn: legacy<br/>boards missing pin/icon/isTrash fields), Trash column<br/>appended if missing, rows/columns sorted by order<br/>(Trash forced last), tasks backfilled (normalizeTask:<br/>trashedAt/preTrashColId = null), expired Trash tasks<br/>(trashedAt 30+ days old) dropped, boardLoaded = true
+    Reducer-->>Provider: columns backfilled (normalizeColumn: legacy<br/>boards missing pin/icon/isTrash fields), Trash column<br/>appended if missing, rows/columns sorted by order<br/>(Trash forced last), tasks backfilled (normalizeTask:<br/>trashedAt/preTrashColId = null), expired Trash tasks<br/>(trashedAt 30+ days old) dropped, tasks whose row or<br/>column is missing dropped (KV has no cascade),<br/>boardLoaded = true
     Provider->>View: BoardView, RowBoard, BoardConfigModal<br/>all re-render (BoardDataContext: rows/columns/<br/>tasks/boardLoaded changed)<br/>-> RowBoard mounts one RowSection per row<br/>(or, when rows is empty e.g. after BOARD/RESET,<br/>the empty state: prompt + inline CreateRowSection),<br/>BoardConfigModal's sections render row/column settings
     View->>View: BoardView useEffect[boardLoaded]<br/>-> document.documentElement.dataset.boardLoaded = "true"<br/>(for e2e hydration gating)
     opt rowId param present (entered via "/dashboard/row/:rowId")
@@ -98,8 +100,20 @@ sequenceDiagram
     else local change
         alt isAuthenticated
             rect rgba(38, 240, 58, 0.25)
-                Provider->>API: PUT /api/board {rows, columns, tasks}
-                API->>KV: saveBoard(boardId, body)
+                Provider->>Provider: queued on saveChainRef (one PATCH in flight)<br/>diffBoard(savedRef, snapshot): upserts = new/changed<br/>rows/columns/tasks (JSON compare), deletes = ids gone
+                opt diff not empty
+                    loop each chunk of at most 1000 upserts + deletes<br/>(chunkChanges: rows, columns, tasks, then deletes)
+                        Provider->>API: PATCH /api/board {upserts, deletes}
+                        API->>KV: applyBoardChanges(boardId, changes)<br/>kv.atomic(): set/delete per entity
+                        API-->>Provider: 200, or 4xx/5xx -> stop
+                    end
+                    alt every chunk 200
+                        Provider->>Provider: diff applied to savedRef<br/>setSaveRejected(false)
+                    else a chunk rejected
+                        Provider->>Provider: savedRef unchanged (the next diff resends<br/>these changes), setSaveRejected(true)
+                        Provider->>View: BoardProvider re-renders SaveErrorAlert<br/>(shared/SaveErrorAlert.tsx, same alert as ?unauthorized=1)<br/>until dismissed or a later save succeeds
+                    end
+                end
             end
         else not authenticated
             rect rgba(240, 38, 38, 0.25)
@@ -111,10 +125,11 @@ sequenceDiagram
         end
         Note over Provider: The post-load save is not broadcast: other tabs<br/>already hold that board, or a newer one it would undo.<br/>loadedSnapshotRef is cleared after the first save.
     end
+    Note over Provider,KV: Edits from different devices to different entities both survive.<br/>Same entity: last write wins. A stale device's upsert can<br/>resurrect an entity another device deleted (accepted for now).
 
     Note over User,Tab: Cross-tab sync (same browser; skipped for boardId "demo")
     Tab->>Provider: channel message {rows, columns, tasks}
-    Provider->>Provider: lastSyncedRef = JSON.stringify(snapshot)
+    Provider->>Provider: lastSyncedRef = JSON.stringify(snapshot)<br/>savedRef = per-entity JSON of snapshot (the sender saved it)
     Provider->>Reducer: dispatch(BOARD/SYNC, snapshot) -> board.sync
     Reducer-->>Provider: rows/columns/tasks replaced (last write wins)
     alt rows.length === 0
@@ -126,5 +141,5 @@ sequenceDiagram
 
     Note over User,Purge: Daily trash purge (no client involved). Planned as a Deno.cron() on<br/>Deno Deploy, NOT scheduled yet: until then only board.load drops expired tasks.
     Purge->>Purge: check Authorization: Bearer CRON_SECRET
-    Purge->>KV: purgeExpiredTrash() (lib/db/kv.ts), for each ["board", id]:<br/>drop Trash tasks with trashedAt 30+ days old<br/>(atomic check(versionstamp).set; conflict -> board skipped, retried next run),<br/>then delete ["task_comment", id, taskId, *] whose taskId is not<br/>on the saved board and createdAt is 24h+ old
-    Note over Provider,KV: A tab still holding a purged task may re-PUT it.<br/>board.load drops it again on the next load (and the<br/>next purge does too). KV boards never prune comments client-side:<br/>comments of any task that leaves the board (purged, expired on load,<br/>row/column deleted) are swept by the next purge. The 24h guard<br/>protects comments posted before their task's autosave lands.<br/>localStorage boards never reach the purge. BoardProvider<br/>prunes their comments on load instead.
+    Purge->>KV: purgeExpiredTrash() (lib/db/kv.ts): for each ["task", boardId, taskId]<br/>with trashedAt 30+ days old: atomic check(versionstamp).delete<br/>(conflict -> task skipped, retried next run), then delete<br/>["task_comment", boardId, taskId, *] whose ["task", boardId, taskId]<br/>is missing and createdAt is 24h+ old. Boards still in a legacy<br/>["board", id] entry are migrated first (getBoard).
+    Note over Provider,KV: A tab still holding a purged task may re-PATCH it.<br/>board.load drops it again on the next load (and the<br/>next purge does too). KV boards never prune comments client-side:<br/>comments of any task that leaves the board (purged, expired on load,<br/>row/column deleted) are swept by the next purge. The 24h guard<br/>protects comments posted before their task's autosave lands.<br/>localStorage boards never reach the purge. BoardProvider<br/>prunes their comments on load instead.

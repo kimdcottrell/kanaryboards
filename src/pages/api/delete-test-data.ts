@@ -1,6 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from "astro";
+import { deleteBoard } from "@lib/db/kv.ts";
 
 const E2E_TEST_USER_ID: string | null = import.meta.env.E2E_TEST_USER_ID ??
   null;
@@ -25,7 +26,6 @@ export const GET: APIRoute = async () => {
     .atomic()
     .check(entry)
     .delete(["user_board", E2E_TEST_USER_ID]);
-  if (entry.value) atomic.delete(["board", entry.value]);
   const res = await atomic.commit();
   kv.close();
   if (!res.ok) {
@@ -39,6 +39,9 @@ export const GET: APIRoute = async () => {
       headers: { "Content-Type": "application/json" },
     });
   }
+  // Not part of the atomic commit above: a board is many entries, more than
+  // one commit may hold.
+  if (entry.value) await deleteBoard(entry.value);
   return new Response(JSON.stringify({ ok: true }), {
     status: 200,
     headers: { "Content-Type": "application/json" },
