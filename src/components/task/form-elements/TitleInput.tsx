@@ -43,7 +43,7 @@ export default function TitleInput({
           e.preventDefault();
           if (!readOnly) e.currentTarget.form?.requestSubmit();
         }}
-        className={`textarea textarea-ghost validator -mx-2 w-[calc(100%+1rem)] min-h-0 px-2 rounded resize-none field-sizing-content border-none text-2xl font-roboto-slab font-semibold ${
+        className={`textarea py-0 textarea-ghost validator -mx-2 w-[calc(100%+1rem)] min-h-0 px-2 rounded resize-none field-sizing-content border-none text-2xl font-roboto-slab font-semibold ${
           readOnly ? "" : "hover:bg-base-content/20"
         }`}
       />

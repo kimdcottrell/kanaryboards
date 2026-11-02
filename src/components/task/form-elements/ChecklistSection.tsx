@@ -126,7 +126,7 @@ export default function ChecklistSection({
                 )
                 : (
                   <input
-                    className="input input-sm flex-1 min-w-0"
+                    className="input input-sm text-sm flex-1 min-w-0"
                     type="text"
                     data-testid="checklist-item-awaiting-input"
                     autoFocus={editingId === item.id}
