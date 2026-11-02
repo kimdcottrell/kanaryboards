@@ -20,12 +20,12 @@ export default function FieldsGrid({
   checklistGeneration?: ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-      <div className="contents md:flex md:flex-col md:gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6 items-start">
+      <div className="contents md:flex md:flex-col md:gap-6">
         {status}
         <div className="order-1 md:order-0">{description}</div>
       </div>
-      <div className="contents md:flex md:flex-col md:gap-4">
+      <div className="contents md:flex md:flex-col md:gap-6">
         <div className="order-2 md:order-0">{project}</div>
         <div className="order-4 md:order-0">{checklist}</div>
         {checklistGeneration && (

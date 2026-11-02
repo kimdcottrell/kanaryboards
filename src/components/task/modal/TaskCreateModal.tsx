@@ -46,7 +46,7 @@ export default function TaskCreateModal() {
         <>
           <form
             id={formId}
-            className="mt-4 space-y-4"
+            className="mt-4 space-y-6"
             onSubmit={handleSubmit}
             noValidate
           >

@@ -79,7 +79,7 @@ export default function TaskComments({ taskId }: { taskId: string }) {
 
   return (
     <aside
-      className="relative mt-6 md:mt-5 pt-6 md:pt-0 md:min-h-[min(24rem,70vh)]"
+      className="relative mt-0 md:mt-5 pt-6 md:pt-0 md:min-h-[min(24rem,70vh)]"
       aria-label="Comments"
       data-testid="task-comments"
     >
