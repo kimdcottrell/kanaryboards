@@ -32,6 +32,8 @@ export default function ChecklistSection({
 }) {
   const { setChecklistInputRef } = useBoardRefs();
   const [draggedId, setDraggedId] = useState<string | null>(null);
+  // Only the item being edited renders as an input; the rest are plain text.
+  const [editingId, setEditingId] = useState<string | null>(null);
   const { dropTarget, handleDragOver } = useDropTarget(!!draggedId);
 
   // The top item is always an empty entry row; committing it (Enter / blur /
@@ -58,12 +60,12 @@ export default function ChecklistSection({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <p className="text-[12px] uppercase font-bold">
         Checklist items
       </p>
       <div
-        className="space-y-3"
+        className="space-y-1"
         onDrop={handleDrop}
       >
         {checklist.map((item, index) => (
@@ -73,7 +75,7 @@ export default function ChecklistSection({
             onDragOver={index === 0
               ? undefined
               : (e) => handleDragOver(e, item.id)}
-            className="rounded flex items-center gap-1 bg-base-content/10 p-1"
+            className="rounded flex items-center gap-1 bg-base-content/10 px-1 h-11"
             style={{
               opacity: draggedId === item.id ? 0.4 : 1,
               borderTop: `2px solid ${
@@ -109,48 +111,69 @@ export default function ChecklistSection({
                 )}
               className="checkbox bg-secondary checked:bg-secondary checked:text-base-100 checkbox-sm shrink-0"
             />
-            <input
-              className="input w-10/12 mx-auto"
-              type="text"
-              data-testid="checklist-item-awaiting-input"
-              value={item.text}
-              onChange={(e) =>
-                updateChecklistItem(
-                  item.id,
-                  "text",
-                  e.currentTarget.value,
-                )}
-              onKeyDown={(e) => {
-                if (index === 0 && e.key === "Enter") {
-                  e.preventDefault();
-                  if (item.text.trim()) addChecklistItem(true, 0);
-                } else {
-                  handleChecklistKeyDown(
-                    e.nativeEvent,
-                    index,
-                    addChecklistItem,
-                  );
-                }
-              }}
-              onBlur={index === 0
-                ? () => {
-                  if (item.text.trim()) addChecklistItem(false, 0);
-                }
-                : undefined}
-              onPaste={(e) => {
-                // Multi-line paste: each non-blank line becomes its own item,
-                // inserted in order below this row; this input is left as-is.
-                const lines = e.clipboardData.getData("text").split(/\r?\n/)
-                  .map((line) => line.trim()).filter(Boolean);
-                if (lines.length < 2) return;
-                e.preventDefault();
-                lines.forEach((line, i) =>
-                  addChecklistItem(false, index + 1 + i, line)
-                );
-              }}
-              ref={(el) => setChecklistInputRef(item.id, el)}
-              placeholder="Shift+Enter for a new line, Enter to commit"
-            />
+            {
+              // Empty items stay inputs so a freshly added row can be focused.
+              index !== 0 && editingId !== item.id && item.text !== ""
+                ? (
+                  <button
+                    type="button"
+                    data-testid="checklist-item-text"
+                    onClick={() => setEditingId(item.id)}
+                    className="flex-1 min-w-0 truncate text-left text-sm px-3 py-1.5 rounded cursor-text hover:bg-base-content/20"
+                  >
+                    {item.text}
+                  </button>
+                )
+                : (
+                  <input
+                    className="input input-sm flex-1 min-w-0"
+                    type="text"
+                    data-testid="checklist-item-awaiting-input"
+                    autoFocus={editingId === item.id}
+                    onFocus={() => setEditingId(item.id)}
+                    value={item.text}
+                    onChange={(e) =>
+                      updateChecklistItem(
+                        item.id,
+                        "text",
+                        e.currentTarget.value,
+                      )}
+                    onKeyDown={(e) => {
+                      if (index === 0 && e.key === "Enter") {
+                        e.preventDefault();
+                        if (item.text.trim()) addChecklistItem(true, 0);
+                      } else {
+                        handleChecklistKeyDown(
+                          e.nativeEvent,
+                          index,
+                          addChecklistItem,
+                        );
+                      }
+                    }}
+                    onBlur={() => {
+                      setEditingId((id) => (id === item.id ? null : id));
+                      if (index === 0 && item.text.trim()) {
+                        addChecklistItem(false, 0);
+                      }
+                    }}
+                    onPaste={(e) => {
+                      // Multi-line paste: each non-blank line becomes its own item,
+                      // inserted in order below this row; this input is left as-is.
+                      const lines = e.clipboardData.getData("text").split(
+                        /\r?\n/,
+                      )
+                        .map((line) => line.trim()).filter(Boolean);
+                      if (lines.length < 2) return;
+                      e.preventDefault();
+                      lines.forEach((line, i) =>
+                        addChecklistItem(false, index + 1 + i, line)
+                      );
+                    }}
+                    ref={(el) => setChecklistInputRef(item.id, el)}
+                    placeholder="Shift+Enter for a new line, Enter to commit"
+                  />
+                )
+            }
             {index === 0
               ? <span className="btn-sm btn-square shrink-0 ml-auto"></span>
               : (
@@ -285,7 +308,7 @@ export function ChecklistGenerationCollapse({
               <>
                 <button
                   type="button"
-                  className="btn btn-error btn-soft btn-sm"
+                  className="btn btn-error btn-soft btn-sm max-md:btn-md"
                   onClick={clearChecklistPreview}
                 >
                   <span className="iconify hugeicons--delete-02  text-lg">
@@ -294,7 +317,7 @@ export function ChecklistGenerationCollapse({
                 </button>
                 <button
                   type="button"
-                  className="btn btn-success btn-sm"
+                  className="btn btn-success btn-sm max-md:btn-md"
                   onClick={applyChecklist}
                 >
                   <span className="iconify hugeicons--add-to-list text-lg">
@@ -306,7 +329,7 @@ export function ChecklistGenerationCollapse({
             : (
               <button
                 type="button"
-                className="btn btn-info btn-sm"
+                className="btn btn-info btn-sm max-md:btn-md"
                 onClick={tryGenerate}
                 disabled={isGeneratingChecklist}
               >

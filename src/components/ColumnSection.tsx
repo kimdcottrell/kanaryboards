@@ -99,7 +99,9 @@ export default function ColumnSection(
             )
             : (
               <h4
-                className="text-xl font-semibold cursor-text font-roboto-slab flex items-center gap-2"
+                className={`text-xl font-semibold cursor-text font-roboto-slab flex items-center gap-2 -mx-2 px-2 rounded ${
+                  column.isTrash ? "" : "hover:bg-base-content/20"
+                }`}
                 onDoubleClick={column.isTrash
                   ? undefined
                   : () => editColumnTitle(column, row.id)}

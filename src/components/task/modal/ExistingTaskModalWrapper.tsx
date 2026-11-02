@@ -58,7 +58,7 @@ export default function ExistingTaskModalWrapper({
           column, comments after the body. */
       }
       <div className="grid md:grid-cols-[7fr_3fr] md:grid-rows-[auto_minmax(0,1fr)] md:relative md:gap-x-2 md:max-h-[calc(100dvh*11/12-3rem)]">
-        <div className="pr-10 md:col-span-2" {...lock}>
+        <div className="pr-13 md:col-span-2" {...lock}>
           {title}
           {alert}
         </div>

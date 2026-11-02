@@ -521,37 +521,58 @@ test.describe("Board CRUD", () => {
       await expect(modal.getByRole("button", { name: "Save", exact: true }))
         .toBeVisible();
 
-      const fields = modal.getByTestId("checklist-item-awaiting-input");
+      // Only the entry row (and the item being edited) render as inputs;
+      // committed items render as plain text until clicked.
+      const rows = modal.locator("[data-checklist-item]");
+      const entry = modal.getByTestId("checklist-item-awaiting-input").first();
+      const items = modal.getByTestId("checklist-item-text");
       const deleteButtons = modal.getByRole("button", {
         name: "Delete checklist item",
       });
       // An empty entry row (no trash button) is spawned above the seeded item.
-      await expect(fields).toHaveCount(2);
-      await expect(fields.nth(0)).toHaveValue("");
-      await expect(fields.nth(1)).toHaveValue("Draft outline");
+      await expect(rows).toHaveCount(2);
+      await expect(entry).toHaveValue("");
+      await expect(items).toHaveText(["Draft outline"]);
       await expect(deleteButtons).toHaveCount(1);
 
       // Enter commits the entry row and spawns a fresh one at the top.
-      await fillStable(fields.nth(0), "Entered item");
-      await fields.nth(0).press("Enter");
-      await expect(fields).toHaveCount(3);
-      await expect(fields.nth(0)).toHaveValue("");
-      await expect(fields.nth(1)).toHaveValue("Entered item");
+      await fillStable(entry, "Entered item");
+      await entry.press("Enter");
+      await expect(rows).toHaveCount(3);
+      await expect(entry).toHaveValue("");
+      await expect(items).toHaveText(["Entered item", "Draft outline"]);
       await expect(deleteButtons).toHaveCount(2);
 
       // Leaving the entry row with text in it does the same.
-      await fillStable(fields.nth(0), "Blurred item");
-      await fields.nth(0).blur();
-      await expect(fields).toHaveCount(4);
-      await expect(fields.nth(0)).toHaveValue("");
-      await expect(fields.nth(1)).toHaveValue("Blurred item");
+      await fillStable(entry, "Blurred item");
+      await entry.blur();
+      await expect(rows).toHaveCount(4);
+      await expect(entry).toHaveValue("");
+      await expect(items).toHaveText([
+        "Blurred item",
+        "Entered item",
+        "Draft outline",
+      ]);
+
+      // Clicking a text item turns it into an input.
+      await items.nth(2).click();
+      const editing = rows.nth(3).getByTestId("checklist-item-awaiting-input");
+      await expect(editing).toBeFocused();
+      await expect(editing).toHaveValue("Draft outline");
 
       // Shift+Enter from the last input still appends directly after it.
-      await fields.nth(3).press("Shift+Enter");
-      await expect(fields).toHaveCount(5);
-      await fillStable(fields.nth(4), "Last item");
-      await expect(fields.nth(3)).toHaveValue("Draft outline");
-      await expect(fields.nth(4)).toHaveValue("Last item");
+      await editing.press("Shift+Enter");
+      await expect(rows).toHaveCount(5);
+      const last = rows.nth(4).getByTestId("checklist-item-awaiting-input");
+      await expect(last).toBeFocused();
+      await fillStable(last, "Last item");
+      await last.blur();
+      await expect(items).toHaveText([
+        "Blurred item",
+        "Entered item",
+        "Draft outline",
+        "Last item",
+      ]);
     });
   });
 
@@ -713,12 +734,12 @@ test.describe("Board CRUD", () => {
       await expect(modal.getByRole("button", { name: "Save", exact: true }))
         .toBeVisible();
 
-      const fields = modal.getByTestId("checklist-item-awaiting-input");
-      await fillStable(fields.nth(0), "Top item");
-      await fields.nth(0).press("Enter");
-      await expect(fields).toHaveCount(3);
-      await expect(fields.nth(1)).toHaveValue("Top item");
-      await expect(fields.nth(2)).toHaveValue("Draft outline");
+      const entry = modal.getByTestId("checklist-item-awaiting-input").first();
+      const items = modal.getByTestId("checklist-item-text");
+      await fillStable(entry, "Top item");
+      await entry.press("Enter");
+      await expect(modal.locator("[data-checklist-item]")).toHaveCount(3);
+      await expect(items).toHaveText(["Top item", "Draft outline"]);
 
       // Drag the third row's handle onto the second to move it before. Each
       // HTML5 drag phase is fired in its own round trip so React can flush the
@@ -771,8 +792,7 @@ test.describe("Board CRUD", () => {
         );
       }, dataTransfer);
 
-      await expect(fields.nth(1)).toHaveValue("Draft outline");
-      await expect(fields.nth(2)).toHaveValue("Top item");
+      await expect(items).toHaveText(["Draft outline", "Top item"]);
     });
   });
 });
