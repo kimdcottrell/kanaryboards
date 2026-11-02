@@ -79,7 +79,7 @@ export default function TaskComments({ taskId }: { taskId: string }) {
 
   return (
     <aside
-      className="relative mt-6 md:mt-5 pt-6 md:pt-0 md:min-h-[min(24rem,70vh)]"
+      className="relative mt-0 md:mt-5 pt-6 md:pt-0 md:min-h-[min(24rem,70vh)]"
       aria-label="Comments"
       data-testid="task-comments"
     >
@@ -88,7 +88,7 @@ export default function TaskComments({ taskId }: { taskId: string }) {
           role="tablist"
           className="tabs tabs-lift flex-1 min-h-0 flex-col items-start"
         >
-          <label className="font-inter tab bg-primary/15 border-b-2 border-b-base-content text-xs font-bold uppercase">
+          <label className="font-inter tab max-md:h-[45px] bg-primary/15 border-b-2 border-b-base-content text-xs font-bold uppercase">
             <input type="radio" name="task_modal_tabs" defaultChecked />
             <span className="iconify hugeicons--comment-01 me-2"></span>
             Comments

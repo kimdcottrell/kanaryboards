@@ -157,14 +157,13 @@ test.describe("Checklist AI generation — malicious items render as inert text"
 
     // Editing a task whose checklist starts empty seeds one blank row of its
     // own (see openEditModal in reducers/tasks.ts), so the 3 malicious items
-    // land alongside it rather than being the only rows.
-    const itemInputs = page.locator(
-      "[data-checklist-item] input[type='text']",
+    // land alongside it rather than being the only rows. Committed items
+    // render as plain text, so read their text content.
+    await expect(page.locator("[data-checklist-item]")).toHaveCount(
+      MALICIOUS_TITLES.length + 1,
     );
-    await expect(itemInputs).toHaveCount(MALICIOUS_TITLES.length + 1);
-    const values = await itemInputs.evaluateAll((els) =>
-      (els as HTMLInputElement[]).map((el) => el.value)
-    );
+    const values = await page.getByTestId("checklist-item-text")
+      .allTextContents();
     for (const title of MALICIOUS_TITLES) {
       expect(values).toContain(title);
     }

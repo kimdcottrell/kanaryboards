@@ -18,7 +18,11 @@ export default function CloseButton({
   const tooltipClasses = tooltip
     ? `tooltip${tooltipPosition ? ` tooltip-${tooltipPosition}` : ""}`
     : "";
-  const cls = [tooltipClasses, "btn btn-error btn-sm btn-square", extraClass]
+  const cls = [
+    tooltipClasses,
+    "btn btn-error btn-sm max-md:btn-md btn-square",
+    extraClass,
+  ]
     .filter(Boolean)
     .join(" ");
 

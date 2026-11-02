@@ -88,7 +88,7 @@ export default function RowSection(
               : (
                 <h3
                   ref={titleRef}
-                  className="text-2xl font-roboto-slab font-semibold"
+                  className="text-2xl font-roboto-slab font-semibold -mx-2 px-2 rounded cursor-text hover:bg-base-content/20"
                   title="Double-click to edit"
                   onDoubleClick={() => editRowTitle(row)}
                 >

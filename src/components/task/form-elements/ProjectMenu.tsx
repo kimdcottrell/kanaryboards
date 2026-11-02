@@ -42,7 +42,7 @@ export default function ProjectMenu({
             {rows.map((option) => (
               <li key={option.id}>
                 <label
-                  className={`font-roboto-slab font-semibold row-menu-item has-focus-visible:underline${
+                  className={`font-roboto-slab font-semibold row-menu-item max-md:p-3 has-focus-visible:underline${
                     option.id === selectedRowId ? " menu-active" : ""
                   }`}
                   style={{

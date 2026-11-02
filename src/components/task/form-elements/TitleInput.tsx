@@ -21,21 +21,31 @@ export default function TitleInput({
   const inputProps = {
     id,
     form,
-    type: "text",
     value,
-    onChange: (e: { currentTarget: HTMLInputElement }) =>
-      onChange?.(e.currentTarget.value),
+    // Titles are single-line; flatten newlines pasted into the textarea.
+    onChange: (e: { currentTarget: HTMLInputElement | HTMLTextAreaElement }) =>
+      onChange?.(e.currentTarget.value.replace(/\r?\n/g, " ")),
     required: true,
     readOnly,
     ...(readOnly ? preventEdits : {}),
   };
 
   if (variant === "heading") {
+    // A textarea so long titles wrap; field-sizing-content grows it to fit.
+    // Enter submits the form, as it would from a single-line input.
     return (
-      <input
+      <textarea
         {...inputProps}
+        rows={1}
         aria-label="Title"
-        className="input input-ghost validator w-full px-0 hover:border-base-content/50 text-2xl font-roboto-slab font-semibold"
+        onKeyDown={(e) => {
+          if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
+          e.preventDefault();
+          if (!readOnly) e.currentTarget.form?.requestSubmit();
+        }}
+        className={`textarea py-0 textarea-ghost validator -mx-2 w-[calc(100%+1rem)] min-h-0 px-2 rounded resize-none field-sizing-content border-none text-2xl font-roboto-slab font-semibold ${
+          readOnly ? "" : "hover:bg-base-content/20"
+        }`}
       />
     );
   }
@@ -45,6 +55,7 @@ export default function TitleInput({
       <label className="fieldset-legend" htmlFor={id}>Title</label>
       <input
         {...inputProps}
+        type="text"
         className="input validator input-bordered w-full"
       />
       <span className="validator-hint hidden">Required</span>

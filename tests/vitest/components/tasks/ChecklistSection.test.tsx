@@ -64,7 +64,12 @@ const existing: ChecklistItem = {
 
 const inputs = () =>
   screen.getAllByTestId("checklist-item-awaiting-input") as HTMLInputElement[];
-const texts = () => inputs().map((i) => i.value);
+// Each row's text, whether it renders as an input or as plain text.
+const texts = () =>
+  Array.from(document.querySelectorAll("[data-checklist-item]")).map((row) =>
+    row.querySelector<HTMLInputElement>("input[type='text']")?.value ??
+      row.querySelector("[data-testid='checklist-item-text']")!.textContent
+  );
 const paste = (el: HTMLElement, text: string) =>
   fireEvent.paste(el, { clipboardData: { getData: () => text } });
 
@@ -77,6 +82,7 @@ describe("ChecklistSection paste", () => {
 
   test("multi-line paste into an existing item inserts the lines below it", () => {
     render(<Harness initial={[entry, existing]} />);
+    fireEvent.click(screen.getByText("existing"));
     paste(inputs()[1], "a\nb");
     expect(texts()).toEqual(["", "existing", "a", "b"]);
   });
