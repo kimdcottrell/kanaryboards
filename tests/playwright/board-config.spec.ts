@@ -244,7 +244,6 @@ test.describe("Board Configuration — Create New Row section", () => {
         "to first column",
       );
       await expect(section.locator(".alert-info")).toHaveCount(0);
-      await page.waitForTimeout(1000);
       await expect(section).toBeVisible();
       // ...then the modal closes after the 1s delay.
       await expect(section).not.toBeVisible({ timeout: 5000 });
