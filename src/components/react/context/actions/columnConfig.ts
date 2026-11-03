@@ -5,6 +5,8 @@ import {
   useColumnConfigState,
 } from "../BoardContext.tsx";
 import { createId } from "../constants.ts";
+import { validateEntity } from "./shared.ts";
+import type { FieldError } from "./shared.ts";
 import { generateKeyBetween } from "fractional-indexing";
 import type { DragEvent } from "react";
 
@@ -13,11 +15,19 @@ export function useColumnConfigActions() {
   const { defaultColumnInput, draggedDefaultIndex } = useColumnConfigState();
   const { columns } = useBoardDataState();
 
+  // Resolves to the validation error to show, or null once added (or when
+  // the position selects aren't set, which the form's `required` prevents).
   const addColumn = useCallback(
-    (direction: "left" | "right", referenceColumnId: string) => {
-      const title = defaultColumnInput.trim();
+    async (
+      direction: "left" | "right",
+      referenceColumnId: string,
+    ): Promise<FieldError | null> => {
       const refIdx = columns.findIndex((c) => c.id === referenceColumnId);
-      if (!title || !direction || refIdx === -1) return;
+      if (!direction || refIdx === -1) return null;
+      const checked = await validateEntity("column", {
+        title: defaultColumnInput,
+      });
+      if (!checked.ok) return checked;
 
       const id = createId();
       const lastCol = columns[columns.length - 1];
@@ -25,7 +35,7 @@ export function useColumnConfigActions() {
         type: "COLUMN/ADD",
         payload: {
           id,
-          title,
+          title: checked.values.title,
           order: generateKeyBetween(lastCol?.order ?? null, null),
           icon: null,
         },
@@ -39,6 +49,7 @@ export function useColumnConfigActions() {
         payload: { columnId: id, beforeColumnId },
       });
       dispatch({ type: "COLUMN/SET_INPUT", payload: { value: "" } });
+      return null;
     },
     [defaultColumnInput, columns, dispatch],
   );

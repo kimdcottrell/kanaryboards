@@ -44,7 +44,7 @@ export const PATCH: APIRoute = async (context) => {
   if (!expected) return jsonResponse({ error: "If-Match is required." }, 428);
   const body = await readJsonObject(context.request);
   if (body instanceof Response) return body;
-  const fields = validateFields("row", body, found.board);
+  const fields = validateFields("row", body, "cli");
   if (!fields.ok) return jsonResponse({ error: fields.error }, 422);
   const row: Row = { ...found.row, ...fields.values };
   const version = await saveEntity("row", found.boardId, row, expected);

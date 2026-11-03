@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import {
+  useBoardDataState,
   useBoardDispatch,
   useBoardRefs,
   useTaskEditState,
@@ -7,29 +8,35 @@ import {
 import { createId } from "../constants.ts";
 import type { Task } from "../types.ts";
 import { clearEditDraft } from "../../task/editDraftStore.ts";
+import { liveRowId, validateEntity } from "./shared.ts";
+import type { FieldError } from "./shared.ts";
 
 export function useTaskEditActions() {
   const dispatch = useBoardDispatch();
   const { focusChecklistInput } = useBoardRefs();
   const { editTaskDraft } = useTaskEditState();
+  const { rows } = useBoardDataState();
 
-  const saveTaskEdit = useCallback((
+  // Resolves to the validation error to show (the modal stays open), or null
+  // once saved.
+  const saveTaskEdit = useCallback(async (
     event: Event,
     description?: string,
-  ) => {
+  ): Promise<FieldError | null> => {
     event.preventDefault();
-    if (!(event.target as HTMLFormElement).checkValidity()) return;
-    if (description !== undefined && editTaskDraft) {
-      dispatch({
-        type: "TASK/UPDATE_EDIT_DRAFT",
-        payload: {
-          draft: { ...editTaskDraft, description },
-        },
-      });
-    }
-    dispatch({ type: "TASK/SAVE_EDIT" });
-    if (editTaskDraft) clearEditDraft(editTaskDraft.id);
-  }, [editTaskDraft, dispatch]);
+    if (!editTaskDraft) return null;
+    const checked = await validateEntity("task", {
+      title: editTaskDraft.title,
+      description: description ?? editTaskDraft.description,
+      rowId: liveRowId(rows, editTaskDraft.rowId),
+      colId: editTaskDraft.colId,
+      checklist: editTaskDraft.checklist,
+    });
+    if (!checked.ok) return checked;
+    dispatch({ type: "TASK/SAVE_EDIT", payload: { edits: checked.values } });
+    clearEditDraft(editTaskDraft.id);
+    return null;
+  }, [editTaskDraft, rows, dispatch]);
 
   const addEditChecklistItem = useCallback((
     focusNew = false,

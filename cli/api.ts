@@ -25,6 +25,8 @@ export async function api<T>(
       method,
       headers: {
         Authorization: `Bearer ${token}`,
+        // Selects the CLI's field rules on /api/v1/validate (see fields.ts).
+        "X-Kanby-Client": "cli",
         ...(body === undefined ? {} : { "Content-Type": "application/json" }),
         ...headers,
       },

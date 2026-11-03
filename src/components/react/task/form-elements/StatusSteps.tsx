@@ -2,16 +2,19 @@ import { useState } from "react";
 import type { CSSProperties } from "react";
 import type { Column } from "../../context/types.ts";
 
+// `error` is the save's validation message for the status, if any.
 export default function StatusSteps({
   taskId,
   columns,
   selectedColId,
   onSelect,
+  error,
 }: {
   taskId: string;
   columns: Column[];
   selectedColId: string | null;
   onSelect?: (colId: string) => void;
+  error?: string;
 }) {
   const name = `column-select-${taskId || "new"}`;
   // Trash is only reachable via the Trash button or drag-and-drop, so it is
@@ -26,9 +29,14 @@ export default function StatusSteps({
 
   return (
     <fieldset className="fieldset min-w-0">
-      <legend className="fieldset-legend text-[12px] uppercase font-bold">
+      <legend
+        className={`fieldset-legend text-[12px] uppercase font-bold${
+          error ? " text-error" : ""
+        }`}
+      >
         Status
       </legend>
+      {error && <span className="text-error">{error}</span>}
       <div className="overflow-x-auto">
         <div
           id={name}

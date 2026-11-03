@@ -14,6 +14,7 @@ const tasks = await import("@pages/api/v1/tasks/index.ts");
 const task = await import("@pages/api/v1/tasks/[id].ts");
 const columns = await import("@pages/api/v1/columns.ts");
 const validate = await import("@pages/api/v1/validate/[entity]/[field].ts");
+const validateAll = await import("@pages/api/v1/validate/[entity]/index.ts");
 
 let memKv: Deno.Kv;
 beforeEach(async () => {
@@ -89,11 +90,32 @@ describe("auth gate", () => {
 });
 
 describe("validate", () => {
-  const check = (entity: string, field: string, value: unknown) =>
+  const cli = { "X-Kanby-Client": "cli" };
+  // No login: validation reads and saves nothing.
+  const check = (
+    entity: string,
+    field: string,
+    value: unknown,
+    headers: Record<string, string> = {},
+  ) =>
     validate.POST(ctx({
       method: "POST",
       params: { entity, field },
       body: { value },
+      headers,
+      userId: null,
+    }));
+  const checkAll = (
+    entity: string,
+    body: unknown,
+    headers: Record<string, string> = {},
+  ) =>
+    validateAll.POST(ctx({
+      method: "POST",
+      params: { entity },
+      body,
+      headers,
+      userId: null,
     }));
 
   test("an empty title is rejected", async () => {
@@ -115,18 +137,59 @@ describe("validate", () => {
     });
   });
 
-  test("the Trash column and unknown rows are rejected", async () => {
-    await seed();
-    const trash = (await getBoard(
-      (await memKv.get<string>(["user_board", "user_cli"])).value!,
-    ))!.columns.find((c) => c.isTrash)!;
-    expect((await check("task", "colId", trash.id)).status).toBe(422);
-    expect((await check("task", "rowId", "nope")).status).toBe(422);
+  test("columns have a title", async () => {
+    expect(await (await check("column", "title", " Done ")).json()).toEqual({
+      ok: true,
+      value: "Done",
+    });
+    expect((await check("column", "title", "")).status).toBe(422);
+  });
+
+  test("the app's checklist is items; blank ones are dropped", async () => {
+    const item = (text: string) => ({
+      id: text || "blank",
+      text,
+      checked: false,
+      order: "a0",
+    });
+    const res = await check("task", "checklist", [item(""), item("Ship")]);
+    expect(await res.json()).toEqual({ ok: true, value: [item("Ship")] });
+    expect((await check("task", "checklist", ["Ship"])).status).toBe(422);
+  });
+
+  test("X-Kanby-Client: cli selects the CLI's checklist rule", async () => {
+    const res = await check("task", "checklist", [" Ship "], cli);
+    expect(await res.json()).toEqual({ ok: true, value: ["Ship"] });
+    expect((await check("task", "checklist", [""], cli)).status).toBe(422);
+  });
+
+  test("ids are only checked for presence", async () => {
+    expect((await check("task", "rowId", "")).status).toBe(422);
+    expect((await check("task", "colId", "any-id")).status).toBe(200);
   });
 
   test("unknown fields (including prototype keys) are 404", async () => {
     expect((await check("task", "constructor", "x")).status).toBe(404);
     expect((await check("board", "title", "x")).status).toBe(404);
+  });
+
+  test("a whole entity returns normalized values", async () => {
+    const res = await checkAll("row", { title: " Q3\nplan ", extra: 1 });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      ok: true,
+      values: { title: "Q3 plan" },
+    });
+  });
+
+  test("a whole entity names the field that failed", async () => {
+    const res = await checkAll("task", { title: "Ok", rowId: "" });
+    expect(res.status).toBe(422);
+    expect(await res.json()).toEqual({
+      error: "Project is required.",
+      field: "rowId",
+    });
+    expect((await checkAll("board", {})).status).toBe(404);
   });
 });
 
@@ -187,6 +250,25 @@ describe("tasks", () => {
       body: { rowId: r.id, colId: cols[0].id },
     }));
     expect(res.status).toBe(422);
+  });
+
+  test("create rejects an unknown row and the Trash column", async () => {
+    const { row: r, cols } = await seed();
+    const trash = (await getBoard(
+      (await memKv.get<string>(["user_board", "user_cli"])).value!,
+    ))!.columns.find((c) => c.isTrash)!;
+    const create = async (rowId: string, colId: string) => {
+      const res = await tasks.POST(ctx({
+        method: "POST",
+        body: { rowId, colId, title: "Nope" },
+      }));
+      return [res.status, (await res.json()).error];
+    };
+    expect(await create("nope", cols[0].id)).toEqual([422, "No such row."]);
+    expect(await create(r.id, trash.id)).toEqual([
+      422,
+      "Tasks can't be moved to Trash from the CLI.",
+    ]);
   });
 
   test("list filters by row", async () => {

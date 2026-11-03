@@ -212,12 +212,11 @@ export function renameSave(
   state: BoardState,
   payload: Extract<ColumnAction, { type: "COLUMN/RENAME_SAVE" }>["payload"],
 ): BoardState {
-  const trimmed = state.editingColumnName.trim();
-  if (!trimmed) return { ...state, editingColumnId: null };
+  // payload.title has passed /api/v1/validate (see actions/columnEdit.ts).
   return {
     ...state,
     columns: state.columns.map((c) =>
-      c.id === payload.columnId ? { ...c, title: trimmed } : c
+      c.id === payload.columnId ? { ...c, title: payload.title } : c
     ),
     editingColumnId: null,
     editingColumnRowId: null,

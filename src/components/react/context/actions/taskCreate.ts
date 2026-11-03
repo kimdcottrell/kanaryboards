@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import {
+  useBoardDataState,
   useBoardDispatch,
   useBoardRefs,
   useTaskCreateState,
@@ -7,39 +8,45 @@ import {
 } from "../BoardContext.tsx";
 import { createId } from "../constants.ts";
 import { generateKeyBetween } from "fractional-indexing";
-import type { ChecklistItem, Task } from "../types.ts";
+import { liveRowId, validateEntity } from "./shared.ts";
+import type { FieldError } from "./shared.ts";
+import type { Task } from "../types.ts";
 
 export function useTaskCreateActions() {
   const dispatch = useBoardDispatch();
   const { focusChecklistInput } = useBoardRefs();
   const { taskDraft } = useTaskCreateState();
+  const { rows } = useBoardDataState();
   const tasksByCell = useTasksByCell();
 
-  const createTask = useCallback((
+  // Resolves to the validation error to show (the modal stays open), or null
+  // once created.
+  const createTask = useCallback(async (
     event: Event,
     description?: string,
-  ) => {
+  ): Promise<FieldError | null> => {
     event.preventDefault();
-    if (!(event.target as HTMLFormElement).checkValidity()) return;
-    const { rowId, colId } = taskDraft;
-    const cellKey = `${rowId}|${colId}`;
-    const cellTasks = tasksByCell[cellKey] ?? [];
+    const checked = await validateEntity("task", {
+      title: taskDraft.title,
+      description: description ?? taskDraft.description,
+      rowId: liveRowId(rows, taskDraft.rowId),
+      colId: taskDraft.colId,
+      checklist: taskDraft.checklist,
+    });
+    if (!checked.ok) return checked;
+    const { rowId, colId } = checked.values;
+    const cellTasks = tasksByCell[`${rowId}|${colId}`] ?? [];
     const firstOrder = cellTasks[0]?.order ?? null;
     const task: Task = {
+      ...checked.values,
       id: createId(),
-      rowId,
-      colId,
       order: generateKeyBetween(null, firstOrder),
-      title: taskDraft.title.trim(),
-      description: description ?? taskDraft.description,
-      checklist: taskDraft.checklist.filter(
-        (item: ChecklistItem) => item.text.trim(),
-      ),
       trashedAt: null,
       preTrashColId: null,
     };
     dispatch({ type: "TASK/CREATE", payload: { task } });
-  }, [taskDraft, tasksByCell, dispatch]);
+    return null;
+  }, [taskDraft, rows, tasksByCell, dispatch]);
 
   const addChecklistItem = useCallback((
     focusNew = false,

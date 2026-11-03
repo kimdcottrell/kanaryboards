@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { useBoardDispatch } from "../BoardContext.tsx";
+import { validateEntity } from "./shared.ts";
+import type { FieldError } from "./shared.ts";
 
 export function useRowActions() {
   const dispatch = useBoardDispatch();
@@ -21,7 +23,18 @@ export function useRowActions() {
       }),
     updateRowColor: (rowId: string, color: string) =>
       dispatch({ type: "ROW/UPDATE_COLOR", payload: { rowId, color } }),
-    renameRow: (rowId: string, name: string) =>
-      dispatch({ type: "ROW/RENAME", payload: { rowId, name } }),
+    // Resolves to the validation error to show, or null once renamed.
+    renameRow: async (
+      rowId: string,
+      name: string,
+    ): Promise<FieldError | null> => {
+      const checked = await validateEntity("row", { title: name });
+      if (!checked.ok) return checked;
+      dispatch({
+        type: "ROW/RENAME",
+        payload: { rowId, name: checked.values.title },
+      });
+      return null;
+    },
   }), [dispatch]);
 }

@@ -1,18 +1,19 @@
 import type { CSSProperties } from "react";
 import type { Row } from "../../context/types.ts";
 
+// `error` is the save's validation message for the project, if any.
 export default function ProjectMenu({
   taskId,
   rows,
   selectedRowId,
   onSelect,
-  required = false,
+  error,
 }: {
   taskId: string;
   rows: Row[];
   selectedRowId: string;
   onSelect?: (rowId: string) => void;
-  required?: boolean;
+  error?: string;
 }) {
   const name = `row-select-${taskId || "new"}`;
   return (
@@ -21,23 +22,19 @@ export default function ProjectMenu({
         /* The current project is tinted with its row color
           (.row-menu-item in global.css). */
       }
-      {
-        /* After a failed submit (:user-invalid), the legend turns error-colored
-          and shows the "Required" hint. */
-      }
-      <ul id={name} className="menu validator group/project w-full p-0">
+      <ul id={name} className="menu w-full p-0">
         <li>
-          <legend className="p-0 fieldset-legend menu-title text-base-content group-has-user-invalid/project:text-error text-[12px] uppercase font-bold">
+          <legend
+            className={`p-0 fieldset-legend menu-title text-[12px] uppercase font-bold ${
+              error ? "text-error" : "text-base-content"
+            }`}
+          >
             Project
           </legend>
           {
-            /* menu-title keeps the hint from getting menu-item styling. */
+            /* menu-title keeps the error from getting menu-item styling. */
           }
-          {required && (
-            <span className="validator-hint p-0 text-error hidden group-has-user-invalid/project:block group-has-user-invalid/project:visible">
-              Required
-            </span>
-          )}
+          {error && <span className="menu-title p-0 text-error">{error}</span>}
           <ul className="pt-2 mx-0">
             {rows.map((option) => (
               <li key={option.id}>
@@ -56,7 +53,6 @@ export default function ProjectMenu({
                     value={option.id}
                     checked={option.id === selectedRowId}
                     onChange={() => onSelect?.(option.id)}
-                    required={required}
                   />
                   {option.title}
                 </label>

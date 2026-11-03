@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   useRowFormActions,
   useRowFormState,
@@ -14,6 +15,7 @@ export default function CreateRowSection() {
     taskGenerationFailed,
   } = useRowFormState();
   const { setNewRowName, setNewRowPrompt, addRow } = useRowFormActions();
+  const [nameError, setNameError] = useState<string>();
 
   return (
     <div
@@ -24,21 +26,27 @@ export default function CreateRowSection() {
       <form
         key={newRowFormKey}
         className="space-y-3 mt-3"
-        onSubmit={addRow}
+        onSubmit={(e) =>
+          addRow(e).then((result) => setNameError(result?.error))}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <fieldset className="fieldset">
             <legend className="fieldset-legend">Row name</legend>
             <input
-              className="input  input-secondary w-full validator"
+              className={`input  input-secondary w-full${
+                nameError ? " input-error" : ""
+              }`}
               type="text"
               value={newRowName}
-              onChange={(e) => setNewRowName(e.currentTarget.value)}
+              onChange={(e) => {
+                setNameError(undefined);
+                setNewRowName(e.currentTarget.value);
+              }}
               placeholder="A project name, a category for large project tasks, etc."
               disabled={isGeneratingTasks}
-              required
+              aria-invalid={nameError ? true : undefined}
             />
-            <p className="validator-hint">Required</p>
+            {nameError && <p className="text-error text-sm">{nameError}</p>}
           </fieldset>
 
           <fieldset className="fieldset">

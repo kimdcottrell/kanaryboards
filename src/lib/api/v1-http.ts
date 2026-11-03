@@ -1,5 +1,6 @@
 import { getBoard } from "@lib/db/kv.ts";
 import type { PersistedBoard } from "@lib/db/kv.ts";
+import type { Client } from "@lib/api/fields.ts";
 import { jsonResponse } from "@lib/http/api-responses.ts";
 import { liveBoard } from "@lib/api/board-ops.ts";
 
@@ -40,3 +41,10 @@ export function jsonWithEtag(
   response.headers.set("ETag", toEtag(versionstamp));
   return response;
 }
+
+// Which rule set field validation uses: the kanby CLI sends
+// `X-Kanby-Client: cli`; anything else is the web app.
+export const clientOf = (request: Request): Client =>
+  request.headers.get("X-Kanby-Client")?.toLowerCase() === "cli"
+    ? "cli"
+    : "app";

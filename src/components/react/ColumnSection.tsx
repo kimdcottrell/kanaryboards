@@ -1,3 +1,4 @@
+import { useState } from "react";
 import TaskCard from "./task/TaskCard.tsx";
 import DynamicIcon from "./shared/DynamicIcon.tsx";
 import {
@@ -27,6 +28,10 @@ export default function ColumnSection(
     useColumnEditState();
   const { setEditingColumnName, editColumnTitle, saveColumnTitle } =
     useColumnEditActions();
+  // The last save's validation error; the input stays open while it shows.
+  const [titleError, setTitleError] = useState<string>();
+  const saveTitle = () =>
+    saveColumnTitle(column.id).then((result) => setTitleError(result?.error));
   const { openTaskForm, reorderTaskInCell, handleColumnDrop } =
     useTaskActions();
   const renderCount = useRenderCount();
@@ -80,22 +85,32 @@ export default function ColumnSection(
             )
             : editingColumnId === column.id && editingColumnRowId === row.id
             ? (
-              <input
-                className="w-full border border-base-300 px-2 py-1 text-xl font-semibold outline-none focus:border-base-content/40"
-                type="text"
-                value={editingColumnName}
-                onChange={(e) => setEditingColumnName(e.currentTarget.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    saveColumnTitle(column.id);
-                  } else if (e.key === "Escape") {
-                    setEditingColumnName(null);
-                  }
-                }}
-                onBlur={() => saveColumnTitle(column.id)}
-                autoFocus
-              />
+              <div className="w-full">
+                <input
+                  className="w-full border border-base-300 px-2 py-1 text-xl font-semibold outline-none focus:border-base-content/40"
+                  type="text"
+                  value={editingColumnName}
+                  onChange={(e) => {
+                    setTitleError(undefined);
+                    setEditingColumnName(e.currentTarget.value);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      saveTitle();
+                    } else if (e.key === "Escape") {
+                      setTitleError(undefined);
+                      setEditingColumnName(null);
+                    }
+                  }}
+                  onBlur={saveTitle}
+                  aria-invalid={titleError ? true : undefined}
+                  autoFocus
+                />
+                {titleError && (
+                  <p className="text-error text-sm mt-1">{titleError}</p>
+                )}
+              </div>
             )
             : (
               <h4

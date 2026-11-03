@@ -23,7 +23,7 @@ export const POST: APIRoute = async (context) => {
   const body = await readJsonObject(context.request);
   if (body instanceof Response) return body;
   const board = await loadLiveBoard(auth.boardId);
-  const fields = validateFields("row", body, board, ["title"]);
+  const fields = validateFields("row", body, "cli", ["title"]);
   if (!fields.ok) return jsonResponse({ error: fields.error }, 422);
   const row = newRow(board, fields.values as { title: string; color?: string });
   const columns = board.columns.length ? [] : defaultColumns();

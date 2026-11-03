@@ -94,12 +94,11 @@ export function editSave(
   state: BoardState,
   payload: Extract<RowAction, { type: "ROW/EDIT_SAVE" }>["payload"],
 ): BoardState {
-  const trimmed = state.editingRowName.trim();
-  if (!trimmed) return { ...state, editingRowId: null };
+  // payload.title has passed /api/v1/validate (see actions/rowEdit.ts).
   return {
     ...state,
     rows: state.rows.map((r) =>
-      r.id === payload.rowId ? { ...r, title: trimmed } : r
+      r.id === payload.rowId ? { ...r, title: payload.title } : r
     ),
     editingRowId: null,
   };
@@ -113,12 +112,11 @@ export function rename(
   state: BoardState,
   payload: Extract<RowAction, { type: "ROW/RENAME" }>["payload"],
 ): BoardState {
-  const trimmed = payload.name.trim();
-  if (!trimmed) return state;
+  // payload.name has passed /api/v1/validate (see actions/row.ts).
   return {
     ...state,
     rows: state.rows.map((r) =>
-      r.id === payload.rowId ? { ...r, title: trimmed } : r
+      r.id === payload.rowId ? { ...r, title: payload.name } : r
     ),
   };
 }

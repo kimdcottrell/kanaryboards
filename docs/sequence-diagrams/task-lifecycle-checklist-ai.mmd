@@ -12,6 +12,7 @@ sequenceDiagram
     participant Reducer as reducers<br/>(tasks.ts, checklist.ts, checklistAi.ts)
     participant Ctx as BoardContext<br/>(TaskCreate/TaskEdit/ChecklistAI/<br/>BoardData/TasksByCell)
     participant AI as /api/generate-tasks<br/>(Google GenAI)
+    participant Validate as /api/v1/validate/{entity}<br/>(lib/api/fields.ts, app rules)
     participant Comments as TaskComments<br/>(task/comments/TaskComments.tsx,<br/>useTaskComments.ts)
     participant Store as commentStore<br/>(task/comments/commentStore.ts)
     participant CommentsAPI as /api/task-comments<br/>(Deno KV task_comment entries)
@@ -45,14 +46,21 @@ sequenceDiagram
 
     Note over User,AI: Create task: submit
     User->>Form: submit form
-    Form->>Actions: createTask(event, description)<br/>(description = editor getJSON();<br/>actions/taskCreate.ts)
-    Actions->>Actions: task = {id: createId(),<br/>order: generateKeyBetween(null, firstOrder),<br/>title, description (falls back to draft),<br/>checklist: non-empty items}
-    Actions->>Ctx: dispatch(TASK/CREATE, {task})
-    Ctx->>Reducer: tasks.create(state, {task})
-    Reducer-->>Ctx: tasks = [task, ...tasks]<br/>taskCreateModalOpen = false<br/>resets ChecklistAI slice
-    Ctx->>Ctx: computeTasksByCell(tasks)
-    Ctx-->>TaskModal: TaskCreateModal re-renders<br/>(TaskCreateContext: taskCreateModalOpen=false)<br/>-> modal closes, unmounts Form
-    Ctx-->>Cell: ColumnSection (target cell) re-renders<br/>(TasksByCellContext changed)<br/>-> new TaskCard mounts as child
+    Form->>Actions: createTask(event, description)<br/>(description = editor getJSON();<br/>actions/taskCreate.ts, via useTaskFormSubmit)
+    Actions->>Validate: POST /api/v1/validate/task<br/>{title, description (falls back to draft),<br/>rowId, colId, checklist}
+    alt 422 / unreachable
+        Validate-->>Actions: {error, field}<br/>(unreachable: "Couldn't check this — try again.")
+        Actions-->>TaskModal: resolves to the error -> useTaskFormSubmit error state<br/>-> message under Title / Status / Project, or below the form.<br/>Modal stays open, no dispatch
+    else 200
+        Validate-->>Actions: {ok, values}<br/>(title trimmed, newlines -> spaces,<br/>blank checklist items dropped)
+        Actions->>Actions: task = {...values, id: createId(),<br/>order: generateKeyBetween(null, firstOrder)}
+        Actions->>Ctx: dispatch(TASK/CREATE, {task})
+        Ctx->>Reducer: tasks.create(state, {task})
+        Reducer-->>Ctx: tasks = [task, ...tasks]<br/>taskCreateModalOpen = false<br/>resets ChecklistAI slice
+        Ctx->>Ctx: computeTasksByCell(tasks)
+        Ctx-->>TaskModal: TaskCreateModal re-renders<br/>(TaskCreateContext: taskCreateModalOpen=false)<br/>-> modal closes, unmounts Form
+        Ctx-->>Cell: ColumnSection (target cell) re-renders<br/>(TasksByCellContext changed)<br/>-> new TaskCard mounts as child
+    end
 
     Note over User,AI: Edit task: open modal
     User->>Card: click title
@@ -97,17 +105,17 @@ sequenceDiagram
     Note over User,AI: Edit task: save
     User->>Form: submit form
     Form->>Actions: saveTaskEdit(event, description)<br/>(actions/taskEdit.ts, wrapped in closeAfter)
-    alt form.checkValidity() fails (e.g. Project empty because its row<br/>was deleted in another tab)
-        Actions->>Actions: return early: no dispatch, nothing saved
-        TaskModal->>TaskModal: closeAfter still runs navigate(/dashboard)
-        Note over TaskModal,Ctx: Intended: taskEditModalOpen stays true, so the modal stays<br/>open with the draft while the URL is now /dashboard.<br/>Picking a project and saving again completes the save below.
+    Actions->>Validate: POST /api/v1/validate/task<br/>{title, description (falls back to draft),<br/>rowId (or "" if its row is gone), colId, checklist}
+    alt 422 / unreachable (e.g. Project empty because its row<br/>was deleted in another tab)
+        Validate-->>Actions: {error, field}
+        Actions-->>TaskModal: resolves to the error -> closeAfter skips navigate,<br/>message under the field (or below the form).<br/>Modal stays open with the draft, no dispatch
+        Note over TaskModal,Ctx: Picking a project and saving again completes the save below.
     end
-    Actions->>Ctx: dispatch(TASK/UPDATE_EDIT_DRAFT,<br/>{draft: {...editTaskDraft, description}}<br/>(skipped if description undefined))
-    Ctx->>Reducer: tasks.updateEditDraft
-    Actions->>Ctx: dispatch(TASK/SAVE_EDIT)
-    Ctx->>Reducer: tasks.saveEdit(state)
-    Reducer-->>Ctx: tasks updated (title/description/rowId/colId/checklist)<br/>editingTaskId = null, editTaskDraft = null<br/>taskEditModalOpen = false
-    Note over Reducer: Task deleted in another tab while being edited (BOARD/SYNC):<br/>saveEdit adds it back from editTaskDraft at the end of its cell.<br/>Project is required, so a draft whose row was deleted<br/>isn't saved until a new project is picked (see the alt above).
+    Validate-->>Actions: {ok, values} (title trimmed, newlines -> spaces,<br/>blank checklist items dropped)
+    Actions->>Ctx: dispatch(TASK/SAVE_EDIT, {edits: values})
+    Ctx->>Reducer: tasks.saveEdit(state, {edits})
+    Reducer-->>Ctx: tasks updated with edits as given<br/>(title/description/rowId/colId/checklist)<br/>editingTaskId = null, editTaskDraft = null<br/>taskEditModalOpen = false
+    Note over Reducer: Task deleted in another tab while being edited (BOARD/SYNC):<br/>saveEdit adds it back from editTaskDraft + edits at the end of its cell.
     Actions->>Drafts: clearEditDraft(task.id) -> alert gone on next open
     Drafts-->>Card: TaskCard re-renders (useHasEditDraft) -> indicator removed
     TaskModal->>TaskModal: navigate(/dashboard)

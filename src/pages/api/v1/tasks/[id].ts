@@ -2,7 +2,7 @@ export const prerender = false;
 
 import type { APIContext, APIRoute } from "astro";
 import { authorizeCli } from "@lib/api/cli-auth.ts";
-import { validateFields } from "@lib/api/fields.ts";
+import { checkTaskRefs, validateFields } from "@lib/api/fields.ts";
 import {
   ifMatchVersion,
   jsonWithEtag,
@@ -56,15 +56,22 @@ export const PATCH: APIRoute = async (context) => {
   }
   const expected = ifMatchVersion(context.request);
   if (!expected) return jsonResponse({ error: "If-Match is required." }, 428);
+
   const body = await readJsonObject(context.request);
   if (body instanceof Response) return body;
-  const fields = validateFields("task", body, found.board);
+
+  const fields = validateFields("task", body, "cli");
   if (!fields.ok) return jsonResponse({ error: fields.error }, 422);
+
+  const refs = checkTaskRefs(fields.values, found.board);
+  if (!refs.ok) return jsonResponse({ error: refs.error }, 422);
+
   const task = updatedTask(
     found.board,
     found.task,
     fields.values as Partial<TaskInput>,
   );
+
   const version = await saveEntity("task", found.boardId, task, expected);
   if (!version) {
     return jsonResponse({ error: "This task changed since it was read." }, 409);

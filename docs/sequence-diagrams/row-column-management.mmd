@@ -13,6 +13,7 @@ sequenceDiagram
     participant Reducer as reducers<br/>(board.ts, rows.ts, columns.ts, taskAi.ts, view.ts)
     participant Ctx as BoardContext<br/>(BoardConfig/BoardData/RowForm/<br/>RowEdit/ColumnEdit/ColumnConfig/ColumnFilter)
     participant AI as /api/generate-tasks<br/>(Google GenAI)
+    participant Validate as /api/v1/validate/{entity}<br/>(lib/api/fields.ts, app rules)
 
     Note over User,AI: Open board configuration modal<br/>(gear icon, or "Add new column to all rows" menu item)
     alt gear icon
@@ -49,7 +50,14 @@ sequenceDiagram
     Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: newRowName/newRowPrompt changed)
 
     User->>RowModal: submit "Add row" form
-    RowModal->>Actions: addRow(event)<br/>(actions/rowForm.ts)<br/>builds newRow = {id, title, color: blue, order}
+    RowModal->>Actions: addRow(event)<br/>(actions/rowForm.ts)
+    Actions->>Validate: POST /api/v1/validate/row {title: newRowName}
+    alt 422 / unreachable
+        Validate-->>Actions: {error, field}
+        Actions-->>RowModal: resolves to the error -> CreateRowSection shows it<br/>under "Row name" (local state, cleared on typing).<br/>No ROW/ADD, no AI generation
+    end
+    Validate-->>Actions: {ok, values} (title trimmed, newlines -> spaces)
+    Actions->>Actions: newRow = {id, title: values.title, color: blue, order}
 
     alt newRowPrompt is non-empty
         Note over Actions: generateTasksForRow(newRow) — the row is only<br/>created once tasks come back, so the modal stays open
@@ -109,7 +117,7 @@ sequenceDiagram
     Actions->>Ctx: dispatch(TASK/OPEN_CREATE_MODAL, {rowId:"", colId:""})
     Ctx->>Reducer: tasks.openCreateModal
     Reducer-->>Ctx: taskCreateModalOpen=true<br/>taskDraft=emptyTaskDraft("", "")
-    Note over BoardMenu: TaskCreateModal opens with empty, required<br/>Status (colId) + Row (rowId) selects.<br/>createTask gates on form checkValidity() -> submit blocked<br/>until both are chosen, so no orphan (rowId/colId="") task.
+    Note over BoardMenu: TaskCreateModal opens with empty<br/>Status (colId) + Row (rowId) selects.<br/>createTask runs POST /api/v1/validate/task, which rejects an<br/>empty rowId / colId ("Project / Status is required."), so no<br/>orphan (rowId/colId="") task. See task-lifecycle-checklist-ai.mmd.
 
     Note over User,AI: Rename row (RowSection)
     User->>Row: double-click row title
@@ -127,12 +135,19 @@ sequenceDiagram
     Ctx-->>Row: editing RowSection's input re-renders<br/>(RowEditContext: editingRowName changed)
 
     User->>Row: Enter / blur
-    Row->>Actions: saveRowTitle(rowId)
-    Actions->>Ctx: dispatch(ROW/EDIT_SAVE, {rowId})
-    Ctx->>Reducer: rows.editSave
-    Reducer-->>Ctx: rows[rowId].title = trimmed (if non-empty)<br/>editingRowId = null
-    Ctx-->>Row: that RowSection re-renders<br/>(BoardData: row.title changed)<br/>-> shows updated title
-    Ctx-->>Row: every RowSection re-renders<br/>(RowEditContext: editingRowId=null)<br/>-> input reverts to text
+    Row->>Actions: saveRowTitle(rowId)<br/>(actions/rowEdit.ts)
+    Actions->>Validate: POST /api/v1/validate/row {title: editingRowName}
+    alt 422 / unreachable
+        Validate-->>Actions: {error, field}
+        Actions-->>Row: resolves to the error -> input stays open,<br/>message under it (RowSection local state, cleared on typing)
+    else 200
+        Validate-->>Actions: {ok, values}
+        Actions->>Ctx: dispatch(ROW/EDIT_SAVE, {rowId, title: values.title})
+        Ctx->>Reducer: rows.editSave
+        Reducer-->>Ctx: rows[rowId].title = title<br/>editingRowId = null
+        Ctx-->>Row: that RowSection re-renders<br/>(BoardData: row.title changed)<br/>-> shows updated title
+        Ctx-->>Row: every RowSection re-renders<br/>(RowEditContext: editingRowId=null)<br/>-> input reverts to text
+    end
 
     Note over Row: Escape → ROW/EDIT_CANCEL → rows.editCancel<br/>(discards edit, no title change.<br/>every RowSection re-renders via RowEditContext)
 
@@ -179,9 +194,15 @@ sequenceDiagram
     Note over Config: direction + referenceColumnId are local<br/>component useState — no dispatch
 
     User->>Config: click "Add Column" (form submit)
-    Note over Config: native form validation (required name + both selects)<br/>blocks submit until all fields are filled
+    Note over Config: native form validation (both required selects)<br/>blocks submit until a direction and column are picked
     Config->>Actions: addColumn(direction, referenceColumnId)<br/>(actions/columnConfig.ts)
-    Actions->>Ctx: dispatch(COLUMN/ADD, {id, title, order: end, icon: null})
+    Actions->>Validate: POST /api/v1/validate/column {title: defaultColumnInput}
+    alt 422 / unreachable
+        Validate-->>Actions: {error, field}
+        Actions-->>Config: resolves to the error -> shown under<br/>"New column name" (selects kept), no dispatch
+    end
+    Validate-->>Actions: {ok, values}
+    Actions->>Ctx: dispatch(COLUMN/ADD, {id, title: values.title, order: end, icon: null})
     Ctx->>Reducer: columns.add(state, payload)
     Reducer-->>Ctx: columns = [...columns, newColumn]
     Actions->>Ctx: dispatch(COLUMN/REORDER, {columnId: id,<br/>beforeColumnId: left ? referenceId : column after reference})
@@ -204,12 +225,20 @@ sequenceDiagram
     Ctx-->>Cell: the matching ColumnSection (columnId, rowId)<br/>re-renders (ColumnEditContext changed)<br/>-> shows input
 
     User->>Cell: type name, Enter / blur
-    Cell->>Actions: setEditingColumnName(name) -> saveColumnTitle(columnId)
-    Actions->>Ctx: dispatch(COLUMN/RENAME_CHANGE, {name})<br/>dispatch(COLUMN/RENAME_SAVE, {columnId})
-    Ctx->>Reducer: columns.renameChange / renameSave
-    Reducer-->>Ctx: columns[columnId].title = trimmed (if non-empty)<br/>editingColumnId/editingColumnRowId = null
-    Ctx-->>Cell: every ColumnSection for this column<br/>(across all rows) re-renders<br/>(BoardData: column.title changed)<br/>-> shows new title
-    Ctx-->>Cell: the editing ColumnSection re-renders<br/>(ColumnEditContext: editingColumnId=null)<br/>-> input reverts to text
+    Cell->>Actions: setEditingColumnName(name) on each keystroke<br/>-> dispatch(COLUMN/RENAME_CHANGE, {name})
+    Cell->>Actions: saveColumnTitle(columnId) on Enter / blur<br/>(actions/columnEdit.ts)
+    Actions->>Validate: POST /api/v1/validate/column {title: editingColumnName}
+    alt 422 / unreachable
+        Validate-->>Actions: {error, field}
+        Actions-->>Cell: resolves to the error -> input stays open,<br/>message under it (ColumnSection local state, cleared on typing)
+    else 200
+        Validate-->>Actions: {ok, values}
+        Actions->>Ctx: dispatch(COLUMN/RENAME_SAVE, {columnId, title: values.title})
+        Ctx->>Reducer: columns.renameSave
+        Reducer-->>Ctx: columns[columnId].title = title<br/>editingColumnId/editingColumnRowId = null
+        Ctx-->>Cell: every ColumnSection for this column<br/>(across all rows) re-renders<br/>(BoardData: column.title changed)<br/>-> shows new title
+        Ctx-->>Cell: the editing ColumnSection re-renders<br/>(ColumnEditContext: editingColumnId=null)<br/>-> input reverts to text
+    end
 
     Note over Cell: Escape → COLUMN/RENAME_CANCEL → columns.renameCancel<br/>(editing ColumnSection re-renders via ColumnEditContext,<br/>no title change)
 

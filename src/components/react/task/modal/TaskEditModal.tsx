@@ -43,8 +43,14 @@ export default function TaskEditModal() {
   const { trashTask } = useTaskActions();
   const { applyChecklistPreview } = useChecklistAIActions();
   const { close, closeAfter } = useCloseTaskDetails();
-  const { handleSubmit, submitButtonRef, onEditorReady, getDescription } =
-    useTaskFormSubmit(closeAfter(saveTaskEdit));
+  const {
+    handleSubmit,
+    submitButtonRef,
+    onEditorReady,
+    getDescription,
+    errorFor,
+    formError,
+  } = useTaskFormSubmit(closeAfter(saveTaskEdit));
 
   // Trashed tasks open in TaskViewOnlyModal instead.
   const isTrashed = isTaskTrashed(draft, columns);
@@ -87,6 +93,7 @@ export default function TaskEditModal() {
           form={formId}
           value={draft.title}
           onChange={(title) => setEditTaskDraft({ ...draft, title })}
+          error={errorFor("title")}
         />
       }
       comments={<TaskComments taskId={draft.id} />}
@@ -136,6 +143,7 @@ export default function TaskEditModal() {
               columns={columns}
               selectedColId={draft.colId}
               onSelect={(colId) => setEditTaskDraft({ ...draft, colId })}
+              error={errorFor("colId")}
             />
           }
           project={
@@ -144,7 +152,7 @@ export default function TaskEditModal() {
               rows={rows}
               selectedRowId={draft.rowId}
               onSelect={(rowId) => setEditTaskDraft({ ...draft, rowId })}
-              required
+              error={errorFor("rowId")}
             />
           }
           checklist={
@@ -163,6 +171,7 @@ export default function TaskEditModal() {
             />
           }
         />
+        {formError && <p className="text-error text-sm">{formError}</p>}
       </form>
     </ExistingTaskModalWrapper>
   );

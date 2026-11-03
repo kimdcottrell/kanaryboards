@@ -2,7 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from "astro";
 import { authorizeCli } from "@lib/api/cli-auth.ts";
-import { validateFields } from "@lib/api/fields.ts";
+import { checkTaskRefs, validateFields } from "@lib/api/fields.ts";
 import { loadLiveBoard, readJsonObject } from "@lib/api/v1-http.ts";
 import { newTask, taskView } from "@lib/api/board-ops.ts";
 import type { TaskInput } from "@lib/api/board-ops.ts";
@@ -33,12 +33,14 @@ export const POST: APIRoute = async (context) => {
   const body = await readJsonObject(context.request);
   if (body instanceof Response) return body;
   const board = await loadLiveBoard(auth.boardId);
-  const fields = validateFields("task", body, board, [
+  const fields = validateFields("task", body, "cli", [
     "rowId",
     "colId",
     "title",
   ]);
   if (!fields.ok) return jsonResponse({ error: fields.error }, 422);
+  const refs = checkTaskRefs(fields.values, board);
+  if (!refs.ok) return jsonResponse({ error: refs.error }, 422);
   const task = newTask(board, {
     description: "",
     checklist: [],

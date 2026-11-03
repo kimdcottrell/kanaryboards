@@ -12,21 +12,25 @@ export default function RowSettingsSection() {
 
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [editError, setEditError] = useState<string>();
 
   const startRowEdit = (row: Row) => {
     setEditId(row.id);
     setEditName(row.title);
   };
 
-  const saveRowEdit = () => {
-    if (editId) renameRow(editId, editName);
-    setEditId(null);
-    setEditName("");
+  // A validation error keeps the edit open and shows under the input.
+  const saveRowEdit = async () => {
+    if (!editId) return;
+    const result = await renameRow(editId, editName);
+    if (result) setEditError(result.error);
+    else cancelRowEdit();
   };
 
   const cancelRowEdit = () => {
     setEditId(null);
     setEditName("");
+    setEditError(undefined);
   };
 
   return (
@@ -55,22 +59,32 @@ export default function RowSettingsSection() {
             <div>
               {editId === row.id
                 ? (
-                  <input
-                    className="input input-sm input-bordered w-full font-bold"
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.currentTarget.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        saveRowEdit();
-                      } else if (e.key === "Escape") {
-                        cancelRowEdit();
-                      }
-                    }}
-                    onBlur={saveRowEdit}
-                    autoFocus
-                  />
+                  <>
+                    <input
+                      className={`input input-sm input-bordered w-full font-bold${
+                        editError ? " input-error" : ""
+                      }`}
+                      type="text"
+                      value={editName}
+                      onChange={(e) => {
+                        setEditError(undefined);
+                        setEditName(e.currentTarget.value);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          saveRowEdit();
+                        } else if (e.key === "Escape") {
+                          cancelRowEdit();
+                        }
+                      }}
+                      onBlur={saveRowEdit}
+                      autoFocus
+                    />
+                    {editError && (
+                      <p className="text-error text-sm mt-1">{editError}</p>
+                    )}
+                  </>
                 )
                 : (
                   <h4

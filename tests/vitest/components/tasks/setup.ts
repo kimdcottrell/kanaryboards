@@ -98,7 +98,7 @@ export function makeTaskCreateActions(
 ): TaskCreateActions {
   return {
     setTaskDraft: vi.fn(),
-    createTask: vi.fn(),
+    createTask: vi.fn(() => Promise.resolve(null)),
     addChecklistItem: vi.fn(),
     updateChecklistItem: vi.fn(),
     deleteChecklistItem: vi.fn(),
@@ -159,7 +159,7 @@ export function makeTaskEditActions(
 ): TaskEditActions {
   return {
     setEditTaskDraft: vi.fn(),
-    saveTaskEdit: vi.fn(),
+    saveTaskEdit: vi.fn(() => Promise.resolve(null)),
     addEditChecklistItem: vi.fn(),
     updateEditChecklistItem: vi.fn(),
     deleteEditChecklistItem: vi.fn(),
@@ -228,7 +228,7 @@ export function makeBaseBoardState() {
     taskCreateModalOpen: false,
     taskDraft: mockTaskDraft,
     setTaskDraft: vi.fn(),
-    createTask: vi.fn(),
+    createTask: vi.fn(() => Promise.resolve(null)),
     closeTaskCreateModal: vi.fn(),
     addChecklistItem: vi.fn(),
     updateChecklistItem: vi.fn(),
@@ -249,7 +249,7 @@ export function makeBaseBoardState() {
     columns: [mockColumn],
     rows: [mockRow],
     cancelEditTask: vi.fn(),
-    saveTaskEdit: vi.fn(),
+    saveTaskEdit: vi.fn(() => Promise.resolve(null)),
     deleteTask: vi.fn(),
     setEditTaskDraft: vi.fn(),
     addEditChecklistItem: vi.fn(),

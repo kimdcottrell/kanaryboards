@@ -141,7 +141,7 @@ describe("TaskCreateModal", () => {
     ).toBeNull();
   });
 
-  test("renders a required Row select and an optional Status select", () => {
+  test("Row and Status selects leave validation to the save", () => {
     vi.mocked(useTaskCreateState).mockReturnValue(
       makeTaskCreateState({
         taskCreateModalOpen: true,
@@ -149,16 +149,11 @@ describe("TaskCreateModal", () => {
       }),
     );
     const { container } = render(<TaskCreateModal />);
-    const status = container.querySelectorAll<HTMLInputElement>(
-      "input[name='column-select-new']",
+    const radios = container.querySelectorAll<HTMLInputElement>(
+      "input[name='column-select-new'], input[name='row-select-new']",
     );
-    const row = container.querySelectorAll<HTMLInputElement>(
-      "input[name='row-select-new']",
-    );
-    expect(status.length).toBeGreaterThan(0);
-    status.forEach((radio) => expect(radio.required).toBe(false));
-    expect(row.length).toBeGreaterThan(0);
-    row.forEach((radio) => expect(radio.required).toBe(true));
+    expect(radios.length).toBeGreaterThan(0);
+    radios.forEach((radio) => expect(radio.required).toBe(false));
   });
 
   test("Status and Row selects are empty when opened with a blank draft", () => {
@@ -177,7 +172,7 @@ describe("TaskCreateModal", () => {
     ).toBeNull();
   });
 
-  test("title field is labeled and required", () => {
+  test("title field is labeled and has no native required check", () => {
     vi.mocked(useTaskCreateState).mockReturnValue(
       makeTaskCreateState({
         taskCreateModalOpen: true,
@@ -187,7 +182,47 @@ describe("TaskCreateModal", () => {
     render(<TaskCreateModal />);
     expect(
       screen.getByLabelText<HTMLInputElement>("Title").required,
-    ).toBe(true);
+    ).toBe(false);
+  });
+
+  // createTask resolves to /api/v1/validate's error; each field shows its own.
+  const submitWithError = (error: { field?: string; error: string }) => {
+    vi.mocked(useTaskCreateState).mockReturnValue(
+      makeTaskCreateState({
+        taskCreateModalOpen: true,
+        taskDraft: mockTaskDraft,
+      }),
+    );
+    vi.mocked(useTaskCreateActions).mockReturnValue(
+      makeTaskCreateActions({
+        createTask: vi.fn(() => Promise.resolve(error)),
+      }),
+    );
+    render(<TaskCreateModal />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Create task", hidden: true }),
+    );
+  };
+
+  test("a title validation error shows under the title", async () => {
+    submitWithError({ field: "title", error: "Title is required." });
+    expect(await screen.findByText("Title is required.")).toBeTruthy();
+    expect(
+      screen.getByLabelText<HTMLInputElement>("Title").getAttribute(
+        "aria-invalid",
+      ),
+    ).toBe("true");
+  });
+
+  test("a project validation error shows under Project", async () => {
+    submitWithError({ field: "rowId", error: "Project is required." });
+    expect(await screen.findByText("Project is required.")).toBeTruthy();
+  });
+
+  test("an unreachable check shows a form-level error", async () => {
+    submitWithError({ error: "Couldn't check this — try again." });
+    expect(await screen.findByText("Couldn't check this — try again."))
+      .toBeTruthy();
   });
 
   test("renders the checklist and AI checklist generation", () => {
@@ -227,7 +262,7 @@ describe("TaskCreateModal", () => {
   });
 
   test("Create task submits the form to createTask", () => {
-    const createTask = vi.fn();
+    const createTask = vi.fn(() => Promise.resolve(null));
     vi.mocked(useTaskCreateState).mockReturnValue(
       makeTaskCreateState({
         taskCreateModalOpen: true,

@@ -6,14 +6,22 @@ import { preventEdits } from "@lib/dashboard/view-only.ts";
 import { useTaskActions } from "../../context/hooks.ts";
 
 // An existing task's modal lives at /dashboard/task/:id, so every way out of
-// it (close, save, trash, restore, delete) also returns to /dashboard.
+// it (close, save, trash, restore, delete) also returns to /dashboard. A save
+// that resolves to a validation error stays where it is.
 export function useCloseTaskDetails() {
   const navigate = useNavigate();
   const { cancelEditTask } = useTaskActions();
   const closeAfter =
-    <A extends unknown[]>(fn: (...args: A) => void) => (...args: A) => {
-      fn(...args);
+    <A extends unknown[], R>(fn: (...args: A) => R) => (...args: A): R => {
+      const result = fn(...args);
+      if (result instanceof Promise) {
+        return result.then((error) => {
+          if (!error) navigate("/dashboard");
+          return error;
+        }) as R;
+      }
       navigate("/dashboard");
+      return result;
     };
   return { close: closeAfter(cancelEditTask), closeAfter };
 }

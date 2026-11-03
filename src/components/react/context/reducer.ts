@@ -115,7 +115,7 @@ export function boardReducer(
       return tasks.remove(state, action.payload);
 
     case "TASK/SAVE_EDIT":
-      return tasks.saveEdit(state);
+      return tasks.saveEdit(state, action.payload);
 
     case "TASK/MOVE_TO_COLUMN":
       return tasks.moveToColumn(state, action.payload);
