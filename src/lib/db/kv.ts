@@ -135,6 +135,38 @@ export async function applyBoardChanges(
   await commit();
 }
 
+export type EntityKind = "row" | "column" | "task";
+
+// One row/column/task with its versionstamp, which the CLI API hands out as
+// an ETag so an edit can be rejected if the entity changed in the meantime.
+export async function getEntity<T>(
+  kind: EntityKind,
+  boardId: string,
+  id: string,
+): Promise<{ value: T; versionstamp: string } | null> {
+  const kv = await getKv();
+  const entry = await kv.get<T>([kind, boardId, id]);
+  if (entry.versionstamp === null) return null;
+  return { value: entry.value, versionstamp: entry.versionstamp };
+}
+
+// Saves `value` only if its entry is still at `expectedVersion`. Returns the
+// new versionstamp, or null if the entry changed since it was read.
+export async function saveEntity<T extends { id: string }>(
+  kind: EntityKind,
+  boardId: string,
+  value: T,
+  expectedVersion: string,
+): Promise<string | null> {
+  const kv = await getKv();
+  const key = [kind, boardId, value.id];
+  const res = await kv.atomic()
+    .check({ key, versionstamp: expectedVersion })
+    .set(key, value)
+    .commit();
+  return res.ok ? res.versionstamp : null;
+}
+
 export async function deleteBoard(boardId: string): Promise<void> {
   const kv = await getKv();
   await Promise.all(

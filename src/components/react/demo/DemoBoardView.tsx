@@ -5,6 +5,7 @@ import TaskCreateModal from "../task/modal/TaskCreateModal.tsx";
 import TaskEditModal from "../task/modal/TaskEditModal.tsx";
 import TaskViewOnlyModal from "../task/modal/TaskViewOnlyModal.tsx";
 import { useBoardDataState, useTaskActions } from "../context/hooks.ts";
+import { findByShortId } from "@lib/dashboard/short-id.ts";
 
 export default function DemoBoardView() {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ export default function DemoBoardView() {
       return;
     }
     if (syncedTaskId.current === taskId) return;
-    const task = tasks.find((t) => t.id === taskId);
+    const task = findByShortId(tasks, taskId);
     if (task) {
       startEditTask(task);
       syncedTaskId.current = taskId;

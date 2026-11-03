@@ -14,7 +14,7 @@ sequenceDiagram
     participant Tab as other tabs<br/>(BroadcastChannel<br/>board-sync:kv / board-sync:local)
 
     Note over User,LS: Initial mount
-    User->>Router: navigate to "/dashboard"<br/>(or deep-link "/dashboard/row/:rowId"<br/>from the drawer's project-row list)
+    User->>Router: navigate to "/dashboard"<br/>(or deep-link "/dashboard/row/:shortId"<br/>from the drawer's project-row list)
     Note over User,Router: On the dashboard, drawer row clicks (the data-board-link anchors)<br/>are intercepted by BoardController and routed via router.navigate<br/>client-side, so there is no reload and no BOARD/LOAD. This reaches the<br/>rowId param scroll step below. Off the SPA it is a full page load.
     Router->>Provider: render BoardProvider<br/>useReducer(boardReducer, createInitialState)
     Provider->>View: initial render, boardLoaded = false
@@ -88,7 +88,7 @@ sequenceDiagram
     Reducer-->>Provider: columns backfilled (normalizeColumn: legacy<br/>boards missing pin/icon/isTrash fields), Trash column<br/>appended if missing, rows/columns sorted by order<br/>(Trash forced last), tasks backfilled (normalizeTask:<br/>trashedAt/preTrashColId = null), expired Trash tasks<br/>(trashedAt 30+ days old) dropped, tasks whose row or<br/>column is missing dropped (KV has no cascade),<br/>boardLoaded = true
     Provider->>View: BoardView, RowBoard, BoardConfigModal<br/>all re-render (BoardDataContext: rows/columns/<br/>tasks/boardLoaded changed)<br/>-> RowBoard mounts one RowSection per row<br/>(or, when rows is empty e.g. after BOARD/RESET,<br/>the empty state: prompt + inline CreateRowSection),<br/>BoardConfigModal's sections render row/column settings
     View->>View: BoardView useEffect[boardLoaded]<br/>-> document.documentElement.dataset.boardLoaded = "true"<br/>(for e2e hydration gating)
-    opt rowId param present (entered via "/dashboard/row/:rowId")
+    opt rowId param present (entered via "/dashboard/row/:shortId"; findByShortId(rows, rowId))
         View->>View: BoardView finds row by id, then<br/>requestAnimationFrame -> document.getElementById<br/>("row-section-{rowId}").scrollIntoView({block:"start"})<br/>(unknown id -> navigate("/dashboard", replace))
     end
 

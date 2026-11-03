@@ -62,7 +62,7 @@ sequenceDiagram
     Actions->>Ctx: dispatch(TASK/OPEN_EDIT_MODAL, {task})<br/>(task = {...task, stored title/description/<br/>rowId/colId/checklist} if stored)
     Ctx->>Reducer: tasks.openEditModal(state, {task})
     Reducer-->>Ctx: editingTaskId = task.id<br/>editTaskDraft = normalized clone<br/>taskEditModalOpen = true
-    Card->>Card: navigate(/dashboard/task/:id)
+    Card->>Card: navigate(/dashboard/task/:shortId)<br/>(shortId = last 8 chars of task.id)
     Ctx-->>TaskModal: TaskEditModal re-renders<br/>(TaskEditContext: taskEditModalOpen=true)<br/>-> opens (task not in Trash)
     TaskModal-->>Form: task fields + ChecklistSection mount<br/>(taskDraft = editTaskDraft)
     Note over TaskModal,Drafts: TaskEditModal passes PostEditPreSaveAlert(taskId) to the<br/>ExistingTaskModalWrapper alert slot; it reads updatedAt<br/>once per task id -> "last edited …" alert

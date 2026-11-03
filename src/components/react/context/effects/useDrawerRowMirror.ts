@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import type { Row } from "../types.ts";
 import { byOrder } from "../ordering.ts";
+import { shortId } from "@lib/dashboard/short-id.ts";
 
 // DrawerMenu.astro renders its row list outside this React island (an Astro
 // server island, hydrated once at load), so it never learns about client-side
@@ -21,7 +22,7 @@ export function useDrawerRowMirror(
       ...[...rows].sort(byOrder).map((row) => {
         const li = document.createElement("li");
         const a = document.createElement("a");
-        a.href = `/dashboard/row/${row.id}`;
+        a.href = `/dashboard/row/${shortId(row.id)}`;
         a.dataset.boardLink = "";
         a.textContent = row.title;
         li.appendChild(a);

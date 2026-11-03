@@ -74,6 +74,7 @@ import {
 } from "@components/react/context/hooks.ts";
 import TaskCard from "@components/react/task/TaskCard.tsx";
 import TaskEditModal from "@components/react/task/modal/TaskEditModal.tsx";
+import { shortId } from "@lib/dashboard/short-id.ts";
 import BoardView from "@components/react/BoardView.tsx";
 import {
   makeBoardDataState,
@@ -142,14 +143,16 @@ describe("TaskCard — URL navigation", () => {
   test("clicking the task title navigates to /dashboard/task/:id", () => {
     const { getByText } = render(<TaskCard {...cardProps} />);
     fireEvent.click(getByText(urlTask.title));
-    expect(mockNavigate).toHaveBeenCalledWith(`/dashboard/task/${urlTask.id}`);
+    expect(mockNavigate).toHaveBeenCalledWith(
+      `/dashboard/task/${shortId(urlTask.id)}`,
+    );
   });
 
   test("navigate receives the exact task ID (URL is deterministic from task ID)", () => {
     const { getByText } = render(<TaskCard {...cardProps} />);
     fireEvent.click(getByText(urlTask.title));
     const [url] = mockNavigate.mock.calls[0] as [string];
-    expect(url).toBe(`/dashboard/task/task-abc-123`);
+    expect(url).toBe(`/dashboard/task/${shortId("task-abc-123")}`);
   });
 
   test("startEditTask is called alongside navigate when clicking the title", () => {
@@ -160,7 +163,9 @@ describe("TaskCard — URL navigation", () => {
     const { getByText } = render(<TaskCard {...cardProps} />);
     fireEvent.click(getByText(urlTask.title));
     expect(startEditTask).toHaveBeenCalledWith(urlTask);
-    expect(mockNavigate).toHaveBeenCalledWith(`/dashboard/task/${urlTask.id}`);
+    expect(mockNavigate).toHaveBeenCalledWith(
+      `/dashboard/task/${shortId(urlTask.id)}`,
+    );
   });
 
   test("clicking the edit (pencil) icon also navigates to /dashboard/task/:id", () => {
@@ -169,7 +174,9 @@ describe("TaskCard — URL navigation", () => {
       ".hugeicons--edit-03",
     ) as HTMLElement;
     fireEvent.click(icon);
-    expect(mockNavigate).toHaveBeenCalledWith(`/dashboard/task/${urlTask.id}`);
+    expect(mockNavigate).toHaveBeenCalledWith(
+      `/dashboard/task/${shortId(urlTask.id)}`,
+    );
   });
 
   test("different tasks produce different navigate URLs", () => {
@@ -178,7 +185,9 @@ describe("TaskCard — URL navigation", () => {
       <TaskCard {...cardProps} task={otherTask} />,
     );
     fireEvent.click(getByText(otherTask.title));
-    expect(mockNavigate).toHaveBeenCalledWith("/dashboard/task/task-xyz-999");
+    expect(mockNavigate).toHaveBeenCalledWith(
+      `/dashboard/task/${shortId("task-xyz-999")}`,
+    );
   });
 });
 

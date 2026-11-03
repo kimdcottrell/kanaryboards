@@ -93,7 +93,9 @@ const BOARD_STATE = {
 const DASHBOARD_READY = "html[data-board-loaded='true']";
 
 function rowLink(page: Page, id: string) {
-  return page.locator(`#drawer-row-list a[href="/dashboard/row/${id}"]`);
+  return page.locator(
+    `#drawer-row-list a[href="/dashboard/row/${id.slice(-8)}"]`,
+  );
 }
 
 async function openDrawer(page: Page): Promise<void> {

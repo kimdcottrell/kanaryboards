@@ -1,0 +1,8 @@
+{
+  // Used only by `deno task cli:compile`: without the repo's package.json and
+  // node_modules, the binary embeds just commander instead of every app
+  // dependency (over 1GB).
+  "imports": { "commander": "npm:commander@14.0.1" },
+  "nodeModulesDir": "none",
+  "lock": false
+}

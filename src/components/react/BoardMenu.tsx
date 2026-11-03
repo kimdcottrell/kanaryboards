@@ -1,6 +1,7 @@
 import DynamicIcon from "./shared/DynamicIcon.tsx";
 import { useSharedMenuActions } from "./context/hooks.ts";
 import { byOrder } from "./context/ordering.ts";
+import { shortId } from "@lib/dashboard/short-id.ts";
 
 export default function BoardMenu(
   { isSticky, isPreview }: { isSticky?: boolean; isPreview?: boolean },
@@ -48,7 +49,7 @@ export default function BoardMenu(
           <ul className="w-max" data-drawer-row-list-mirror>
             {sortedRows.map((row) => (
               <li key={row.id}>
-                <a href={`/dashboard/row/${row.id}`} data-board-link>
+                <a href={`/dashboard/row/${shortId(row.id)}`} data-board-link>
                   {row.title}
                 </a>
               </li>

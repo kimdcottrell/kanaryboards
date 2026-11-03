@@ -58,6 +58,11 @@
     // astro.config.mjs), so node_modules can go once the build is done.
     // package.json goes too, or the compile reinstalls every dependency.
     "build:deploy": "deno task build && rm -rf node_modules package.json",
+    // The kanby CLI (cli/README.md). DENO_TLS_CA_STORE=system trusts the
+    // locally installed CA that signs https://kanary.local.dev.
+    "cli": "KANBY_API_URL=http://localhost:4321 DENO_TLS_CA_STORE=system deno run --allow-net --allow-env --allow-read --allow-write --allow-run cli/main.ts",
+    "cli:compile": "deno compile --config cli/deno.jsonc --allow-net --allow-env --allow-read --allow-write --allow-run --output cli/bin/kanby cli/main.ts",
+    "cli:test": "deno test --allow-env --allow-read --allow-net=127.0.0.1 cli/",
     "dev": "astro dev",
     "e2e-test": "deno task playwright test --project=chromium --project=chromium-shared-account",
     "e2e-test:ui": "deno task playwright test --ui-port=8080 --ui-host=0.0.0.0",
