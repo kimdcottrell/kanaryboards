@@ -76,18 +76,18 @@ test.describe("Board persistence across sign-in", () => {
     // Clerk instance and resolves once Clerk.user is set.
     await clerk.signIn({ page, emailAddress: E2E_EMAIL });
 
-    // The post-sign-in BOARD/LOAD schedules a debounced (500ms) autosave PUT to
-    // /api/board. Track those PUT responses so we can wait for them to settle
-    // before the test ends — otherwise a late PUT is processed after afterEach's
+    // The post-sign-in BOARD/LOAD schedules a debounced (500ms) autosave PATCH to
+    // /api/board. Track those PATCH responses so we can wait for them to settle
+    // before the test ends — otherwise a late PATCH is processed after afterEach's
     // delete and resurrects the board (the /api/board middleware re-creates the
     // user_board mapping on any authenticated write), which the next repeat then
     // reads as stale remote data instead of migrating its own localStorage row.
-    let lastBoardPutAt = Date.now();
+    let lastBoardPatchAt = Date.now();
     page.on("response", (resp) => {
       if (
-        resp.url().endsWith("/api/board") && resp.request().method() === "PUT"
+        resp.url().endsWith("/api/board") && resp.request().method() === "PATCH"
       ) {
-        lastBoardPutAt = Date.now();
+        lastBoardPatchAt = Date.now();
       }
     });
 
@@ -99,11 +99,11 @@ test.describe("Board persistence across sign-in", () => {
     await expect(newRow.getByText(rowName)).toBeVisible();
     await expect(newRow.getByText(taskName)).toBeVisible();
 
-    // Wait until /api/board PUTs have quiesced (>700ms since the last one) so
+    // Wait until /api/board PATCHes have quiesced (>700ms since the last one) so
     // afterEach's delete is the final KV write and can't be undone by a late
-    // autosave PUT.
+    // autosave PATCH.
     await expect
-      .poll(() => Date.now() - lastBoardPutAt, { timeout: 10_000 })
+      .poll(() => Date.now() - lastBoardPatchAt, { timeout: 10_000 })
       .toBeGreaterThan(700);
   });
 });

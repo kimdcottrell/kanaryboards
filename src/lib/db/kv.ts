@@ -35,24 +35,111 @@ export async function setBoardIdForUser(
   await kv.set(["user_board", userId], boardId);
 }
 
+// Each row, column and task is its own entry, so saving one never rewrites
+// the others and the board as a whole isn't bound by the 64KiB value limit.
+// Key: [kind, boardId, id]. Boards saved before this live in a single
+// ["board", boardId] entry until getBoard migrates them.
+
+// Only what changed since the last save (PATCH /api/board).
+export interface BoardChanges {
+  upserts: PersistedBoard;
+  deletes: { rowIds: string[]; columnIds: string[]; taskIds: string[] };
+}
+
+async function listValues<T>(prefix: Deno.KvKey): Promise<T[]> {
+  const kv = await getKv();
+  const values: T[] = [];
+  for await (const entry of kv.list<T>({ prefix })) values.push(entry.value);
+  return values;
+}
+
+async function listBoard(boardId: string): Promise<PersistedBoard | null> {
+  const [rows, columns, tasks] = await Promise.all([
+    listValues<Row>(["row", boardId]),
+    listValues<Column>(["column", boardId]),
+    listValues<Task>(["task", boardId]),
+  ]);
+  if (rows.length || columns.length || tasks.length) {
+    return { rows, columns, tasks };
+  }
+  return null;
+}
+
 export async function getBoard(
   boardId: string,
 ): Promise<PersistedBoard | null> {
+  const board = await listBoard(boardId);
+  if (board) return board;
   const kv = await getKv();
-  const result = await kv.get<PersistedBoard>(["board", boardId]);
-  return result.value;
+  const legacy = await kv.get<PersistedBoard>(["board", boardId]);
+  if (!legacy.value) return null;
+  // One commit, checked against the legacy entry: if another request migrated
+  // it first, the user may have saved since, so keep what's stored. A legacy
+  // board fits in one commit: it was capped at 64KiB.
+  const atomic = kv.atomic().check(legacy).delete(["board", boardId]);
+  const { rows, columns, tasks } = legacy.value;
+  for (const row of rows) atomic.set(["row", boardId, row.id], row);
+  for (const col of columns) atomic.set(["column", boardId, col.id], col);
+  for (const task of tasks) atomic.set(["task", boardId, task.id], task);
+  const res = await atomic.commit();
+  if (!res.ok) return listBoard(boardId);
+  return legacy.value;
 }
 
-export async function saveBoard(
+// Deno KV caps one atomic commit at 1000 mutations and 800KiB; leave headroom
+// for key and encoding overhead.
+const MAX_COMMIT_MUTATIONS = 1000;
+const MAX_COMMIT_BYTES = 750 * 1024;
+
+// Commits atomically, unless the changes exceed one commit's limits; then
+// each chunk is atomic on its own.
+export async function applyBoardChanges(
   boardId: string,
-  board: PersistedBoard,
+  { upserts, deletes }: BoardChanges,
 ): Promise<void> {
   const kv = await getKv();
-  await kv.set(["board", boardId], board);
+  const set = (kind: string) => (value: { id: string }): Deno.KvMutation => ({
+    type: "set",
+    key: [kind, boardId, value.id],
+    value,
+  });
+  const del = (kind: string) => (id: string): Deno.KvMutation => ({
+    type: "delete",
+    key: [kind, boardId, id],
+  });
+  const mutations = [
+    ...upserts.rows.map(set("row")),
+    ...upserts.columns.map(set("column")),
+    ...upserts.tasks.map(set("task")),
+    ...deletes.rowIds.map(del("row")),
+    ...deletes.columnIds.map(del("column")),
+    ...deletes.taskIds.map(del("task")),
+  ];
+  let batch: Deno.KvMutation[] = [];
+  let bytes = 0;
+  const commit = async () => {
+    if (batch.length > 0) await kv.atomic().mutate(...batch).commit();
+    batch = [];
+    bytes = 0;
+  };
+  for (const mutation of mutations) {
+    const size = new TextEncoder().encode(JSON.stringify(mutation)).length;
+    if (
+      batch.length === MAX_COMMIT_MUTATIONS || bytes + size > MAX_COMMIT_BYTES
+    ) {
+      await commit();
+    }
+    batch.push(mutation);
+    bytes += size;
+  }
+  await commit();
 }
 
 export async function deleteBoard(boardId: string): Promise<void> {
   const kv = await getKv();
+  await Promise.all(
+    ["row", "column", "task"].map((kind) => deleteByPrefix([kind, boardId])),
+  );
   await kv.delete(["board", boardId]);
 }
 
@@ -134,10 +221,12 @@ export function deleteBoardComments(boardId: string): Promise<void> {
 const ORPHAN_COMMENT_GRACE_MS = 24 * 60 * 60 * 1000;
 
 // Permanently deletes every Trash task whose `trashedAt` is past retention, on
-// every board. Each board is rewritten with an atomic versionstamp check; a
-// board the user saved mid-run is skipped and picked up by the next run.
-// Then deletes the board's comments whose task is no longer on it (purged here,
-// expired on load, or removed with its row/column) — KV has no cascade.
+// every board (`trashedAt` is only set while a task is in Trash). Each delete
+// checks the task's versionstamp; a task the user saved mid-run is skipped and
+// picked up by the next run. Then deletes comments whose task is gone (purged
+// here, expired on load, or removed with its row/column) — KV has no cascade.
+// Boards still in the legacy ["board", boardId] entry are migrated first, so
+// their tasks are under ["task"] like every other board's.
 export async function purgeExpiredTrash(now = Date.now()): Promise<{
   boardsScanned: number;
   boardsUpdated: number;
@@ -146,56 +235,41 @@ export async function purgeExpiredTrash(now = Date.now()): Promise<{
   conflicts: number;
 }> {
   const kv = await getKv();
-  const result = {
-    boardsScanned: 0,
-    boardsUpdated: 0,
-    tasksDeleted: 0,
-    commentsDeleted: 0,
-    conflicts: 0,
-  };
-  for await (const entry of kv.list<PersistedBoard>({ prefix: ["board"] })) {
-    result.boardsScanned++;
-    const board = entry.value;
-    const boardId = entry.key[1] as string;
-    const trashIds = new Set(
-      board.columns.filter((c) => c.isTrash).map((c) => c.id),
-    );
-    const expiredIds = new Set(
-      board.tasks.filter((t) =>
-        trashIds.has(t.colId) && isTrashExpired(t.trashedAt ?? null, now)
-      ).map((t) => t.id),
-    );
-    const tasks = board.tasks.filter((t) => !expiredIds.has(t.id));
-
-    if (expiredIds.size > 0) {
-      const res = await kv.atomic()
-        .check(entry)
-        .set(entry.key, { ...board, tasks })
-        .commit();
-      // The board changed mid-run, so `tasks` may be stale; skip the comment
-      // sweep too rather than delete comments of a task just added.
-      if (!res.ok) {
-        result.conflicts++;
-        continue;
-      }
-      result.boardsUpdated++;
-      result.tasksDeleted += expiredIds.size;
-    }
-
-    const taskIds = new Set(tasks.map((t) => t.id));
-    for await (
-      const comment of kv.list<TaskComment>({
-        prefix: ["task_comment", boardId],
-      })
-    ) {
-      const { taskId, createdAt } = comment.value;
-      if (taskIds.has(taskId)) continue;
-      if (now - Date.parse(createdAt) < ORPHAN_COMMENT_GRACE_MS) continue;
-      await kv.delete(comment.key);
-      result.commentsDeleted++;
-    }
+  const scanned = new Set<string>();
+  const updated = new Set<string>();
+  const result = { tasksDeleted: 0, commentsDeleted: 0, conflicts: 0 };
+  for await (const entry of kv.list({ prefix: ["board"] })) {
+    await getBoard(entry.key[1] as string);
   }
-  return result;
+  for await (const entry of kv.list<Task>({ prefix: ["task"] })) {
+    const boardId = entry.key[1] as string;
+    scanned.add(boardId);
+    if (!isTrashExpired(entry.value.trashedAt ?? null, now)) continue;
+    const res = await kv.atomic().check(entry).delete(entry.key).commit();
+    if (!res.ok) {
+      result.conflicts++;
+      continue;
+    }
+    updated.add(boardId);
+    result.tasksDeleted++;
+  }
+
+  for await (
+    const comment of kv.list<TaskComment>({ prefix: ["task_comment"] })
+  ) {
+    const boardId = comment.key[1] as string;
+    const { taskId, createdAt } = comment.value;
+    if (now - Date.parse(createdAt) < ORPHAN_COMMENT_GRACE_MS) continue;
+    const task = await kv.get(["task", boardId, taskId]);
+    if (task.versionstamp !== null) continue;
+    await kv.delete(comment.key);
+    result.commentsDeleted++;
+  }
+  return {
+    boardsScanned: scanned.size,
+    boardsUpdated: updated.size,
+    ...result,
+  };
 }
 
 /** For unit tests only — injects a KV instance to replace the module singleton. */

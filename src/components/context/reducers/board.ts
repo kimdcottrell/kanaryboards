@@ -132,13 +132,19 @@ export function load(
     );
   }
   const expired = expiredTrashTaskIds(columns, tasks, Date.now());
+  const rowIds = new Set(rows.map((r) => r.id));
+  const colIds = new Set(columns.map((c) => c.id));
   return {
     ...state,
     rows: [...rows].sort((a, b) => a.order < b.order ? -1 : 1),
     columns,
     // Expired Trash tasks are dropped here too: localStorage boards never
     // reach /api/purge-trash, and a stale tab may have re-saved purged tasks.
-    tasks: tasks.map(normalizeTask).filter((t) => !expired.has(t.id)),
+    // So are tasks whose row or column is gone: KV has no cascade, so a stale
+    // device can save a task into a row or column another device deleted.
+    tasks: tasks.map(normalizeTask).filter((t) =>
+      !expired.has(t.id) && rowIds.has(t.rowId) && colIds.has(t.colId)
+    ),
     boardLoaded: true,
   };
 }

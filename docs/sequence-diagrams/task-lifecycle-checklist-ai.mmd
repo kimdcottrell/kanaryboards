@@ -226,4 +226,4 @@ sequenceDiagram
 
     Note over User,AI: Autosave (debounced, async)
     Ctx->>Ctx: useBoardPersistence: useEffect on tasks (500ms debounce)
-    Ctx->>Ctx: PUT /api/board {rows, columns, tasks}<br/>(or localStorage if unauthenticated)
+    Ctx->>Ctx: PATCH /api/board {upserts, deletes} (only changed entities)<br/>(or full localStorage write if unauthenticated)

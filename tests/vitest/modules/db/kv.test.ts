@@ -2,12 +2,12 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import {
   _setKvForTest,
+  applyBoardChanges,
   deleteBoard,
   getBoard,
   getBoardIdForUser,
   listTaskComments,
   purgeExpiredTrash,
-  saveBoard,
   saveTaskComment,
   setBoardIdForUser,
 } from "@lib/db/kv.ts";
@@ -83,10 +83,15 @@ const sampleBoard: PersistedBoard = {
   ],
 };
 
-// ── saveBoard / getBoard ──────────────────────────────────────────────────────
+const noDeletes = { rowIds: [], columnIds: [], taskIds: [] };
+const noUpserts: PersistedBoard = { rows: [], columns: [], tasks: [] };
+const saveBoard = (id: string, board: PersistedBoard) =>
+  applyBoardChanges(id, { upserts: board, deletes: noDeletes });
 
-describe("saveBoard / getBoard", () => {
-  test("getBoard returns the persisted board after saveBoard", async () => {
+// ── applyBoardChanges / getBoard ──────────────────────────────────────────────
+
+describe("applyBoardChanges / getBoard", () => {
+  test("getBoard returns the persisted board after applyBoardChanges", async () => {
     await saveBoard(boardId, sampleBoard);
     const board = await getBoard(boardId);
     expect(board?.tasks).toHaveLength(2);
@@ -97,16 +102,61 @@ describe("saveBoard / getBoard", () => {
     expect(await getBoard("nonexistent")).toBeNull();
   });
 
-  test("overwrites the board on a second saveBoard call", async () => {
+  test("updates only the upserted entities", async () => {
     await saveBoard(boardId, sampleBoard);
-    const updated: PersistedBoard = {
-      ...sampleBoard,
-      tasks: [{ ...sampleBoard.tasks[0], title: "Write better tests" }],
-    };
-    await saveBoard(boardId, updated);
+    await applyBoardChanges(boardId, {
+      upserts: {
+        ...noUpserts,
+        tasks: [{ ...sampleBoard.tasks[0], title: "Write better tests" }],
+      },
+      deletes: noDeletes,
+    });
     const board = await getBoard(boardId);
-    expect(board?.tasks).toHaveLength(1);
-    expect(board?.tasks[0].title).toBe("Write better tests");
+    expect(board?.tasks.map((t) => t.title)).toEqual([
+      "Write better tests",
+      "Deploy",
+    ]);
+    expect(board?.rows).toEqual(sampleBoard.rows);
+    expect(board?.columns).toEqual(sampleBoard.columns);
+  });
+
+  test("changes to different tasks from separate saves both persist", async () => {
+    await saveBoard(boardId, sampleBoard);
+    const [a, b] = sampleBoard.tasks;
+    await applyBoardChanges(boardId, {
+      upserts: { ...noUpserts, tasks: [{ ...a, title: "From phone" }] },
+      deletes: noDeletes,
+    });
+    await applyBoardChanges(boardId, {
+      upserts: { ...noUpserts, tasks: [{ ...b, title: "From laptop" }] },
+      deletes: noDeletes,
+    });
+    const board = await getBoard(boardId);
+    expect(board?.tasks.map((t) => t.title)).toEqual([
+      "From phone",
+      "From laptop",
+    ]);
+  });
+
+  test("deletes only the named entities", async () => {
+    await saveBoard(boardId, sampleBoard);
+    await applyBoardChanges(boardId, {
+      upserts: noUpserts,
+      deletes: { rowIds: [], columnIds: ["col-2"], taskIds: ["task-b"] },
+    });
+    const board = await getBoard(boardId);
+    expect(board?.columns.map((c) => c.id)).toEqual(["col-1"]);
+    expect(board?.tasks.map((t) => t.id)).toEqual(["task-a"]);
+    expect(board?.rows).toEqual(sampleBoard.rows);
+  });
+
+  test("splits changes past one commit's 1000-mutation limit", async () => {
+    const tasks = Array.from({ length: 1500 }, (_, i) => ({
+      ...sampleBoard.tasks[1],
+      id: `task-${String(i).padStart(4, "0")}`,
+    }));
+    await saveBoard(boardId, { ...sampleBoard, tasks });
+    expect((await getBoard(boardId))?.tasks).toHaveLength(1500);
   });
 
   test("board preserves row title and order fields", async () => {
@@ -128,13 +178,64 @@ describe("saveBoard / getBoard", () => {
     const board = await getBoard(boardId);
     expect(board?.tasks[0].order).toBe("a0");
   });
+
+  test("migrates a legacy single-entry board on first read", async () => {
+    await memKv.set(["board", boardId], sampleBoard);
+    expect(await getBoard(boardId)).toEqual(sampleBoard);
+    expect((await memKv.get(["board", boardId])).value).toBeNull();
+    expect((await memKv.get(["task", boardId, "task-a"])).value).toEqual(
+      sampleBoard.tasks[0],
+    );
+    expect(await getBoard(boardId)).toEqual(sampleBoard);
+  });
+
+  test("a migration that lost a race keeps what was saved since", async () => {
+    await memKv.set(["board", boardId], sampleBoard);
+    const edited = { ...sampleBoard.tasks[0], title: "Saved after migrating" };
+    // Between this read of the legacy entry and its migration commit, another
+    // request migrates the board and the user saves an edit.
+    const racingKv = new Proxy(memKv, {
+      get(target, prop) {
+        if (prop === "get") {
+          return async (key: Deno.KvKey) => {
+            const entry = await target.get(key);
+            if (key[0] === "board") {
+              _setKvForTest(memKv);
+              await getBoard(boardId);
+              await applyBoardChanges(boardId, {
+                upserts: { ...noUpserts, tasks: [edited] },
+                deletes: noDeletes,
+              });
+            }
+            return entry;
+          };
+        }
+        const value = Reflect.get(target, prop);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    _setKvForTest(racingKv);
+
+    const board = await getBoard(boardId);
+
+    expect(board?.tasks[0]).toEqual(edited);
+    expect((await memKv.get(["task", boardId, "task-a"])).value).toEqual(
+      edited,
+    );
+  });
 });
 
 // ── deleteBoard ───────────────────────────────────────────────────────────────
 
 describe("deleteBoard", () => {
-  test("removes the board entry so getBoard returns null", async () => {
+  test("removes every entity so getBoard returns null", async () => {
     await saveBoard(boardId, sampleBoard);
+    await deleteBoard(boardId);
+    expect(await getBoard(boardId)).toBeNull();
+  });
+
+  test("removes a legacy single-entry board", async () => {
+    await memKv.set(["board", boardId], sampleBoard);
     await deleteBoard(boardId);
     expect(await getBoard(boardId)).toBeNull();
   });
@@ -242,9 +343,9 @@ describe("purgeExpiredTrash", () => {
     });
     const board = await getBoard(boardId);
     expect(board?.tasks.map((t) => t.id)).toEqual([
+      "recent",
       "task-a",
       "task-b",
-      "recent",
     ]);
     expect(await listTaskComments(boardId, "expired")).toEqual([]);
     expect(await getBoard("untouched-board")).toEqual(sampleBoard);
@@ -282,5 +383,33 @@ describe("purgeExpiredTrash", () => {
     const result = await purgeExpiredTrash(now);
     expect(result.tasksDeleted).toBe(0);
     expect(await getBoard(boardId)).toEqual(sampleBoard);
+  });
+
+  test("migrates legacy single-entry boards, then purges them", async () => {
+    await memKv.set(["board", boardId], trashBoard());
+    const comment = (id: string, taskId: string) => ({
+      id,
+      taskId,
+      authorId: null,
+      authorName: "A",
+      authorImageUrl: null,
+      content: "",
+      createdAt: daysAgo(31),
+      updatedAt: null,
+    });
+    await saveTaskComment(boardId, comment("c1", "expired"));
+    await saveTaskComment(boardId, comment("c2", "task-a"));
+
+    const result = await purgeExpiredTrash(now);
+
+    expect(result).toMatchObject({ tasksDeleted: 1, commentsDeleted: 1 });
+    expect((await memKv.get(["board", boardId])).value).toBeNull();
+    expect((await getBoard(boardId))?.tasks.map((t) => t.id)).toEqual([
+      "recent",
+      "task-a",
+      "task-b",
+    ]);
+    expect(await listTaskComments(boardId, "expired")).toEqual([]);
+    expect(await listTaskComments(boardId, "task-a")).toHaveLength(1);
   });
 });

@@ -33,7 +33,7 @@ function restoreLocation() {
 }
 
 // Default fetch: /api/generate-tasks succeeds, GET /api/board 404s (no board
-// yet), PUT /api/board succeeds.
+// yet), PATCH /api/board succeeds.
 function makeFetch(
   generate: () => Promise<{ ok: boolean; json: () => Promise<unknown> }>,
 ) {
@@ -163,7 +163,7 @@ describe("HeroStartForm", () => {
     );
   });
 
-  test("authenticated: persists via PUT /api/board before redirecting", async () => {
+  test("authenticated: persists via PATCH /api/board before redirecting", async () => {
     clerk.isSignedIn = true;
     const fetchMock = makeFetch(generateOk);
     vi.stubGlobal("fetch", fetchMock);
@@ -174,16 +174,24 @@ describe("HeroStartForm", () => {
     await waitFor(() => expect(globalThis.location.href).toBe("/dashboard"));
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/board",
-      expect.objectContaining({ method: "PUT" }),
+      expect.objectContaining({ method: "PATCH" }),
     );
+    const patch = fetchMock.mock.calls.find(([, init]) =>
+      init?.method === "PATCH"
+    )!;
+    const body = JSON.parse((patch[1] as { body: string }).body);
+    expect(body.upserts.rows.map((r: { title: string }) => r.title)).toEqual([
+      "Plan a party",
+    ]);
+    expect(body.deletes).toEqual({ rowIds: [], columnIds: [], taskIds: [] });
   });
 
-  test("authenticated: a failed PUT shows an error and does not redirect", async () => {
+  test("authenticated: a failed PATCH shows an error and does not redirect", async () => {
     clerk.isSignedIn = true;
     const fetchMock = vi.fn((input: string, init?: { method?: string }) => {
       const url = String(input);
       if (url.includes("/api/generate-tasks")) return generateOk();
-      if (init?.method === "PUT") {
+      if (init?.method === "PATCH") {
         return Promise.resolve({
           ok: false,
           status: 400,
@@ -208,12 +216,12 @@ describe("HeroStartForm", () => {
     expect(globalThis.location.href).toBe("");
   });
 
-  test("authenticated: backfills legacy column fields before the PUT", async () => {
+  test("authenticated: backfills legacy column fields before the PATCH", async () => {
     clerk.isSignedIn = true;
     const fetchMock = vi.fn((input: string, init?: { method?: string }) => {
       const url = String(input);
       if (url.includes("/api/generate-tasks")) return generateOk();
-      if (init?.method === "PUT") {
+      if (init?.method === "PATCH") {
         return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
       }
       return Promise.resolve({
@@ -233,10 +241,10 @@ describe("HeroStartForm", () => {
 
     await waitFor(() => expect(globalThis.location.href).toBe("/dashboard"));
     const put = fetchMock.mock.calls.find(([, init]) =>
-      init?.method === "PUT"
+      init?.method === "PATCH"
     )!;
     const body = JSON.parse((put[1] as { body: string }).body);
-    expect(body.columns[0]).toMatchObject({
+    expect(body.upserts.columns[0]).toMatchObject({
       pinnedToShortcut: false,
       pinnedToDock: false,
       icon: null,

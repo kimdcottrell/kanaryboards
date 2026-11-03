@@ -1,10 +1,127 @@
-import { useEffect, useRef } from "react";
-import type { Dispatch } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { Dispatch, RefObject } from "react";
 import type { BoardAction, BoardData, BoardState } from "../types.ts";
+import type { BoardChanges } from "@lib/db/kv.ts";
 import { expiredTrashTaskIds } from "../reducers/board.ts";
 import { pruneLocalComments } from "../../task/comments/commentStore.ts";
 import { STORAGE_KEY } from "../constants.ts";
 import { createDemoBoard } from "../../demo/demoBoardData.ts";
+
+type Entities = Record<"rows" | "columns" | "tasks", { id: string }[]>;
+
+// What the server last confirmed, as each entity's JSON by id. Authenticated
+// autosave sends only what differs from it.
+export type SavedBoard = Record<keyof Entities, Map<string, string>>;
+
+export function toSavedBoard(board: Entities): SavedBoard {
+  const byId = (items: { id: string }[]) =>
+    new Map(items.map((item) => [item.id, JSON.stringify(item)]));
+  return {
+    rows: byId(board.rows),
+    columns: byId(board.columns),
+    tasks: byId(board.tasks),
+  };
+}
+
+// Rows/columns/tasks that are new or changed since `saved`, and the ids of
+// those no longer on the board. null when nothing changed.
+export function diffBoard(
+  saved: SavedBoard,
+  board: Pick<BoardData, "rows" | "columns" | "tasks">,
+): BoardChanges | null {
+  const changed = <T extends { id: string }>(
+    items: T[],
+    prev: Map<string, string>,
+  ) => items.filter((item) => prev.get(item.id) !== JSON.stringify(item));
+  const removed = (items: { id: string }[], prev: Map<string, string>) => {
+    const ids = new Set(items.map((item) => item.id));
+    return [...prev.keys()].filter((id) => !ids.has(id));
+  };
+  const changes: BoardChanges = {
+    upserts: {
+      rows: changed(board.rows, saved.rows),
+      columns: changed(board.columns, saved.columns),
+      tasks: changed(board.tasks, saved.tasks),
+    },
+    deletes: {
+      rowIds: removed(board.rows, saved.rows),
+      columnIds: removed(board.columns, saved.columns),
+      taskIds: removed(board.tasks, saved.tasks),
+    },
+  };
+  const isEmpty = [
+    ...Object.values(changes.upserts),
+    ...Object.values(changes.deletes),
+  ].every((list) => list.length === 0);
+  return isEmpty ? null : changes;
+}
+
+function applyToSaved(saved: SavedBoard, { upserts, deletes }: BoardChanges) {
+  for (const kind of ["rows", "columns", "tasks"] as const) {
+    for (const item of upserts[kind]) {
+      saved[kind].set(item.id, JSON.stringify(item));
+    }
+  }
+  deletes.rowIds.forEach((id) => saved.rows.delete(id));
+  deletes.columnIds.forEach((id) => saved.columns.delete(id));
+  deletes.taskIds.forEach((id) => saved.tasks.delete(id));
+}
+
+const emptySavedBoard = () =>
+  toSavedBoard({ rows: [], columns: [], tasks: [] });
+
+// The most upserts + deletes PATCH /api/board accepts in one request.
+const MAX_PATCH_CHANGES = 1000;
+
+// Splits `changes` into PATCH-sized pieces. Upserts come first, rows and
+// columns before tasks, so a task never lands before its row or column.
+export function chunkChanges(
+  { upserts, deletes }: BoardChanges,
+  size = MAX_PATCH_CHANGES,
+): BoardChanges[] {
+  const ops: ((chunk: BoardChanges) => void)[] = [
+    ...upserts.rows.map((row) => (c: BoardChanges) => c.upserts.rows.push(row)),
+    ...upserts.columns.map((col) => (c: BoardChanges) =>
+      c.upserts.columns.push(col)
+    ),
+    ...upserts.tasks.map((task) => (c: BoardChanges) =>
+      c.upserts.tasks.push(task)
+    ),
+    ...deletes.rowIds.map((id) => (c: BoardChanges) =>
+      c.deletes.rowIds.push(id)
+    ),
+    ...deletes.columnIds.map((id) => (c: BoardChanges) =>
+      c.deletes.columnIds.push(id)
+    ),
+    ...deletes.taskIds.map((id) => (c: BoardChanges) =>
+      c.deletes.taskIds.push(id)
+    ),
+  ];
+  const chunks: BoardChanges[] = [];
+  for (let i = 0; i < ops.length; i += size) {
+    const chunk: BoardChanges = {
+      upserts: { rows: [], columns: [], tasks: [] },
+      deletes: { rowIds: [], columnIds: [], taskIds: [] },
+    };
+    ops.slice(i, i + size).forEach((op) => op(chunk));
+    chunks.push(chunk);
+  }
+  return chunks;
+}
+
+// Sends `changes` as one or more PATCHes, stopping at the first one the
+// server rejects. Returns whether all were accepted.
+async function patchBoard(changes: BoardChanges): Promise<boolean> {
+  for (const chunk of chunkChanges(changes)) {
+    const res = await fetch("/api/board", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(chunk),
+    });
+    if (!res.ok) return false;
+  }
+  return true;
+}
 
 // The board saved in localStorage, or null if there is none or it's malformed.
 function readLocalBoard() {
@@ -18,21 +135,35 @@ function readLocalBoard() {
 }
 
 // Authenticated: load from the API. If the server has no board yet, migrate
-// the localStorage one. Returns null to leave the board unloaded.
-async function loadRemoteBoard(): Promise<BoardAction | null> {
+// the localStorage one. Returns null to leave the board unloaded. `savedRef`
+// is set to what the server holds, so the first autosave sends only what
+// BOARD/LOAD normalized (or everything, if the migration failed).
+async function loadRemoteBoard(
+  savedRef: RefObject<SavedBoard>,
+): Promise<BoardAction | null> {
   const res = await fetch("/api/board");
-  if (res.ok) return { type: "BOARD/LOAD", payload: await res.json() };
+  if (res.ok) {
+    const remote = await res.json();
+    savedRef.current = toSavedBoard(remote);
+    return { type: "BOARD/LOAD", payload: remote };
+  }
   // Non-404 errors are unexpected — bail out and leave the board unloaded.
   if (res.status !== 404) return null;
 
   const local = readLocalBoard();
   if (!local) return { type: "BOARD/RESET" };
-  const putRes = await fetch("/api/board", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(local),
+  const migrated = await patchBoard({
+    upserts: {
+      rows: local.rows ?? [],
+      columns: local.columns ?? [],
+      tasks: local.tasks ?? [],
+    },
+    deletes: { rowIds: [], columnIds: [], taskIds: [] },
   });
-  if (putRes.ok) globalThis.localStorage?.removeItem(STORAGE_KEY);
+  if (migrated) {
+    globalThis.localStorage?.removeItem(STORAGE_KEY);
+    savedRef.current = toSavedBoard(local);
+  }
   return { type: "BOARD/LOAD", payload: local };
 }
 
@@ -60,11 +191,12 @@ function loadLocalBoard(): BoardAction {
 async function loadBoard(
   boardId: string | undefined,
   isAuthenticated: boolean,
+  savedRef: RefObject<SavedBoard>,
 ): Promise<BoardAction | null> {
   if (boardId === "demo") {
     return { type: "BOARD/LOAD", payload: createDemoBoard() };
   }
-  return isAuthenticated ? await loadRemoteBoard() : loadLocalBoard();
+  return isAuthenticated ? await loadRemoteBoard(savedRef) : loadLocalBoard();
 }
 
 export function useBoardPersistence(
@@ -73,9 +205,11 @@ export function useBoardPersistence(
   boardId: string | undefined,
   isAuthenticated: boolean,
 ) {
+  const savedRef = useRef<SavedBoard>(emptySavedBoard());
+
   // Load board on mount.
   useEffect(() => {
-    loadBoard(boardId, isAuthenticated)
+    loadBoard(boardId, isAuthenticated, savedRef)
       .then((action) => action && dispatch(action))
       .catch((error) => {
         // Whatever failed (fetch rejection, res.json() on a non-JSON body,
@@ -87,11 +221,13 @@ export function useBoardPersistence(
   }, [boardId, isAuthenticated]);
 
   // Persist board on state changes (after initial load).
-  // Authenticated: save to API (KV). Unauthenticated: save to localStorage only.
+  // Authenticated: send what changed to the API (KV). Unauthenticated: save
+  // to localStorage only.
   // boardId === "demo": never write anywhere — the demo board is ephemeral.
   // Each save is also broadcast to this browser's other tabs, which apply it
   // with BOARD/SYNC. lastSyncedRef holds the last received board so applying
   // it doesn't trigger a save + broadcast back (an endless echo between tabs).
+  // The sending tab already saved it, so it also becomes savedRef.
   const channelRef = useRef<BroadcastChannel | null>(null);
   const lastSyncedRef = useRef<string | null>(null);
   useEffect(() => {
@@ -104,6 +240,7 @@ export function useBoardPersistence(
     ) => {
       const { rows, columns, tasks } = e.data;
       lastSyncedRef.current = JSON.stringify({ rows, columns, tasks });
+      savedRef.current = toSavedBoard({ rows, columns, tasks });
       dispatch({ type: "BOARD/SYNC", payload: { rows, columns, tasks } });
     };
     channelRef.current = channel;
@@ -117,6 +254,10 @@ export function useBoardPersistence(
   // already have it, or something newer that it would overwrite.
   const loadedSnapshotRef = useRef<string | null>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // PATCHes run one at a time, so an older one can't land after a newer one.
+  const saveChainRef = useRef<Promise<void>>(Promise.resolve());
+  // Whether the server rejected the latest save; cleared once one succeeds.
+  const [saveRejected, setSaveRejected] = useState(false);
   useEffect(() => {
     if (boardId === "demo") return;
     if (!state.boardLoaded) return;
@@ -135,11 +276,16 @@ export function useBoardPersistence(
       const body = JSON.stringify(boardSnapshot);
       if (body === lastSyncedRef.current) return;
       if (isAuthenticated) {
-        fetch("/api/board", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body,
-        });
+        // Diffed when its turn comes, against what the server has confirmed
+        // by then. A failed save leaves savedRef alone, so the next one
+        // resends its changes.
+        saveChainRef.current = saveChainRef.current.then(async () => {
+          const changes = diffBoard(savedRef.current, boardSnapshot);
+          if (!changes) return;
+          const saved = await patchBoard(changes);
+          if (saved) applyToSaved(savedRef.current, changes);
+          setSaveRejected(!saved);
+        }).catch((error) => console.error("Failed to save board:", error));
       } else {
         globalThis.localStorage?.setItem(STORAGE_KEY, body);
       }
@@ -159,4 +305,9 @@ export function useBoardPersistence(
     isAuthenticated,
     boardId,
   ]);
+
+  return {
+    saveRejected,
+    dismissSaveRejected: useCallback(() => setSaveRejected(false), []),
+  };
 }

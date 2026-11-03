@@ -11,10 +11,19 @@ runs:
         path: node_modules
         key: ${{ runner.os }}-node_modules-${{ hashFiles('package.json') }}
 
-    - name: Install dependencies
-      if: steps.npm-cache.outputs.cache-hit != 'true'
+    # Written even on a cache hit: later npm calls in the job (e.g.
+    # wrangler-action's `npm i wrangler@4`) re-resolve the whole project, and
+    # fail on the astro-seo-schema/schema-dts peer conflict or the @jsr scope
+    # without this project .npmrc.
+    - name: Configure npm
       shell: bash
       run: |
         npm config set min-release-age 0 --location=project
         npm config set @jsr:registry https://npm.jsr.io --location=project
+        npm config set legacy-peer-deps true --location=project
+
+    - name: Install dependencies
+      if: steps.npm-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
         npm install --legacy-peer-deps

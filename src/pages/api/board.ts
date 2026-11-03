@@ -3,10 +3,10 @@ export const prerender = false;
 import type { APIRoute } from "astro";
 import { z } from "astro/zod";
 import {
+  applyBoardChanges,
   deleteBoard,
   deleteBoardComments,
   getBoard,
-  saveBoard,
 } from "@lib/db/kv.ts";
 import { jsonResponse, unauthorizedResponse } from "@lib/http/api-responses.ts";
 
@@ -51,16 +51,37 @@ const TaskSchema = z.object({
   preTrashColId: z.string().nullable(),
 });
 
-// Deno KV rejects any single value over 64KiB (see saveBoard in
-// @lib/db/kv.ts), which otherwise surfaces as an unhandled 500. Reject it
-// here instead, with headroom held back for the KV entry's own overhead.
-const PersistedBoardSchema = z.object({
-  rows: z.array(RowSchema),
-  columns: z.array(ColumnSchema),
-  tasks: z.array(TaskSchema),
+// Deno KV rejects any single value over 64KiB (each row/column/task is its
+// own entry, see applyBoardChanges in @lib/db/kv.ts), which otherwise surfaces
+// as an unhandled 500. Reject it here instead, with headroom held back for the
+// KV entry's own overhead.
+const fitsKvValue = <T extends z.ZodType>(schema: T) =>
+  schema.refine(
+    (value) => new TextEncoder().encode(JSON.stringify(value)).length < 65000,
+    { error: "Entry is too large." },
+  );
+
+// Larger change sets are valid for applyBoardChanges (it splits them into
+// several commits), but no single edit produces this many.
+const MAX_CHANGES = 1000;
+
+const BoardChangesSchema = z.object({
+  upserts: z.object({
+    rows: z.array(fitsKvValue(RowSchema)),
+    columns: z.array(fitsKvValue(ColumnSchema)),
+    tasks: z.array(fitsKvValue(TaskSchema)),
+  }),
+  deletes: z.object({
+    rowIds: z.array(z.string()),
+    columnIds: z.array(z.string()),
+    taskIds: z.array(z.string()),
+  }),
 }).refine(
-  (board) => new TextEncoder().encode(JSON.stringify(board)).length < 65000,
-  { error: "Board payload is too large." },
+  ({ upserts, deletes }) =>
+    upserts.rows.length + upserts.columns.length + upserts.tasks.length +
+        deletes.rowIds.length + deletes.columnIds.length +
+        deletes.taskIds.length <= MAX_CHANGES,
+  { error: "Too many changes." },
 );
 
 export const GET: APIRoute = async ({ locals, request }) => {
@@ -80,36 +101,36 @@ export const GET: APIRoute = async ({ locals, request }) => {
   return jsonResponse(board, 200);
 };
 
-export const PUT: APIRoute = async ({ request, locals }) => {
+export const PATCH: APIRoute = async ({ request, locals }) => {
   const { userId } = locals.auth();
   if (!userId) return unauthorizedResponse(request);
   const boardId = locals.boardId;
   if (!boardId) {
     console.error({
       event:
-        "Rejected PUT /api/board: locals.boardId missing despite passing the auth gate",
+        "Rejected PATCH /api/board: locals.boardId missing despite passing the auth gate",
       auth: locals.auth(),
     });
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
-  let body: z.infer<typeof PersistedBoardSchema>;
+  let body: z.infer<typeof BoardChangesSchema>;
   try {
-    body = PersistedBoardSchema.parse(await request.json());
+    body = BoardChangesSchema.parse(await request.json());
   } catch (error) {
     console.error({
-      event: "Rejected PUT /api/board: invalid request body",
+      event: "Rejected PATCH /api/board: invalid request body",
       boardId,
       issues: error instanceof z.ZodError ? error.issues : String(error),
     });
     return jsonResponse({ error: "Invalid request body." }, 400);
   }
   console.debug({
-    method: "PUT",
+    method: "PATCH",
     boardId,
     auth: locals.auth(),
-    rows: body.rows.map((r) => r.title),
+    rows: body.upserts.rows.map((r) => r.title),
   });
-  await saveBoard(boardId, body);
+  await applyBoardChanges(boardId, body);
   return jsonResponse({ ok: true }, 200);
 };
 

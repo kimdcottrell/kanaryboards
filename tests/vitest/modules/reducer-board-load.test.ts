@@ -25,10 +25,12 @@ const column = (overrides: Partial<Column>): Column => ({
   ...overrides,
 });
 
+const row = { id: "row-1", title: "Project", color: "", order: "a0" };
+
 const load = (columns: StoredColumn[], tasks: StoredTask[] = []) =>
   boardReducer(createInitialState(), {
     type: "BOARD/LOAD",
-    payload: { rows: [], columns, tasks },
+    payload: { rows: [row], columns, tasks },
   });
 
 describe("BOARD/LOAD", () => {
@@ -102,6 +104,26 @@ describe("BOARD/LOAD", () => {
       trashedAt: null,
       preTrashColId: null,
     });
+  });
+
+  test("drops tasks whose row or column is gone", () => {
+    const task = (id: string, rowId: string, colId: string): Task => ({
+      id,
+      rowId,
+      colId,
+      title: "t",
+      description: "",
+      checklist: [],
+      order: "a0",
+      trashedAt: null,
+      preTrashColId: null,
+    });
+    const state = load([column({})], [
+      task("kept", "row-1", "col-1"),
+      task("no-row", "deleted-row", "col-1"),
+      task("no-column", "row-1", "deleted-col"),
+    ]);
+    expect(state.tasks.map((t) => t.id)).toEqual(["kept"]);
   });
 });
 
