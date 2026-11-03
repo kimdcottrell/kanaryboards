@@ -9,7 +9,7 @@ Kanary Boards is a kanban board app. Key stack facts:
 
 **Framework:** Astro 7.x with the Deno adapter (`@deno/astro-adapter`). SSR mode (`output: "server"`). Deploys to Deno Deploy. Pages: `src/pages/index.astro` (marketing homepage with the demo board), board pages under `src/pages/dashboard/` (`index.astro`, `task/`, `row/`). Shared layout at `src/layouts/BaseLayout.astro`. Middleware at `src/middleware.ts` (sets `boardId` cookie and `Astro.locals.boardId`).
 
-**Routing:** react-router-dom 7.x inside the React island. `BrowserRouter` wraps `BoardWrapper`. Board routes live under `/dashboard` (`/dashboard`, `/dashboard/task/:taskId`, `/dashboard/row/:id`). Astro handles SSR for both; react-router handles client-side navigation.
+**Routing:** react-router-dom 7.x inside the React island. `src/lib/dashboard/spa-router.ts` builds a data router (`createBrowserRouter`) whose routes all render `BoardView`; `BoardController` (the `client:only` island mounted by `SPA.astro`) renders `<RouterProvider>` inside `BoardProvider` and routes drawer `a[data-board-link]` clicks through `router.navigate`. Board routes live under `/dashboard` (`/dashboard`, `/dashboard/task/:taskId`, `/dashboard/row/:rowId`). Astro handles SSR for both; react-router handles client-side navigation.
 
 **UI:** React 19. Components live in `src/components/`, split by framework: React (`.tsx`/`.ts`, including the board context state) under `react/`, Astro (`.astro`) under `astro/`. State is managed with Context API + useReducer (no Redux/Zustand). Many fine-grained contexts in `BoardContext.tsx` (see [[State architecture and types]]). Icons via `@iconify-json/{hugeicons,basil,mingcute}` + `@iconify/tailwind4`. Rich text via `@lyfie/luthor`.
 

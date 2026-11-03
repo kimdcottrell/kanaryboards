@@ -23,7 +23,7 @@ sequenceDiagram
     User->>Cell: dragover
     Cell->>Cell: preventDefault()
     Card->>Cell: dragover (per task), stopPropagation
-    Cell->>Cell: useDropTarget.handleDragOver()<br/>-> dropPositionFromEvent() (lib/drag.ts)<br/>-> local dropTarget state
+    Cell->>Cell: useDropTarget.handleDragOver()<br/>-> dropPositionFromEvent() (lib/dashboard/drag.ts)<br/>-> local dropTarget state
     Cell-->>Card: the hovered TaskCard re-renders locally<br/>(isDropBefore/isDropAfter props)<br/>-> shows top/bottom drop-indicator border
 
     Note over User,Ctx: Drop: same cell -> reorder
