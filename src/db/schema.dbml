@@ -2,7 +2,7 @@ Table boards {
   id uuid7 [primary key]
   user_id varchar [unique, not null]
   created_at timestamptz [not null, default: `now()`]
-  updated_at timestamptz [not null, default: `now()`, note: "updated via trigger"]
+  updated_at timestamptz [not null, default: `now()`, note: "updated via trigger; also touched by triggers on rows/columns/tasks, which pg_notify('board_changed', board_id) for live refresh (replaces Deno KV's [\"board_rev\", boardId] key). LISTEN needs a direct connection, not a transaction-mode pooler; poll updated_at as the fallback."]
 }
 
 Table rows {

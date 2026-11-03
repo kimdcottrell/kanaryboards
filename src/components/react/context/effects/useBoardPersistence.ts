@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Dispatch, RefObject } from "react";
 import type { BoardAction, BoardData, BoardState } from "../types.ts";
-import type { BoardChanges } from "@lib/db/kv.ts";
+import type { BoardChanges, PersistedBoard } from "@lib/db/kv.ts";
+import { liveBoard } from "@lib/api/board-ops.ts";
 import { expiredTrashTaskIds } from "../reducers/board.ts";
 import { pruneLocalComments } from "../../task/comments/commentStore.ts";
 import { STORAGE_KEY } from "../constants.ts";
@@ -258,6 +259,53 @@ export function useBoardPersistence(
   const saveChainRef = useRef<Promise<void>>(Promise.resolve());
   // Whether the server rejected the latest save; cleared once one succeeds.
   const [saveRejected, setSaveRejected] = useState(false);
+  // An edit is waiting on the 500ms autosave timer. A refresh then would
+  // replace the board before the edit is saved, so it waits for the timer
+  // (refreshQueuedRef) instead.
+  const savePendingRef = useRef(false);
+  const refreshQueuedRef = useRef(false);
+
+  // Applies the server's board if it changed elsewhere (the CLI, another
+  // device). Queued on saveChainRef, so it runs after any PATCH in flight;
+  // this tab's own saves then match savedRef and are skipped. Applied like
+  // a cross-tab sync: lastSyncedRef stops it from being saved or broadcast.
+  const refreshFromServer = useCallback(() => {
+    saveChainRef.current = saveChainRef.current.then(async () => {
+      if (savePendingRef.current) {
+        refreshQueuedRef.current = true;
+        return;
+      }
+      const res = await fetch("/api/board");
+      if (!res.ok) return;
+      const remote: PersistedBoard = await res.json();
+      // The user may have started an edit during the GET.
+      if (savePendingRef.current) {
+        refreshQueuedRef.current = true;
+        return;
+      }
+      if (!diffBoard(savedRef.current, remote)) return;
+      const board = liveBoard(remote);
+      savedRef.current = toSavedBoard(remote);
+      lastSyncedRef.current = JSON.stringify(board);
+      dispatch({ type: "BOARD/SYNC", payload: board });
+    }).catch((error) => console.error("Failed to refresh board:", error));
+  }, [dispatch]);
+
+  const runQueuedRefresh = useCallback(() => {
+    if (!refreshQueuedRef.current) return;
+    refreshQueuedRef.current = false;
+    refreshFromServer();
+  }, [refreshFromServer]);
+
+  // Server-Sent Events from /api/board/events: one message per board write,
+  // and one on connect. EventSource reconnects by itself after a drop.
+  useEffect(() => {
+    if (boardId === "demo" || !isAuthenticated || !state.boardLoaded) return;
+    const events = new EventSource("/api/board/events");
+    events.onmessage = refreshFromServer;
+    return () => events.close();
+  }, [boardId, isAuthenticated, state.boardLoaded, refreshFromServer]);
+
   useEffect(() => {
     if (boardId === "demo") return;
     if (!state.boardLoaded) return;
@@ -267,14 +315,16 @@ export function useBoardPersistence(
       tasks: state.tasks,
     });
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    savePendingRef.current = true;
     saveTimeoutRef.current = setTimeout(() => {
+      savePendingRef.current = false;
       const boardSnapshot = {
         rows: state.rows,
         columns: state.columns,
         tasks: state.tasks,
       };
       const body = JSON.stringify(boardSnapshot);
-      if (body === lastSyncedRef.current) return;
+      if (body === lastSyncedRef.current) return runQueuedRefresh();
       if (isAuthenticated) {
         // Diffed when its turn comes, against what the server has confirmed
         // by then. A failed save leaves savedRef alone, so the next one
@@ -293,6 +343,7 @@ export function useBoardPersistence(
         channelRef.current?.postMessage(boardSnapshot);
       }
       loadedSnapshotRef.current = ""; // only the first save is skipped
+      runQueuedRefresh(); // queued after this save
     }, 500);
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
@@ -304,6 +355,7 @@ export function useBoardPersistence(
     state.boardLoaded,
     isAuthenticated,
     boardId,
+    runQueuedRefresh,
   ]);
 
   return {

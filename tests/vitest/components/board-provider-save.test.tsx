@@ -1,6 +1,13 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { BoardProvider } from "@components/react/context/BoardContext.tsx";
+import {
+  BoardProvider,
+  useBoardDataState,
+  useBoardDispatch,
+} from "@components/react/context/BoardContext.tsx";
+import type { Row } from "@components/react/context/types.ts";
+import type { BoardChanges } from "@lib/db/kv.ts";
+import type { FakeEventSource } from "../eventSource.setup.ts";
 
 const row = { id: "row-1", title: "Project", color: "", order: "a0" };
 const column = {
@@ -102,5 +109,121 @@ describe("BoardProvider (signed in) — autosave", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
     expect(screen.queryByRole("alert")).toBeNull();
+  });
+});
+
+describe("BoardProvider (signed in) — live refresh", () => {
+  const trash = { ...column, id: "trash", order: "a1", isTrash: true };
+  const cliRow = { id: "row-cli", title: "From CLI", color: "", order: "a1" };
+
+  // A board the server holds. PATCHes are applied to it, as /api/board does.
+  function stubServer(
+    board: { rows: unknown[]; columns: unknown[]; tasks: unknown[] },
+  ) {
+    const server = { board, patches: [] as BoardChanges[] };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_url: string, init?: Init) => {
+        if (init?.method === "PATCH") {
+          const changes: BoardChanges = JSON.parse(init.body!);
+          server.patches.push(changes);
+          const upsert = <T extends { id: string }>(
+            items: T[],
+            next: T[],
+          ) => [
+            ...items.filter((i) => !next.some((n) => n.id === i.id)),
+            ...next,
+          ];
+          server.board = {
+            rows: upsert(server.board.rows as Row[], changes.upserts.rows),
+            columns: server.board.columns,
+            tasks: server.board.tasks,
+          };
+          return Promise.resolve(new Response("{}"));
+        }
+        return Promise.resolve(new Response(JSON.stringify(server.board)));
+      }),
+    );
+    return server;
+  }
+
+  function Probe() {
+    const { rows } = useBoardDataState();
+    const dispatch = useBoardDispatch();
+    return (
+      <>
+        <span data-testid="rows">{rows.map((r) => r.title).join(",")}</span>
+        <button
+          type="button"
+          onClick={() =>
+            dispatch({
+              type: "ROW/RENAME",
+              payload: { rowId: "row-1", name: "Local" },
+            })}
+        >
+          rename
+        </button>
+      </>
+    );
+  }
+
+  const renderProbe = () =>
+    render(
+      <BoardProvider boardId="board-1" isAuthenticated>
+        <Probe />
+      </BoardProvider>,
+    );
+
+  const events = () =>
+    (globalThis.EventSource as unknown as typeof FakeEventSource).instances
+      .at(-1)!;
+  const rowTitles = () => screen.getByTestId("rows").textContent;
+
+  test("applies a board changed elsewhere without saving it back", async () => {
+    const server = stubServer({
+      rows: [row],
+      columns: [column, trash],
+      tasks: [],
+    });
+    renderProbe();
+    await waitFor(() => expect(rowTitles()).toBe("Project"));
+    expect(events().url).toBe("/api/board/events");
+
+    server.board = { ...server.board, rows: [row, cliRow] };
+    events().emit();
+
+    await waitFor(() => expect(rowTitles()).toBe("Project,From CLI"));
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    expect(server.patches).toEqual([]);
+  });
+
+  test("waits for a pending local edit to be saved before refreshing", async () => {
+    const server = stubServer({
+      rows: [row],
+      columns: [column, trash],
+      tasks: [],
+    });
+    renderProbe();
+    await waitFor(() => expect(rowTitles()).toBe("Project"));
+
+    fireEvent.click(screen.getByRole("button", { name: "rename" }));
+    server.board = { ...server.board, rows: [row, cliRow] };
+    events().emit();
+
+    await waitFor(() => expect(rowTitles()).toBe("Local,From CLI"), {
+      timeout: 3000,
+    });
+    expect(server.patches).toHaveLength(1);
+    expect(server.patches[0].upserts.rows).toEqual([
+      { ...row, title: "Local" },
+    ]);
+  });
+
+  test("closes the stream on unmount", async () => {
+    stubServer({ rows: [row], columns: [column, trash], tasks: [] });
+    const { unmount } = renderProbe();
+    await waitFor(() => expect(rowTitles()).toBe("Project"));
+    unmount();
+    expect(events().closed).toBe(true);
   });
 });
