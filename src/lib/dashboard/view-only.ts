@@ -1,5 +1,5 @@
 import type { KeyboardEvent, SyntheticEvent } from "react";
-import type { Column, Task } from "@components/context/types.ts";
+import type { Column, Task } from "@components/react/context/types.ts";
 
 const block = (e: SyntheticEvent) => {
   e.preventDefault();

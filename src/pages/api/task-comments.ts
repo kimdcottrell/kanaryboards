@@ -11,7 +11,7 @@ import {
 } from "@lib/db/kv.ts";
 import { jsonResponse, unauthorizedResponse } from "@lib/http/api-responses.ts";
 import { createId } from "@lib/db/uuid.ts";
-import type { TaskComment } from "@components/context/types.ts";
+import type { TaskComment } from "@components/react/context/types.ts";
 
 // Each comment is its own KV entry, so it must also stay under Deno KV's
 // 64KiB value limit, with headroom for the other fields.

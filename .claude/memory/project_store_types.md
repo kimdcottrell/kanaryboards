@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-State lives under `src/components/context/`:
+State lives under `src/components/react/context/`:
 
 - `types.ts` — `BoardState` is an intersection of named per-slice interfaces (`BoardData`, `RowFormState`, `RowEditState`, `ColumnEditState`, `ColumnConfigState`, `TaskCreateState`, `TaskEditState`, `ChecklistAIState`, `DragState`, …); `BoardAction` is a union of named per-domain unions (`ColumnAction`, `RowAction`, `TaskAction`, `ChecklistAction`, `ChecklistAIAction`, `TaskAIAction`, `DragAction`, `BoardLifecycleAction`, …). Also `StoredColumn`/`StoredTask` (legacy-tolerant shapes accepted by `BOARD/LOAD`) and `TaskComment`.
 - `reducer.ts` — thin router; `createInitialState` plus a `boardReducer` switch that delegates each case to `reducers/<domain>.ts` (one-line `case "X/Y": return domain.fn(state, action.payload);`)
@@ -30,7 +30,7 @@ interface Task   { id; rowId; colId; title; description; checklist: ChecklistIte
 
 **Cross-tab sync (feature/notes, 2026-10):** every autosave also posts `{rows, columns, tasks}` on a `BroadcastChannel` (`board-sync:kv` signed in, `board-sync:local` signed out; none for demo). Receivers dispatch `BOARD/SYNC` → `board.sync` (last write wins, no normalize). Echo guard: the received JSON is kept in `lastSyncedRef`, and the autosave skips save + broadcast when its snapshot equals it. The first save after load is not broadcast (`loadedSnapshotRef`) so a freshly opened tab can't overwrite newer state in other tabs. If sync leaves no rows, task modals close; if a draft's row is gone, its `rowId` becomes `""` and the modal stays open. `saveEdit` re-adds a task deleted in another tab while it was being edited.
 
-**Unsaved edit drafts:** `src/components/task/editDraftStore.ts`, outside the reducer. Closing `TaskEditModal` without saving writes the draft to localStorage `task+${id}` (or clears it if it matches the saved task); `startEditTask` reapplies it on next open; save/trash/delete clear it. `useHasEditDraft` (useSyncExternalStore on a same-tab event + `storage`) drives the TaskCard "edited but not saved" badge.
+**Unsaved edit drafts:** `src/components/react/task/editDraftStore.ts`, outside the reducer. Closing `TaskEditModal` without saving writes the draft to localStorage `task+${id}` (or clears it if it matches the saved task); `startEditTask` reapplies it on next open; save/trash/delete clear it. `useHasEditDraft` (useSyncExternalStore on a same-tab event + `storage`) drives the TaskCard "edited but not saved" badge.
 
 **Ordering — `fractional-indexing` package:**
 Import `generateKeyBetween` and `generateNKeysBetween` directly from `"fractional-indexing"` (helpers in `ordering.ts`, e.g. `reorderKey`). Sort with native `<`/`>` comparison, NOT `localeCompare()`. Used everywhere ordering mutates state (row move, column reorder, task reorder/drop, `BOARD/LOAD` sort, `computeTasksByCell`).

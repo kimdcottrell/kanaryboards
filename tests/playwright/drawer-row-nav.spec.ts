@@ -11,7 +11,7 @@ import {
 /**
  * Seeded board with enough rows that the last one sits well below the fold, so
  * the "scroll to row" behavior is observable. Same shape/key as the BOARD/LOAD
- * payload (see src/components/context/reducers/board.ts).
+ * payload (see src/components/react/context/reducers/board.ts).
  */
 const ROW_COLORS = [
   "var(--color-row-blue)",

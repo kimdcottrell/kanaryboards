@@ -12,7 +12,7 @@ import {
   mockColumn,
   mockRow,
 } from "./setup.ts";
-import type { Task } from "@components/context/types.ts";
+import type { Task } from "@components/react/context/types.ts";
 
 const mockNavigate = vi.fn();
 
@@ -21,7 +21,7 @@ vi.mock("react-router-dom", async (importOriginal) => {
   return { ...actual, useNavigate: () => mockNavigate, useParams: () => ({}) };
 });
 
-vi.mock("@components/context/hooks.ts", () => ({
+vi.mock("@components/react/context/hooks.ts", () => ({
   useBoardDataState: vi.fn(),
   useTaskEditState: vi.fn(),
   useTaskEditActions: vi.fn(),
@@ -33,7 +33,7 @@ vi.mock("@components/context/hooks.ts", () => ({
 }));
 
 // Comments have their own tests (TaskComments.test.tsx).
-vi.mock("@components/task/comments/TaskComments.tsx", () => ({
+vi.mock("@components/react/task/comments/TaskComments.tsx", () => ({
   default: () => null,
 }));
 
@@ -53,8 +53,8 @@ import {
   useTaskActions,
   useTaskEditActions,
   useTaskEditState,
-} from "@components/context/hooks.ts";
-import TaskViewOnlyModal from "@components/task/modal/TaskViewOnlyModal.tsx";
+} from "@components/react/context/hooks.ts";
+import TaskViewOnlyModal from "@components/react/task/modal/TaskViewOnlyModal.tsx";
 
 const doneColumn = { ...mockColumn, id: "col-2", title: "Done" };
 const trashColumn = {

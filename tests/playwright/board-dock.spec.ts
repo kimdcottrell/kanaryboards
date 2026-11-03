@@ -2,7 +2,7 @@
 import { expect, testNoClerk as test } from "./fixtures.ts";
 
 /**
- * BoardDock (src/components/BoardDock.tsx) is the small-screen counterpart to
+ * BoardDock (src/components/react/BoardDock.tsx) is the small-screen counterpart to
  * #board-menu. Below the `lg` breakpoint the DaisyUI dock (`.dock`, fixed to the
  * bottom) is shown and #board-menu is hidden; at `lg`+ this reverses. The dock
  * surfaces the single column pinned via `pinnedToDock`, and clicking it drives

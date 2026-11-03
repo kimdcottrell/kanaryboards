@@ -7,8 +7,8 @@ import {
 } from "@clerk/astro/react";
 import type { SignInButtonProps } from "@clerk/astro/react";
 import { useEffect, useState } from "react";
-import { getClerkAppearance } from "@components/theme/clerkAppearance.ts";
-import { getPreferredTheme } from "@components/theme/theme.ts";
+import { getClerkAppearance } from "@components/react/theme/clerkAppearance.ts";
+import { getPreferredTheme } from "@components/react/theme/theme.ts";
 
 export default function LoginControls() {
   const [theme, setTheme] = useState(getPreferredTheme);

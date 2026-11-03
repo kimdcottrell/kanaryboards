@@ -7,10 +7,10 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import type { TaskComment } from "@components/context/types.ts";
-import { COMMENTS_STORAGE_KEY } from "@components/task/comments/commentStore.ts";
+import type { TaskComment } from "@components/react/context/types.ts";
+import { COMMENTS_STORAGE_KEY } from "@components/react/task/comments/commentStore.ts";
 
-vi.mock("@components/context/hooks.ts", () => ({
+vi.mock("@components/react/context/hooks.ts", () => ({
   useBoardMeta: () => ({ boardId: "board-1", isAuthenticated: false }),
 }));
 
@@ -46,7 +46,7 @@ vi.mock("@lyfie/luthor", () => ({
   },
 }));
 
-import TaskComments from "@components/task/comments/TaskComments.tsx";
+import TaskComments from "@components/react/task/comments/TaskComments.tsx";
 
 function seed(...texts: string[]) {
   const comments: TaskComment[] = texts.map((text, i) => ({

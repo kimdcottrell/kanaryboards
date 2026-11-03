@@ -9,7 +9,7 @@ import {
 
 /**
  * Each autosave is broadcast to the browser's other tabs over BroadcastChannel
- * and applied there with BOARD/SYNC (src/components/context/BoardContext.tsx).
+ * and applied there with BOARD/SYNC (src/components/react/context/BoardContext.tsx).
  * Open task modals survive a sync, except when no rows are left.
  */
 const BOARD_STATE = {

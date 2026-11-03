@@ -2,7 +2,7 @@
 import { experimental_AstroContainer as AstroContainer } from "astro/container";
 import { describe, expect, test } from "vitest";
 
-import GoogleAnalytics from "@components/seo/partials/GoogleAnalytics.astro";
+import GoogleAnalytics from "@components/astro/seo/partials/GoogleAnalytics.astro";
 
 // The consent mapping runs in the browser (define:vars), so execute the rendered
 // inline script against a stubbed window and return the gtag calls it made.

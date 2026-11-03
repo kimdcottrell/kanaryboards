@@ -13,6 +13,7 @@
     "jsr:@std/path@^1.1.5": "1.1.6",
     "jsr:@std/path@^1.1.6": "1.1.6",
     "jsr:@std/streams@^1.2.0": "1.2.0",
+    "jsr:@zip-js/zip-js@*": "2.24.0",
     "npm:@anthropic-ai/claude-code@2.1.316": "2.1.316",
     "npm:@astrojs/check@0.9.12": "0.9.12_typescript@6.0.3_@emnapi+runtime@1.11.3",
     "npm:@astrojs/react@7.1.2": "7.1.2_@types+react@19.3.0_@types+react-dom@19.3.0_react@19.3.1_react-dom@19.3.1",
@@ -110,6 +111,9 @@
     },
     "@std/streams@1.2.0": {
       "integrity": "256b934254778f2bf45f5713b934209ff29e9b4b7fd4ec095219966813758c5f"
+    },
+    "@zip-js/zip-js@2.24.0": {
+      "integrity": "655339ab359175210ee3d38c338b504724762b99aeb311856d82c8709429d640"
     }
   },
   "npm": {

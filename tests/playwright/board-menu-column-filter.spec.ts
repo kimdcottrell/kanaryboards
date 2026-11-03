@@ -10,7 +10,7 @@ import { expect, testNoClerk as test } from "./fixtures.ts";
  *       editable, creatable, and draggable.
  *   - two or more selected         -> normal row layout, columns filtered to the
  *       selected set.
- * See src/components/RowBoard.tsx, RowSection.tsx, CondensedColumnBoard.tsx.
+ * See src/components/react/RowBoard.tsx, RowSection.tsx, CondensedColumnBoard.tsx.
  */
 const BOARD_STATE = {
   rows: [

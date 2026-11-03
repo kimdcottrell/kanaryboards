@@ -3,7 +3,7 @@ import {
   byOrder,
   insertKey,
   reorderKey,
-} from "@components/context/ordering.ts";
+} from "@components/react/context/ordering.ts";
 
 const list = [
   { id: "a", order: "a0" },

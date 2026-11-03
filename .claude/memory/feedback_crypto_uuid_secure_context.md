@@ -8,7 +8,7 @@ metadata:
 
 **Why:** Discovered when debugging via Playwright browser pointed at the dev server's network IP. The error was `TypeError: crypto.randomUUID is not a function` deep in the React init chain.
 
-**How to apply:** Always guard `crypto.randomUUID` with a fallback UUID generator. The fix in `src/components/context/constants.ts`:
+**How to apply:** Always guard `crypto.randomUUID` with a fallback UUID generator. The fix in `src/components/react/context/constants.ts`:
 
 ```ts
 export const createId = (): string =>

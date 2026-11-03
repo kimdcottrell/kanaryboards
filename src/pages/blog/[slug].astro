@@ -1,8 +1,8 @@
 ---
 import { render } from "astro:content";
 import BlogPostLayout from "@layouts/BlogPostLayout.astro";
-import Prose from "@components/pages/Prose.astro";
-import TagList from "@components/pages/blog/TagList.astro";
+import Prose from "@components/astro/pages/Prose.astro";
+import TagList from "@components/astro/pages/blog/TagList.astro";
 import { getProtectedCollection } from "@src/utils";
 import { setPublicCache } from "@lib/http/cache-headers";
 

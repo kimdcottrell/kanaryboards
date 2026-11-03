@@ -119,7 +119,7 @@ deno task e2e-test 2>&1 | tail -25
   `html[data-board-loaded='true']` gate never latches and `beforeEach` times out at
   30s. `trace-net.mjs` showing `/dashboard` ~10× + a `clerk.accounts.dev/.../handshake`
   request is the fingerprint. Fix: inject the testing token in the fixture.
-- **`data-board-loaded`.** [BoardView.tsx](src/components/BoardView.tsx) sets
+- **`data-board-loaded`.** [BoardView.tsx](src/components/react/BoardView.tsx) sets
   `html[data-board-loaded='true']` only after the island hydrates and `BOARD/LOAD`
   commits. Guest load is synchronous localStorage — if that flag never appears, the
   island isn't mounting, not the board data hanging.

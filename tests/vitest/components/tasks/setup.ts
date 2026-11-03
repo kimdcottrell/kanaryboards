@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import type { Column, Row, Task } from "@components/context/types.ts";
+import type { Column, Row, Task } from "@components/react/context/types.ts";
 import type {
   useBoardDataState,
   useBoardRefs,
@@ -11,7 +11,7 @@ import type {
   useTaskCreateState,
   useTaskEditActions,
   useTaskEditState,
-} from "@components/context/hooks.ts";
+} from "@components/react/context/hooks.ts";
 
 type TaskCreateState = ReturnType<typeof useTaskCreateState>;
 type TaskCreateActions = ReturnType<typeof useTaskCreateActions>;

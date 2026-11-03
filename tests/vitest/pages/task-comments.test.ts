@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import type { APIContext } from "astro";
 import { _setKvForTest, listTaskComments } from "@lib/db/kv.ts";
-import type { TaskComment } from "@components/context/types.ts";
+import type { TaskComment } from "@components/react/context/types.ts";
 
 const { GET, POST, PATCH, DELETE } = await import(
   "@pages/api/task-comments.ts"

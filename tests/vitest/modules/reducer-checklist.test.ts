@@ -2,9 +2,12 @@ import { describe, expect, test, vi } from "vitest";
 import {
   boardReducer,
   createInitialState,
-} from "@components/context/reducer.ts";
-import { handleChecklistKeyDown } from "@components/context/actions/shared.ts";
-import type { BoardState, ChecklistItem } from "@components/context/types.ts";
+} from "@components/react/context/reducer.ts";
+import { handleChecklistKeyDown } from "@components/react/context/actions/shared.ts";
+import type {
+  BoardState,
+  ChecklistItem,
+} from "@components/react/context/types.ts";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

@@ -2,8 +2,12 @@ import { describe, expect, test } from "vitest";
 import {
   boardReducer,
   createInitialState,
-} from "@components/context/reducer.ts";
-import type { BoardState, Column, Task } from "@components/context/types.ts";
+} from "@components/react/context/reducer.ts";
+import type {
+  BoardState,
+  Column,
+  Task,
+} from "@components/react/context/types.ts";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

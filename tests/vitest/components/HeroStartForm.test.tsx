@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { STORAGE_KEY } from "@components/context/constants.ts";
+import { STORAGE_KEY } from "@components/react/context/constants.ts";
 
 // Controllable Clerk state, matching the pattern in LoginControls.test.tsx.
 const clerk = vi.hoisted(() => ({ isLoaded: true, isSignedIn: false }));
@@ -9,7 +9,7 @@ vi.mock("@clerk/astro/react", () => ({
   useAuth: () => ({ isLoaded: clerk.isLoaded, isSignedIn: clerk.isSignedIn }),
 }));
 
-import HeroStartForm from "@components/HeroStartForm.tsx";
+import HeroStartForm from "@components/react/HeroStartForm.tsx";
 
 const MOCK_TITLES = ["Book venue", "Send invites", "Order cake"];
 

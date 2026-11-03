@@ -4,7 +4,7 @@ import { expect, fillStable, testNoClerk as test } from "./fixtures.ts";
 
 /**
  * Unsaved edit-modal changes are kept in localStorage under `task+${id}` when
- * the modal is closed without saving (src/components/task/editDraftStore.ts),
+ * the modal is closed without saving (src/components/react/task/editDraftStore.ts),
  * restored on reopen, and flagged on the task card until saved or discarded.
  */
 const BOARD_STATE = {

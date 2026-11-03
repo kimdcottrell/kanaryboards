@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { BoardProvider } from "@components/context/BoardContext.tsx";
+import { BoardProvider } from "@components/react/context/BoardContext.tsx";
 
 const row = { id: "row-1", title: "Project", color: "", order: "a0" };
 const column = {

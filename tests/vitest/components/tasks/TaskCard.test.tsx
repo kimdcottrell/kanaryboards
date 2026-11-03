@@ -9,12 +9,12 @@ vi.mock("react-router-dom", async (importOriginal) => {
   return { ...actual, useNavigate: () => mockNavigate, useParams: () => ({}) };
 });
 
-vi.mock("@components/context/hooks.ts", () => ({
+vi.mock("@components/react/context/hooks.ts", () => ({
   useTaskActions: vi.fn(),
 }));
 
-import { useTaskActions } from "@components/context/hooks.ts";
-import TaskCard from "@components/task/TaskCard.tsx";
+import { useTaskActions } from "@components/react/context/hooks.ts";
+import TaskCard from "@components/react/task/TaskCard.tsx";
 
 const taskActions = makeTaskActions();
 
