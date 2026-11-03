@@ -11,7 +11,7 @@ Kanary Boards is a kanban board app. Key stack facts:
 
 **Routing:** react-router-dom 7.x inside the React island. `BrowserRouter` wraps `BoardWrapper`. Board routes live under `/dashboard` (`/dashboard`, `/dashboard/task/:taskId`, `/dashboard/row/:id`). Astro handles SSR for both; react-router handles client-side navigation.
 
-**UI:** React 19. Components live in `src/components/`. State is managed with Context API + useReducer (no Redux/Zustand). Many fine-grained contexts in `BoardContext.tsx` (see [[State architecture and types]]). Icons via `@iconify-json/{hugeicons,basil,mingcute}` + `@iconify/tailwind4`. Rich text via `@lyfie/luthor`.
+**UI:** React 19. Components live in `src/components/`, split by framework: React (`.tsx`/`.ts`, including the board context state) under `react/`, Astro (`.astro`) under `astro/`. State is managed with Context API + useReducer (no Redux/Zustand). Many fine-grained contexts in `BoardContext.tsx` (see [[State architecture and types]]). Icons via `@iconify-json/{hugeicons,basil,mingcute}` + `@iconify/tailwind4`. Rich text via `@lyfie/luthor`.
 
 **Styling:** Tailwind CSS 4.x + DaisyUI 5.x. Uses `className=` (React convention). Two themes: `kanary-day` (light) and `kanary-night` (dark), toggled via ThemeToggle.tsx.
 

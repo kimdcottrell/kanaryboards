@@ -3,8 +3,8 @@ import type {
   Row,
   Task,
   TaskComment,
-} from "@components/context/types.ts";
-import { isTrashExpired } from "@components/context/constants.ts";
+} from "@components/react/context/types.ts";
+import { isTrashExpired } from "@components/react/context/constants.ts";
 
 export interface PersistedBoard {
   rows: Row[];

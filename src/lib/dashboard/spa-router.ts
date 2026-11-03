@@ -1,5 +1,5 @@
 import { createBrowserRouter } from "react-router-dom";
-import BoardView from "@components/BoardView.tsx";
+import BoardView from "@components/react/BoardView.tsx";
 
 export const router = createBrowserRouter([
   {

@@ -2,13 +2,13 @@ import { describe, expect, test } from "vitest";
 import {
   boardReducer,
   createInitialState,
-} from "@components/context/reducer.ts";
+} from "@components/react/context/reducer.ts";
 import type {
   BoardState,
   Column,
   Row,
   Task,
-} from "@components/context/types.ts";
+} from "@components/react/context/types.ts";
 
 const row = (id: string): Row => ({
   id,

@@ -10,7 +10,7 @@ import {
 } from "@lib/db/kv.ts";
 import { jsonResponse, unauthorizedResponse } from "@lib/http/api-responses.ts";
 
-// Mirrors Row/Column/Task in @components/context/types.ts (required fields,
+// Mirrors Row/Column/Task in @components/react/context/types.ts (required fields,
 // not schema.dbml's looser nullability — nothing downstream of this validator
 // is written to handle nulls here).
 const RowSchema = z.object({

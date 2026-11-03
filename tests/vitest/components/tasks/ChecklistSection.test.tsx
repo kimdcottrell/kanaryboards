@@ -3,20 +3,20 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { makeBoardRefs } from "./setup.ts";
 
-vi.mock("@components/context/hooks.ts", () => ({
+vi.mock("@components/react/context/hooks.ts", () => ({
   useBoardRefs: vi.fn(),
   useChecklistAIState: vi.fn(),
   useChecklistAIActions: vi.fn(),
   handleChecklistKeyDown: vi.fn(),
 }));
 
-import { useBoardRefs } from "@components/context/hooks.ts";
+import { useBoardRefs } from "@components/react/context/hooks.ts";
 import {
   boardReducer,
   createInitialState,
-} from "@components/context/reducer.ts";
-import type { ChecklistItem } from "@components/context/types.ts";
-import ChecklistSection from "@components/task/form-elements/ChecklistSection.tsx";
+} from "@components/react/context/reducer.ts";
+import type { ChecklistItem } from "@components/react/context/types.ts";
+import ChecklistSection from "@components/react/task/form-elements/ChecklistSection.tsx";
 
 beforeEach(() => {
   vi.mocked(useBoardRefs).mockReturnValue(makeBoardRefs());

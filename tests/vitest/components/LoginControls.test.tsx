@@ -3,7 +3,11 @@ import React from "react";
 import { act, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-import { applyTheme, DAY_THEME, NIGHT_THEME } from "@components/theme/theme.ts";
+import {
+  applyTheme,
+  DAY_THEME,
+  NIGHT_THEME,
+} from "@components/react/theme/theme.ts";
 
 // Controllable Clerk state driving the mocked control components below, so each
 // load/auth branch of LoginControls can be exercised deterministically.
@@ -39,7 +43,7 @@ vi.mock("@clerk/astro/react", () => ({
     }),
 }));
 
-import LoginControls from "@components/LoginControls.tsx";
+import LoginControls from "@components/react/LoginControls.tsx";
 
 // jsdom doesn't implement matchMedia; LoginControls' initial theme read
 // (getPreferredTheme) falls back to it when localStorage has no saved theme.

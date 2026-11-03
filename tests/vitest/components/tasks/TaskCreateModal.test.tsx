@@ -12,7 +12,7 @@ import {
   mockTaskDraft,
 } from "./setup.ts";
 
-vi.mock("@components/context/hooks.ts", () => ({
+vi.mock("@components/react/context/hooks.ts", () => ({
   useBoardDataState: vi.fn(),
   useTaskCreateState: vi.fn(),
   useTaskCreateActions: vi.fn(),
@@ -39,8 +39,8 @@ import {
   useTaskActions,
   useTaskCreateActions,
   useTaskCreateState,
-} from "@components/context/hooks.ts";
-import TaskCreateModal from "@components/task/modal/TaskCreateModal.tsx";
+} from "@components/react/context/hooks.ts";
+import TaskCreateModal from "@components/react/task/modal/TaskCreateModal.tsx";
 
 beforeEach(() => {
   vi.mocked(useBoardDataState).mockReturnValue(makeBoardDataState());

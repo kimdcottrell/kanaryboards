@@ -1,6 +1,6 @@
 ---
 import { getBoard } from "@lib/db/kv.ts";
-import { byOrder } from "@components/context/ordering.ts";
+import { byOrder } from "@components/react/context/ordering.ts";
 
 const { userId } = Astro.locals.auth();
 const isAuthenticated = !!userId;
@@ -83,7 +83,7 @@ if (isAuthenticated && boardId) {
 </div>
 
 <script>
-    import { byOrder } from "@components/context/ordering.ts";
+    import { byOrder } from "@components/react/context/ordering.ts";
     const list = document.getElementById("drawer-row-list");
     if (list && list.dataset.authenticated !== "true") {
         try {

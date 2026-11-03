@@ -4,8 +4,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   getClerkAppearance,
   getClerkAppearanceForCurrentTheme,
-} from "@components/theme/clerkAppearance.ts";
-import { DAY_THEME, NIGHT_THEME } from "@components/theme/theme.ts";
+} from "@components/react/theme/clerkAppearance.ts";
+import { DAY_THEME, NIGHT_THEME } from "@components/react/theme/theme.ts";
 
 describe("getClerkAppearance", () => {
   it("returns the dark Clerk theme for NIGHT_THEME", () => {

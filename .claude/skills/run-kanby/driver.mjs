@@ -25,7 +25,7 @@ const SHOT_DIR = new URL("./screenshots/", import.meta.url).pathname;
 
 // Guest board written to localStorage before navigation, so /dashboard renders
 // a populated board instead of the empty-state prompt. Shape matches BOARD/LOAD
-// (see src/components/context/reducers/board.ts) and STORAGE_KEY "kanby-v0-1-0".
+// (see src/components/react/context/reducers/board.ts) and STORAGE_KEY "kanby-v0-1-0".
 const SEED_BOARD = {
   rows: [
     { id: "row-1", title: "Launch Plan", color: "var(--color-row-blue)", order: "a0" },

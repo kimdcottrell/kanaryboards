@@ -5,7 +5,7 @@ import {
   getPreferredTheme,
   NIGHT_THEME,
   toggleTheme,
-} from "@components/theme/theme.ts";
+} from "@components/react/theme/theme.ts";
 
 const globalCss = await Deno.readTextFile(
   `${Deno.cwd()}/src/styles/global.css`,

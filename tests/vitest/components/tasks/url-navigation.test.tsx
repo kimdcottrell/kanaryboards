@@ -17,7 +17,7 @@ vi.mock("react-router-dom", async (importOriginal) => {
   };
 });
 
-vi.mock("@components/context/hooks.ts", () => ({
+vi.mock("@components/react/context/hooks.ts", () => ({
   useTaskActions: vi.fn(),
   useRowFormActions: vi.fn(),
   useColumnFilterState: vi.fn(),
@@ -34,22 +34,22 @@ vi.mock("@components/context/hooks.ts", () => ({
 }));
 
 // Stub heavy child components used by BoardView that aren't under test here
-vi.mock("@components/config/board/BoardConfigModal.tsx", () => ({
+vi.mock("@components/react/config/board/BoardConfigModal.tsx", () => ({
   default: () => null,
 }));
-vi.mock("@components/config/board/CreateRowModal.tsx", () => ({
+vi.mock("@components/react/config/board/CreateRowModal.tsx", () => ({
   default: () => null,
 }));
-vi.mock("@components/RowBoard.tsx", () => ({ default: () => null }));
+vi.mock("@components/react/RowBoard.tsx", () => ({ default: () => null }));
 vi.mock(
-  "@components/task/modal/TaskCreateModal.tsx",
+  "@components/react/task/modal/TaskCreateModal.tsx",
   () => ({ default: () => null }),
 );
 // TaskEditModal is NOT mocked — it is rendered directly in tests below
 
 // Stub the rich-text editor used inside TaskEditModal
 // Comments have their own tests (TaskComments.test.tsx).
-vi.mock("@components/task/comments/TaskComments.tsx", () => ({
+vi.mock("@components/react/task/comments/TaskComments.tsx", () => ({
   default: () => null,
 }));
 
@@ -71,10 +71,10 @@ import {
   useTaskActions,
   useTaskEditActions,
   useTaskEditState,
-} from "@components/context/hooks.ts";
-import TaskCard from "@components/task/TaskCard.tsx";
-import TaskEditModal from "@components/task/modal/TaskEditModal.tsx";
-import BoardView from "@components/BoardView.tsx";
+} from "@components/react/context/hooks.ts";
+import TaskCard from "@components/react/task/TaskCard.tsx";
+import TaskEditModal from "@components/react/task/modal/TaskEditModal.tsx";
+import BoardView from "@components/react/BoardView.tsx";
 import {
   makeBoardDataState,
   makeBoardRefs,

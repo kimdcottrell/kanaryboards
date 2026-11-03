@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
 import { mockColumn, secondColumn } from "./setup.ts";
-import StatusSteps from "@components/task/form-elements/StatusSteps.tsx";
+import StatusSteps from "@components/react/task/form-elements/StatusSteps.tsx";
 
 const trashColumn = {
   ...mockColumn,

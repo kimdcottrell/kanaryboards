@@ -5,7 +5,7 @@ import { expect, fillStable, testNoClerk as test } from "./fixtures.ts";
 /**
  * Seeded board state, written to localStorage before navigation so every
  * test starts from the same known rows/columns/tasks (same shape as the
- * BOARD/LOAD payload — see src/components/context/reducers/board.ts).
+ * BOARD/LOAD payload — see src/components/react/context/reducers/board.ts).
  */
 const BOARD_STATE = {
   rows: [
