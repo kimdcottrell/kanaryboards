@@ -11,11 +11,11 @@ sequenceDiagram
     participant Drafts as editDraftStore<br/>(task/editDraftStore.ts,<br/>localStorage `task+${id}`)
     participant Reducer as reducers<br/>(tasks.ts, checklist.ts, checklistAi.ts)
     participant Ctx as BoardContext<br/>(TaskCreate/TaskEdit/ChecklistAI/<br/>BoardData/TasksByCell)
-    participant AI as /api/generate-tasks<br/>(Google GenAI)
+    participant AI as /api/v1/ai/task-titles<br/>(Google GenAI)
     participant Validate as /api/v1/validate/{entity}<br/>(lib/api/fields.ts, app rules)
     participant Comments as TaskComments<br/>(task/comments/TaskComments.tsx,<br/>useTaskComments.ts)
     participant Store as commentStore<br/>(task/comments/commentStore.ts)
-    participant CommentsAPI as /api/task-comments<br/>(Deno KV task_comment entries)
+    participant CommentsAPI as /api/v1/tasks/{id}/comments<br/>(Deno KV task_comment entries)
 
     Note over User,AI: Create task: open modal
     User->>Cell: click "add task"
@@ -133,7 +133,7 @@ sequenceDiagram
     TaskModal->>TaskModal: navigate(/dashboard)
     Ctx-->>TaskModal: TaskEditModal re-renders<br/>(TaskEditContext: taskEditModalOpen=false)<br/>-> modal closes, unmounts Form
     Ctx-->>Cell: source + Trash ColumnSection re-render<br/>(TasksByCellContext changed)<br/>-> TaskCard remounts in Trash with<br/>"N days until permanent deletion."
-    Note over Actions,CommentsAPI: Comments are kept. They are deleted with the task by<br/>POST /api/purge-trash (KV) once trashedAt is 30+ days old
+    Note over Actions,CommentsAPI: Comments are kept. They are deleted with the task by<br/>POST /api/v1/cron/purge-trash (KV) once trashedAt is 30+ days old
 
     Note over User,AI: Open a trashed task (view-only) and Restore
     Ctx-->>TaskModal: TaskViewOnlyModal re-renders<br/>(TaskEditContext: taskEditModalOpen=true,<br/>colId is the Trash column; isTaskTrashed)<br/>-> opens; TaskEditModal stays closed
@@ -155,7 +155,7 @@ sequenceDiagram
     Ctx->>Reducer: tasks.remove(state, {taskId})
     Reducer-->>Ctx: tasks filtered<br/>closes edit modal if it was the edited task
     Actions->>Store: deleteAllComments(taskId) (fire-and-forget)
-    Store->>CommentsAPI: DELETE {taskId}<br/>(or localStorage / in-memory demo)
+    Store->>CommentsAPI: DELETE /tasks/{taskId}/comments<br/>(or localStorage / in-memory demo)
     TaskModal->>TaskModal: navigate(/dashboard)
     Ctx-->>TaskModal: TaskViewOnlyModal re-renders<br/>(TaskEditContext: taskEditModalOpen=false)<br/>-> modal closes, unmounts Form
     Ctx-->>Cell: Trash ColumnSection re-renders<br/>(TasksByCellContext changed)<br/>-> TaskCard unmounts
@@ -165,7 +165,7 @@ sequenceDiagram
     Comments->>Ctx: useBoardMeta() -> {boardId, isAuthenticated}
     Comments->>Store: listComments(taskId)
     alt isAuthenticated
-        Store->>CommentsAPI: GET ?taskId
+        Store->>CommentsAPI: GET /tasks/{taskId}/comments
     else anonymous
         Store->>Store: read localStorage kanby-comments-v0-1-0
     else demo board
@@ -174,7 +174,7 @@ sequenceDiagram
     Store-->>Comments: TaskComment[] (newest first)
     User->>Comments: post / edit / delete a comment
     Comments->>Store: createComment / updateComment / deleteComment
-    Store->>CommentsAPI: POST / PATCH / DELETE<br/>(or localStorage / in-memory demo)
+    Store->>CommentsAPI: POST /tasks/{taskId}/comments<br/>PATCH / DELETE /tasks/{taskId}/comments/{commentId}<br/>(or localStorage / in-memory demo)
     Comments->>Comments: setState -> only TaskComments re-renders
     Note over Comments,Ctx: no dispatch; board autosave unaffected
 
@@ -193,7 +193,7 @@ sequenceDiagram
     Reducer-->>Ctx: isGeneratingChecklist = true<br/>checklistModalTaskId = taskId
     Ctx-->>Form: ChecklistGenerationCollapse re-renders<br/>(reads ChecklistAIContext itself: isGeneratingChecklist=true)<br/>-> "Generate" button disabled, shows "Generating..."
 
-    Actions->>AI: fetchGeneratedItems(prompt, 10)<br/>(actions/shared.ts)<br/>POST /api/generate-tasks {prompt, maxTasks:10}
+    Actions->>AI: fetchGeneratedItems(prompt, 10)<br/>(actions/shared.ts)<br/>POST /api/v1/ai/task-titles {prompt, maxTasks:10}
     AI->>AI: GoogleGenAI.generateContentStream(...)<br/>normalizeTaskLines(fullText)
     AI-->>Actions: {response: string[]}
 
@@ -234,4 +234,4 @@ sequenceDiagram
 
     Note over User,AI: Autosave (debounced, async)
     Ctx->>Ctx: useBoardPersistence: useEffect on tasks (500ms debounce)
-    Ctx->>Ctx: PATCH /api/board {upserts, deletes} (only changed entities)<br/>(or full localStorage write if unauthenticated)
+    Ctx->>Ctx: PATCH /api/v1/board {upserts, deletes} (only changed entities)<br/>(or full localStorage write if unauthenticated)

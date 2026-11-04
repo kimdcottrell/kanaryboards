@@ -10,7 +10,7 @@ vi.mock("@lib/db/kv.ts", () => ({
   deleteBoardComments: vi.fn(async () => {}),
 }));
 
-const { GET, PATCH, DELETE } = await import("@pages/api/board.ts");
+const { GET, PATCH, DELETE } = await import("@pages/api/v1/board.ts");
 
 function makeContext(
   { userId, boardId, method = "GET", navigate = false, body }: {
@@ -24,7 +24,7 @@ function makeContext(
   const headers = new Headers();
   if (navigate) headers.set("Sec-Fetch-Mode", "navigate");
   return {
-    request: new Request("http://localhost/api/board", {
+    request: new Request("http://localhost/api/v1/board", {
       method,
       headers,
       body,
@@ -36,7 +36,7 @@ function makeContext(
   } as unknown as APIContext;
 }
 
-describe("/api/board auth gate", () => {
+describe("/api/v1/board auth gate", () => {
   const handlers = { GET, PATCH, DELETE };
 
   describe("when unauthenticated", () => {
@@ -90,7 +90,7 @@ describe("/api/board auth gate", () => {
       });
       expect(res.status).toBe(400);
       expect(errorSpy).toHaveBeenCalledWith(expect.objectContaining({
-        event: "Rejected PATCH /api/board: invalid request body",
+        event: "Rejected PATCH /api/v1/board: invalid request body",
         issues: expect.arrayContaining([
           expect.objectContaining({
             path: ["upserts", "columns", 0, "pinnedToShortcut"],

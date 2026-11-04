@@ -56,14 +56,14 @@ describe("protectedRequestMiddleware", () => {
   });
 
   describe("when unauthenticated", () => {
-    // Auth enforcement now lives in the resource (src/pages/api/board.ts), not
+    // Auth enforcement now lives in the resource (src/pages/api/v1/board.ts), not
     // the middleware — so the middleware passes every request through and never
     // assigns a boardId. board.ts exposes GET, PATCH and DELETE.
     test.each(["GET", "PATCH", "DELETE"])(
-      "passes %s /api/board through without assigning a boardId",
+      "passes %s /api/v1/board through without assigning a boardId",
       async (method) => {
         const next = vi.fn(() => Promise.resolve(new Response("ok")));
-        const context = makeContext("http://localhost/api/board", method);
+        const context = makeContext("http://localhost/api/v1/board", method);
         await protectedRequestMiddleware(context, next);
 
         expect(next).toHaveBeenCalledOnce();
@@ -85,9 +85,9 @@ describe("protectedRequestMiddleware", () => {
       authState.userId = "user_123";
     });
 
-    test("allows /api/board and assigns the user's boardId", async () => {
+    test("allows /api/v1/board and assigns the user's boardId", async () => {
       const next = vi.fn(() => Promise.resolve(new Response("ok")));
-      const context = makeContext("http://localhost/api/board", "PATCH");
+      const context = makeContext("http://localhost/api/v1/board", "PATCH");
       await protectedRequestMiddleware(context, next);
 
       expect(next).toHaveBeenCalledOnce();

@@ -148,7 +148,7 @@ function drawerNavChecks(t: SessionTest) {
       await expect(link).toBeVisible();
       await link.click();
 
-      await expect(page).toHaveURL(/\/dashboard\/row\/row-e2e-2$/);
+      await expect(page).toHaveURL(/\/dashboard\/row\/ow-e2e-2$/);
       expect(
         await page.evaluate(() =>
           (globalThis as Record<string, unknown>).__noReload
@@ -199,7 +199,7 @@ function drawerNavChecks(t: SessionTest) {
 
       await rowLink(page, "row-e2e-2").click();
 
-      await expect(page).toHaveURL(/\/dashboard\/row\/row-e2e-2$/);
+      await expect(page).toHaveURL(/\/dashboard\/row\/ow-e2e-2$/);
       await expect(page.getByText("Task dashboard is loading..."))
         .toBeVisible();
       expect(loadingHtmlServed).toBe(true);
@@ -265,9 +265,9 @@ test.describe("Drawer row navigation (authenticated)", () => {
 
     // Clear any leftover board, then seed KV directly via the authenticated API
     // so the server-rendered drawer reads known rows.
-    const cleared = await page.request.get("/api/delete-test-data");
+    const cleared = await page.request.delete("/api/v1/test-data");
     expect(cleared.status()).toBe(200);
-    const seeded = await page.request.patch("/api/board", {
+    const seeded = await page.request.patch("/api/v1/board", {
       data: {
         upserts: BOARD_STATE,
         deletes: { rowIds: [], columnIds: [], taskIds: [] },
@@ -277,7 +277,7 @@ test.describe("Drawer row navigation (authenticated)", () => {
   });
 
   test.afterEach(async ({ page }) => {
-    await page.request.get("/api/delete-test-data");
+    await page.request.delete("/api/v1/test-data");
   });
 
   test("server-renders the project-row list for a logged-in user", async ({ page }) => {

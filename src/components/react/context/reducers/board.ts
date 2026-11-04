@@ -67,7 +67,7 @@ export function closeConfigModal(state: BoardState): BoardState {
 }
 
 // Boards saved before the column pin/icon fields existed (6abb264, 2026-07-07)
-// are missing them, and /api/board's validator rejects the whole board on the
+// are missing them, and /api/v1/board's validator rejects the whole board on the
 // next PUT. Backfill them as off/none.
 export const normalizeColumn = (column: StoredColumn): Column => ({
   ...column,
@@ -139,7 +139,7 @@ export function load(
     rows: [...rows].sort((a, b) => a.order < b.order ? -1 : 1),
     columns,
     // Expired Trash tasks are dropped here too: localStorage boards never
-    // reach /api/purge-trash, and a stale tab may have re-saved purged tasks.
+    // reach /api/v1/cron/purge-trash, and a stale tab may have re-saved purged tasks.
     // So are tasks whose row or column is gone: KV has no cascade, so a stale
     // device can save a task into a row or column another device deleted.
     tasks: tasks.map(normalizeTask).filter((t) =>

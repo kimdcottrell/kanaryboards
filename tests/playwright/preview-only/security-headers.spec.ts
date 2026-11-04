@@ -276,8 +276,8 @@ test.describe("security headers block a malicious user", () => {
       // Empty bodies fail schema validation before either route ever calls
       // its downstream service (Resend / Gemini), so these are safe to hit
       // against the live server.
-      request.post("/api/contact", { data: {} }),
-      request.post("/api/generate-tasks", { data: {} }),
+      request.post("/api/v1/contact-messages", { data: {} }),
+      request.post("/api/v1/ai/task-titles", { data: {} }),
     ]);
 
     for (const res of responses) {

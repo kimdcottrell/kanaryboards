@@ -24,4 +24,4 @@ How `kanby user login` works and how it's configured (as of 2026-11-03). Part of
 - `KANBY_CLERK_OAUTH_CLIENT_ID` required. User's `.env` has all three set.
 - `deno task cli` sets `DENO_TLS_CA_STORE=system` for the local mkcert TLS on kanary.local.dev.
 
-**Server side:** `@clerk/astro` middleware authenticates with `acceptsToken: "any"`, so `/api/v1/*` uses `locals.auth({ acceptsToken: "oauth_token" })` (auth object has `userId`). Verified on dev server: no token / bogus token → 401.
+**Server side:** `@clerk/astro` middleware authenticates with `acceptsToken: "any"`, so the CLI routes (`cliRoute` in `src/lib/api/route.ts`; not every `/api/v1/*` route, since the web app's routes moved there too) use `locals.auth({ acceptsToken: "oauth_token" })` (auth object has `userId`). Verified on dev server: no token / bogus token → 401.

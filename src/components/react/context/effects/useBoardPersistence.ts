@@ -71,7 +71,7 @@ function applyToSaved(saved: SavedBoard, { upserts, deletes }: BoardChanges) {
 const emptySavedBoard = () =>
   toSavedBoard({ rows: [], columns: [], tasks: [] });
 
-// The most upserts + deletes PATCH /api/board accepts in one request.
+// The most upserts + deletes PATCH /api/v1/board accepts in one request.
 const MAX_PATCH_CHANGES = 1000;
 
 // Splits `changes` into PATCH-sized pieces. Upserts come first, rows and
@@ -114,7 +114,7 @@ export function chunkChanges(
 // server rejects. Returns whether all were accepted.
 async function patchBoard(changes: BoardChanges): Promise<boolean> {
   for (const chunk of chunkChanges(changes)) {
-    const res = await fetch("/api/board", {
+    const res = await fetch("/api/v1/board", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(chunk),
@@ -142,7 +142,7 @@ function readLocalBoard() {
 async function loadRemoteBoard(
   savedRef: RefObject<SavedBoard>,
 ): Promise<BoardAction | null> {
-  const res = await fetch("/api/board");
+  const res = await fetch("/api/v1/board");
   if (res.ok) {
     const remote = await res.json();
     savedRef.current = toSavedBoard(remote);
@@ -169,7 +169,7 @@ async function loadRemoteBoard(
 }
 
 // Unauthenticated: board lives in localStorage only, no KV interaction.
-// Comments live in separate localStorage, out of reach of /api/purge-trash,
+// Comments live in separate localStorage, out of reach of /api/v1/cron/purge-trash,
 // so drop those of every task not on the loaded board: expired Trash tasks
 // (BOARD/LOAD drops them) and tasks removed with their row or column.
 // No board (e.g. after a reset) means no comment belongs to one.
@@ -275,7 +275,7 @@ export function useBoardPersistence(
         refreshQueuedRef.current = true;
         return;
       }
-      const res = await fetch("/api/board");
+      const res = await fetch("/api/v1/board");
       if (!res.ok) return;
       const remote: PersistedBoard = await res.json();
       // The user may have started an edit during the GET.
@@ -297,11 +297,11 @@ export function useBoardPersistence(
     refreshFromServer();
   }, [refreshFromServer]);
 
-  // Server-Sent Events from /api/board/events: one message per board write,
+  // Server-Sent Events from /api/v1/board/events: one message per board write,
   // and one on connect. EventSource reconnects by itself after a drop.
   useEffect(() => {
     if (boardId === "demo" || !isAuthenticated || !state.boardLoaded) return;
-    const events = new EventSource("/api/board/events");
+    const events = new EventSource("/api/v1/board/events");
     events.onmessage = refreshFromServer;
     return () => events.close();
   }, [boardId, isAuthenticated, state.boardLoaded, refreshFromServer]);

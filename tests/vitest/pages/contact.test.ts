@@ -14,7 +14,7 @@ const apiContext = (request: Request): APIContext =>
   ({ request }) as APIContext;
 
 function makeRequest(body: unknown) {
-  return new Request("http://localhost/api/contact", {
+  return new Request("http://localhost/api/v1/contact-messages", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -22,7 +22,7 @@ function makeRequest(body: unknown) {
 }
 
 function makeInvalidRequest() {
-  return new Request("http://localhost/api/contact", {
+  return new Request("http://localhost/api/v1/contact-messages", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: "not-json{{",
@@ -36,11 +36,11 @@ const validPayload = {
 };
 
 async function importPOST() {
-  const mod = await import("@pages/api/contact.ts");
+  const mod = await import("@pages/api/v1/contact-messages.ts");
   return mod.POST;
 }
 
-describe("POST /api/contact", () => {
+describe("POST /api/v1/contact-messages", () => {
   describe("when email service is not configured", () => {
     beforeEach(() => {
       vi.resetModules();
@@ -265,7 +265,7 @@ describe("POST /api/contact", () => {
       });
     });
 
-    // Documents a known gap rather than fixing it: /api/contact has no rate
+    // Documents a known gap rather than fixing it: /api/v1/contact-messages has no rate
     // limiting or bot challenge (Cloudflare Turnstile is allowlisted in the
     // CSP for Clerk but isn't wired to this form). A real fix — Turnstile
     // verification or edge/KV-based rate limiting — is a separate, larger

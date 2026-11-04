@@ -1,16 +1,14 @@
 export const prerender = false;
 
 import type { APIRoute } from "astro";
-import { authorizeCli } from "@lib/api/cli-auth.ts";
-import { loadLiveBoard } from "@lib/api/v1-http.ts";
+import { cliRoute } from "@lib/api/route.ts";
+import { loadLiveBoard } from "@lib/api/request.ts";
 import { shortId } from "@lib/api/board-ops.ts";
 import { jsonResponse } from "@lib/http/api-responses.ts";
 
 // Columns a task can be put in from the CLI, in board order (Trash excluded).
-export const GET: APIRoute = async (context) => {
-  const auth = await authorizeCli(context);
-  if (auth instanceof Response) return auth;
-  const board = await loadLiveBoard(auth.boardId);
+export const GET = cliRoute(async (_context, { boardId }) => {
+  const board = await loadLiveBoard(boardId);
   return jsonResponse(
     board.columns.filter((c) => !c.isTrash).map((c) => ({
       id: c.id,
@@ -19,4 +17,4 @@ export const GET: APIRoute = async (context) => {
     })),
     200,
   );
-};
+}) satisfies APIRoute;

@@ -13,7 +13,7 @@ export function useBoardLifecycleActions() {
     if (confirmed) {
       dispatch({ type: "BOARD/RESET" });
       globalThis.localStorage?.removeItem(STORAGE_KEY);
-      fetch("/api/board", { method: "DELETE" });
+      fetch("/api/v1/board", { method: "DELETE" });
     }
   }, [dispatch]);
 

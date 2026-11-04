@@ -8,7 +8,7 @@ import {
 } from "./fixtures.ts";
 
 // The homepage hero form (HeroStartForm.tsx) generates tasks via
-// /api/generate-tasks — which calls Google GenAI and needs GOOGLE_AI_STUDIO_KEY
+// /api/v1/ai/task-titles — which calls Google GenAI and needs GOOGLE_AI_STUDIO_KEY
 // — so every test mocks that route and never hits the real model.
 const MOCK_TASKS_RESPONSE = {
   response: [
@@ -41,7 +41,7 @@ const rowFor = (page: Page, goal: string) =>
   });
 
 function mockGenerateTasks(page: Page) {
-  return page.route("/api/generate-tasks", (route) =>
+  return page.route("/api/v1/ai/task-titles", (route) =>
     route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -62,7 +62,7 @@ testNoClerk.describe("Homepage hero form — anonymous", () => {
     "empty submit does not navigate or call the API",
     async ({ page }) => {
       const apiCall = page
-        .waitForRequest("**/api/generate-tasks", { timeout: 1500 })
+        .waitForRequest("**/api/v1/ai/task-titles", { timeout: 1500 })
         .catch(() => null);
 
       await getStarted(page).click();
@@ -107,7 +107,7 @@ testNoClerk.describe("Homepage hero form — anonymous", () => {
     async ({ page }) => {
       let resolveRoute!: () => void;
       await page.route(
-        "/api/generate-tasks",
+        "/api/v1/ai/task-titles",
         (route) =>
           new Promise<void>((resolve) => {
             resolveRoute = resolve;
@@ -122,7 +122,7 @@ testNoClerk.describe("Homepage hero form — anonymous", () => {
 
       await fillControlled(heroInput(page), "Plan a birthday party");
 
-      const requestPromise = page.waitForRequest("**/api/generate-tasks");
+      const requestPromise = page.waitForRequest("**/api/v1/ai/task-titles");
       await getStarted(page).click();
       await requestPromise;
 
@@ -147,13 +147,13 @@ test.describe("Homepage hero form — authenticated", () => {
     // testAuthed boots with global.setup.ts's storage state, so the session is
     // already live — no clerk.signIn() round-trip needed here.
     await page.goto("/dashboard");
-    const cleared = await page.request.get("/api/delete-test-data");
+    const cleared = await page.request.delete("/api/v1/test-data");
     expect(cleared.status()).toBe(200);
     await mockGenerateTasks(page);
   });
 
   test.afterEach(async ({ page }) => {
-    const cleared = await page.request.get("/api/delete-test-data");
+    const cleared = await page.request.delete("/api/v1/test-data");
     expect(cleared.status()).toBe(200);
   });
 
@@ -165,9 +165,9 @@ test.describe("Homepage hero form — authenticated", () => {
 
       await fillControlled(heroInput(page), goal);
 
-      const genRequest = page.waitForRequest("**/api/generate-tasks");
+      const genRequest = page.waitForRequest("**/api/v1/ai/task-titles");
       const patchRequest = page.waitForRequest(
-        (r) => r.url().includes("/api/board") && r.method() === "PATCH",
+        (r) => r.url().includes("/api/v1/board") && r.method() === "PATCH",
       );
       await getStarted(page).click();
       await genRequest;

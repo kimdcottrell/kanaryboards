@@ -34,7 +34,7 @@ const MOCK_TASKS_RESPONSE = {
  * The form calls addRow() on submit. Without a prompt it dispatches ROW/ADD,
  * closes the modal, then ROW/RESET_FORM resets state (newRowFormKey changes,
  * unmounting/remounting the form to clear inputs). With a prompt it fetches
- * /api/generate-tasks first and only adds the row on success, closing the
+ * /api/v1/ai/task-titles first and only adds the row on success, closing the
  * modal 3s after the completed status shows; on failure no row is added and
  * the modal stays open with the error and the inputs kept.
  */
@@ -127,11 +127,11 @@ test.describe("Board Configuration — Create New Row section", () => {
     });
   });
 
-  test.describe("creating a row with AI task generation (mocked /api/generate-tasks)", () => {
+  test.describe("creating a row with AI task generation (mocked /api/v1/ai/task-titles)", () => {
     test("hides Add Row button and shows generating status while waiting for the API", async ({ page }) => {
       let resolveRoute!: () => void;
       await page.route(
-        "/api/generate-tasks",
+        "/api/v1/ai/task-titles",
         (route) =>
           new Promise<void>((resolve) => {
             resolveRoute = resolve;
@@ -154,7 +154,7 @@ test.describe("Board Configuration — Create New Row section", () => {
       await fillStable(nameInput, "Pizza Making");
       await fillStable(promptInput, "Steps to make a pizza");
 
-      const requestPromise = page.waitForRequest("**/api/generate-tasks");
+      const requestPromise = page.waitForRequest("**/api/v1/ai/task-titles");
       await section.getByRole("button", { name: "Add Row" }).click();
       await requestPromise;
 
@@ -169,7 +169,7 @@ test.describe("Board Configuration — Create New Row section", () => {
     });
 
     test("adds the new row to the board after AI generation completes", async ({ page }) => {
-      await page.route("/api/generate-tasks", (route) =>
+      await page.route("/api/v1/ai/task-titles", (route) =>
         route.fulfill({
           status: 200,
           contentType: "application/json",
@@ -192,7 +192,7 @@ test.describe("Board Configuration — Create New Row section", () => {
     });
 
     test("places generated tasks on the board after AI generation completes", async ({ page }) => {
-      await page.route("/api/generate-tasks", (route) =>
+      await page.route("/api/v1/ai/task-titles", (route) =>
         route.fulfill({
           status: 200,
           contentType: "application/json",
@@ -223,7 +223,7 @@ test.describe("Board Configuration — Create New Row section", () => {
     });
 
     test("keeps the modal open with the completed status, then closes it 1s later", async ({ page }) => {
-      await page.route("/api/generate-tasks", (route) =>
+      await page.route("/api/v1/ai/task-titles", (route) =>
         route.fulfill({
           status: 200,
           contentType: "application/json",
@@ -250,7 +250,7 @@ test.describe("Board Configuration — Create New Row section", () => {
     });
 
     test("does not create the row and keeps the modal open when generation fails", async ({ page }) => {
-      await page.route("/api/generate-tasks", (route) =>
+      await page.route("/api/v1/ai/task-titles", (route) =>
         route.fulfill({
           status: 500,
           contentType: "application/json",

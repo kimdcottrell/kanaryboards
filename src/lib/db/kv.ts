@@ -40,7 +40,7 @@ export async function setBoardIdForUser(
 // Key: [kind, boardId, id]. Boards saved before this live in a single
 // ["board", boardId] entry until getBoard migrates them.
 
-// Only what changed since the last save (PATCH /api/board).
+// Only what changed since the last save (PATCH /api/v1/board).
 export interface BoardChanges {
   upserts: PersistedBoard;
   deletes: { rowIds: string[]; columnIds: string[]; taskIds: string[] };

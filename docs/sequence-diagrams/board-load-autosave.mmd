@@ -7,12 +7,12 @@ sequenceDiagram
     participant Provider as BoardProvider<br/>(BoardContext.tsx -><br/>effects/useBoardPersistence.ts)
     participant Reducer as board reducer<br/>(reducers/board.ts)
     participant View as BoardView /<br/>RowBoard / BoardConfigModal
-    participant API@{ "type" : "boundary" } as /api/board<br/>(pages/api/board.ts)
-    participant Events@{ "type" : "boundary" } as /api/board/events<br/>(pages/api/board/events.ts)
-    participant CLI@{ "type" : "boundary" } as kanby CLI<br/>(pages/api/v1/*)
+    participant API@{ "type" : "boundary" } as /api/v1/board<br/>(pages/api/v1/board.ts)
+    participant Events@{ "type" : "boundary" } as /api/v1/board/events<br/>(pages/api/v1/board/events.ts)
+    participant CLI@{ "type" : "boundary" } as kanby CLI<br/>(pages/api/v1/{rows,tasks,columns})
     participant KV@{ "type" : "database" } as Deno KV<br/>(lib/db/kv.ts)
     participant LS@{ "type" : "database" } as localStorage
-    participant Purge@{ "type" : "boundary" } as /api/purge-trash<br/>(pages/api/purge-trash.ts)
+    participant Purge@{ "type" : "boundary" } as /api/v1/cron/purge-trash<br/>(pages/api/v1/cron/purge-trash.ts)
     participant Tab as other tabs<br/>(BroadcastChannel<br/>board-sync:kv / board-sync:local)
 
     Note over User,LS: Initial mount
@@ -25,7 +25,7 @@ sequenceDiagram
     Note over Provider,Reducer: boardId === "demo" (landing-page demo): dispatch(BOARD/LOAD, createDemoBoard())<br/>and nothing else — no API, no localStorage, no autosave, no cross-tab sync.<br/>If loading throws (fetch rejects, non-JSON body), it logs and dispatches BOARD/RESET.
     rect rgba(38, 240, 58, 0.25)
         critical isAuthenticated
-            Provider->>API: GET /api/board
+            Provider->>API: GET /api/v1/board
             API->>KV: getBoard(boardId)
             rect rgba(255, 255, 255, 0.5)
                 alt board exists (200)
@@ -47,7 +47,7 @@ sequenceDiagram
                         break legacy local data found
                             rect rgba(38, 240, 58, 0.25)
                                 LS-->>Provider: stored JSON
-                                Provider->>API: PATCH /api/board {upserts: local, deletes: none}<br/>(migrate local -> remote; split into chunks of 1000 like autosave)
+                                Provider->>API: PATCH /api/v1/board {upserts: local, deletes: none}<br/>(migrate local -> remote; split into chunks of 1000 like autosave)
                                 API->>KV: applyBoardChanges(boardId, changes)
                                 opt PATCH ok
                                     Provider->>LS: localStorage.removeItem(STORAGE_KEY)
@@ -105,7 +105,7 @@ sequenceDiagram
                 Provider->>Provider: queued on saveChainRef (one PATCH in flight)<br/>diffBoard(savedRef, snapshot): upserts = new/changed<br/>rows/columns/tasks (JSON compare), deletes = ids gone
                 opt diff not empty
                     loop each chunk of at most 1000 upserts + deletes<br/>(chunkChanges: rows, columns, tasks, then deletes)
-                        Provider->>API: PATCH /api/board {upserts, deletes}
+                        Provider->>API: PATCH /api/v1/board {upserts, deletes}
                         API->>KV: applyBoardChanges(boardId, changes)<br/>kv.atomic(): set/delete per entity<br/>+ set ["board_rev", boardId]
                         API-->>Provider: 200, or 4xx/5xx -> stop
                     end
@@ -130,21 +130,21 @@ sequenceDiagram
     Note over Provider,KV: Edits from different devices to different entities both survive.<br/>Same entity: last write wins. A stale device's upsert can<br/>resurrect an entity another device deleted (accepted for now).<br/>Other devices see the change live (see Live refresh below).
 
     Note over User,Tab: Live refresh (authenticated, once boardLoaded; skipped for boardId "demo")
-    Provider->>Events: new EventSource("/api/board/events")
+    Provider->>Events: new EventSource("/api/v1/board/events")
     Events->>KV: watchBoard(boardId) -> kv.watch([["board_rev", boardId]])
     Note over Events: ": ping" every 30s keeps proxies (Cloudflare: 100s idle)<br/>from closing the stream. EventSource reopens a dropped one.
     KV-->>Events: current entry (on connect)
     Events-->>Provider: data: change
-    Note over Provider: The connect-time message covers writes made<br/>between GET /api/board and the stream opening.
+    Note over Provider: The connect-time message covers writes made<br/>between GET /api/v1/board and the stream opening.
     CLI->>KV: POST/PATCH /api/v1/rows|tasks -> applyBoardChanges / saveEntity<br/>(same atomic commit sets ["board_rev", boardId])
-    Note over KV: Every board write bumps board_rev: this tab's and other devices'<br/>autosaves, the CLI, and DELETE /api/board (deletes it). getBoard's<br/>legacy migration and purgeExpiredTrash don't.
+    Note over KV: Every board write bumps board_rev: this tab's and other devices'<br/>autosaves, the CLI, and DELETE /api/v1/board (deletes it). getBoard's<br/>legacy migration and purgeExpiredTrash don't.
     KV-->>Events: board_rev changed
     Events-->>Provider: data: change
     Provider->>Provider: refreshFromServer() queued on saveChainRef<br/>(runs after any in-flight PATCH)
     alt an edit is waiting on the 500ms autosave timer
         Provider->>Provider: refreshQueuedRef = true<br/>(the timer re-queues the refresh after its save)
     else no pending edit
-        Provider->>API: GET /api/board
+        Provider->>API: GET /api/v1/board
         API->>KV: getBoard(boardId)
         API-->>Provider: 200 {rows, columns, tasks} (non-200 -> stop)
         alt an edit started during the GET

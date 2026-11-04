@@ -116,7 +116,7 @@ describe("BoardProvider (signed in) — live refresh", () => {
   const trash = { ...column, id: "trash", order: "a1", isTrash: true };
   const cliRow = { id: "row-cli", title: "From CLI", color: "", order: "a1" };
 
-  // A board the server holds. PATCHes are applied to it, as /api/board does.
+  // A board the server holds. PATCHes are applied to it, as /api/v1/board does.
   function stubServer(
     board: { rows: unknown[]; columns: unknown[]; tasks: unknown[] },
   ) {
@@ -187,7 +187,7 @@ describe("BoardProvider (signed in) — live refresh", () => {
     });
     renderProbe();
     await waitFor(() => expect(rowTitles()).toBe("Project"));
-    expect(events().url).toBe("/api/board/events");
+    expect(events().url).toBe("/api/v1/board/events");
 
     server.board = { ...server.board, rows: [row, cliRow] };
     events().emit();

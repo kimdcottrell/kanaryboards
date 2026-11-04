@@ -27,7 +27,7 @@ export const fetchGeneratedItems = async (
   prompt: string,
   maxItems = 10,
 ): Promise<string[]> => {
-  const response = await fetch("/api/generate-tasks", {
+  const response = await fetch("/api/v1/ai/task-titles", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt, maxTasks: maxItems }),

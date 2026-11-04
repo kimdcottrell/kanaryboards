@@ -56,13 +56,13 @@ async function pickColumn(current?: string): Promise<string> {
   );
 }
 
-// Offers an AI-generated checklist (POST /api/generate-tasks, as the web
+// Offers an AI-generated checklist (POST /api/v1/ai/task-titles, as the web
 // app's checklist button does). Returns the items to add; [] if declined.
 async function aiChecklist(title: string): Promise<string[]> {
   if (!yesNo("Generate an AI checklist?", false)) return [];
   const prompt = await ask("Describe the checklist", { current: title });
   console.log("Generating…");
-  const res = await fetch(`${config.apiUrl}/api/generate-tasks`, {
+  const res = await fetch(`${config.apiUrl}/api/v1/ai/task-titles`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt, maxTasks: 10 }),

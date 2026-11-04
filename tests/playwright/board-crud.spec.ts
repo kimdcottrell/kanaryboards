@@ -449,7 +449,7 @@ test.describe("Board CRUD", () => {
         }),
       )
         .toBeVisible();
-      await expect(page).toHaveURL(/\/dashboard\/task\/task-e2e-1/);
+      await expect(page).toHaveURL(/\/dashboard\/task\/sk-e2e-1/);
 
       await fillStable(
         page.getByRole("textbox", { name: "Title" }),

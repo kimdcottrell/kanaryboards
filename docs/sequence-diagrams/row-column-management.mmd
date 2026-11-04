@@ -12,7 +12,7 @@ sequenceDiagram
     participant Actions as action hooks<br/>(actions/boardConfig.ts,<br/>row*.ts, column*.ts, view.ts)
     participant Reducer as reducers<br/>(board.ts, rows.ts, columns.ts, taskAi.ts, view.ts)
     participant Ctx as BoardContext<br/>(BoardConfig/BoardData/RowForm/<br/>RowEdit/ColumnEdit/ColumnConfig/ColumnFilter)
-    participant AI as /api/generate-tasks<br/>(Google GenAI)
+    participant AI as /api/v1/ai/task-titles<br/>(Google GenAI)
     participant Validate as /api/v1/validate/{entity}<br/>(lib/api/fields.ts, app rules)
 
     Note over User,AI: Open board configuration modal<br/>(gear icon, or "Add new column to all rows" menu item)
@@ -66,7 +66,7 @@ sequenceDiagram
         Reducer-->>Ctx: isGeneratingTasks = true, taskGenerationFailed = false<br/>taskGenerationStatus = "Generating tasks..."
         Ctx-->>RowModal: CreateRowModal re-renders<br/>(RowFormContext: isGeneratingTasks=true)<br/>-> modal stays open, GeneratingTasksAlert (info),<br/>inputs disabled, Add Row hidden
 
-        Actions->>AI: fetchGeneratedItems(prompt, 10)<br/>(actions/shared.ts)<br/>POST /api/generate-tasks
+        Actions->>AI: fetchGeneratedItems(prompt, 10)<br/>(actions/shared.ts)<br/>POST /api/v1/ai/task-titles
         AI-->>Actions: {response: string[]} (task titles)
 
         alt titles returned
@@ -157,8 +157,8 @@ sequenceDiagram
     Actions->>Ctx: dispatch(ROW/DELETE, {rowId})
     Ctx->>Reducer: rows.remove(state, payload)
     Reducer-->>Ctx: rows filtered. tasks for that row removed.<br/>clears any open modal/edit state referencing it
-    Note over Reducer: Comments of the removed tasks are not deleted here:<br/>KV -> swept by the next /api/purge-trash run,<br/>localStorage -> pruned on the next board load
-    Note over Ctx: The next autosave diff deletes the row and all its tasks<br/>(signed in: one PATCH /api/board)
+    Note over Reducer: Comments of the removed tasks are not deleted here:<br/>KV -> swept by the next /api/v1/cron/purge-trash run,<br/>localStorage -> pruned on the next board load
+    Note over Ctx: The next autosave diff deletes the row and all its tasks<br/>(signed in: one PATCH /api/v1/board)
     Ctx-->>Row: that RowSection (+ its ColumnSections/TaskCards)<br/>unmounts (BoardData: rows/tasks changed)
     Ctx-->>Config: RowSettingsSection re-renders<br/>(BoardData: rows changed)<br/>-> row settings list loses the row
     Note over Ctx: Other tabs receive the new board via BOARD/SYNC<br/>(see board-load-autosave). If no rows are left there,<br/>their task modals close.
@@ -248,8 +248,8 @@ sequenceDiagram
     Actions->>Ctx: dispatch(COLUMN/DELETE, {columnId})
     Ctx->>Reducer: columns.remove(state, payload)
     Reducer-->>Ctx: columns filtered. tasks for that column removed.<br/>clears any open modal/edit state referencing it
-    Note over Reducer: Comments of the removed tasks are not deleted here:<br/>KV -> swept by the next /api/purge-trash run,<br/>localStorage -> pruned on the next board load
-    Note over Ctx: The next autosave diff deletes the column and all its tasks<br/>(signed in: one PATCH /api/board)
+    Note over Reducer: Comments of the removed tasks are not deleted here:<br/>KV -> swept by the next /api/v1/cron/purge-trash run,<br/>localStorage -> pruned on the next board load
+    Note over Ctx: The next autosave diff deletes the column and all its tasks<br/>(signed in: one PATCH /api/v1/board)
     Ctx-->>Config: ColumnSettingsSection re-renders<br/>(BoardData: columns changed)<br/>-> column settings badge list loses the column
     Ctx-->>Cell: the corresponding ColumnSection instance in<br/>every RowSection unmounts<br/>(BoardData: columns/tasks changed)
 
@@ -325,7 +325,7 @@ sequenceDiagram
 
     Note over User,AI: Autosave (debounced, async)
     Ctx->>Ctx: useBoardPersistence: useEffect on rows/columns/tasks (500ms debounce)
-    Ctx->>Ctx: PATCH /api/board {upserts, deletes} (only changed entities)<br/>(or full localStorage write if unauthenticated)
+    Ctx->>Ctx: PATCH /api/v1/board {upserts, deletes} (only changed entities)<br/>(or full localStorage write if unauthenticated)
 
     Note over User,AI: Sync drawer row list (DrawerMenu.astro,<br/>an Astro server island rendered outside the React tree —<br/>see BoardController's document-click-delegation note above)
     Ctx->>Ctx: useDrawerRowMirror (effects/useDrawerRowMirror.ts):<br/>useEffect on rows (after boardLoaded, skipped when boardId === "demo")

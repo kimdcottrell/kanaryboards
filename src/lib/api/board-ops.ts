@@ -20,8 +20,8 @@ import { lexicalToPlainText, plainTextToLexical } from "@lib/lexical.ts";
 import { shortId } from "@lib/dashboard/short-id.ts";
 
 // Server-side counterparts of the board's client-side domain rules, for the
-// kanby CLI API (src/pages/api/v1/). They work on a PersistedBoard from
-// getBoard() and return the entities to save.
+// kanby CLI API (src/pages/api/v1/{rows,tasks,columns}). They work on a
+// PersistedBoard from getBoard() and return the entities to save.
 
 // The board as the web app shows it after BOARD/LOAD: legacy fields
 // backfilled, rows/columns sorted, expired Trash tasks and tasks whose row or

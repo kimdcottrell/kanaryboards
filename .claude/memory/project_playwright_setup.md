@@ -28,7 +28,7 @@ deno task e2e-test   # runs --project=chromium --project=chromium-shared-account
 - `task-edit-drafts.spec.ts` — unsaved edit drafts (`task+${id}` localStorage), "edited but not saved" indicator, PostEditPreSaveAlert
 - `task-url.spec.ts` — task deep-link URL behaviour
 - `board-persistence.spec.ts` — localStorage→KV migration on sign-in (shared Clerk account; the only spec using the Clerk-wrapped `test`)
-- `board-config.spec.ts`, `board-menu*.spec.ts`, `board-dock.spec.ts`, `dashboard-empty-state.spec.ts`, `drawer-row-*.spec.ts`, `render-isolation.spec.ts`, `hero-start-form.spec.ts`, `theme-toggle.spec.ts`, `generate-tasks-api.spec.ts`, plus non-board specs (blog, cookie consent, Clerk sign-up, unauth `/api/board`)
+- `board-config.spec.ts`, `board-menu*.spec.ts`, `board-dock.spec.ts`, `dashboard-empty-state.spec.ts`, `drawer-row-*.spec.ts`, `render-isolation.spec.ts`, `hero-start-form.spec.ts`, `theme-toggle.spec.ts`, `generate-tasks-api.spec.ts`, plus non-board specs (blog, cookie consent, Clerk sign-up, unauth `/api/v1/board`)
 - `preview-only/` — security specs; excluded by `testIgnore` in every project, so neither `e2e-test` nor CI currently runs them
 
 ## Fixtures and Clerk
@@ -77,7 +77,7 @@ await page.evaluate(() => {
 });
 await expect(page.getByRole("heading", { name: "Add task" })).toBeVisible();
 ```
-Direct click hits strict-mode violations (3 buttons match). Use `evaluate` or scope to a column locator. `waitForSelector` is required first — the board is loaded from `/api/board` via a useEffect after mount, so the buttons don't exist immediately after `goto`.
+Direct click hits strict-mode violations (3 buttons match). Use `evaluate` or scope to a column locator. `waitForSelector` is required first — the board is loaded from `/api/v1/board` via a useEffect after mount, so the buttons don't exist immediately after `goto`.
 
 **Filling the task title input:**
 ```ts
@@ -112,12 +112,12 @@ This requires `CLERK_SECRET_KEY` (Backend API creates a sign-in token).
 The load/migration effect (`effects/useBoardPersistence.ts`) runs once on mount keyed on
 `[boardId, isAuthenticated]` — it is NOT reactive. After `clerk.signIn`,
 `page.reload()` is required for SSR to recompute `isAuthenticated` and trigger
-migration. Migration only fires if `GET /api/board` 404s, so delete any
+migration. Migration only fires if `GET /api/v1/board` 404s, so delete any
 leftover board first:
 ```ts
-await page.request.delete("/api/board");
+await page.request.delete("/api/v1/board");
 const migrated = page.waitForResponse((res) =>
-  res.url().includes("/api/board") && res.request().method() === "PUT"
+  res.url().includes("/api/v1/board") && res.request().method() === "PATCH"
 );
 await page.reload();
 await migrated;

@@ -35,12 +35,12 @@ describe("API-key secrets are read at runtime via Deno.env.get()", () => {
   describe("contact endpoint — RESEND_API_KEY", () => {
     test("reads the key through Deno.env.get() at module load", async () => {
       const getSpy = vi.spyOn(Deno.env, "get");
-      await import("@pages/api/contact.ts");
+      await import("@pages/api/v1/contact-messages.ts");
       expect(getSpy).toHaveBeenCalledWith("RESEND_API_KEY");
     });
 
     test("does not read the key off import.meta.env in source", () => {
-      const src = readSource("src/pages/api/contact.ts");
+      const src = readSource("src/pages/api/v1/contact-messages.ts");
       expect(src).toContain('Deno.env.get("RESEND_API_KEY")');
       expect(src).not.toMatch(/import\.meta\.env\.RESEND_API_KEY/);
     });
@@ -49,13 +49,13 @@ describe("API-key secrets are read at runtime via Deno.env.get()", () => {
   describe("generate-tasks endpoint — GOOGLE_AI_STUDIO_KEY / _MODEL", () => {
     test("reads both keys through Deno.env.get() at module load", async () => {
       const getSpy = vi.spyOn(Deno.env, "get");
-      await import("@pages/api/generate-tasks.ts");
+      await import("@pages/api/v1/ai/task-titles.ts");
       expect(getSpy).toHaveBeenCalledWith("GOOGLE_AI_STUDIO_KEY");
       expect(getSpy).toHaveBeenCalledWith("GOOGLE_AI_STUDIO_MODEL");
     });
 
     test("does not read the keys off import.meta.env in source", () => {
-      const src = readSource("src/pages/api/generate-tasks.ts");
+      const src = readSource("src/pages/api/v1/ai/task-titles.ts");
       expect(src).toContain('Deno.env.get("GOOGLE_AI_STUDIO_KEY")');
       expect(src).toContain('Deno.env.get("GOOGLE_AI_STUDIO_MODEL")');
       // MODE is a legitimate build-time constant, so only the secret keys are

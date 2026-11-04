@@ -2,7 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from "astro";
 import { watchBoard } from "@lib/db/kv.ts";
-import { jsonResponse, unauthorizedResponse } from "@lib/http/api-responses.ts";
+import { sessionRoute } from "@lib/api/route.ts";
 
 const encoder = new TextEncoder();
 const CHANGE = encoder.encode("data: change\n\n");
@@ -12,21 +12,9 @@ const PING_INTERVAL_MS = 30_000;
 
 // Server-Sent Events: "change" whenever the board is written (by this tab,
 // another device, or the CLI), plus once on connect to cover writes made
-// between the tab's GET /api/board and this stream opening. The tab refetches
-// the board on each one (see effects/useBoardPersistence.ts).
-export const GET: APIRoute = async ({ locals, request }) => {
-  const { userId } = locals.auth();
-  if (!userId) return unauthorizedResponse(request);
-  const boardId = locals.boardId;
-  if (!boardId) {
-    console.error({
-      event:
-        "Rejected GET /api/board/events: locals.boardId missing despite passing the auth gate",
-      auth: locals.auth(),
-    });
-    return jsonResponse({ error: "Unauthorized" }, 401);
-  }
-
+// between the tab's GET /api/v1/board and this stream opening. The tab
+// refetches the board on each one (see effects/useBoardPersistence.ts).
+export const GET = sessionRoute(async (_context, { boardId }) => {
   const reader = (await watchBoard(boardId)).getReader();
   let ping: ReturnType<typeof setInterval>;
   const body = new ReadableStream<Uint8Array>({
@@ -55,4 +43,4 @@ export const GET: APIRoute = async ({ locals, request }) => {
       "Cache-Control": "no-cache",
     },
   });
-};
+}) satisfies APIRoute;

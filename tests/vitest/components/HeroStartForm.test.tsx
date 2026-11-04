@@ -32,16 +32,16 @@ function restoreLocation() {
   });
 }
 
-// Default fetch: /api/generate-tasks succeeds, GET /api/board 404s (no board
-// yet), PATCH /api/board succeeds.
+// Default fetch: /api/v1/ai/task-titles succeeds, GET /api/v1/board 404s (no board
+// yet), PATCH /api/v1/board succeeds.
 function makeFetch(
   generate: () => Promise<{ ok: boolean; json: () => Promise<unknown> }>,
 ) {
   return vi.fn((input: string, init?: { method?: string }) => {
     const url = String(input);
     const method = init?.method ?? "GET";
-    if (url.includes("/api/generate-tasks")) return generate();
-    if (url.includes("/api/board")) {
+    if (url.includes("/api/v1/ai/task-titles")) return generate();
+    if (url.includes("/api/v1/board")) {
       if (method === "GET") {
         return Promise.resolve({
           ok: false,
@@ -111,7 +111,7 @@ describe("HeroStartForm", () => {
     await waitFor(() => expect(globalThis.location.href).toBe("/dashboard"));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/generate-tasks",
+      "/api/v1/ai/task-titles",
       expect.objectContaining({ method: "POST" }),
     );
     const stored = globalThis.localStorage.getItem(STORAGE_KEY);
@@ -163,7 +163,7 @@ describe("HeroStartForm", () => {
     );
   });
 
-  test("authenticated: persists via PATCH /api/board before redirecting", async () => {
+  test("authenticated: persists via PATCH /api/v1/board before redirecting", async () => {
     clerk.isSignedIn = true;
     const fetchMock = makeFetch(generateOk);
     vi.stubGlobal("fetch", fetchMock);
@@ -173,7 +173,7 @@ describe("HeroStartForm", () => {
 
     await waitFor(() => expect(globalThis.location.href).toBe("/dashboard"));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/board",
+      "/api/v1/board",
       expect.objectContaining({ method: "PATCH" }),
     );
     const patch = fetchMock.mock.calls.find(([, init]) =>
@@ -190,7 +190,7 @@ describe("HeroStartForm", () => {
     clerk.isSignedIn = true;
     const fetchMock = vi.fn((input: string, init?: { method?: string }) => {
       const url = String(input);
-      if (url.includes("/api/generate-tasks")) return generateOk();
+      if (url.includes("/api/v1/ai/task-titles")) return generateOk();
       if (init?.method === "PATCH") {
         return Promise.resolve({
           ok: false,
@@ -220,7 +220,7 @@ describe("HeroStartForm", () => {
     clerk.isSignedIn = true;
     const fetchMock = vi.fn((input: string, init?: { method?: string }) => {
       const url = String(input);
-      if (url.includes("/api/generate-tasks")) return generateOk();
+      if (url.includes("/api/v1/ai/task-titles")) return generateOk();
       if (init?.method === "PATCH") {
         return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
       }

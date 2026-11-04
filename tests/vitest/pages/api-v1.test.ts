@@ -28,16 +28,18 @@ const auth = vi.fn((_opts?: { acceptsToken?: string }) => ({
   userId: "user_cli" as string | null,
 }));
 
-function ctx(
-  { method = "GET", path = "/", params = {}, body, headers = {}, userId }: {
-    method?: string;
-    path?: string;
-    params?: Record<string, string>;
-    body?: unknown;
-    headers?: Record<string, string>;
-    userId?: string | null;
-  } = {},
-): APIContext {
+// Typed by its params, as each route's handler is (e.g. {id: string}).
+function ctx<P extends Record<string, string> = Record<string, string>>(
+  { method = "GET", path = "/", params = {} as P, body, headers = {}, userId }:
+    {
+      method?: string;
+      path?: string;
+      params?: P;
+      body?: unknown;
+      headers?: Record<string, string>;
+      userId?: string | null;
+    } = {},
+): APIContext<Record<string, unknown>, P> {
   auth.mockReturnValue({ userId: userId === undefined ? "user_cli" : userId });
   const url = new URL(`http://localhost/api/v1${path}`);
   return {
@@ -49,7 +51,7 @@ function ctx(
       body: body === undefined ? undefined : JSON.stringify(body),
     }),
     locals: { auth },
-  } as unknown as APIContext;
+  } as unknown as APIContext<Record<string, unknown>, P>;
 }
 
 // Creates a row (and so the default columns) and a task in its To Do column.

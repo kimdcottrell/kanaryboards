@@ -3,11 +3,11 @@ import type { Page } from "@playwright/test";
 import { expect, testNoClerk as test } from "../fixtures.ts";
 
 // A "malicious user" suite for the /contact form. RESEND_API_KEY is set in
-// this environment, so the real /api/contact route would actually call
+// this environment, so the real /api/v1/contact-messages route would actually call
 // Resend for any schema-valid payload — even one submitted through the
-// browser. Every test here registers page.route("**/api/contact", ...)
+// browser. Every test here registers page.route("**/api/v1/contact-messages", ...)
 // BEFORE interacting with the form, so the real server (and therefore
-// Resend) is never reached: the browser's own fetch("/api/contact") call is
+// Resend) is never reached: the browser's own fetch("/api/v1/contact-messages") call is
 // intercepted client-side. XSS-escaping of the outgoing email body itself is
 // verified separately in tests/vitest/pages/contact.test.ts, which mocks the
 // Resend client directly.
@@ -29,9 +29,9 @@ test.describe("Contact form — form injection & client-validation safety", () =
     await page.goto("/contact");
   });
 
-  test("empty submit does not call /api/contact", async ({ page }) => {
+  test("empty submit does not call /api/v1/contact-messages", async ({ page }) => {
     const apiCall = page
-      .waitForRequest("**/api/contact", { timeout: 1500 })
+      .waitForRequest("**/api/v1/contact-messages", { timeout: 1500 })
       .catch(() => null);
 
     await submitButton(page).click();
@@ -39,9 +39,9 @@ test.describe("Contact form — form injection & client-validation safety", () =
     expect(await apiCall).toBeNull();
   });
 
-  test("invalid email format does not call /api/contact", async ({ page }) => {
+  test("invalid email format does not call /api/v1/contact-messages", async ({ page }) => {
     const apiCall = page
-      .waitForRequest("**/api/contact", { timeout: 1500 })
+      .waitForRequest("**/api/v1/contact-messages", { timeout: 1500 })
       .catch(() => null);
 
     await nameInput(page).fill("Ada Lovelace");
@@ -64,7 +64,7 @@ test.describe("Contact form — form injection & client-validation safety", () =
 
   test("an XSS-shaped but schema-valid payload is sent verbatim (server escapes, not the client)", async ({ page }) => {
     let requestBody: Record<string, string> | null = null;
-    await page.route("**/api/contact", (route) => {
+    await page.route("**/api/v1/contact-messages", (route) => {
       requestBody = route.request().postDataJSON();
       return route.fulfill({
         status: 200,
@@ -96,7 +96,7 @@ test.describe("Contact form — form injection & client-validation safety", () =
 
   test("a malicious error message from the server renders as inert text", async ({ page }) => {
     const maliciousError = `<img src=x onerror="window.__xss=1">`;
-    await page.route("**/api/contact", (route) =>
+    await page.route("**/api/v1/contact-messages", (route) =>
       route.fulfill({
         status: 400,
         contentType: "application/json",

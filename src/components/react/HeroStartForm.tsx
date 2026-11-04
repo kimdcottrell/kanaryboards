@@ -23,7 +23,7 @@ import type { Column, Row, Task } from "./context/types.ts";
 type Board = { rows: Row[]; columns: Column[]; tasks: Task[] };
 
 // Load the visitor's current board so we can append to it. Authenticated users'
-// board lives in KV (via /api/board); anonymous visitors' in localStorage. When
+// board lives in KV (via /api/v1/board); anonymous visitors' in localStorage. When
 // no board exists yet, seed the default columns so generated tasks have a "To Do"
 // column to land in (ignoring reset()'s sample row, so the new project stands alone).
 async function loadBoard(
@@ -34,7 +34,7 @@ async function loadBoard(
     | null = null;
   if (isAuthenticated) {
     try {
-      const res = await fetch("/api/board");
+      const res = await fetch("/api/v1/board");
       if (res.ok) existing = await res.json();
     } catch { /* treat as no board */ }
   } else {
@@ -89,7 +89,7 @@ export default function HeroStartForm() {
       if (isSignedIn) {
         // Only what this adds (plus the columns, which may be newly seeded or
         // backfilled), so it can't overwrite tasks saved from another device.
-        const res = await fetch("/api/board", {
+        const res = await fetch("/api/v1/board", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

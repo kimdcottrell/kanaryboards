@@ -89,7 +89,7 @@ cp .env.sample .env
 
 Open `.env` and fill in the values indicated as REQUIRED in the comments.
 
-`CRON_SECRET` is only needed in production. It's the shared secret for `POST /api/purge-trash`, which permanently deletes Trash tasks older than 30 days, along with the comments of tasks that no longer exist on a board. The caller must send `Authorization: Bearer <CRON_SECRET>`. The daily schedule isn't set up yet (the plan is a `Deno.cron()` on Deno Deploy). Until it is, expired Trash tasks are only dropped when a board is loaded.
+`CRON_SECRET` is only needed in production. It's the shared secret for `POST /api/v1/cron/purge-trash`, which permanently deletes Trash tasks older than 30 days, along with the comments of tasks that no longer exist on a board. The caller must send `Authorization: Bearer <CRON_SECRET>`. The daily schedule isn't set up yet (the plan is a `Deno.cron()` on Deno Deploy). Until it is, expired Trash tasks are only dropped when a board is loaded.
 
 ### 4. Generate a Claude OAuth token
 

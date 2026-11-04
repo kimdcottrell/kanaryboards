@@ -15,18 +15,18 @@ vi.mock("@lib/db/kv.ts", () => ({
   ),
 }));
 
-const { GET } = await import("@pages/api/board/events.ts");
+const { GET } = await import("@pages/api/v1/board/events.ts");
 
 function makeContext(
   { userId, boardId }: { userId: string | null; boardId?: string },
 ): APIContext {
   return {
-    request: new Request("http://localhost/api/board/events"),
+    request: new Request("http://localhost/api/v1/board/events"),
     locals: { auth: () => ({ userId }), boardId },
   } as unknown as APIContext;
 }
 
-describe("/api/board/events", () => {
+describe("/api/v1/board/events", () => {
   test("returns 401 when unauthenticated", async () => {
     const res = await GET(makeContext({ userId: null, boardId: "b1" }));
     expect(res.status).toBe(401);

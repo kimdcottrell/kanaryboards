@@ -65,13 +65,13 @@ Put its client ID in `KANBY_CLERK_OAUTH_CLIENT_ID`.
   runs in a container or over SSH and that redirect page can't load, paste its
   address into the terminal instead. Tokens refresh automatically; `logout`
   revokes them.
-- The CLI calls `/api/v1/*` (`src/pages/api/v1/`) with the OAuth access token.
+- The CLI calls `/api/v1/{me,rows,tasks,columns,validate}` (`src/pages/api/v1/`, built with `cliRoute`) with the OAuth access token.
   Those routes verify it with `locals.auth({ acceptsToken: "oauth_token" })` and
   check `isPaidUser()` (`src/lib/api/billing.ts`, currently a stub).
 - Descriptions are stored as Lexical JSON. The CLI shows and edits them as plain
   text, so saving a changed description drops formatting added in the web app.
   An unchanged description is never rewritten.
-- The AI checklist uses the same `/api/generate-tasks` as the web app.
+- The AI checklist uses the same `/api/v1/ai/task-titles` as the web app.
 
 ## Known limitation
 
