@@ -55,18 +55,24 @@ function writeTask(
   localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(all));
 }
 
+// /api/v1/tasks/{taskId}/comments, or one comment under it.
+const commentsUrl = (taskId: string, commentId?: string) =>
+  `/api/v1/tasks/${encodeURIComponent(taskId)}/comments${
+    commentId === undefined ? "" : `/${encodeURIComponent(commentId)}`
+  }`;
+
 async function request<T>(
   method: string,
+  url: string,
   body?: object,
-  query = "",
 ): Promise<T> {
-  const res = await fetch(`/api/task-comments${query}`, {
+  const res = await fetch(url, {
     method,
     headers: body ? { "Content-Type": "application/json" } : undefined,
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
-    throw new Error(`${method} /api/task-comments failed (${res.status})`);
+    throw new Error(`${method} ${url} failed (${res.status})`);
   }
   return res.json();
 }
@@ -80,11 +86,7 @@ export async function listComments(
 ): Promise<TaskComment[]> {
   const backend = backendFor(target);
   const comments = backend === "api"
-    ? await request<TaskComment[]>(
-      "GET",
-      undefined,
-      `?taskId=${encodeURIComponent(taskId)}`,
-    )
+    ? await request<TaskComment[]>("GET", commentsUrl(taskId))
     : readTask(backend, taskId);
   return [...comments].sort(byNewest);
 }
@@ -96,7 +98,7 @@ export async function createComment(
 ): Promise<TaskComment> {
   const backend = backendFor(target);
   if (backend === "api") {
-    return await request<TaskComment>("POST", { taskId, ...input });
+    return await request<TaskComment>("POST", commentsUrl(taskId), input);
   }
   const comment: TaskComment = {
     id: createId(),
@@ -117,11 +119,11 @@ export async function updateComment(
 ): Promise<TaskComment> {
   const backend = backendFor(target);
   if (backend === "api") {
-    return await request<TaskComment>("PATCH", {
-      taskId: comment.taskId,
-      id: comment.id,
-      content,
-    });
+    return await request<TaskComment>(
+      "PATCH",
+      commentsUrl(comment.taskId, comment.id),
+      { content },
+    );
   }
   const updated = { ...comment, content, updatedAt: new Date().toISOString() };
   writeTask(
@@ -140,7 +142,7 @@ export async function deleteComment(
 ): Promise<void> {
   const backend = backendFor(target);
   if (backend === "api") {
-    await request("DELETE", { taskId: comment.taskId, id: comment.id });
+    await request("DELETE", commentsUrl(comment.taskId, comment.id));
     return;
   }
   writeTask(
@@ -151,7 +153,7 @@ export async function deleteComment(
 }
 
 // Drops localStorage comments of every task not in `keepTaskIds`. KV comments
-// are swept by /api/purge-trash instead.
+// are swept by /api/v1/cron/purge-trash instead.
 export function pruneLocalComments(keepTaskIds: Set<string>): void {
   const all = readLocal();
   const taskIds = Object.keys(all);
@@ -166,7 +168,7 @@ export async function deleteAllComments(
 ): Promise<void> {
   const backend = backendFor(target);
   if (backend === "api") {
-    await request("DELETE", { taskId });
+    await request("DELETE", commentsUrl(taskId));
     return;
   }
   writeTask(backend, taskId, []);

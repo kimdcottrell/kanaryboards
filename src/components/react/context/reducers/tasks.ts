@@ -131,16 +131,13 @@ export function remove(
   return next;
 }
 
-export function saveEdit(state: BoardState): BoardState {
+// payload.edits have passed /api/v1/validate (see actions/taskEdit.ts).
+export function saveEdit(
+  state: BoardState,
+  { edits }: Extract<TaskAction, { type: "TASK/SAVE_EDIT" }>["payload"],
+): BoardState {
   const draft = state.editTaskDraft;
-  if (!draft?.title.trim()) return state;
-  const edits = {
-    title: draft.title.trim(),
-    description: draft.description,
-    rowId: draft.rowId,
-    colId: draft.colId,
-    checklist: draft.checklist.filter((i) => i.text.trim()),
-  };
+  if (!draft) return state;
   // Deleted in another tab (BOARD/SYNC) while being edited: add it back at
   // the end of its cell rather than dropping the user's changes.
   const exists = state.tasks.some((t) => t.id === state.editingTaskId);
@@ -153,7 +150,7 @@ export function saveEdit(state: BoardState): BoardState {
       {
         ...draft,
         ...edits,
-        order: endOfCellKey(state, draft.id, draft.rowId, draft.colId)!,
+        order: endOfCellKey(state, draft.id, edits.rowId, edits.colId)!,
       },
     ];
   return {

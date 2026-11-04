@@ -5,7 +5,12 @@ import {
   useRowFormState,
 } from "../BoardContext.tsx";
 import { createId, rowColorOptions } from "../constants.ts";
-import { buildTasksFromTitles, fetchGeneratedItems } from "./shared.ts";
+import {
+  buildTasksFromTitles,
+  fetchGeneratedItems,
+  validateEntity,
+} from "./shared.ts";
+import type { FieldError } from "./shared.ts";
 import { generateKeyBetween } from "fractional-indexing";
 import type { SubmitEvent } from "react";
 import type { RowAction } from "../types.ts";
@@ -66,25 +71,29 @@ export function useRowFormActions() {
     }
   }, [newRowPrompt, columns, dispatch]);
 
+  // Resolves to the validation error to show, or null once the row is added
+  // (or AI generation has started).
   const addRow = useCallback(
-    async (event: SubmitEvent<HTMLFormElement>) => {
+    async (event: SubmitEvent<HTMLFormElement>): Promise<FieldError | null> => {
       event.preventDefault();
-      if (!newRowName.trim()) return;
+      const checked = await validateEntity("row", { title: newRowName });
+      if (!checked.ok) return checked;
       const lastRow = rows[rows.length - 1];
       const newRow: NewRow = {
         id: createId(),
-        title: newRowName.trim(),
+        title: checked.values.title,
         color: rowColorOptions[0].value,
         order: generateKeyBetween(lastRow?.order ?? null, null),
       };
       if (newRowPrompt.trim()) {
         await generateTasksForRow(newRow);
-        return;
+        return null;
       }
       dispatch({ type: "ROW/ADD", payload: newRow });
       dispatch({ type: "ROW/CLOSE_CREATE_MODAL" });
       scrollToRow(newRow.id);
       dispatch({ type: "ROW/RESET_FORM" });
+      return null;
     },
     [newRowName, newRowPrompt, rows, dispatch, generateTasksForRow],
   );

@@ -6,10 +6,13 @@ import {
   deleteBoard,
   getBoard,
   getBoardIdForUser,
+  getEntity,
   listTaskComments,
   purgeExpiredTrash,
+  saveEntity,
   saveTaskComment,
   setBoardIdForUser,
+  watchBoard,
 } from "@lib/db/kv.ts";
 import type { PersistedBoard } from "@lib/db/kv.ts";
 
@@ -411,5 +414,122 @@ describe("purgeExpiredTrash", () => {
     ]);
     expect(await listTaskComments(boardId, "expired")).toEqual([]);
     expect(await listTaskComments(boardId, "task-a")).toHaveLength(1);
+  });
+});
+
+describe("getEntity / saveEntity", () => {
+  test("saves when the entry is still at the version that was read", async () => {
+    await applyBoardChanges(boardId, {
+      upserts: sampleBoard,
+      deletes: { rowIds: [], columnIds: [], taskIds: [] },
+    });
+    const read = await getEntity<{ id: string; title: string }>(
+      "row",
+      boardId,
+      "row-1",
+    );
+    expect(read?.value.title).toBe("Feature");
+    const version = await saveEntity(
+      "row",
+      boardId,
+      { ...read!.value, title: "Renamed" },
+      read!.versionstamp,
+    );
+    expect(version).not.toBeNull();
+    expect((await getBoard(boardId))?.rows[0].title).toBe("Renamed");
+  });
+
+  test("rejects the save if the entry changed since it was read", async () => {
+    await applyBoardChanges(boardId, {
+      upserts: sampleBoard,
+      deletes: { rowIds: [], columnIds: [], taskIds: [] },
+    });
+    const read = await getEntity<{ id: string }>("task", boardId, "task-a");
+    await applyBoardChanges(boardId, {
+      upserts: {
+        rows: [],
+        columns: [],
+        tasks: [{ ...sampleBoard.tasks[0], title: "Edited on the web" }],
+      },
+      deletes: { rowIds: [], columnIds: [], taskIds: [] },
+    });
+    const version = await saveEntity(
+      "task",
+      boardId,
+      { ...sampleBoard.tasks[0], title: "Edited in the CLI" },
+      read!.versionstamp,
+    );
+    expect(version).toBeNull();
+    const tasks = (await getBoard(boardId))?.tasks ?? [];
+    expect(tasks.find((t) => t.id === "task-a")?.title).toBe(
+      "Edited on the web",
+    );
+  });
+
+  test("getEntity returns null for a missing entry", async () => {
+    expect(await getEntity("task", boardId, "nope")).toBeNull();
+  });
+});
+
+describe("watchBoard", () => {
+  // Emissions after the one watchBoard() sends on subscribe.
+  async function watchRevisions(id: string) {
+    const reader = (await watchBoard(id)).getReader();
+    await reader.read();
+    const next = async () => (await reader.read()).value![0].versionstamp;
+    // Resolves "quiet" if nothing is emitted within `ms`.
+    const nextOrQuiet = (ms = 100) =>
+      Promise.race([
+        next(),
+        new Promise<"quiet">((resolve) => setTimeout(resolve, ms, "quiet")),
+      ]);
+    return { next, nextOrQuiet, stop: () => reader.cancel() };
+  }
+
+  test("emits after applyBoardChanges", async () => {
+    const revisions = await watchRevisions(boardId);
+    await saveBoard(boardId, sampleBoard);
+    expect(await revisions.next()).not.toBeNull();
+    await revisions.stop();
+  });
+
+  test("emits after saveEntity, but not after a rejected one", async () => {
+    await saveBoard(boardId, sampleBoard);
+    const read = await getEntity<{ id: string; title: string }>(
+      "row",
+      boardId,
+      "row-1",
+    );
+    const revisions = await watchRevisions(boardId);
+    await saveEntity(
+      "row",
+      boardId,
+      { ...read!.value, title: "A" },
+      read!.versionstamp,
+    );
+    expect(await revisions.next()).not.toBeNull();
+    await saveEntity(
+      "row",
+      boardId,
+      { ...read!.value, title: "B" },
+      read!.versionstamp,
+    );
+    expect(await revisions.nextOrQuiet()).toBe("quiet");
+    await revisions.stop();
+  });
+
+  test("emits a deleted entry after deleteBoard", async () => {
+    await saveBoard(boardId, sampleBoard);
+    const revisions = await watchRevisions(boardId);
+    await deleteBoard(boardId);
+    expect(await revisions.next()).toBeNull();
+    await revisions.stop();
+  });
+
+  test("ignores writes to other boards", async () => {
+    const revisions = await watchRevisions(boardId);
+    await saveBoard("other-board", sampleBoard);
+    expect(await revisions.nextOrQuiet()).toBe("quiet");
+    await revisions.stop();
   });
 });

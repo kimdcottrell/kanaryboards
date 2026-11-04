@@ -179,7 +179,7 @@ export type ColumnAction =
     payload: { columnId: string; rowId: string | null; currentName: string };
   }
   | { type: "COLUMN/RENAME_CHANGE"; payload: { name: string } }
-  | { type: "COLUMN/RENAME_SAVE"; payload: { columnId: string } }
+  | { type: "COLUMN/RENAME_SAVE"; payload: { columnId: string; title: string } }
   | { type: "COLUMN/RENAME_CANCEL" }
   | { type: "COLUMN/TOGGLE_PIN_SHORTCUT"; payload: { columnId: string } }
   | { type: "COLUMN/TOGGLE_PIN_DOCK"; payload: { columnId: string } }
@@ -199,7 +199,7 @@ export type RowAction =
   | { type: "ROW/UPDATE_COLOR"; payload: { rowId: string; color: string } }
   | { type: "ROW/EDIT_START"; payload: { rowId: string; currentName: string } }
   | { type: "ROW/EDIT_CHANGE"; payload: { name: string } }
-  | { type: "ROW/EDIT_SAVE"; payload: { rowId: string } }
+  | { type: "ROW/EDIT_SAVE"; payload: { rowId: string; title: string } }
   | { type: "ROW/EDIT_CANCEL" }
   | { type: "ROW/RENAME"; payload: { rowId: string; name: string } }
   | { type: "ROW/SET_NEW_NAME"; payload: { name: string } }
@@ -211,7 +211,15 @@ export type RowAction =
 export type TaskAction =
   | { type: "TASK/CREATE"; payload: { task: Task } }
   | { type: "TASK/DELETE"; payload: { taskId: string } }
-  | { type: "TASK/SAVE_EDIT" }
+  | {
+    type: "TASK/SAVE_EDIT";
+    payload: {
+      edits: Pick<
+        Task,
+        "title" | "description" | "rowId" | "colId" | "checklist"
+      >;
+    };
+  }
   | { type: "TASK/MOVE_TO_COLUMN"; payload: { taskId: string; colId: string } }
   | { type: "TASK/TRASH"; payload: { taskId: string } }
   | { type: "TASK/RESTORE"; payload: { taskId: string } }

@@ -56,6 +56,16 @@ const sync = (state: BoardState, rows: Row[], tasks: Task[] = []) =>
     payload: { rows, columns: [column], tasks },
   });
 
+// TASK/SAVE_EDIT carries already-validated edits (actions/taskEdit.ts runs
+// them through /api/v1/validate); here they are the draft's own fields.
+const saveEdit = (state: BoardState) => {
+  const { title, description, rowId, colId, checklist } = state.editTaskDraft!;
+  return boardReducer(state, {
+    type: "TASK/SAVE_EDIT",
+    payload: { edits: { title, description, rowId, colId, checklist } },
+  });
+};
+
 describe("BOARD/SYNC", () => {
   test("replaces rows, columns and tasks", () => {
     const next = sync(base(), [row("row-2")], []);
@@ -127,11 +137,11 @@ describe("TASK/SAVE_EDIT", () => {
     state = boardReducer(state, {
       type: "TASK/UPDATE_EDIT_DRAFT",
       payload: {
-        draft: { ...state.editTaskDraft!, title: " Kept ", rowId: "row-2" },
+        draft: { ...state.editTaskDraft!, title: "Kept", rowId: "row-2" },
       },
     });
 
-    const next = boardReducer(state, { type: "TASK/SAVE_EDIT" });
+    const next = saveEdit(state);
     const restored = next.tasks.find((t) => t.id === "task-1");
     expect(restored).toMatchObject({ title: "Kept", rowId: "row-2" });
     expect(restored!.order > "a0").toBe(true);

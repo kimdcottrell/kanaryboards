@@ -4,7 +4,7 @@ import { expect, fillControlled, testNoClerk as test } from "../fixtures.ts";
 
 // A "malicious user" suite for AI-sourced content (task titles from the
 // homepage hero form, checklist items from the AI checklist generator).
-// /api/generate-tasks is mocked in every test — no real Gemini calls — and
+// /api/v1/ai/task-titles is mocked in every test — no real Gemini calls — and
 // the payloads returned are XSS-shaped strings. The point isn't to test
 // Gemini's output; it's to prove that whatever text an LLM hands back is
 // rendered as inert text (React's default JSX escaping), never as markup.
@@ -23,7 +23,7 @@ const MALICIOUS_TITLES = [
 const DASHBOARD_READY = "html[data-board-loaded='true']";
 
 function mockGenerateTasks(page: Page, titles: string[]) {
-  return page.route("/api/generate-tasks", (route) =>
+  return page.route("/api/v1/ai/task-titles", (route) =>
     route.fulfill({
       status: 200,
       contentType: "application/json",

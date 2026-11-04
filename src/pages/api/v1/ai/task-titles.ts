@@ -1,14 +1,11 @@
 export const prerender = false;
 
 import type { APIRoute } from "astro";
-import type { APIContext } from "astro";
 
 import { GoogleGenAI } from "@google/genai";
-
-interface GenerateTasksBody {
-  prompt?: string;
-  maxTasks?: number;
-}
+import { jsonResponse } from "@lib/http/api-responses.ts";
+import { HttpError, publicRoute } from "@lib/api/route.ts";
+import { readJsonObject } from "@lib/api/request.ts";
 
 const normalizeTaskLines = (content: string) =>
   content
@@ -35,6 +32,7 @@ export const apiModel = Deno.env.get("GOOGLE_AI_STUDIO_MODEL") ||
 const MAX_PROMPT_LENGTH = 2000;
 const MIN_TASKS = 1;
 const MAX_TASKS = 30;
+const AI_TIMEOUT_MS = 20_000;
 
 if (!apiKey) {
   console.error(
@@ -48,24 +46,14 @@ const ai = apiKey
   ? new GoogleGenAI({ vertexai: false, apiVersion: "v1beta", apiKey })
   : null;
 
-function jsonResponse(body: object, status: number): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
+// Concise task titles for a project description; the web app and the kanby
+// CLI also use them as checklist items. No login: anonymous visitors use it
+// from the homepage.
+export const POST = publicRoute(async ({ request }) => {
+  if (!ai) throw new HttpError(503, "AI service is not configured.");
 
-export const POST: APIRoute = async ({ request }: APIContext) => {
-  if (!ai) {
-    return jsonResponse({ error: "AI service is not configured." }, 503);
-  }
-
-  let body: GenerateTasksBody;
-  try {
-    body = await request.json();
-  } catch {
-    return jsonResponse({ error: "Invalid request body." }, 400);
-  }
+  // prompt and maxTasks are coerced below, so only the object shape is checked.
+  const body = await readJsonObject(request);
 
   const prompt = String(body.prompt || "").trim();
   const maxTasks = Math.min(
@@ -74,10 +62,10 @@ export const POST: APIRoute = async ({ request }: APIContext) => {
   );
 
   if (!prompt) {
-    return jsonResponse({ error: "Missing prompt." }, 400);
+    throw new HttpError(400, "Missing prompt.");
   }
   if (prompt.length > MAX_PROMPT_LENGTH) {
-    return jsonResponse({ error: "Prompt is too long." }, 400);
+    throw new HttpError(400, "Prompt is too long.");
   }
 
   const systemPrompt =
@@ -88,36 +76,45 @@ export const POST: APIRoute = async ({ request }: APIContext) => {
     maxTasks / 2
   } to ${maxTasks} task titles for the following project description: ${prompt}`;
 
+  // Covers both the initial request and reading the stream.
+  const signal = AbortSignal.timeout(AI_TIMEOUT_MS);
+
   try {
     let fullText = "";
     const response = await ai.models.generateContentStream({
       model: apiModel,
       contents: cleanedPrompt,
-      config: { systemInstruction: systemPrompt },
+      config: { systemInstruction: systemPrompt, abortSignal: signal },
     });
     for await (const chunk of response) {
       fullText += chunk.text;
     }
     return jsonResponse({ response: normalizeTaskLines(fullText) }, 200);
   } catch (e) {
-    console.error("generate-tasks error:", e);
+    console.error("POST /api/v1/ai/task-titles error:", e);
 
     let status = 500;
     let message = "AI generation failed.";
-    try {
-      const outer = JSON.parse((e as Error).message);
-      // Google SDK double-encodes the API error: outer.error.message is itself a JSON string
-      const innerRaw = outer?.error?.message ?? outer?.message;
-      const inner = typeof innerRaw === "string" ? JSON.parse(innerRaw) : null;
-      status = inner?.error?.code ?? outer?.error?.code ?? outer?.code ?? 500;
-      message = inner?.error?.message ?? outer?.error?.message ??
-        outer?.message ?? message;
-    } catch {
-      message = (e as Error).message || message;
+    if (signal.aborted) {
+      status = 503;
+      message = "AI service timed out. Please try again.";
+    } else {
+      try {
+        const outer = JSON.parse((e as Error).message);
+        // Google SDK double-encodes the API error: outer.error.message is itself a JSON string
+        const innerRaw = outer?.error?.message ?? outer?.message;
+        const inner = typeof innerRaw === "string" ? JSON.parse(innerRaw) : null;
+        status = inner?.error?.code ?? outer?.error?.code ?? outer?.code ??
+          500;
+        message = inner?.error?.message ?? outer?.error?.message ??
+          outer?.message ?? message;
+      } catch {
+        message = (e as Error).message || message;
+      }
     }
 
     console.error({
-      event: "generate-tasks: Google AI request failed",
+      event: "POST /api/v1/ai/task-titles: Google AI request failed",
       model: apiModel,
       maxTasks,
       prompt: cleanedPrompt,
@@ -126,4 +123,4 @@ export const POST: APIRoute = async ({ request }: APIContext) => {
     });
     return jsonResponse({ error: message }, status);
   }
-};
+}) satisfies APIRoute;

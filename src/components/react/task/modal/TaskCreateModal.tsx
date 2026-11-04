@@ -32,9 +32,8 @@ export default function TaskCreateModal() {
   } = useTaskCreateActions();
   const { closeTaskCreateModal } = useTaskActions();
   const { applyChecklistPreviewToDraft } = useChecklistAIActions();
-  const { handleSubmit, submitButtonRef, onEditorReady } = useTaskFormSubmit(
-    createTask,
-  );
+  const { handleSubmit, submitButtonRef, onEditorReady, errorFor, formError } =
+    useTaskFormSubmit(createTask);
 
   return (
     <Modal open={taskCreateModalOpen} onClose={closeTaskCreateModal}>
@@ -54,6 +53,7 @@ export default function TaskCreateModal() {
               variant="labeled"
               value={draft.title}
               onChange={(title) => setTaskDraft({ ...draft, title })}
+              error={errorFor("title")}
             />
             <FieldsGrid
               description={
@@ -69,6 +69,7 @@ export default function TaskCreateModal() {
                   columns={columns}
                   selectedColId={draft.colId}
                   onSelect={(colId) => setTaskDraft({ ...draft, colId })}
+                  error={errorFor("colId")}
                 />
               }
               project={
@@ -77,7 +78,7 @@ export default function TaskCreateModal() {
                   rows={rows}
                   selectedRowId={draft.rowId}
                   onSelect={(rowId) => setTaskDraft({ ...draft, rowId })}
-                  required
+                  error={errorFor("rowId")}
                 />
               }
               checklist={
@@ -96,6 +97,7 @@ export default function TaskCreateModal() {
                 />
               }
             />
+            {formError && <p className="text-error text-sm">{formError}</p>}
           </form>
           <ActionsDock>
             <button

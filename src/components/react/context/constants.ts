@@ -33,7 +33,7 @@ export const emptyTaskDraft = (rowId: string, colId: string): Task => ({
 });
 
 // Tasks in the Trash column are permanently deleted this long after
-// `trashedAt`, by /api/purge-trash (KV boards) and on board load (all boards).
+// `trashedAt`, by /api/v1/cron/purge-trash (KV boards) and on board load (all boards).
 export const TRASH_RETENTION_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
 

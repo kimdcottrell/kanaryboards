@@ -9,6 +9,7 @@ import TaskCreateModal from "./task/modal/TaskCreateModal.tsx";
 import TaskEditModal from "./task/modal/TaskEditModal.tsx";
 import TaskViewOnlyModal from "./task/modal/TaskViewOnlyModal.tsx";
 import { useBoardDataState, useTaskActions } from "./context/hooks.ts";
+import { findByShortId } from "@lib/dashboard/short-id.ts";
 
 export default function BoardView() {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ export default function BoardView() {
       return;
     }
     if (syncedTaskId.current === taskId) return;
-    const task = tasks.find((t) => t.id === taskId);
+    const task = findByShortId(tasks, taskId);
     if (task) {
       startEditTask(task);
       syncedTaskId.current = taskId;
@@ -57,10 +58,10 @@ export default function BoardView() {
       return;
     }
     if (syncedRowId.current === rowId) return;
-    const row = rows.find((r) => r.id === rowId);
+    const row = findByShortId(rows, rowId);
     if (row) {
       requestAnimationFrame(() => {
-        document.getElementById(`row-section-${rowId}`)?.scrollIntoView({
+        document.getElementById(`row-section-${row.id}`)?.scrollIntoView({
           block: "start",
         });
       });

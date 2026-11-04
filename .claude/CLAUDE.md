@@ -83,3 +83,9 @@ When adding, removing, or renaming fields on Row, Column, or Task:
 - Check `src/db/schema.dbml` for the corresponding table definition.
 - Keep field names, types, and nullability consistent with the dbml schema.
 - If the dbml schema itself needs to change, call this out as part of the plan.
+
+## 7. API Docs
+
+**Changes to `/api/v1` routes must update `docs/api/openapi.yaml`.**
+
+When adding, removing, or changing a route, method, auth builder, request body, response shape, or status code under `src/pages/api/`, update the matching operation in `docs/api/openapi.yaml`. `tests/vitest/pages/openapi-coverage.test.ts` enforces routes, methods, and security; bodies and status codes are on you.

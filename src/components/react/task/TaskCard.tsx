@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useTaskActions } from "../context/hooks.ts";
 import { useRenderCount } from "@lib/dashboard/use-render-count.ts";
+import { shortId } from "@lib/dashboard/short-id.ts";
 import type { Row, Task } from "../context/types.ts";
 import { hasLexicalText } from "@lib/lexical.ts";
 import { daysUntilPurge } from "../context/constants.ts";
@@ -45,7 +46,7 @@ export default function TaskCard({
       onDragOver={onDragOver}
       onClick={() => {
         startEditTask(task);
-        navigate(`/dashboard/task/${task.id}`);
+        navigate(`/dashboard/task/${shortId(task.id)}`);
       }}
       className={`group rounded shadow-sm shadow-base-900/5 cursor-grab${
         hasEditDraft ? " indicator flex flex-col w-full" : ""

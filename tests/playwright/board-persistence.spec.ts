@@ -16,13 +16,13 @@ test.describe("Board persistence across sign-in", () => {
 
     // Clear out any board left over from a previous run so sign-in migrates
     // this test's localStorage data instead of loading stale remote data.
-    const response = await page.request.get("/api/delete-test-data");
+    const response = await page.request.delete("/api/v1/test-data");
     expect(response.status()).toBe(200);
   });
 
   test.afterEach(async ({ page }) => {
     // Teardown: delete the test account's board so the next run starts from a clean slate.
-    const response = await page.request.get("/api/delete-test-data");
+    const response = await page.request.delete("/api/v1/test-data");
     expect(response.status()).toBe(200);
   });
 
@@ -77,15 +77,16 @@ test.describe("Board persistence across sign-in", () => {
     await clerk.signIn({ page, emailAddress: E2E_EMAIL });
 
     // The post-sign-in BOARD/LOAD schedules a debounced (500ms) autosave PATCH to
-    // /api/board. Track those PATCH responses so we can wait for them to settle
+    // /api/v1/board. Track those PATCH responses so we can wait for them to settle
     // before the test ends — otherwise a late PATCH is processed after afterEach's
-    // delete and resurrects the board (the /api/board middleware re-creates the
+    // delete and resurrects the board (the /api/v1/board middleware re-creates the
     // user_board mapping on any authenticated write), which the next repeat then
     // reads as stale remote data instead of migrating its own localStorage row.
     let lastBoardPatchAt = Date.now();
     page.on("response", (resp) => {
       if (
-        resp.url().endsWith("/api/board") && resp.request().method() === "PATCH"
+        resp.url().endsWith("/api/v1/board") &&
+        resp.request().method() === "PATCH"
       ) {
         lastBoardPatchAt = Date.now();
       }
@@ -99,7 +100,7 @@ test.describe("Board persistence across sign-in", () => {
     await expect(newRow.getByText(rowName)).toBeVisible();
     await expect(newRow.getByText(taskName)).toBeVisible();
 
-    // Wait until /api/board PATCHes have quiesced (>700ms since the last one) so
+    // Wait until /api/v1/board PATCHes have quiesced (>700ms since the last one) so
     // afterEach's delete is the final KV write and can't be undone by a late
     // autosave PATCH.
     await expect

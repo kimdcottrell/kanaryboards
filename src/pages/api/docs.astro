@@ -1,0 +1,30 @@
+---
+// docs/api/openapi.yaml, rendered with Scalar. Dev server only: 404 in any
+// other build. MODE is a build-time constant (see api/v1/ai/task-titles.ts).
+export const prerender = false;
+
+if (import.meta.env.MODE !== "development") {
+  return new Response("Not found", { status: 404 });
+}
+// Imported here, not at the top, so other builds drop it as dead code.
+const { default: spec } = await import("../../../docs/api/openapi.yaml?raw");
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Kanby API</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script
+      is:inline
+      src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.75.1"></script>
+    <script is:inline define:vars={{ spec }}>
+      Scalar.createApiReference("#app", { content: spec });
+    </script>
+  </body>
+</html>

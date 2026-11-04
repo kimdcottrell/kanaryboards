@@ -231,7 +231,7 @@ test.describe("Board menu — column view filter", () => {
       }),
     )
       .toBeVisible();
-    await expect(page).toHaveURL(/\/dashboard\/task\/task-prog-eng/);
+    await expect(page).toHaveURL(/\/dashboard\/task\/prog-eng/);
   });
 
   test("creating a task from a pivoted column pre-fills its status and row", async ({ page }) => {

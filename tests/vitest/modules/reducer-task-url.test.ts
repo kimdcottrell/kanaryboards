@@ -56,6 +56,16 @@ const baseTask: Task = {
 
 // ── Task URL established on creation ─────────────────────────────────────────
 
+// TASK/SAVE_EDIT carries already-validated edits (actions/taskEdit.ts runs
+// them through /api/v1/validate); here they are the draft's own fields.
+const saveEdit = (state: BoardState) => {
+  const { title, description, rowId, colId, checklist } = state.editTaskDraft!;
+  return boardReducer(state, {
+    type: "TASK/SAVE_EDIT",
+    payload: { edits: { title, description, rowId, colId, checklist } },
+  });
+};
+
 describe("Task URL established on creation", () => {
   test("TASK/CREATE adds the task with the exact ID supplied in the payload", () => {
     const state = createInitialState();
@@ -131,7 +141,7 @@ describe("URL unchanged — status change", () => {
       taskEditModalOpen: true,
       editTaskDraft: { ...baseTask, colId: "col-2" },
     };
-    const next = boardReducer(state, { type: "TASK/SAVE_EDIT" });
+    const next = saveEdit(state);
     expect(next.tasks[0].id).toBe("url-stable-task");
     expect(next.tasks[0].colId).toBe("col-2");
   });
@@ -147,7 +157,7 @@ describe("URL unchanged — row change", () => {
       taskEditModalOpen: true,
       editTaskDraft: { ...baseTask, rowId: "row-2" },
     };
-    const next = boardReducer(state, { type: "TASK/SAVE_EDIT" });
+    const next = saveEdit(state);
     expect(next.tasks[0].id).toBe("url-stable-task");
     expect(next.tasks[0].rowId).toBe("row-2");
   });
@@ -173,7 +183,7 @@ describe("URL unchanged — task edit save", () => {
       taskEditModalOpen: true,
       editTaskDraft: { ...baseTask, title: "Updated title" },
     };
-    const next = boardReducer(state, { type: "TASK/SAVE_EDIT" });
+    const next = saveEdit(state);
     expect(next.tasks[0].id).toBe("url-stable-task");
     expect(next.tasks[0].title).toBe("Updated title");
   });
@@ -190,23 +200,11 @@ describe("URL unchanged — task edit save", () => {
         colId: "col-2",
       },
     };
-    const next = boardReducer(state, { type: "TASK/SAVE_EDIT" });
+    const next = saveEdit(state);
     expect(next.tasks[0].id).toBe("url-stable-task");
     expect(next.tasks[0].title).toBe("Fully edited");
     expect(next.tasks[0].rowId).toBe("row-2");
     expect(next.tasks[0].colId).toBe("col-2");
-  });
-
-  test("TASK/SAVE_EDIT with blank title is a no-op — task ID unchanged", () => {
-    const state: BoardState = {
-      ...stateWithTask(baseTask),
-      editingTaskId: "url-stable-task",
-      taskEditModalOpen: true,
-      editTaskDraft: { ...baseTask, title: "   " },
-    };
-    const next = boardReducer(state, { type: "TASK/SAVE_EDIT" });
-    expect(next.tasks[0].id).toBe("url-stable-task");
-    expect(next.tasks[0].title).toBe("Original title");
   });
 
   test("TASK/SAVE_EDIT clears editingTaskId and closes modal", () => {
@@ -216,7 +214,7 @@ describe("URL unchanged — task edit save", () => {
       taskEditModalOpen: true,
       editTaskDraft: { ...baseTask, title: "Done" },
     };
-    const next = boardReducer(state, { type: "TASK/SAVE_EDIT" });
+    const next = saveEdit(state);
     expect(next.editingTaskId).toBeNull();
     expect(next.taskEditModalOpen).toBe(false);
   });

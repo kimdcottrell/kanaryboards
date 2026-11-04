@@ -89,7 +89,7 @@ cp .env.sample .env
 
 Open `.env` and fill in the values indicated as REQUIRED in the comments.
 
-`CRON_SECRET` is only needed in production. It's the shared secret for `POST /api/purge-trash`, which permanently deletes Trash tasks older than 30 days, along with the comments of tasks that no longer exist on a board. The caller must send `Authorization: Bearer <CRON_SECRET>`. The daily schedule isn't set up yet (the plan is a `Deno.cron()` on Deno Deploy). Until it is, expired Trash tasks are only dropped when a board is loaded.
+`CRON_SECRET` is only needed in production. It's the shared secret for `POST /api/v1/cron/purge-trash`, which permanently deletes Trash tasks older than 30 days, along with the comments of tasks that no longer exist on a board. The caller must send `Authorization: Bearer <CRON_SECRET>`. The daily schedule isn't set up yet (the plan is a `Deno.cron()` on Deno Deploy). Until it is, expired Trash tasks are only dropped when a board is loaded.
 
 ### 4. Generate a Claude OAuth token
 
@@ -320,3 +320,7 @@ Runs [mcpdoc](https://github.com/lancedb/mcpdoc) as a Docker service, configured
 | `row-column-management.mmd` | Board config and create-row modals, adding rows with AI-generated tasks, renaming / reordering / deleting rows and columns, pinning and filtering columns, and the drawer row list |
 
 These use [Mermaid](https://mermaid.js.org/) sequence diagram syntax — paste a file's contents into [mermaid.live](https://mermaid.live/) to render it visually, or preview with a Mermaid-compatible editor extension.
+
+## API Reference
+
+`docs/api/openapi.yaml` is an OpenAPI 3.1 description of every `/api/v1` route. While the dev server runs with `MODE=development`, it is browsable at [localhost:4321/api/docs](http://localhost:4321/api/docs). `tests/vitest/pages/openapi-coverage.test.ts` fails when a route or method is missing from the spec, or when an operation's `security` doesn't match its auth builder.

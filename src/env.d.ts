@@ -18,7 +18,11 @@ interface ImportMeta {
 declare namespace App {
   interface Locals {
     boardId: string | undefined;
-    auth: () => { userId: string | null };
+    // acceptsToken "oauth_token" is how the CLI API (src/lib/api/cli-auth.ts)
+    // authenticates; everything else uses the default session token.
+    auth: (options?: { acceptsToken?: "oauth_token" }) => {
+      userId: string | null;
+    };
     timestamp?: string;
     status?: number;
     statusText?: string;

@@ -21,7 +21,7 @@ const apiContext = (request: Request): APIContext =>
   ({ request }) as APIContext;
 
 function makeRequest(body: unknown) {
-  return new Request("http://localhost/api/generate-tasks", {
+  return new Request("http://localhost/api/v1/ai/task-titles", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -29,7 +29,7 @@ function makeRequest(body: unknown) {
 }
 
 function makeInvalidRequest() {
-  return new Request("http://localhost/api/generate-tasks", {
+  return new Request("http://localhost/api/v1/ai/task-titles", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: "not-json{{",
@@ -43,16 +43,16 @@ async function* streamChunks(chunks: string[]) {
 }
 
 async function importPOST() {
-  const mod = await import("@pages/api/generate-tasks.ts");
+  const mod = await import("@pages/api/v1/ai/task-titles.ts");
   return mod.POST;
 }
 
 async function importApiModel() {
-  const mod = await import("@pages/api/generate-tasks.ts");
+  const mod = await import("@pages/api/v1/ai/task-titles.ts");
   return mod.apiModel;
 }
 
-describe("POST /api/generate-tasks", () => {
+describe("POST /api/v1/ai/task-titles", () => {
   describe("when AI service is not configured", () => {
     beforeEach(() => {
       vi.resetModules();

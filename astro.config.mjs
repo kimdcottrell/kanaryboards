@@ -74,6 +74,18 @@ export default defineConfig({
 
   redirects: {
     "/blog/tags": "/blog",
+    // The pre-/api/v1 URLs that tabs opened before the move, and kanby CLI
+    // builds from before it, still call. 307 (not Astro's default 301/308) so
+    // browsers don't cache them, and the method and body are kept. Remove
+    // these in a later release. /api/task-comments has none: its ids moved
+    // from the body into the path, which a redirect can't translate.
+    "/api/board": { status: 307, destination: "/api/v1/board" },
+    "/api/board/events": { status: 307, destination: "/api/v1/board/events" },
+    "/api/generate-tasks": {
+      status: 307,
+      destination: "/api/v1/ai/task-titles",
+    },
+    "/api/contact": { status: 307, destination: "/api/v1/contact-messages" },
   },
 
   site: SITE,

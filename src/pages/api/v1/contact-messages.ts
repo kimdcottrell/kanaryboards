@@ -3,6 +3,9 @@ export const prerender = false;
 import type { APIRoute } from "astro";
 import { Resend } from "resend";
 import { contactFormSchema } from "@lib/contact-schema.ts";
+import { jsonResponse } from "@lib/http/api-responses.ts";
+import { HttpError, publicRoute } from "@lib/api/route.ts";
+import { readJson } from "@lib/api/request.ts";
 
 const CONTACT_EMAIL_TO = "hello@kanby.ai";
 const CONTACT_EMAIL_FROM = "Kanby Contact Form <do-not-reply@kanby.ai>";
@@ -19,13 +22,6 @@ function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]);
 }
 
-function jsonResponse(body: object, status: number): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
 // Read the secret at runtime via Deno.env.get(), NOT import.meta.env.
 // Astro/Vite statically inlines import.meta.env.* at build time, so on Deno
 // Deploy the value gets frozen in during the build — or baked as `undefined`
@@ -37,23 +33,16 @@ if (!apiKey) {
 }
 const resend = apiKey ? new Resend(apiKey) : null;
 
-export const POST: APIRoute = async ({ request }) => {
-  if (!resend) {
-    return jsonResponse({ error: "Email service is not configured." }, 503);
-  }
+// The contact form, emailed to CONTACT_EMAIL_TO. Validation messages are shown
+// to the visitor, so unlike parseBody() the first issue is sent back.
+export const POST = publicRoute(async ({ request }) => {
+  if (!resend) throw new HttpError(503, "Email service is not configured.");
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return jsonResponse({ error: "Invalid request body." }, 400);
-  }
-
-  const parsed = contactFormSchema.safeParse(body);
+  const parsed = contactFormSchema.safeParse(await readJson(request));
   if (!parsed.success) {
-    return jsonResponse(
-      { error: parsed.error.issues[0]?.message ?? "Invalid input." },
+    throw new HttpError(
       400,
+      parsed.error.issues[0]?.message ?? "Invalid input.",
     );
   }
 
@@ -73,8 +62,8 @@ export const POST: APIRoute = async ({ request }) => {
 
   if (error) {
     console.error("Resend API error:", error);
-    return jsonResponse({ error: "Failed to send message." }, 502);
+    throw new HttpError(502, "Failed to send message.");
   }
 
   return jsonResponse({ ok: true }, 200);
-};
+}) satisfies APIRoute;

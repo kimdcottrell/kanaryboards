@@ -8,7 +8,9 @@ import {
   deleteBoardComments,
   getBoard,
 } from "@lib/db/kv.ts";
-import { jsonResponse, unauthorizedResponse } from "@lib/http/api-responses.ts";
+import { jsonResponse } from "@lib/http/api-responses.ts";
+import { HttpError, sessionRoute } from "@lib/api/route.ts";
+import { parseBody } from "@lib/api/request.ts";
 
 // Mirrors Row/Column/Task in @components/react/context/types.ts (required fields,
 // not schema.dbml's looser nullability — nothing downstream of this validator
@@ -84,46 +86,14 @@ const BoardChangesSchema = z.object({
   { error: "Too many changes." },
 );
 
-export const GET: APIRoute = async ({ locals, request }) => {
-  const { userId } = locals.auth();
-  if (!userId) return unauthorizedResponse(request);
-  const boardId = locals.boardId;
-  if (!boardId) {
-    console.error({
-      event:
-        "Rejected GET /api/board: locals.boardId missing despite passing the auth gate",
-      auth: locals.auth(),
-    });
-    return jsonResponse({ error: "Unauthorized" }, 401);
-  }
+export const GET = sessionRoute(async (_context, { boardId }) => {
   const board = await getBoard(boardId);
-  if (!board) return jsonResponse({ noData: true }, 404);
+  if (!board) throw new HttpError(404, { noData: true });
   return jsonResponse(board, 200);
-};
+}) satisfies APIRoute;
 
-export const PATCH: APIRoute = async ({ request, locals }) => {
-  const { userId } = locals.auth();
-  if (!userId) return unauthorizedResponse(request);
-  const boardId = locals.boardId;
-  if (!boardId) {
-    console.error({
-      event:
-        "Rejected PATCH /api/board: locals.boardId missing despite passing the auth gate",
-      auth: locals.auth(),
-    });
-    return jsonResponse({ error: "Unauthorized" }, 401);
-  }
-  let body: z.infer<typeof BoardChangesSchema>;
-  try {
-    body = BoardChangesSchema.parse(await request.json());
-  } catch (error) {
-    console.error({
-      event: "Rejected PATCH /api/board: invalid request body",
-      boardId,
-      issues: error instanceof z.ZodError ? error.issues : String(error),
-    });
-    return jsonResponse({ error: "Invalid request body." }, 400);
-  }
+export const PATCH = sessionRoute(async ({ locals, request }, { boardId }) => {
+  const body = await parseBody(request, BoardChangesSchema, { boardId });
   console.debug({
     method: "PATCH",
     boardId,
@@ -132,20 +102,9 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
   });
   await applyBoardChanges(boardId, body);
   return jsonResponse({ ok: true }, 200);
-};
+}) satisfies APIRoute;
 
-export const DELETE: APIRoute = async ({ locals, request }) => {
-  const { userId } = locals.auth();
-  if (!userId) return unauthorizedResponse(request);
-  const boardId = locals.boardId;
-  if (!boardId) {
-    console.error({
-      event:
-        "Rejected DELETE /api/board: locals.boardId missing despite passing the auth gate",
-      auth: locals.auth(),
-    });
-    return jsonResponse({ error: "Unauthorized" }, 401);
-  }
+export const DELETE = sessionRoute(async ({ locals }, { boardId }) => {
   console.debug({
     method: "DELETE",
     boardId,
@@ -154,4 +113,4 @@ export const DELETE: APIRoute = async ({ locals, request }) => {
   await deleteBoard(boardId);
   await deleteBoardComments(boardId);
   return jsonResponse({ ok: true }, 200);
-};
+}) satisfies APIRoute;

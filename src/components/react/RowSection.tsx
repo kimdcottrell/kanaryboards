@@ -49,6 +49,10 @@ export default function RowSection(
   const { boardId } = useBoardMeta();
   const { editingRowId, editingRowName } = useRowEditState();
   const { setEditingRowName, editRowTitle, saveRowTitle } = useRowEditActions();
+  // The last save's validation error; the input stays open while it shows.
+  const [titleError, setTitleError] = useState<string>();
+  const saveTitle = () =>
+    saveRowTitle(row.id).then((result) => setTitleError(result?.error));
   const { deleteRow } = useRowActions();
   const renderCount = useRenderCount();
 
@@ -68,22 +72,32 @@ export default function RowSection(
           <div>
             {editingRowId === row.id
               ? (
-                <input
-                  className="w-full font-roboto-slab border border-base-300 px-4 py-2 text-2xl font-semibold outline-none focus:border-base-content/40"
-                  type="text"
-                  value={editingRowName}
-                  onChange={(e) => setEditingRowName(e.currentTarget.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      saveRowTitle(row.id);
-                    } else if (e.key === "Escape") {
-                      setEditingRowName(null);
-                    }
-                  }}
-                  onBlur={() => saveRowTitle(row.id)}
-                  autoFocus
-                />
+                <>
+                  <input
+                    className="w-full font-roboto-slab border border-base-300 px-4 py-2 text-2xl font-semibold outline-none focus:border-base-content/40"
+                    type="text"
+                    value={editingRowName}
+                    onChange={(e) => {
+                      setTitleError(undefined);
+                      setEditingRowName(e.currentTarget.value);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        saveTitle();
+                      } else if (e.key === "Escape") {
+                        setTitleError(undefined);
+                        setEditingRowName(null);
+                      }
+                    }}
+                    onBlur={saveTitle}
+                    aria-invalid={titleError ? true : undefined}
+                    autoFocus
+                  />
+                  {titleError && (
+                    <p className="text-error text-sm mt-1">{titleError}</p>
+                  )}
+                </>
               )
               : (
                 <h3

@@ -2,7 +2,7 @@ import { expect, testNoClerk as test } from "./fixtures.ts";
 
 /**
  * BoardMenu.tsx — the "+" dropdown (#board-menu) wires three items:
- *   - "Create new task"           -> TaskCreateModal (first Status preselected, required Row select)
+ *   - "Create new task"           -> TaskCreateModal (first Status preselected, Row select empty until chosen)
  *   - "Add new project row"       -> CreateRowModal ([data-testid='create-new-row'])
  *   - "Add new column to all rows"-> BoardConfigModal scrolled to #create-new-column
  */
@@ -39,7 +39,7 @@ test.describe("Board menu — add dropdown", () => {
     ).click();
   });
 
-  test('"Create new task" opens the task modal with the first Status preselected and an empty required Row select', async ({ page }) => {
+  test('"Create new task" opens the task modal with the first Status preselected and an empty Row select that blocks the save', async ({ page }) => {
     await page.locator("#board-menu").getByText("Create new task").click();
 
     await expect(page.getByRole("heading", { name: "Add task" })).toBeVisible();
@@ -56,8 +56,15 @@ test.describe("Board menu — add dropdown", () => {
     await expect(statusRadios.first()).toBeChecked();
     await expect(statusRadios.first()).toHaveValue("col-todo");
     await expect(rowMenu.locator("input:checked")).toHaveCount(0);
-    // Row is required so the task can't be created until chosen.
-    await expect(rowRadios.first()).toHaveJSProperty("required", true);
+    // Saving without a row is rejected by /api/v1/validate/task, and the
+    // message shows under Project while the modal stays open.
+    await page.getByRole("textbox", { name: "Title", exact: true }).fill(
+      "No project yet",
+    );
+    await page.getByRole("button", { name: "Create task" }).click();
+    await expect(rowMenu.getByText("Project is required.")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Add task" })).toBeVisible();
+    await expect(rowRadios.first()).toHaveJSProperty("required", false);
   });
 
   test('"Add new project row" opens the create-row modal', async ({ page }) => {

@@ -40,7 +40,7 @@ export async function setBoardIdForUser(
 // Key: [kind, boardId, id]. Boards saved before this live in a single
 // ["board", boardId] entry until getBoard migrates them.
 
-// Only what changed since the last save (PATCH /api/board).
+// Only what changed since the last save (PATCH /api/v1/board).
 export interface BoardChanges {
   upserts: PersistedBoard;
   deletes: { rowIds: string[]; columnIds: string[]; taskIds: string[] };
@@ -86,9 +86,21 @@ export async function getBoard(
   return legacy.value;
 }
 
+// Set in the same commit as every board write, so watchBoard() has one key to
+// watch for changes made anywhere (this tab, another device, the CLI).
+const revisionKey = (boardId: string): Deno.KvKey => ["board_rev", boardId];
+
+// Emits the board's revision entry once on subscribe, then after each write.
+export async function watchBoard(
+  boardId: string,
+): Promise<ReadableStream<Deno.KvEntryMaybe<unknown>[]>> {
+  const kv = await getKv();
+  return kv.watch([revisionKey(boardId)]);
+}
+
 // Deno KV caps one atomic commit at 1000 mutations and 800KiB; leave headroom
-// for key and encoding overhead.
-const MAX_COMMIT_MUTATIONS = 1000;
+// for key and encoding overhead. One mutation per commit is the revision bump.
+const MAX_COMMIT_MUTATIONS = 1000 - 1;
 const MAX_COMMIT_BYTES = 750 * 1024;
 
 // Commits atomically, unless the changes exceed one commit's limits; then
@@ -118,7 +130,11 @@ export async function applyBoardChanges(
   let batch: Deno.KvMutation[] = [];
   let bytes = 0;
   const commit = async () => {
-    if (batch.length > 0) await kv.atomic().mutate(...batch).commit();
+    if (batch.length > 0) {
+      await kv.atomic().mutate(...batch)
+        .set(revisionKey(boardId), Date.now())
+        .commit();
+    }
     batch = [];
     bytes = 0;
   };
@@ -135,12 +151,46 @@ export async function applyBoardChanges(
   await commit();
 }
 
+export type EntityKind = "row" | "column" | "task";
+
+// One row/column/task with its versionstamp, which the CLI API hands out as
+// an ETag so an edit can be rejected if the entity changed in the meantime.
+export async function getEntity<T>(
+  kind: EntityKind,
+  boardId: string,
+  id: string,
+): Promise<{ value: T; versionstamp: string } | null> {
+  const kv = await getKv();
+  const entry = await kv.get<T>([kind, boardId, id]);
+  if (entry.versionstamp === null) return null;
+  return { value: entry.value, versionstamp: entry.versionstamp };
+}
+
+// Saves `value` only if its entry is still at `expectedVersion`. Returns the
+// new versionstamp, or null if the entry changed since it was read.
+export async function saveEntity<T extends { id: string }>(
+  kind: EntityKind,
+  boardId: string,
+  value: T,
+  expectedVersion: string,
+): Promise<string | null> {
+  const kv = await getKv();
+  const key = [kind, boardId, value.id];
+  const res = await kv.atomic()
+    .check({ key, versionstamp: expectedVersion })
+    .set(key, value)
+    .set(revisionKey(boardId), Date.now())
+    .commit();
+  return res.ok ? res.versionstamp : null;
+}
+
 export async function deleteBoard(boardId: string): Promise<void> {
   const kv = await getKv();
   await Promise.all(
     ["row", "column", "task"].map((kind) => deleteByPrefix([kind, boardId])),
   );
   await kv.delete(["board", boardId]);
+  await kv.delete(revisionKey(boardId)); // watchBoard() reports deletes too
 }
 
 // Comments live outside the board blob, one entry per comment, so they never

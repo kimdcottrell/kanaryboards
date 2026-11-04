@@ -37,6 +37,11 @@ export default function ColumnSettingsSection() {
   const [direction, setDirection] = useState<"" | "left" | "right">("");
   const [referenceColumnId, setReferenceColumnId] = useState("");
   const [createColumnFormKey, setCreateColumnFormKey] = useState(0);
+  // Validation errors from the last add / rename; each clears on the next edit.
+  const [nameError, setNameError] = useState<string>();
+  const [renameError, setRenameError] = useState<string>();
+  const saveRename = (columnId: string) =>
+    saveColumnTitle(columnId).then((result) => setRenameError(result?.error));
 
   const shortcutCount =
     columns.filter((column) => column.pinnedToShortcut).length;
@@ -63,10 +68,11 @@ export default function ColumnSettingsSection() {
         </h4>
         <form
           key={createColumnFormKey}
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
             if (direction === "") return;
-            addColumn(direction, referenceColumnId);
+            const result = await addColumn(direction, referenceColumnId);
+            if (result) return setNameError(result.error);
             setDirection("");
             setReferenceColumnId("");
             setCreateColumnFormKey((k) => k + 1);
@@ -79,13 +85,16 @@ export default function ColumnSettingsSection() {
               </label>
               <input
                 id="new-column-name"
-                className="input validator"
+                className={`input${nameError ? " input-error" : ""}`}
                 type="text"
                 value={defaultColumnInput}
-                onChange={(e) => setDefaultColumnInput(e.currentTarget.value)}
-                required
+                onChange={(e) => {
+                  setNameError(undefined);
+                  setDefaultColumnInput(e.currentTarget.value);
+                }}
+                aria-invalid={nameError ? true : undefined}
               />
-              <p className="validator-hint">Required</p>
+              {nameError && <p className="text-error text-sm">{nameError}</p>}
             </fieldset>
 
             <fieldset className="w-full md:w-auto fieldset flex-1">
@@ -215,23 +224,36 @@ export default function ColumnSettingsSection() {
                     <h2 className="card-title">
                       {editingColumnId === column.id
                         ? (
-                          <input
-                            className="input text-lg font-semibold outline-none focus:border-base-content/40"
-                            type="text"
-                            value={editingColumnName}
-                            onChange={(e) =>
-                              setEditingColumnName(e.currentTarget.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                saveColumnTitle(column.id);
-                              } else if (e.key === "Escape") {
-                                setEditingColumnName(null);
-                              }
-                            }}
-                            onBlur={() => saveColumnTitle(column.id)}
-                            autoFocus
-                          />
+                          <div>
+                            <input
+                              className={`input text-lg font-semibold outline-none focus:border-base-content/40${
+                                renameError ? " input-error" : ""
+                              }`}
+                              type="text"
+                              value={editingColumnName}
+                              onChange={(e) => {
+                                setRenameError(undefined);
+                                setEditingColumnName(e.currentTarget.value);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  saveRename(column.id);
+                                } else if (e.key === "Escape") {
+                                  setRenameError(undefined);
+                                  setEditingColumnName(null);
+                                }
+                              }}
+                              onBlur={() => saveRename(column.id)}
+                              aria-invalid={renameError ? true : undefined}
+                              autoFocus
+                            />
+                            {renameError && (
+                              <p className="text-error text-sm font-normal mt-1">
+                                {renameError}
+                              </p>
+                            )}
+                          </div>
                         )
                         : (
                           <span

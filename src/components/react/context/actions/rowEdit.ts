@@ -1,11 +1,14 @@
-import { useMemo } from "react";
-import { useBoardDispatch } from "../BoardContext.tsx";
+import { useCallback, useMemo } from "react";
+import { useBoardDispatch, useRowEditState } from "../BoardContext.tsx";
+import { validateEntity } from "./shared.ts";
+import type { FieldError } from "./shared.ts";
 import type { Row } from "../types.ts";
 
 export function useRowEditActions() {
   const dispatch = useBoardDispatch();
+  const { editingRowName } = useRowEditState();
 
-  return useMemo(() => ({
+  const dispatchOnly = useMemo(() => ({
     // null cancels the edit; a string value updates the in-progress name
     setEditingRowName: (name: string | null) => {
       if (name === null) dispatch({ type: "ROW/EDIT_CANCEL" });
@@ -16,7 +19,22 @@ export function useRowEditActions() {
         type: "ROW/EDIT_START",
         payload: { rowId: row.id, currentName: row.title },
       }),
-    saveRowTitle: (rowId: string) =>
-      dispatch({ type: "ROW/EDIT_SAVE", payload: { rowId } }),
   }), [dispatch]);
+
+  // Resolves to the validation error to show (the edit stays open), or null
+  // once saved.
+  const saveRowTitle = useCallback(
+    async (rowId: string): Promise<FieldError | null> => {
+      const checked = await validateEntity("row", { title: editingRowName });
+      if (!checked.ok) return checked;
+      dispatch({
+        type: "ROW/EDIT_SAVE",
+        payload: { rowId, title: checked.values.title },
+      });
+      return null;
+    },
+    [editingRowName, dispatch],
+  );
+
+  return { ...dispatchOnly, saveRowTitle };
 }

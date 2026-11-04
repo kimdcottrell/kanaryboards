@@ -127,9 +127,9 @@ test.describe("Drawer/BoardMenu row-list parity (authenticated)", () => {
     // board. /blog boots Clerk with no island at all.
     await gotoAndWaitForClerk(page, "/blog");
 
-    const cleared = await page.request.get("/api/delete-test-data");
+    const cleared = await page.request.delete("/api/v1/test-data");
     expect(cleared.status()).toBe(200);
-    const seeded = await page.request.patch("/api/board", {
+    const seeded = await page.request.patch("/api/v1/board", {
       data: {
         upserts: BOARD_STATE,
         deletes: { rowIds: [], columnIds: [], taskIds: [] },
@@ -139,7 +139,7 @@ test.describe("Drawer/BoardMenu row-list parity (authenticated)", () => {
   });
 
   test.afterEach(async ({ page }) => {
-    await page.request.get("/api/delete-test-data");
+    await page.request.delete("/api/v1/test-data");
   });
 
   mirrorMatchesDrawer(test);

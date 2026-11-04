@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
   makeBoardDataState,
@@ -331,8 +331,8 @@ describe("TaskEditModal", () => {
     expect(screen.queryByText(/Loading task/)).toBeNull();
   });
 
-  test("Save calls saveTaskEdit and navigates to /dashboard", () => {
-    const saveTaskEdit = vi.fn();
+  test("Save calls saveTaskEdit and navigates to /dashboard", async () => {
+    const saveTaskEdit = vi.fn(() => Promise.resolve(null));
     vi.mocked(useTaskEditState).mockReturnValue(
       makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
     );
@@ -345,6 +345,28 @@ describe("TaskEditModal", () => {
     render(<TaskEditModal />);
     fireEvent.click(screen.getByRole("button", { name: "Save", hidden: true }));
     expect(saveTaskEdit).toHaveBeenCalledTimes(1);
-    expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith("/dashboard")
+    );
+  });
+
+  test("a validation error stays on the task and shows the message", async () => {
+    vi.mocked(useTaskEditState).mockReturnValue(
+      makeTaskEditState({ taskEditModalOpen: true, editTaskDraft: editTask }),
+    );
+    vi.mocked(useBoardDataState).mockReturnValue(
+      makeBoardDataState({ columns: [mockColumn], rows: [mockRow] }),
+    );
+    vi.mocked(useTaskEditActions).mockReturnValue(
+      makeTaskEditActions({
+        saveTaskEdit: vi.fn(() =>
+          Promise.resolve({ field: "title", error: "Title is required." })
+        ),
+      }),
+    );
+    render(<TaskEditModal />);
+    fireEvent.click(screen.getByRole("button", { name: "Save", hidden: true }));
+    expect(await screen.findByText("Title is required.")).toBeTruthy();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 });

@@ -13,14 +13,14 @@ vi.mock("@lib/db/kv.ts", () => ({
   purgeExpiredTrash: vi.fn(() => Promise.resolve(counts)),
 }));
 
-const { POST } = await import("@pages/api/purge-trash.ts");
+const { POST } = await import("@pages/api/v1/cron/purge-trash.ts");
 const { purgeExpiredTrash } = await import("@lib/db/kv.ts");
 
 function makeContext(authorization?: string): APIContext {
   const headers = new Headers();
   if (authorization) headers.set("Authorization", authorization);
   return {
-    request: new Request("http://localhost/api/purge-trash", {
+    request: new Request("http://localhost/api/v1/cron/purge-trash", {
       method: "POST",
       headers,
     }),
@@ -32,7 +32,7 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe("POST /api/purge-trash", () => {
+describe("POST /api/v1/cron/purge-trash", () => {
   test("returns 500 and does not purge when CRON_SECRET is unset", async () => {
     vi.stubEnv("CRON_SECRET", "");
     const res = await POST(makeContext("Bearer "));
