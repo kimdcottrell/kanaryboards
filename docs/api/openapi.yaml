@@ -1,0 +1,1004 @@
+openapi: 3.1.0
+info:
+  title: Kanby API
+  version: "1"
+  description: |
+    The `/api/v1` routes behind the Kanby web app and the `kanby` CLI.
+
+    Every handler in `src/pages/api/v1/` is built with one of the auth builders
+    in `src/lib/api/route.ts`, and each operation's `security` here says which:
+
+    | Builder        | Scheme         | Caller                                      |
+    | -------------- | -------------- | ------------------------------------------- |
+    | `sessionRoute` | `clerkSession` | The web app (Clerk session cookie)          |
+    | `cliRoute`     | `cliOAuth`     | The kanby CLI (Clerk OAuth token, paid plan) |
+    | `publicRoute`  | none           | Anyone, unless the handler checks a secret  |
+
+    Non-2xx responses are JSON `{"error": "..."}` unless noted otherwise.
+
+    `tests/vitest/pages/openapi-coverage.test.ts` fails if a route or method is
+    missing here, or if an operation's `security` doesn't match its builder.
+servers:
+  - url: http://localhost:4321
+    description: Local dev server
+  - url: https://kanary.local.dev
+    description: Local dev server behind the HTTPS proxy
+
+tags:
+  - name: board
+    description: The signed-in user's whole board (web app).
+  - name: rows
+    description: Rows (projects), for the CLI.
+  - name: columns
+    description: Columns (statuses), for the CLI.
+  - name: tasks
+    description: Tasks, for the CLI.
+  - name: comments
+    description: Comments on a task (web app).
+  - name: validate
+    description: Field validation shared by the web app and the CLI. Nothing is read or saved.
+  - name: ai
+    description: AI-generated task titles.
+  - name: me
+    description: The calling user.
+  - name: contact
+    description: The public contact form.
+  - name: internal
+    description: Cron jobs and test helpers. Not for user clients.
+
+paths:
+  # ── board (sessionRoute) ─────────────────────────────────────────────────────
+  /api/v1/board:
+    get:
+      tags: [board]
+      summary: Get the board
+      description: |
+        The board as stored. Entries saved before newer fields existed may
+        lack them; the web app backfills them on load.
+      operationId: getBoard
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: The board.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Board" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404":
+          description: The user has no saved board yet.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [noData]
+                properties:
+                  noData: { const: true }
+    patch:
+      tags: [board]
+      summary: Save board changes
+      description: |
+        Upserts and deletes rows, columns and tasks in one request (the web
+        app's autosave). At most 1000 changes in total, and each entry must
+        serialize to under 65000 bytes.
+      operationId: patchBoard
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BoardChanges" }
+      responses:
+        "200": { $ref: "#/components/responses/Ok" }
+        "400": { $ref: "#/components/responses/InvalidBody" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [board]
+      summary: Delete the board
+      description: Deletes every row, column, task and comment on the board.
+      operationId: deleteBoard
+      security: [{ clerkSession: [] }]
+      responses:
+        "200": { $ref: "#/components/responses/Ok" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/v1/board/events:
+    get:
+      tags: [board]
+      summary: Stream board changes
+      description: |
+        Server-Sent Events. Sends `data: change` once on connect and again
+        whenever the board is written (by this tab, another device or the
+        CLI); the client then refetches `GET /api/v1/board`. A `: ping`
+        comment every 30 seconds keeps proxies from closing the stream.
+      operationId: streamBoardEvents
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: An event stream.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                examples: ["data: change\n\n"]
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  # ── rows (cliRoute) ──────────────────────────────────────────────────────────
+  /api/v1/rows:
+    get:
+      tags: [rows]
+      summary: List rows
+      description: Rows in board order.
+      operationId: listRows
+      security: [{ cliOAuth: [] }]
+      responses:
+        "200":
+          description: The rows.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/RowView" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "402": { $ref: "#/components/responses/PaymentRequired" }
+    post:
+      tags: [rows]
+      summary: Create a row
+      description: |
+        Appends a row. A user with no board yet also gets the web app's
+        default columns, so tasks can be added to the new row.
+      operationId: createRow
+      security: [{ cliOAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { $ref: "#/components/schemas/TitleInput" }
+                color: { $ref: "#/components/schemas/ColorInput" }
+      responses:
+        "201":
+          description: The new row.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RowView" }
+        "400": { $ref: "#/components/responses/InvalidBody" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "402": { $ref: "#/components/responses/PaymentRequired" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /api/v1/rows/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Ref"
+    get:
+      tags: [rows]
+      summary: Get a row
+      operationId: getRow
+      security: [{ cliOAuth: [] }]
+      responses:
+        "200":
+          description: The row. Its ETag is required to PATCH it.
+          headers:
+            ETag: { $ref: "#/components/headers/ETag" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RowView" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "402": { $ref: "#/components/responses/PaymentRequired" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/AmbiguousRef" }
+    patch:
+      tags: [rows]
+      summary: Update a row
+      description: Changes only the fields given.
+      operationId: updateRow
+      security: [{ cliOAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { $ref: "#/components/schemas/TitleInput" }
+                color: { $ref: "#/components/schemas/ColorInput" }
+      responses:
+        "200":
+          description: The updated row.
+          headers:
+            ETag: { $ref: "#/components/headers/ETag" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RowView" }
+        "400": { $ref: "#/components/responses/InvalidBody" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "402": { $ref: "#/components/responses/PaymentRequired" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: |
+            The id matches more than one row, or the row changed since the
+            ETag was read ("This row changed since it was read.").
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "428": { $ref: "#/components/responses/IfMatchRequired" }
+
+  # ── columns (cliRoute) ───────────────────────────────────────────────────────
+  /api/v1/columns:
+    get:
+      tags: [columns]
+      summary: List columns
+      description: Columns a task can be put in, in board order. Trash is excluded.
+      operationId: listColumns
+      security: [{ cliOAuth: [] }]
+      responses:
+        "200":
+          description: The columns.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ColumnView" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "402": { $ref: "#/components/responses/PaymentRequired" }
+
+  # ── tasks (cliRoute) ─────────────────────────────────────────────────────────
+  /api/v1/tasks:
+    get:
+      tags: [tasks]
+      summary: List tasks
+      description: Tasks not in Trash, ordered by row and then column.
+      operationId: listTasks
+      security: [{ cliOAuth: [] }]
+      parameters:
+        - name: rowId
+          in: query
+          description: Only tasks in this row (full id).
+          schema: { type: string }
+      responses:
+        "200":
+          description: The tasks.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/TaskView" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "402": { $ref: "#/components/responses/PaymentRequired" }
+    post:
+      tags: [tasks]
+      summary: Create a task
+      description: The new task goes to the top of its row/column cell.
+      operationId: createTask
+      security: [{ cliOAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rowId, colId, title]
+              properties:
+                rowId: { type: string, description: Full id of an existing row. }
+                colId: { type: string, description: Full id of an existing column other than Trash. }
+                title: { $ref: "#/components/schemas/TitleInput" }
+                description: { type: string, description: Plain text. }
+                checklist: { $ref: "#/components/schemas/ChecklistInput" }
+      responses:
+        "201":
+          description: The new task.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskView" }
+        "400": { $ref: "#/components/responses/InvalidBody" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "402": { $ref: "#/components/responses/PaymentRequired" }
+        "422": { $ref: "#/components/responses/TaskValidationError" }
+
+  /api/v1/tasks/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Ref"
+    get:
+      tags: [tasks]
+      summary: Get a task
+      operationId: getTask
+      security: [{ cliOAuth: [] }]
+      responses:
+        "200":
+          description: The task. Its ETag is required to PATCH it.
+          headers:
+            ETag: { $ref: "#/components/headers/ETag" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskView" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "402": { $ref: "#/components/responses/PaymentRequired" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/AmbiguousRef" }
+    patch:
+      tags: [tasks]
+      summary: Update a task
+      description: |
+        Changes only the fields given. `checklist` items are appended. A
+        task moved to another row/column cell goes to the end of it.
+        `description` is replaced only when given, since the plain-text round
+        trip drops the web app's formatting.
+      operationId: updateTask
+      security: [{ cliOAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rowId: { type: string, description: Full id of an existing row. }
+                colId: { type: string, description: Full id of an existing column other than Trash. }
+                title: { $ref: "#/components/schemas/TitleInput" }
+                description: { type: string, description: Plain text. }
+                checklist: { $ref: "#/components/schemas/ChecklistInput" }
+      responses:
+        "200":
+          description: The updated task.
+          headers:
+            ETag: { $ref: "#/components/headers/ETag" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskView" }
+        "400": { $ref: "#/components/responses/InvalidBody" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "402": { $ref: "#/components/responses/PaymentRequired" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: |
+            The id matches more than one task, the task is in Trash, or it
+            changed since the ETag was read.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422": { $ref: "#/components/responses/TaskValidationError" }
+        "428": { $ref: "#/components/responses/IfMatchRequired" }
+
+  # ── comments (sessionRoute) ──────────────────────────────────────────────────
+  /api/v1/tasks/{id}/comments:
+    parameters:
+      - $ref: "#/components/parameters/TaskId"
+    get:
+      tags: [comments]
+      summary: List a task's comments
+      description: Newest first.
+      operationId: listTaskComments
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: The comments.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/TaskComment" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [comments]
+      summary: Add a comment
+      description: The caller becomes the comment's author.
+      operationId: createTaskComment
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content, authorName, authorImageUrl]
+              properties:
+                content: { $ref: "#/components/schemas/CommentContent" }
+                authorName: { type: string }
+                authorImageUrl: { type: [string, "null"] }
+      responses:
+        "201":
+          description: The new comment.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskComment" }
+        "400": { $ref: "#/components/responses/InvalidBody" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [comments]
+      summary: Delete all of a task's comments
+      description: Every comment on the task, by anyone. Used when the task itself is deleted.
+      operationId: deleteTaskComments
+      security: [{ clerkSession: [] }]
+      responses:
+        "200": { $ref: "#/components/responses/Ok" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/v1/tasks/{id}/comments/{commentId}:
+    parameters:
+      - $ref: "#/components/parameters/TaskId"
+      - name: commentId
+        in: path
+        required: true
+        schema: { type: string }
+    patch:
+      tags: [comments]
+      summary: Edit a comment
+      description: Only the comment's author may edit it.
+      operationId: updateTaskComment
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content: { $ref: "#/components/schemas/CommentContent" }
+      responses:
+        "200":
+          description: The edited comment.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskComment" }
+        "400": { $ref: "#/components/responses/InvalidBody" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/NotAuthor" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [comments]
+      summary: Delete a comment
+      description: Only the comment's author may delete it.
+      operationId: deleteTaskComment
+      security: [{ clerkSession: [] }]
+      responses:
+        "200": { $ref: "#/components/responses/Ok" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/NotAuthor" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  # ── validate (publicRoute) ───────────────────────────────────────────────────
+  /api/v1/validate/{entity}:
+    parameters:
+      - $ref: "#/components/parameters/Entity"
+      - $ref: "#/components/parameters/KanbyClient"
+    post:
+      tags: [validate]
+      summary: Validate several fields
+      description: |
+        Checks every known field in the body; unknown fields are ignored. The
+        web app calls this before each save.
+      operationId: validateFields
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+            example: { title: " Q3 " }
+      responses:
+        "200":
+          description: Every field is valid. `values` holds them normalized.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, values]
+                properties:
+                  ok: { const: true }
+                  values: { type: object, additionalProperties: true }
+              example: { ok: true, values: { title: Q3 } }
+        "400": { $ref: "#/components/responses/InvalidBody" }
+        "404":
+          description: Unknown entity.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422":
+          description: The first invalid field.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FieldError" }
+
+  /api/v1/validate/{entity}/{field}:
+    parameters:
+      - $ref: "#/components/parameters/Entity"
+      - name: field
+        in: path
+        required: true
+        description: |
+          task: `title`, `description`, `rowId`, `colId`, `checklist`;
+          row: `title`, `color`; column: `title`.
+        schema: { type: string }
+      - $ref: "#/components/parameters/KanbyClient"
+    post:
+      tags: [validate]
+      summary: Validate one field
+      description: The kanby CLI calls this as the user answers each prompt.
+      operationId: validateField
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                value: {}
+            example: { value: " Ship it " }
+      responses:
+        "200":
+          description: The value is valid. `value` is it normalized.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, value]
+                properties:
+                  ok: { const: true }
+                  value: {}
+              example: { ok: true, value: Ship it }
+        "400": { $ref: "#/components/responses/InvalidBody" }
+        "404":
+          description: Unknown entity or field.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  # ── ai, me, contact ──────────────────────────────────────────────────────────
+  /api/v1/ai/task-titles:
+    post:
+      tags: [ai]
+      summary: Generate task titles
+      description: |
+        Concise task titles for a project description. Used by the homepage
+        (no login), the web app and the CLI's AI checklist.
+      operationId: generateTaskTitles
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [prompt]
+              properties:
+                prompt: { type: string, maxLength: 2000 }
+                maxTasks:
+                  type: integer
+                  minimum: 1
+                  maximum: 30
+                  default: 10
+                  description: Clamped to 1–30.
+      responses:
+        "200":
+          description: One title per item.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [response]
+                properties:
+                  response:
+                    type: array
+                    items: { type: string }
+        "400":
+          description: Invalid body, missing prompt, or prompt too long.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "503":
+          description: The AI service is not configured or timed out (20 s).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        default:
+          description: The AI provider's error, passed through with its status (500 if it has none).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/v1/me:
+    get:
+      tags: [me]
+      summary: Get the calling user
+      description: "`kanby user whoami`."
+      operationId: getMe
+      security: [{ cliOAuth: [] }]
+      responses:
+        "200":
+          description: The user.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [userId, email, name]
+                properties:
+                  userId: { type: string }
+                  email: { type: [string, "null"] }
+                  name: { type: [string, "null"] }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "402": { $ref: "#/components/responses/PaymentRequired" }
+
+  /api/v1/contact-messages:
+    post:
+      tags: [contact]
+      summary: Send a contact message
+      description: Emails the message to the Kanby team.
+      operationId: sendContactMessage
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, message]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 100 }
+                email: { type: string, format: email }
+                message: { type: string, minLength: 1, maxLength: 500 }
+      responses:
+        "200": { $ref: "#/components/responses/Ok" }
+        "400":
+          description: Invalid body. `error` is the first validation message, shown to the visitor.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "502":
+          description: The email provider rejected the message.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "503":
+          description: The email service is not configured.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  # ── internal (publicRoute) ───────────────────────────────────────────────────
+  /api/v1/cron/purge-trash:
+    post:
+      tags: [internal]
+      summary: Purge expired Trash
+      description: |
+        Called daily by a Deno Deploy cron. Permanently deletes Trash tasks
+        past retention (and their comments) on every user's board.
+      operationId: purgeTrash
+      security: [{ cronSecret: [] }]
+      responses:
+        "200":
+          description: What was purged.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [boardsScanned, boardsUpdated, tasksDeleted, commentsDeleted, conflicts]
+                properties:
+                  boardsScanned: { type: integer }
+                  boardsUpdated: { type: integer }
+                  tasksDeleted: { type: integer }
+                  commentsDeleted: { type: integer }
+                  conflicts: { type: integer }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500":
+          description: "`CRON_SECRET` is not set."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/v1/test-data:
+    delete:
+      tags: [internal]
+      summary: Delete the E2E test user's board
+      description: |
+        Deletes only the board of the user in `E2E_TEST_USER_ID`, for the
+        Playwright suite. Rejected when that variable is unset.
+      operationId: deleteTestData
+      security: []
+      responses:
+        "200": { $ref: "#/components/responses/Ok" }
+        "400":
+          description: "`E2E_TEST_USER_ID` is not set."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: Concurrent modification; retry.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+components:
+  securitySchemes:
+    clerkSession:
+      type: apiKey
+      in: cookie
+      name: __session
+      description: |
+        A Clerk session, as the signed-in web app sends it. A top-level
+        browser navigation without one is redirected (302) to
+        `/dashboard?unauthorized=1` instead of getting a 401.
+    cliOAuth:
+      type: oauth2
+      description: |
+        A Clerk OAuth access token, sent as `Authorization: Bearer <token>`.
+        The authorize and token URLs are on the Clerk instance's Frontend
+        API (`KANBY_CLERK_ISSUER`); see cli/README.md. Requires a paid plan.
+      flows:
+        authorizationCode:
+          authorizationUrl: https://your-instance.clerk.accounts.dev/oauth/authorize
+          tokenUrl: https://your-instance.clerk.accounts.dev/oauth/token
+          refreshUrl: https://your-instance.clerk.accounts.dev/oauth/token
+          scopes:
+            profile: Name and user id
+            email: Email address
+            offline_access: Refresh tokens
+    cronSecret:
+      type: http
+      scheme: bearer
+      description: "`Authorization: Bearer $CRON_SECRET`."
+
+  parameters:
+    Ref:
+      name: id
+      in: path
+      required: true
+      description: |
+        A full id, or its last 6+ characters (the CLI shows the last 8, since
+        a UUIDv7's leading characters are a timestamp).
+      schema: { type: string }
+    TaskId:
+      name: id
+      in: path
+      required: true
+      description: The task's full id. Short refs are not accepted here.
+      schema: { type: string }
+    Entity:
+      name: entity
+      in: path
+      required: true
+      schema:
+        type: string
+        enum: [task, row, column]
+    KanbyClient:
+      name: X-Kanby-Client
+      in: header
+      description: |
+        `cli` selects the CLI's rules where they differ from the web app's
+        (for task `checklist`: a list of non-empty strings instead of
+        ChecklistItem objects). Anything else means the web app.
+      schema:
+        type: string
+        enum: [cli]
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      description: The ETag from the GET. The request fails with 409 if the entity changed since.
+      schema: { type: string }
+
+  headers:
+    ETag:
+      description: The entity's version (a quoted Deno KV versionstamp). Send it back in If-Match.
+      schema: { type: string }
+
+  responses:
+    Ok:
+      description: Done.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [ok]
+            properties:
+              ok: { const: true }
+    InvalidBody:
+      description: The body isn't JSON, isn't an object, or fails the schema ("Invalid request body.").
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: Not signed in, or the token is missing or invalid.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    PaymentRequired:
+      description: The kanby CLI requires a paid plan.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotAuthor:
+      description: The caller didn't write this comment ("Forbidden").
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: No such item, or the ref is shorter than 6 characters.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    AmbiguousRef:
+      description: The ref matches more than one item.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    ValidationError:
+      description: A field is invalid. `error` is the message to show.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    TaskValidationError:
+      description: |
+        A field is invalid, `rowId`/`colId` isn't on the board, or `colId` is
+        Trash.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    IfMatchRequired:
+      description: The If-Match header is missing.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+    FieldError:
+      type: object
+      required: [error, field]
+      properties:
+        error: { type: string }
+        field: { type: string }
+
+    # Stored entities: src/components/react/context/types.ts, aligned with
+    # src/db/schema.dbml. The API requires every field (non-null unless
+    # marked), stricter than the dbml's nullability.
+    Row:
+      type: object
+      required: [id, title, color, order]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        color: { type: string, description: "A stored color value, e.g. `var(--color-row-blue)`." }
+        order: { type: string, description: Fractional index. }
+    Column:
+      type: object
+      required: [id, title, order, pinnedToShortcut, pinnedToDock, icon, iconInBoardMenu, iconNearColumnTitle, isTrash]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        order: { type: string, description: Fractional index. }
+        pinnedToShortcut: { type: boolean }
+        pinnedToDock: { type: boolean }
+        icon: { type: [string, "null"], description: Iconify hugeicons icon name. }
+        iconInBoardMenu: { type: boolean }
+        iconNearColumnTitle: { type: boolean }
+        isTrash: { type: boolean, description: "The fixed, always-last Trash column." }
+    Task:
+      type: object
+      required: [id, rowId, colId, title, description, checklist, order, trashedAt, preTrashColId]
+      properties:
+        id: { type: string }
+        rowId: { type: string }
+        colId: { type: string }
+        title: { type: string }
+        description: { type: string, description: Lexical JSON. }
+        checklist:
+          type: array
+          items: { $ref: "#/components/schemas/ChecklistItem" }
+        order: { type: string, description: Fractional index within its row/column cell. }
+        trashedAt: { type: [string, "null"], format: date-time, description: Set while in Trash. }
+        preTrashColId: { type: [string, "null"], description: Column to return to on Restore. }
+    ChecklistItem:
+      type: object
+      required: [id, text, checked, order]
+      properties:
+        id: { type: string }
+        text: { type: string }
+        checked: { type: boolean }
+        order: { type: string }
+    TaskComment:
+      type: object
+      required: [id, taskId, authorId, authorName, authorImageUrl, content, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        taskId: { type: string }
+        authorId: { type: [string, "null"], description: Clerk user id. }
+        authorName: { type: string }
+        authorImageUrl: { type: [string, "null"] }
+        content: { type: string, description: Lexical JSON. }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: [string, "null"], format: date-time, description: Set once the comment is edited. }
+    Board:
+      type: object
+      required: [rows, columns, tasks]
+      properties:
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/Row" }
+        columns:
+          type: array
+          items: { $ref: "#/components/schemas/Column" }
+        tasks:
+          type: array
+          items: { $ref: "#/components/schemas/Task" }
+    BoardChanges:
+      type: object
+      required: [upserts, deletes]
+      properties:
+        upserts: { $ref: "#/components/schemas/Board" }
+        deletes:
+          type: object
+          required: [rowIds, columnIds, taskIds]
+          properties:
+            rowIds: { type: array, items: { type: string } }
+            columnIds: { type: array, items: { type: string } }
+            taskIds: { type: array, items: { type: string } }
+
+    # What the CLI routes send: src/lib/api/board-ops.ts (rowView, taskView)
+    # and src/pages/api/v1/columns.ts.
+    RowView:
+      type: object
+      required: [id, shortId, title, color, taskCount]
+      properties:
+        id: { type: string }
+        shortId: { type: string, description: The id's last 8 characters. }
+        title: { type: string }
+        color: { type: string, description: "The color's label, e.g. `Blue`." }
+        taskCount: { type: integer, description: "Tasks in the row, not counting Trash." }
+    ColumnView:
+      type: object
+      required: [id, shortId, title]
+      properties:
+        id: { type: string }
+        shortId: { type: string }
+        title: { type: string }
+    TaskView:
+      type: object
+      required: [id, shortId, title, description, rowId, rowTitle, colId, colTitle, checklist, trashed]
+      properties:
+        id: { type: string }
+        shortId: { type: string }
+        title: { type: string }
+        description: { type: string, description: Plain text (converted from Lexical JSON). }
+        rowId: { type: string }
+        rowTitle: { type: string }
+        colId: { type: string }
+        colTitle: { type: string }
+        checklist:
+          type: array
+          description: In order.
+          items: { $ref: "#/components/schemas/ChecklistItem" }
+        trashed: { type: boolean }
+
+    # Request fields (src/lib/api/fields.ts).
+    TitleInput:
+      type: string
+      description: Newlines become spaces and it is trimmed; must not be empty.
+    ColorInput:
+      type: string
+      description: |
+        A color label, in any case (Blue, Red, Yellow, Green, Purple, Grey),
+        or its stored value. Defaults to Blue on create.
+    ChecklistInput:
+      type: array
+      description: New items' text, appended to the checklist.
+      items: { type: string, minLength: 1 }
+    CommentContent:
+      type: string
+      minLength: 1
+      description: Lexical JSON, under 60000 bytes.

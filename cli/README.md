@@ -67,7 +67,9 @@ Put its client ID in `KANBY_CLERK_OAUTH_CLIENT_ID`.
   revokes them.
 - The CLI calls `/api/v1/{me,rows,tasks,columns,validate}` (`src/pages/api/v1/`, built with `cliRoute`) with the OAuth access token.
   Those routes verify it with `locals.auth({ acceptsToken: "oauth_token" })` and
-  check `isPaidUser()` (`src/lib/api/billing.ts`, currently a stub).
+  check `isPaidUser()` (`src/lib/api/billing.ts`, currently a stub). Their
+  request and response shapes are in `docs/api/openapi.yaml`, browsable at
+  `http://localhost:4321/api/docs` on the dev server.
 - Descriptions are stored as Lexical JSON. The CLI shows and edits them as plain
   text, so saving a changed description drops formatting added in the web app.
   An unchanged description is never rewritten.

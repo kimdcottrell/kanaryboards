@@ -320,3 +320,7 @@ Runs [mcpdoc](https://github.com/lancedb/mcpdoc) as a Docker service, configured
 | `row-column-management.mmd` | Board config and create-row modals, adding rows with AI-generated tasks, renaming / reordering / deleting rows and columns, pinning and filtering columns, and the drawer row list |
 
 These use [Mermaid](https://mermaid.js.org/) sequence diagram syntax — paste a file's contents into [mermaid.live](https://mermaid.live/) to render it visually, or preview with a Mermaid-compatible editor extension.
+
+## API Reference
+
+`docs/api/openapi.yaml` is an OpenAPI 3.1 description of every `/api/v1` route. While the dev server runs with `MODE=development`, it is browsable at [localhost:4321/api/docs](http://localhost:4321/api/docs). `tests/vitest/pages/openapi-coverage.test.ts` fails when a route or method is missing from the spec, or when an operation's `security` doesn't match its auth builder.
