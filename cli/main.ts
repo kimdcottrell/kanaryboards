@@ -1,48 +1,59 @@
-import { Command } from "commander";
+import { log } from "@clack/prompts";
 import { CliError } from "./errors.ts";
+import {
+  type CliArgs,
+  type Command,
+  GROUPS,
+  helpFor,
+  parseCli,
+  unsupportedOption,
+} from "./args.ts";
 import { loginCommand, logoutCommand, whoami } from "./commands/user.ts";
 import { createRow, editRow, listRows } from "./commands/row.ts";
 import { createTask, editTask, listTasks } from "./commands/task.ts";
 
-// Prints user-facing errors without a stack trace.
-const run =
-  <A extends unknown[]>(fn: (...args: A) => Promise<void>) =>
-  async (...args: A) => {
-    try {
-      await fn(...args);
-    } catch (error) {
-      if (!(error instanceof CliError)) throw error;
-      console.error(`✖ ${error.message}`);
-      Deno.exit(1);
-    }
-  };
+const requireId = ({ id }: CliArgs) => {
+  if (!id) throw new CliError("Pass the id with --id <id>.");
+  return id;
+};
 
-const program = new Command()
-  .name("kanby")
-  .description("Manage your Kanby board from the terminal.");
+const handlers: Record<Command, (args: CliArgs) => Promise<void>> = {
+  "user login": loginCommand,
+  "user logout": logoutCommand,
+  "user whoami": whoami,
+  "row list": listRows,
+  "row create": createRow,
+  "row edit": (args) => editRow(requireId(args)),
+  "task list": listTasks,
+  "task create": createTask,
+  "task edit": (args) => editTask(requireId(args)),
+};
 
-const user = program.command("user").description("Log in and out.");
-user.command("login").description("Log in with your browser.")
-  .action(run(loginCommand));
-user.command("logout").description("Log out on this machine.")
-  .action(run(logoutCommand));
-user.command("whoami").description("Show who you're logged in as.")
-  .action(run(whoami));
+const args = parseCli(Deno.args);
+// `kanby` and `kanby task` print help, like --help does.
+if (
+  args.help || !args.command || Object.hasOwn(GROUPS, args.command)
+) {
+  console.log(helpFor(args.command));
+  Deno.exit(0);
+}
+if (!Object.hasOwn(handlers, args.command)) {
+  console.log(helpFor(args.command));
+  log.error(`Unknown command "${args.command}".`);
+  Deno.exit(1);
+}
+const unsupported = unsupportedOption(args);
+if (unsupported) {
+  console.log(helpFor(args.command));
+  log.error(`"${args.command}" doesn't take ${unsupported}.`);
+  Deno.exit(1);
+}
 
-const row = program.command("row").description("Rows (projects).");
-row.command("list").description("List rows.").action(run(listRows));
-row.command("create").description("Create a row.").action(run(createRow));
-row.command("edit").description("Edit a row.")
-  .argument("<id>", "row id, or its last 8 characters")
-  .action(run(editRow));
-
-const task = program.command("task").description("Tasks.");
-task.command("list").description("List tasks (Trash excluded).")
-  .option("-r, --row <id>", "only tasks in this row")
-  .action(run(listTasks));
-task.command("create").description("Create a task.").action(run(createTask));
-task.command("edit").description("Edit a task.")
-  .argument("<id>", "task id, or its last 8 characters")
-  .action(run(editTask));
-
-await program.parseAsync(Deno.args, { from: "user" });
+// User-facing errors are shown without a stack trace.
+try {
+  await handlers[args.command as Command](args);
+} catch (error) {
+  if (!(error instanceof CliError)) throw error;
+  log.error(error.message);
+  Deno.exit(1);
+}

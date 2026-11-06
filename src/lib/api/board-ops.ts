@@ -119,14 +119,23 @@ export function newTask(board: PersistedBoard, input: TaskInput): Task {
 
 // A task moved to another cell goes to the end of it. description is only
 // rewritten when given, since the plain-text round trip drops formatting.
+// `checked` (full item ids) marks those existing items done and the rest not;
+// unknown ids are ignored.
 export function updatedTask(
   board: PersistedBoard,
   task: Task,
-  changes: Partial<TaskInput>,
+  changes: Partial<TaskInput> & { checked?: string[] },
 ): Task {
   const rowId = changes.rowId ?? task.rowId;
   const colId = changes.colId ?? task.colId;
   const moved = rowId !== task.rowId || colId !== task.colId;
+  const { checked } = changes;
+  const checklist = checked
+    ? task.checklist.map((item) => ({
+      ...item,
+      checked: checked.includes(item.id),
+    }))
+    : task.checklist;
   return {
     ...task,
     rowId,
@@ -137,8 +146,8 @@ export function updatedTask(
       ? task.description
       : plainTextToLexical(changes.description),
     checklist: changes.checklist
-      ? appendChecklistItems(task.checklist, changes.checklist)
-      : task.checklist,
+      ? appendChecklistItems(checklist, changes.checklist)
+      : checklist,
   };
 }
 

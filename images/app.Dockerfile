@@ -71,7 +71,7 @@ RUN --mount=type=cache,target=${DENO_DIR},uid=${LOCAL_MACHINE_UID},gid=${LOCAL_M
 
 # Compile the main app so that it doesn't need to be compiled each startup/entry.
 # RUN deno cache main.ts
-ENV PATH="$PATH:/var/dev/node_modules/.bin/:$HOME/.local/bin"
+ENV PATH="$PATH:/var/dev/node_modules/.bin/:$HOME/.local/bin:/var/dev/cli/bin"
 
 RUN deno run --allow-all husky
 

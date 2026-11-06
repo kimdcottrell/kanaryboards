@@ -1,5 +1,7 @@
+import { log } from "@clack/prompts";
 import { config } from "./config.ts";
 import { CliError } from "./errors.ts";
+import { waiting } from "./prompts.ts";
 
 // Clerk OAuth (authorization code + PKCE) for a public client, as in
 // https://github.com/clerk/cli-auth-example: a one-shot server on 127.0.0.1
@@ -133,9 +135,7 @@ async function pastedRedirect(signal: AbortSignal): Promise<URL> {
       } catch {
         // not a URL
       }
-      console.error(
-        "✖ Paste the whole address, starting with http://127.0.0.1",
-      );
+      log.error("Paste the whole address, starting with http://127.0.0.1");
     }
   }
 }
@@ -221,22 +221,23 @@ export async function login(): Promise<void> {
       code_challenge: challenge,
       code_challenge_method: "S256",
     }).toString();
-    console.log(
-      `Opening your browser to log in. If it doesn't open, visit:\n\n${url}\n`,
+    log.info(
+      `Opening your browser to log in. If it doesn't open, visit:\n\n${url}`,
     );
-    console.log(
+    // No spinner while waiting here: its redraws would garble a paste.
+    log.info(
       "Waiting for you to log in… If the page you land on afterwards " +
         "doesn't load, paste its full address here and press Enter:",
     );
     openBrowser(url.toString());
   });
-  const tokens = await requestTokens(issuer, {
+  const tokens = await waiting(requestTokens(issuer, {
     grant_type: "authorization_code",
     code,
     redirect_uri: redirectUri,
     client_id: clientId,
     code_verifier: verifier,
-  });
+  }));
   await writeTokens(issuer, tokens);
 }
 
@@ -246,11 +247,13 @@ export async function logout(): Promise<boolean> {
   const tokens = (await readAll())[issuer];
   if (!tokens) return false;
   const token = tokens.refreshToken ?? tokens.accessToken;
-  await fetch(`${issuer}/oauth/token/revoke`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ token, client_id: clientId }),
-  }).then((res) => res.body?.cancel()).catch(() => {});
+  await waiting(
+    fetch(`${issuer}/oauth/token/revoke`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ token, client_id: clientId }),
+    }).then((res) => res.body?.cancel()).catch(() => {}),
+  );
   await writeTokens(issuer, null);
   return true;
 }

@@ -165,6 +165,13 @@ describe("validate", () => {
     expect((await check("task", "checklist", [""], cli)).status).toBe(422);
   });
 
+  test("checked is a CLI-only list of item ids", async () => {
+    const res = await check("task", "checked", ["id-1"], cli);
+    expect(await res.json()).toEqual({ ok: true, value: ["id-1"] });
+    expect((await check("task", "checked", "id-1", cli)).status).toBe(422);
+    expect((await check("task", "checked", ["id-1"])).status).toBe(404);
+  });
+
   test("ids are only checked for presence", async () => {
     expect((await check("task", "rowId", "")).status).toBe(422);
     expect((await check("task", "colId", "any-id")).status).toBe(200);
@@ -318,6 +325,25 @@ describe("tasks", () => {
       body: { title: "Lost update" },
     }));
     expect(stale.status).toBe(409);
+  });
+
+  test("edit checks and unchecks checklist items", async () => {
+    const { task: created } = await seed();
+    const params = { id: created.shortId };
+    const [item] = created.checklist;
+    const patch = async (checked: string[]) => {
+      const got = await task.GET(ctx({ params }));
+      const res = await task.PATCH(ctx({
+        method: "PATCH",
+        params,
+        headers: { "If-Match": got.headers.get("ETag")! },
+        body: { checked },
+      }));
+      expect(res.status).toBe(200);
+      return (await res.json()).checklist[0].checked;
+    };
+    expect(await patch([item.id])).toBe(true);
+    expect(await patch([])).toBe(false);
   });
 
   test("a trashed task can't be edited", async () => {

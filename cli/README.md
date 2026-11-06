@@ -5,17 +5,36 @@ in for every command except `kanby user login`.
 
 ```
 kanby user  login | logout | whoami
-kanby row   list | create | edit <id>
-kanby task  list [--row <id>] | create | edit <id>
+kanby row   list | create | edit --id <id>
+kanby task  list [--row <id>] | create | edit --id <id>
+kanby [task [create]] --help    # all commands, one group's, or one command's
 ```
 
-`<id>` is a full id, or the last 8 characters `list` shows (UUIDv7 ids start
-with a timestamp, so their first characters aren't unique).
+`kanby task` with no subcommand shows the same help as `kanby task --help`.
 
-`create` and `edit` walk you through each field. Every answer is checked by the
-server (`POST /api/v1/validate/{task|row}/{field}`) before moving on; an empty
-required field (a title) is an error and asks again. In `edit`, pressing Enter
-keeps the current value. Nothing is saved until you confirm at the end.
+`<id>` (`--id`/`-i`, `--row`/`-r`) is a full id, or the last 8 characters
+`list` shows (UUIDv7 ids start with a timestamp, so their first characters
+aren't unique). Ids are flags rather than positional arguments because
+`@bomb.sh/args` turns a positional that starts with a digit into a number.
+
+`create` and `edit` walk you through each field with
+[`@clack/prompts`](https://bomb.sh/docs/clack/packages/prompts/):
+
+- Titles are text inputs. Every answer is checked by the server
+  (`POST /api/v1/validate/{task|row}/{field}`) before moving on; an empty
+  required field (a title) is an error and asks again.
+- Row, column and color are menus.
+- The description takes several lines: Enter adds a line; press Tab to move
+  to `[ submit ]`, then Enter to finish.
+- In `task edit`, the checklist is a multiselect: selected items are done, and
+  Space checks or unchecks one (or the whole group).
+- The AI checklist is offered with a yes/no, and its items are shown for you
+  to accept or decline. Declining offers to regenerate from an edited
+  description; say no to move on without it.
+
+In `edit`, each field starts with its current value. A spinner shows while the
+CLI waits on the server. Nothing is saved until you confirm at the end, and
+Ctrl+C at any prompt quits without saving.
 
 ## Running
 

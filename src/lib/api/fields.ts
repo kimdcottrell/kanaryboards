@@ -84,6 +84,12 @@ const cliValidators: Partial<
         error: "Checklist must be a list of non-empty items.",
       }),
     ),
+    // CLI only: full ids of the existing items to mark done (PATCH).
+    checked: fromSchema(
+      z.array(z.string(), {
+        error: "Checked must be a list of checklist item ids.",
+      }),
+    ),
   },
 };
 
@@ -117,7 +123,11 @@ export function validateFields(
   error: string;
 } {
   const values: Record<string, unknown> = {};
-  for (const field of Object.keys(appValidators[entity])) {
+  const fields = new Set([
+    ...Object.keys(appValidators[entity]),
+    ...Object.keys((client === "cli" && cliValidators[entity]) || {}),
+  ]);
+  for (const field of fields) {
     if (body[field] === undefined) {
       if (required.includes(field)) {
         return { ok: false, field, error: `${field} is required.` };

@@ -97,6 +97,25 @@ describe("newTask / updatedTask", () => {
     expect(edited).toEqual({ ...original, title: "Renamed" });
   });
 
+  test("checked marks the listed items done and the others not", () => {
+    const b = board();
+    const items = appendChecklistItems([], ["one", "two"]).map((i, n) => ({
+      ...i,
+      checked: n === 0,
+    }));
+    const original = { ...b.tasks[0], checklist: items };
+    const edited = updatedTask(b, original, {
+      checked: [items[1].id, "unknown"],
+      checklist: ["three"],
+    });
+    expect(edited.checklist.map((i) => [i.text, i.checked])).toEqual([
+      ["one", false],
+      ["two", true],
+      ["three", false],
+    ]);
+    expect(updatedTask(b, original, { title: "x" }).checklist).toBe(items);
+  });
+
   test("checklist items are appended after existing ones", () => {
     const existing = appendChecklistItems([], ["first"]);
     const items = appendChecklistItems(existing, ["second"]);

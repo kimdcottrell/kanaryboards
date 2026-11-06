@@ -38,9 +38,10 @@ export const GET = cliRoute<Params>(async ({ params }, caller) => {
   return jsonWithEtag(taskView(found.board, found.task), 200, found.version);
 }) satisfies APIRoute<Record<string, unknown>, Params>;
 
-// Body: any of {rowId, colId, title, description, checklist: string[]}.
-// checklist items are appended. Requires If-Match with the ETag from GET; 409
-// if the task changed since.
+// Body: any of {rowId, colId, title, description, checklist: string[],
+// checked: string[]}. checklist items are appended; checked (full item ids)
+// marks those existing items done and the others not. Requires If-Match with
+// the ETag from GET; 409 if the task changed since.
 export const PATCH = cliRoute<Params>(async ({ params, request }, caller) => {
   const found = await findTask(params.id, caller);
   if (found.task.trashedAt !== null) {

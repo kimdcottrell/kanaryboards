@@ -1,86 +1,95 @@
-// Interactive prompts on top of Deno's prompt(). Every answer is re-asked
+// Interactive prompts on top of @clack/prompts. Every answer is re-asked
 // until it's valid; Ctrl+C quits without saving.
+import { cancel, isCancel, multiline, spinner, text } from "@clack/prompts";
+import { CliError } from "./errors.ts";
 
-type Validate = (
+type Check = (
   value: string,
 ) => Promise<{ value: unknown } | { error: string }>;
 
-const fail = (message: string) => console.error(`✖ ${message}`);
+// Every prompt's answer goes through here: a cancelled prompt (Ctrl+C or Esc)
+// exits cleanly, before anything is saved.
+export function answer<T>(value: T): Exclude<T, symbol> {
+  if (isCancel(value)) {
+    cancel("Cancelled. Nothing was saved.");
+    Deno.exit(0);
+  }
+  return value as Exclude<T, symbol>;
+}
 
-const preview = (value: string, max = 40) => {
-  const line = value.split("\n")[0];
-  return line.length > max || value.includes("\n")
-    ? `${line.slice(0, max)}…`
-    : line;
-};
+// A clack `validate` for one field. An empty answer is an error when
+// `required`. Anything else goes through `check` (the server's field rules),
+// whose normalized value `normalize` then returns, so one request both
+// validates and normalizes.
+export function fieldCheck(label: string, required: boolean, check?: Check) {
+  const normalized = new Map<string, string>();
+  return {
+    validate: async (value = "") => {
+      if (!value.trim()) {
+        return required ? `${label} is required.` : undefined;
+      }
+      if (!check) return undefined;
+      let result;
+      try {
+        result = await check(value);
+      } catch (error) {
+        // clack doesn't catch a rejected validate, so e.g. "Not logged in"
+        // is shown as the field's error; Enter retries, Ctrl+C quits.
+        if (error instanceof CliError) return error.message;
+        throw error;
+      }
+      if ("error" in result) return result.error;
+      normalized.set(value, String(result.value));
+      return undefined;
+    },
+    normalize: (value: string) => normalized.get(value) ?? value.trim(),
+  };
+}
 
-// Asks for text. An empty answer keeps `current` when there is one (edit),
-// is "" when `optional`, and otherwise is an error that asks again. A
-// non-empty answer goes through `validate` (the server's field check).
-export async function ask(
+// Asks for text, starting from `initialValue` (the current value, in edit).
+// `multiline` takes several lines: Enter adds a line, and Tab then Enter
+// presses its [ submit ] button.
+export async function askText(
   label: string,
-  { current, optional = false, validate }: {
-    current?: string;
-    optional?: boolean;
-    validate?: Validate;
+  { initialValue, required = true, check, multiline: multi = false }: {
+    initialValue?: string;
+    required?: boolean;
+    check?: Check;
+    multiline?: boolean;
   } = {},
 ): Promise<string> {
-  const hint = current
-    ? ` [${preview(current)}]`
-    : optional
-    ? " (optional, Enter to skip)"
-    : "";
-  while (true) {
-    const answer = (prompt(`${label}${hint}:`) ?? "").trim();
-    if (!answer) {
-      if (current !== undefined) return current;
-      if (optional) return "";
-      fail(`${label} is required.`);
-      continue;
-    }
-    if (!validate) return answer;
-    const result = await validate(answer);
-    if ("error" in result) {
-      fail(result.error);
-      continue;
-    }
-    return String(result.value);
-  }
+  const { validate, normalize } = fieldCheck(label, required, check);
+  const optional = required ? "" : "Optional. ";
+  return normalize(answer(
+    multi
+      ? await multiline({
+        message: label,
+        initialValue,
+        placeholder: `${optional}`,
+        showSubmit: true,
+        validate,
+      })
+      : await text({
+        message: label,
+        initialValue,
+        placeholder: required ? undefined : "Optional",
+        validate,
+      }),
+  ));
 }
 
-// A numbered menu. Enter picks `current` when given.
-export function select<T extends string>(
-  label: string,
-  options: { label: string; value: T }[],
-  current?: T,
-): T {
-  console.log(`${label}:`);
-  options.forEach((option, i) =>
-    console.log(
-      `  ${i + 1}) ${option.label}${
-        option.value === current ? " (current)" : ""
-      }`,
-    )
-  );
-  const currentIndex = options.findIndex((o) => o.value === current);
-  const hint = currentIndex >= 0 ? ` [${currentIndex + 1}]` : "";
-  while (true) {
-    const answer = (prompt(`Choose 1-${options.length}${hint}:`) ?? "").trim();
-    if (!answer && currentIndex >= 0) return options[currentIndex].value;
-    const n = Number(answer);
-    if (Number.isInteger(n) && n >= 1 && n <= options.length) {
-      return options[n - 1].value;
-    }
-    fail(`Enter a number from 1 to ${options.length}.`);
+// Shows a spinner until `promise` settles.
+export async function waiting<T>(promise: Promise<T>): Promise<T> {
+  const spin = spinner();
+  spin.start("Waiting on response from server...");
+  try {
+    const result = await promise;
+    spin.clear();
+    return result;
+  } catch (error) {
+    spin.error("Request failed.");
+    throw error;
   }
-}
-
-// y/n with a default for a bare Enter.
-export function yesNo(label: string, defaultYes: boolean): boolean {
-  const answer = (prompt(`${label} ${defaultYes ? "[Y/n]" : "[y/N]"}`) ?? "")
-    .trim().toLowerCase();
-  if (!answer) return defaultYes;
-  return answer === "y" || answer === "yes";
 }
 
 // Left-aligned columns, for the list commands.

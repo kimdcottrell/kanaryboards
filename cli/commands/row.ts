@@ -1,6 +1,7 @@
+import { confirm, intro, outro, select } from "@clack/prompts";
 import { api, ApiError, validateField } from "../api.ts";
 import { config } from "../config.ts";
-import { ask, printTable, select, yesNo } from "../prompts.ts";
+import { answer, askText, printTable, waiting } from "../prompts.ts";
 
 export interface RowView {
   id: string;
@@ -15,14 +16,19 @@ export interface RowView {
 const COLORS = ["Blue", "Red", "Yellow", "Green", "Purple", "Grey"];
 const colorOptions = COLORS.map((c) => ({ label: c, value: c }));
 
-const askTitle = (current?: string) =>
-  ask("Title", {
-    current,
-    validate: (value) => validateField("row", "title", value),
+const askTitle = (initialValue?: string) =>
+  askText("Title", {
+    initialValue,
+    check: (value) => validateField("row", "title", value),
   });
 
+const askColor = async (initialValue: string) =>
+  answer(
+    await select({ message: "Color", options: colorOptions, initialValue }),
+  );
+
 export async function listRows() {
-  const { data } = await api<RowView[]>("GET", "/api/v1/rows");
+  const { data } = await waiting(api<RowView[]>("GET", "/api/v1/rows"));
   if (data.length === 0) {
     console.log("No rows yet. Create one with `kanby row create`.");
     return;
@@ -40,44 +46,50 @@ export async function listRows() {
 }
 
 export async function createRow() {
+  intro("kanby row create");
   const title = await askTitle();
-  const color = select("Color", colorOptions, "Blue");
-  const { data } = await api<RowView>("POST", "/api/v1/rows", {
+  const color = await askColor("Blue");
+  const { data } = await waiting(api<RowView>("POST", "/api/v1/rows", {
     body: { title, color },
-  });
-  console.log(`Created row ${data.shortId} "${data.title}".`);
-  console.log(`${config.apiUrl}/dashboard/row/${data.shortId}`);
+  }));
+  outro(
+    `Created row ${data.shortId} "${data.title}".\n` +
+      `${config.apiUrl}/dashboard/row/${data.shortId}`,
+  );
 }
 
 export async function editRow(ref: string) {
-  const { data: row, etag } = await api<RowView>(
+  intro("kanby row edit");
+  const { data: row, etag } = await waiting(api<RowView>(
     "GET",
     `/api/v1/rows/${encodeURIComponent(ref)}`,
-  );
-  console.log(`Editing row ${row.shortId}. Press Enter to keep a value.`);
+  ));
   const title = await askTitle(row.title);
-  const color = select("Color", colorOptions, row.color);
+  const color = await askColor(row.color);
   const changes: Record<string, string> = {};
   if (title !== row.title) changes.title = title;
   if (color !== row.color) changes.color = color;
   if (Object.keys(changes).length === 0) {
-    console.log("Nothing changed.");
+    outro("Nothing changed.");
     return;
   }
-  if (!yesNo("Save changes?", true)) return;
+  if (!answer(await confirm({ message: "Save changes?" }))) {
+    outro("Nothing was saved.");
+    return;
+  }
   try {
-    await api<RowView>("PATCH", `/api/v1/rows/${row.id}`, {
+    await waiting(api<RowView>("PATCH", `/api/v1/rows/${row.id}`, {
       body: changes,
       headers: { "If-Match": etag ?? "" },
-    });
+    }));
   } catch (error) {
     if (error instanceof ApiError && error.status === 409) {
       throw new ApiError(
         409,
-        `This row changed while you were editing. Re-run \`kanby row edit ${row.shortId}\`.`,
+        `This row changed while you were editing. Re-run \`kanby row edit --id ${row.shortId}\`.`,
       );
     }
     throw error;
   }
-  console.log(`Saved row ${row.shortId}.`);
+  outro(`Saved row ${row.shortId}.`);
 }

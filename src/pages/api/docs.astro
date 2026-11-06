@@ -19,12 +19,17 @@ const { default: spec } = await import("../../../docs/api/openapi.yaml?raw");
     <title>Kanby API</title>
   </head>
   <body>
-    <div id="app"></div>
-    <script
-      is:inline
-      src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.75.1"></script>
-    <script is:inline define:vars={{ spec }}>
-      Scalar.createApiReference("#app", { content: spec });
+    <div id="app" data-spec={spec}></div>
+    <script>
+      // Inside the MODE check so other builds don't bundle Scalar.
+      if (import.meta.env.MODE === "development") {
+        const [{ createApiReference }] = await Promise.all([
+          import("@scalar/api-reference"),
+          import("@scalar/api-reference/style.css"),
+        ]);
+        const app = document.getElementById("app")!;
+        createApiReference(app, { content: app.dataset.spec });
+      }
     </script>
   </body>
 </html>
