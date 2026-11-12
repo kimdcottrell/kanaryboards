@@ -1,7 +1,18 @@
 #!/usr/bin/bash
 set -e
 
-deno task build 
+# If everything this branch changes (commits since main, plus what's staged)
+# lives under cli/, run only the CLI checks.
+changed=$( (git diff --name-only "$(git merge-base main HEAD)" HEAD; git diff --cached --name-only) | sort -u)
+if [ -n "$changed" ] && ! printf '%s\n' "$changed" | grep -qv '^cli/'; then
+  deno fmt --check --config deno.jsonc cli/
+  deno lint --config deno.jsonc cli/
+  deno check --config deno.jsonc cli/
+  deno task cli:test
+  exit 0
+fi
+
+deno task build
 deno fmt --check
 deno lint
 deno check

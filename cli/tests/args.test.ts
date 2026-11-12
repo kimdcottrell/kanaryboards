@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { helpFor, parseCli, unsupportedOption, USAGE } from "./args.ts";
+import { helpFor, parseCli, unsupportedOption, USAGE } from "../args.ts";
 
 Deno.test("helpFor: a command shows just its own options", () => {
   assert.equal(

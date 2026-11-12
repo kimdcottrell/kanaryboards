@@ -284,8 +284,14 @@ paths:
               type: object
               required: [rowId, colId, title]
               properties:
-                rowId: { type: string, description: Full id of an existing row. }
-                colId: { type: string, description: Full id of an existing column other than Trash. }
+                rowId: {
+                  type: string,
+                  description: Full id of an existing row.,
+                }
+                colId: {
+                  type: string,
+                  description: Full id of an existing column other than Trash.,
+                }
                 title: { $ref: "#/components/schemas/TitleInput" }
                 description: { type: string, description: Plain text. }
                 checklist: { $ref: "#/components/schemas/ChecklistInput" }
@@ -340,8 +346,14 @@ paths:
             schema:
               type: object
               properties:
-                rowId: { type: string, description: Full id of an existing row. }
-                colId: { type: string, description: Full id of an existing column other than Trash. }
+                rowId: {
+                  type: string,
+                  description: Full id of an existing row.,
+                }
+                colId: {
+                  type: string,
+                  description: Full id of an existing column other than Trash.,
+                }
                 title: { $ref: "#/components/schemas/TitleInput" }
                 description: { type: string, description: Plain text. }
                 checklist: { $ref: "#/components/schemas/ChecklistInput" }
@@ -692,7 +704,13 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [boardsScanned, boardsUpdated, tasksDeleted, commentsDeleted, conflicts]
+                required: [
+                  boardsScanned,
+                  boardsUpdated,
+                  tasksDeleted,
+                  commentsDeleted,
+                  conflicts,
+                ]
                 properties:
                   boardsScanned: { type: integer }
                   boardsUpdated: { type: integer }
@@ -882,24 +900,53 @@ components:
       properties:
         id: { type: string }
         title: { type: string }
-        color: { type: string, description: "A stored color value, e.g. `var(--color-row-blue)`." }
+        color: {
+          type: string,
+          description: "A stored color value, e.g. `var(--color-row-blue)`.",
+        }
         order: { type: string, description: Fractional index. }
     Column:
       type: object
-      required: [id, title, order, pinnedToShortcut, pinnedToDock, icon, iconInBoardMenu, iconNearColumnTitle, isTrash]
+      required: [
+        id,
+        title,
+        order,
+        pinnedToShortcut,
+        pinnedToDock,
+        icon,
+        iconInBoardMenu,
+        iconNearColumnTitle,
+        isTrash,
+      ]
       properties:
         id: { type: string }
         title: { type: string }
         order: { type: string, description: Fractional index. }
         pinnedToShortcut: { type: boolean }
         pinnedToDock: { type: boolean }
-        icon: { type: [string, "null"], description: Iconify hugeicons icon name. }
+        icon: {
+          type: [string, "null"],
+          description: Iconify hugeicons icon name.,
+        }
         iconInBoardMenu: { type: boolean }
         iconNearColumnTitle: { type: boolean }
-        isTrash: { type: boolean, description: "The fixed, always-last Trash column." }
+        isTrash: {
+          type: boolean,
+          description: "The fixed, always-last Trash column.",
+        }
     Task:
       type: object
-      required: [id, rowId, colId, title, description, checklist, order, trashedAt, preTrashColId]
+      required: [
+        id,
+        rowId,
+        colId,
+        title,
+        description,
+        checklist,
+        order,
+        trashedAt,
+        preTrashColId,
+      ]
       properties:
         id: { type: string }
         rowId: { type: string }
@@ -909,9 +956,19 @@ components:
         checklist:
           type: array
           items: { $ref: "#/components/schemas/ChecklistItem" }
-        order: { type: string, description: Fractional index within its row/column cell. }
-        trashedAt: { type: [string, "null"], format: date-time, description: Set while in Trash. }
-        preTrashColId: { type: [string, "null"], description: Column to return to on Restore. }
+        order: {
+          type: string,
+          description: Fractional index within its row/column cell.,
+        }
+        trashedAt: {
+          type: [string, "null"],
+          format: date-time,
+          description: Set while in Trash.,
+        }
+        preTrashColId: {
+          type: [string, "null"],
+          description: Column to return to on Restore.,
+        }
     ChecklistItem:
       type: object
       required: [id, text, checked, order]
@@ -922,7 +979,16 @@ components:
         order: { type: string }
     TaskComment:
       type: object
-      required: [id, taskId, authorId, authorName, authorImageUrl, content, createdAt, updatedAt]
+      required: [
+        id,
+        taskId,
+        authorId,
+        authorName,
+        authorImageUrl,
+        content,
+        createdAt,
+        updatedAt,
+      ]
       properties:
         id: { type: string }
         taskId: { type: string }
@@ -931,7 +997,11 @@ components:
         authorImageUrl: { type: [string, "null"] }
         content: { type: string, description: Lexical JSON. }
         createdAt: { type: string, format: date-time }
-        updatedAt: { type: [string, "null"], format: date-time, description: Set once the comment is edited. }
+        updatedAt: {
+          type: [string, "null"],
+          format: date-time,
+          description: Set once the comment is edited.,
+        }
     Board:
       type: object
       required: [rows, columns, tasks]
@@ -968,7 +1038,10 @@ components:
         shortId: { type: string, description: The id's last 8 characters. }
         title: { type: string }
         color: { type: string, description: "The color's label, e.g. `Blue`." }
-        taskCount: { type: integer, description: "Tasks in the row, not counting Trash." }
+        taskCount: {
+          type: integer,
+          description: "Tasks in the row, not counting Trash.",
+        }
     ColumnView:
       type: object
       required: [id, shortId, title]
@@ -978,12 +1051,26 @@ components:
         title: { type: string }
     TaskView:
       type: object
-      required: [id, shortId, title, description, rowId, rowTitle, colId, colTitle, checklist, trashed]
+      required: [
+        id,
+        shortId,
+        title,
+        description,
+        rowId,
+        rowTitle,
+        colId,
+        colTitle,
+        checklist,
+        trashed,
+      ]
       properties:
         id: { type: string }
         shortId: { type: string }
         title: { type: string }
-        description: { type: string, description: Plain text (converted from Lexical JSON). }
+        description: {
+          type: string,
+          description: Plain text (converted from Lexical JSON).,
+        }
         rowId: { type: string }
         rowTitle: { type: string }
         colId: { type: string }

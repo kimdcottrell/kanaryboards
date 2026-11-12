@@ -103,7 +103,9 @@ export const POST = publicRoute(async ({ request }) => {
         const outer = JSON.parse((e as Error).message);
         // Google SDK double-encodes the API error: outer.error.message is itself a JSON string
         const innerRaw = outer?.error?.message ?? outer?.message;
-        const inner = typeof innerRaw === "string" ? JSON.parse(innerRaw) : null;
+        const inner = typeof innerRaw === "string"
+          ? JSON.parse(innerRaw)
+          : null;
         status = inner?.error?.code ?? outer?.error?.code ?? outer?.code ??
           500;
         message = inner?.error?.message ?? outer?.error?.message ??

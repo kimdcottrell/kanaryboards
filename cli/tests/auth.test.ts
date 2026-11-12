@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { pkcePair, receiveCode } from "./auth.ts";
+import { pkcePair, receiveCode } from "../auth.ts";
 
 Deno.test("pkcePair: challenge is the base64url SHA-256 of the verifier", async () => {
   const { verifier, challenge } = await pkcePair();

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import { fieldCheck } from "./prompts.ts";
-import { CliError } from "./errors.ts";
+import { fieldCheck } from "../prompts.ts";
+import { CliError } from "../errors.ts";
 
 const server = (v: string) =>
   Promise.resolve(
