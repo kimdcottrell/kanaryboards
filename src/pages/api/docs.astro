@@ -1,6 +1,9 @@
 ---
-// docs/api/openapi.yaml, rendered with Scalar. Dev server only: 404 in any
-// other build. MODE is a build-time constant (see api/v1/ai/task-titles.ts).
+import { ScalarComponent } from "@scalar/astro";
+
+// docs/api/openapi.yaml, rendered with Scalar's Astro component. Dev server
+// only: 404 in any other build. MODE is a build-time constant (see
+// api/v1/ai/task-titles.ts).
 export const prerender = false;
 
 if (import.meta.env.MODE !== "development") {
@@ -19,17 +22,6 @@ const { default: spec } = await import("../../../docs/api/openapi.yaml?raw");
     <title>Kanby API</title>
   </head>
   <body>
-    <div id="app" data-spec={spec}></div>
-    <script>
-      // Inside the MODE check so other builds don't bundle Scalar.
-      if (import.meta.env.MODE === "development") {
-        const [{ createApiReference }] = await Promise.all([
-          import("@scalar/api-reference"),
-          import("@scalar/api-reference/style.css"),
-        ]);
-        const app = document.getElementById("app")!;
-        createApiReference(app, { content: app.dataset.spec });
-      }
-    </script>
+    <ScalarComponent configuration={{ content: spec }} />
   </body>
 </html>
