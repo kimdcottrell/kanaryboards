@@ -120,6 +120,7 @@ sequenceDiagram
                         Provider->>Provider: setSaveRejected(false)
                     else 409 conflict
                         Provider->>API: GET /api/v1/board -> remote + ETag
+                        Note over Provider: closeStaleEdit(remote.tasks) first (see Live refresh)
                         Provider->>Provider: mergeConflict(savedRef, latest state, remote):<br/>conflicted = this tab's changed entities whose server copy<br/>differs from savedRef (keys compared sorted);<br/>merged = remote + this tab's other changes<br/>savedRef = per-entity JSON of remote, revRef = ETag
                         Provider->>Reducer: dispatch(BOARD/SYNC, liveBoard(merged))<br/>(lastSyncedRef not set, so the autosave this triggers<br/>resends the surviving changes at the new revision)
                         opt conflicted not empty
@@ -167,6 +168,11 @@ sequenceDiagram
             Provider->>Provider: revRef = ETag (savedRef already matches remote)
             Note over Provider: nothing to apply
         else board changed elsewhere
+            opt closeStaleEdit(remote.tasks): a task modal is open and the server's<br/>copy of that task differs from savedRef (canonical compare;<br/>a task deleted elsewhere keeps its modal)
+                Provider->>LS: clearEditDraft(editingTaskId) (task+id)
+                Provider->>Reducer: dispatch(TASK/CLOSE_EDIT_MODAL)<br/>-> editingTaskId/editTaskDraft = null, taskEditModalOpen = false
+                Provider->>View: BoardProvider re-renders EditDiscardedAlert<br/>(shared/EditDiscardedAlert.tsx) until dismissed<br/>BoardView: modal closed while URL is /dashboard/task/:id<br/>-> navigate("/dashboard", replace)
+            end
             Provider->>Provider: board = liveBoard(remote) (sorted, normalized)<br/>savedRef = per-entity JSON of remote, revRef = ETag<br/>lastSyncedRef = JSON.stringify(board)
             Provider->>Reducer: dispatch(BOARD/SYNC, board) -> board.sync<br/>(same handling as cross-tab sync below)
             Provider->>View: re-render (BoardData changed)
@@ -176,6 +182,7 @@ sequenceDiagram
 
     Note over User,Tab: Cross-tab sync (same browser; skipped for boardId "demo")
     Tab->>Provider: channel message {rows, columns, tasks}
+    Note over Provider: closeStaleEdit(tasks) first (see Live refresh):<br/>the other tab saving the open task closes its modal here.
     Provider->>Provider: lastSyncedRef = JSON.stringify(snapshot)<br/>savedRef = per-entity JSON of snapshot (the sender saved it)
     Provider->>Reducer: dispatch(BOARD/SYNC, snapshot) -> board.sync
     Reducer-->>Provider: rows/columns/tasks replaced (last write wins)

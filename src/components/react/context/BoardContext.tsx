@@ -23,6 +23,7 @@ import { useDrawerRowMirror } from "./effects/useDrawerRowMirror.ts";
 import { useChecklistInputRefs } from "./effects/useChecklistInputRefs.ts";
 import SaveErrorAlert from "../shared/SaveErrorAlert.tsx";
 import SaveConflictAlert from "../shared/SaveConflictAlert.tsx";
+import EditDiscardedAlert from "../shared/EditDiscardedAlert.tsx";
 
 export const BoardDispatchContext = createContext<Dispatch<BoardAction> | null>(
   null,
@@ -184,6 +185,8 @@ export function BoardProvider(
     dismissSaveRejected,
     saveConflict,
     dismissSaveConflict,
+    editDiscarded,
+    dismissEditDiscarded,
   } = useBoardPersistence(
     state,
     dispatch,
@@ -344,6 +347,11 @@ export function BoardProvider(
                                   {saveConflict && (
                                     <SaveConflictAlert
                                       onDismiss={dismissSaveConflict}
+                                    />
+                                  )}
+                                  {editDiscarded && (
+                                    <EditDiscardedAlert
+                                      onDismiss={dismissEditDiscarded}
                                     />
                                   )}
                                   {children}

@@ -8,7 +8,11 @@ import RowBoard from "./RowBoard.tsx";
 import TaskCreateModal from "./task/modal/TaskCreateModal.tsx";
 import TaskEditModal from "./task/modal/TaskEditModal.tsx";
 import TaskViewOnlyModal from "./task/modal/TaskViewOnlyModal.tsx";
-import { useBoardDataState, useTaskActions } from "./context/hooks.ts";
+import {
+  useBoardDataState,
+  useTaskActions,
+  useTaskEditState,
+} from "./context/hooks.ts";
 import { findByShortId } from "@lib/dashboard/short-id.ts";
 
 export default function BoardView() {
@@ -16,7 +20,9 @@ export default function BoardView() {
   const { taskId, rowId } = useParams();
   const { rows, tasks, boardLoaded } = useBoardDataState();
   const { startEditTask } = useTaskActions();
+  const { taskEditModalOpen } = useTaskEditState();
   const syncedTaskId = useRef<string | undefined>(undefined);
+  const wasEditModalOpen = useRef(false);
   const syncedRowId = useRef<string | undefined>(undefined);
 
   // Reflect board-load state onto the root element so e2e tests can gate input
@@ -51,6 +57,16 @@ export default function BoardView() {
       navigate("/dashboard", { replace: true });
     }
   }, [boardLoaded, taskId, tasks]);
+
+  // The board closed the task modal itself (its task was saved elsewhere).
+  // Every user action that closes it also leaves /dashboard/task/:id; do the
+  // same here, or opening that task again wouldn't change the URL.
+  useEffect(() => {
+    if (wasEditModalOpen.current && !taskEditModalOpen && taskId) {
+      navigate("/dashboard", { replace: true });
+    }
+    wasEditModalOpen.current = taskEditModalOpen;
+  }, [taskEditModalOpen]);
 
   useEffect(() => {
     if (!boardLoaded || !rowId) {

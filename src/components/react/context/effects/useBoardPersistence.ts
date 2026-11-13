@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Dispatch, RefObject } from "react";
-import type { PersistedBoard } from "@lib/types.ts";
+import type { PersistedBoard, Task } from "@lib/types.ts";
 import type { BoardState } from "../types.ts";
 import type { BoardAction } from "../reducer.ts";
 import type { BoardChanges } from "@lib/db/kv.ts";
 import { liveBoard } from "@lib/api/board-ops.ts";
 import { expiredTrashTaskIds } from "../reducers/board.ts";
 import { pruneLocalComments } from "../../task/comments/commentStore.ts";
+import { clearEditDraft } from "../../task/editDraftStore.ts";
 import { STORAGE_KEY } from "../constants.ts";
 import { createDemoBoard } from "../../demo/demoBoardData.ts";
 
@@ -314,6 +315,25 @@ export function useBoardPersistence(
   // while the server's board was being fetched.
   const stateRef = useRef(state);
   stateRef.current = state;
+  // Whether a task modal was closed because its task was saved elsewhere.
+  const [editDiscarded, setEditDiscarded] = useState(false);
+
+  // Before a board from elsewhere replaces savedRef: if the task open in the
+  // modal was saved there (the CLI, another device or tab), close the modal
+  // and drop its unsaved edits, stashed draft included, so they can't
+  // overwrite that save. A task deleted elsewhere keeps its modal (saveEdit
+  // adds it back).
+  const closeStaleEdit = useCallback((tasks: Task[]) => {
+    const id = stateRef.current.editingTaskId;
+    if (!id) return;
+    const saved = savedRef.current.tasks.get(id);
+    const remote = tasks.find((t) => t.id === id);
+    if (!saved || !remote) return;
+    if (canonical(JSON.parse(saved)) === canonical(remote)) return;
+    clearEditDraft(id);
+    dispatch({ type: "TASK/CLOSE_EDIT_MODAL" });
+    setEditDiscarded(true);
+  }, [dispatch]);
 
   // Load board on mount.
   useEffect(() => {
@@ -347,6 +367,7 @@ export function useBoardPersistence(
       e: MessageEvent<PersistedBoard>,
     ) => {
       const { rows, columns, tasks } = e.data;
+      closeStaleEdit(tasks);
       lastSyncedRef.current = JSON.stringify({ rows, columns, tasks });
       savedRef.current = toSavedBoard({ rows, columns, tasks });
       dispatch({ type: "BOARD/SYNC", payload: { rows, columns, tasks } });
@@ -356,7 +377,7 @@ export function useBoardPersistence(
       channel.close();
       channelRef.current = null;
     };
-  }, [boardId, isAuthenticated]);
+  }, [boardId, isAuthenticated, closeStaleEdit]);
 
   // The board as first loaded. Its post-load save isn't broadcast: other tabs
   // already have it, or something newer that it would overwrite.
@@ -396,11 +417,12 @@ export function useBoardPersistence(
       revRef.current = res.headers.get("ETag") ?? revRef.current;
       if (!diffBoard(savedRef.current, remote)) return;
       const board = liveBoard(remote);
+      closeStaleEdit(remote.tasks);
       savedRef.current = toSavedBoard(remote);
       lastSyncedRef.current = JSON.stringify(board);
       dispatch({ type: "BOARD/SYNC", payload: board });
     }).catch((error) => console.error("Failed to refresh board:", error));
-  }, [dispatch]);
+  }, [dispatch, closeStaleEdit]);
 
   // After a 409, on saveChainRef: the board was written elsewhere since
   // revRef. Keeps this tab's changes to entities nobody else wrote and takes
@@ -416,11 +438,12 @@ export function useBoardPersistence(
       { rows, columns, tasks },
       remote,
     );
+    closeStaleEdit(remote.tasks);
     savedRef.current = toSavedBoard(remote);
     revRef.current = res.headers.get("ETag");
     dispatch({ type: "BOARD/SYNC", payload: liveBoard(board) });
     if (conflicted.size > 0) setSaveConflict(true);
-  }, [dispatch]);
+  }, [dispatch, closeStaleEdit]);
 
   const runQueuedRefresh = useCallback(() => {
     if (!refreshQueuedRef.current) return;
@@ -499,5 +522,7 @@ export function useBoardPersistence(
     dismissSaveRejected: useCallback(() => setSaveRejected(false), []),
     saveConflict,
     dismissSaveConflict: useCallback(() => setSaveConflict(false), []),
+    editDiscarded,
+    dismissEditDiscarded: useCallback(() => setEditDiscarded(false), []),
   };
 }

@@ -92,38 +92,45 @@ const conflictAlert = (page: Page) =>
     hasText: "Some of your changes were replaced.",
   });
 
+// Seeds BOARD_STATE and opens the board. Without live refresh the app can't
+// pick up a write made elsewhere until its own save gets a 409.
+async function openSeededBoard(page: Page, { liveRefresh = true } = {}) {
+  // See drawer-row-nav.spec.ts: refresh the session on a page without the
+  // board island, so its autosave can't race the seed.
+  await gotoAndWaitForClerk(page, "/blog");
+  expect((await page.request.delete("/api/v1/test-data")).status()).toBe(
+    200,
+  );
+  const seeded = await page.request.patch("/api/v1/board", {
+    data: {
+      upserts: BOARD_STATE,
+      deletes: { rowIds: [], columnIds: [], taskIds: [] },
+    },
+  });
+  expect(seeded.ok()).toBeTruthy();
+
+  if (!liveRefresh) {
+    await page.route("**/api/v1/board/events", (route) => route.abort());
+  }
+  await page.goto("/dashboard");
+  await page.locator("html[data-board-loaded='true']").waitFor({
+    state: "attached",
+  });
+  await expect(card(page, "task-sc-b")).toBeVisible();
+  // Let the post-load autosave timer (500ms) pass, so the only saves
+  // recorded below are the ones each test triggers.
+  await page.waitForTimeout(1000);
+}
+
 test.describe("Autosave conflicts with writes made elsewhere", () => {
   test.beforeEach(async ({ page, browserName }) => {
     test.skip(
       browserName !== "chromium",
       "shares one Clerk test account across runs",
     );
-    // See drawer-row-nav.spec.ts: refresh the session on a page without the
-    // board island, so its autosave can't race the seed.
-    await gotoAndWaitForClerk(page, "/blog");
-    expect((await page.request.delete("/api/v1/test-data")).status()).toBe(
-      200,
-    );
-    const seeded = await page.request.patch("/api/v1/board", {
-      data: {
-        upserts: BOARD_STATE,
-        deletes: { rowIds: [], columnIds: [], taskIds: [] },
-      },
-    });
-    expect(seeded.ok()).toBeTruthy();
-
-    // Without live refresh the app can't pick up the other write before the
-    // user's edit, which holds open the window the 409 handling is for
+    // No live refresh, which holds open the window the 409 handling is for
     // (normally the time until the SSE event's refetch lands).
-    await page.route("**/api/v1/board/events", (route) => route.abort());
-    await page.goto("/dashboard");
-    await page.locator("html[data-board-loaded='true']").waitFor({
-      state: "attached",
-    });
-    await expect(card(page, "task-sc-b")).toBeVisible();
-    // Let the post-load autosave timer (500ms) pass, so the only saves
-    // recorded below are the ones each test triggers.
-    await page.waitForTimeout(1000);
+    await openSeededBoard(page, { liveRefresh: false });
   });
 
   test.afterEach(async ({ page }) => {
@@ -184,5 +191,55 @@ test.describe("Autosave conflicts with writes made elsewhere", () => {
 
     await conflictAlert(page).getByRole("button", { name: "Dismiss" }).click();
     await expect(conflictAlert(page)).toHaveCount(0);
+  });
+});
+
+test.describe("A task saved elsewhere while its modal is open", () => {
+  test.beforeEach(async ({ page, browserName }) => {
+    test.skip(
+      browserName !== "chromium",
+      "shares one Clerk test account across runs",
+    );
+    await openSeededBoard(page);
+  });
+
+  test.afterEach(async ({ page }) => {
+    await page.request.delete("/api/v1/test-data");
+  });
+
+  test("closes the modal, discards its edits and shows a notice", async ({ page }) => {
+    const saves = recordSaves(page);
+    await card(page, "task-sc-a").getByText("Task A", { exact: true }).click();
+    await expect(page.locator("dialog.modal-open")).toBeVisible();
+    await expect(page).toHaveURL(/\/dashboard\/task\//);
+    await fillStable(
+      page.getByRole("textbox", { name: "Title" }),
+      "Renamed in the app",
+    );
+
+    await renameElsewhere(page, "task-sc-a", "Renamed in the CLI");
+
+    await expect(page.locator("dialog.modal-open")).toHaveCount(0);
+    await expect(page).toHaveURL(/\/dashboard$/);
+    const notice = page.getByRole("alert").filter({
+      hasText: "This task was changed elsewhere.",
+    });
+    await expect(notice).toBeVisible();
+    await expect(card(page, "task-sc-a").getByText("Renamed in the CLI"))
+      .toBeVisible();
+    // Nothing was stashed for next time.
+    expect(await page.evaluate(() => localStorage.getItem("task+task-sc-a")))
+      .toBeNull();
+
+    await notice.getByRole("button", { name: "Dismiss" }).click();
+    await expect(notice).toHaveCount(0);
+
+    // Reopening shows the CLI's version.
+    await card(page, "task-sc-a").getByText("Renamed in the CLI").click();
+    await expect(page.getByRole("textbox", { name: "Title" })).toHaveValue(
+      "Renamed in the CLI",
+    );
+    await page.waitForTimeout(1000);
+    expect(saves).toEqual([]);
   });
 });

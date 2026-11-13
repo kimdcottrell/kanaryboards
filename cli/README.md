@@ -108,6 +108,8 @@ Put its client ID in `KANBY_CLERK_OAUTH_CLIENT_ID`.
   count.
 - An open web tab shows CLI changes within moments, without reloading (it
   refetches on each board write, over `/api/v1/board/events`).
+- If that tab has the task's modal open, the modal closes and its unsaved
+  edits are discarded, with a notice, so they can't overwrite the CLI's edit.
 - If that tab saves an edit to the same task before it has the CLI's change,
   its save is refused (409). The tab then reloads the board, keeps its changes
   to anything the CLI didn't touch, and shows the CLI's version of that task

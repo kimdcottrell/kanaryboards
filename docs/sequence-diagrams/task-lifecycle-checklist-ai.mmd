@@ -123,6 +123,15 @@ sequenceDiagram
     Ctx-->>TaskModal: TaskEditModal re-renders<br/>(TaskEditContext: taskEditModalOpen=false)<br/>-> modal closes, unmounts Form
     Ctx-->>Cell: ColumnSection(s) re-render<br/>(TasksByCellContext changed)<br/>-> TaskCard moves to new cell if rowId/colId<br/>changed, otherwise updates in place
 
+    Note over User,AI: Edit task: saved elsewhere while open (CLI, another device or tab)
+    Ctx->>Drafts: useBoardPersistence closeStaleEdit: the open task's server copy<br/>changed since savedRef (live refresh, cross-tab sync or 409 merge)<br/>-> clearEditDraft(task.id)
+    Drafts-->>Card: TaskCard re-renders (useHasEditDraft) -> indicator removed
+    Ctx->>Reducer: dispatch(TASK/CLOSE_EDIT_MODAL), then BOARD/SYNC
+    Reducer-->>Ctx: editingTaskId = null, editTaskDraft = null,<br/>taskEditModalOpen = false; tasks = the server's
+    Ctx-->>TaskModal: modal closes, unsaved edits discarded<br/>BoardProvider shows EditDiscardedAlert (alert-info) until dismissed
+    TaskModal->>TaskModal: BoardView: modal closed while URL is /dashboard/task/:id<br/>-> navigate(/dashboard, replace)
+    Note over Ctx,Reducer: A task deleted elsewhere doesn't count: its modal stays open<br/>and saveEdit adds it back (above).
+
     Note over User,AI: Trash task (edit modal dock, task not in Trash)
     User->>Form: click "Trash" (edit modal only)
     Form->>Actions: trashTask(taskId)<br/>(actions/task.ts)

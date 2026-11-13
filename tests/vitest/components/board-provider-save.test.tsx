@@ -4,7 +4,12 @@ import {
   BoardProvider,
   useBoardDataState,
   useBoardDispatch,
+  useTaskEditState,
 } from "@components/react/context/BoardContext.tsx";
+import {
+  readEditDraft,
+  writeEditDraft,
+} from "@components/react/task/editDraftStore.ts";
 import type { Row } from "@lib/types.ts";
 import type { BoardChanges } from "@lib/db/kv.ts";
 import type { FakeEventSource } from "../eventSource.setup.ts";
@@ -232,6 +237,110 @@ describe("BoardProvider (signed in) — live refresh", () => {
     expect(server.patches[0].upserts.rows).toEqual([
       { ...row, title: "Local" },
     ]);
+  });
+
+  describe("with a task modal open", () => {
+    const task = (id: string, title: string) => ({
+      ...legacyTask(id),
+      title,
+      trashedAt: null,
+      preTrashColId: null,
+    });
+
+    function EditProbe() {
+      const { tasks } = useBoardDataState();
+      const { taskEditModalOpen, editTaskDraft } = useTaskEditState();
+      const dispatch = useBoardDispatch();
+      return (
+        <>
+          <span data-testid="tasks">{tasks.map((t) => t.title).join(",")}</span>
+          <span data-testid="draft">
+            {taskEditModalOpen ? editTaskDraft?.title : "closed"}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              dispatch({
+                type: "TASK/OPEN_EDIT_MODAL",
+                payload: { task: tasks[0] },
+              });
+              dispatch({
+                type: "TASK/UPDATE_EDIT_DRAFT",
+                payload: { draft: { ...tasks[0], title: "Unsaved" } },
+              });
+              writeEditDraft({ ...tasks[0], title: "Stashed" });
+            }}
+          >
+            edit
+          </button>
+        </>
+      );
+    }
+
+    async function openModal() {
+      const server = stubServer({
+        rows: [row],
+        columns: [column, trash],
+        tasks: [task("task-1", "Task 1"), task("task-2", "Task 2")],
+      });
+      render(
+        <BoardProvider boardId="board-1" isAuthenticated>
+          <EditProbe />
+        </BoardProvider>,
+      );
+      await waitFor(() =>
+        expect(screen.getByTestId("tasks").textContent).toBe("Task 1,Task 2")
+      );
+      fireEvent.click(screen.getByRole("button", { name: "edit" }));
+      expect(screen.getByTestId("draft").textContent).toBe("Unsaved");
+      return server;
+    }
+
+    beforeEach(() => localStorage.clear());
+
+    test("closes it and discards its edits when its task is saved elsewhere", async () => {
+      const server = await openModal();
+
+      server.board = {
+        ...server.board,
+        tasks: [task("task-1", "From CLI"), task("task-2", "Task 2")],
+      };
+      events().emit();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("tasks").textContent).toBe(
+          "From CLI,Task 2",
+        )
+      );
+      expect(screen.getByTestId("draft").textContent).toBe("closed");
+      expect(readEditDraft("task-1")).toBeNull();
+      const alert = screen.getByRole("alert");
+      expect(alert.textContent).toContain("This task was changed elsewhere.");
+
+      fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+      expect(screen.queryByRole("alert")).toBeNull();
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      expect(server.patches).toEqual([]);
+    });
+
+    test("keeps it open when another task is saved elsewhere", async () => {
+      const server = await openModal();
+
+      server.board = {
+        ...server.board,
+        tasks: [task("task-1", "Task 1"), task("task-2", "From CLI")],
+      };
+      events().emit();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("tasks").textContent).toBe(
+          "Task 1,From CLI",
+        )
+      );
+      expect(screen.getByTestId("draft").textContent).toBe("Unsaved");
+      expect(readEditDraft("task-1")?.draft.title).toBe("Stashed");
+      expect(screen.queryByRole("alert")).toBeNull();
+    });
   });
 
   test("closes the stream on unmount", async () => {
