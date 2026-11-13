@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import type { Task } from "../context/types.ts";
+import type { Task } from "@lib/types.ts";
 import { hasLexicalText } from "@lib/lexical.ts";
 
 // Unsaved edit-modal changes, kept per task when the modal is closed without

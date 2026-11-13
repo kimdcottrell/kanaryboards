@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import type { Row } from "../types.ts";
+import type { Row } from "@lib/types.ts";
 import { byOrder } from "../ordering.ts";
 import { shortId } from "@lib/dashboard/short-id.ts";
 

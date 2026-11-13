@@ -15,7 +15,7 @@ import {
   boardReducer,
   createInitialState,
 } from "@components/react/context/reducer.ts";
-import type { ChecklistItem } from "@components/react/context/types.ts";
+import type { ChecklistItem } from "@lib/types.ts";
 import ChecklistSection from "@components/react/task/form-elements/ChecklistSection.tsx";
 
 beforeEach(() => {

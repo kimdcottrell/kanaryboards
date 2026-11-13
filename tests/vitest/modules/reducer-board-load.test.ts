@@ -3,12 +3,11 @@ import {
   boardReducer,
   createInitialState,
 } from "@components/react/context/reducer.ts";
+import type { Column, Task } from "@lib/types.ts";
 import type {
-  Column,
   StoredColumn,
   StoredTask,
-  Task,
-} from "@components/react/context/types.ts";
+} from "@components/react/context/reducers/board.ts";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 import { useBoardDispatch, useColumnEditState } from "../BoardContext.tsx";
 import { validateEntity } from "./shared.ts";
 import type { FieldError } from "./shared.ts";
-import type { Column } from "../types.ts";
+import type { Column } from "@lib/types.ts";
 
 export function useColumnEditActions() {
   const dispatch = useBoardDispatch();

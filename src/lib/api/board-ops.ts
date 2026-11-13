@@ -1,10 +1,12 @@
 import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
-import type { PersistedBoard } from "@lib/db/kv.ts";
 import type {
   ChecklistItem,
+  PersistedBoard,
   Row,
+  RowView,
   Task,
-} from "@components/react/context/types.ts";
+  TaskView,
+} from "@lib/types.ts";
 import {
   createId,
   rowColorOptions,
@@ -170,7 +172,7 @@ export const colorLabel = (value: string) =>
 
 // What the CLI is sent for a task: ids shortened, titles resolved, and the
 // description as plain text.
-export function taskView(board: PersistedBoard, task: Task) {
+export function taskView(board: PersistedBoard, task: Task): TaskView {
   return {
     id: task.id,
     shortId: shortId(task.id),
@@ -185,7 +187,7 @@ export function taskView(board: PersistedBoard, task: Task) {
   };
 }
 
-export function rowView(board: PersistedBoard, row: Row) {
+export function rowView(board: PersistedBoard, row: Row): RowView {
   return {
     id: row.id,
     shortId: shortId(row.id),

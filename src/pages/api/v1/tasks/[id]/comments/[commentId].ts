@@ -12,7 +12,7 @@ import { HttpError, sessionRoute } from "@lib/api/route.ts";
 import { parseBody } from "@lib/api/request.ts";
 import { ContentSchema } from "@lib/api/comments.ts";
 import type { Caller } from "@lib/api/route.ts";
-import type { TaskComment } from "@components/react/context/types.ts";
+import type { TaskComment } from "@lib/types.ts";
 
 // One comment on task `id`. Only its author may edit or delete it.
 type Params = { id: string; commentId: string };

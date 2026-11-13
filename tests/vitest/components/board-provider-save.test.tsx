@@ -5,7 +5,7 @@ import {
   useBoardDataState,
   useBoardDispatch,
 } from "@components/react/context/BoardContext.tsx";
-import type { Row } from "@components/react/context/types.ts";
+import type { Row } from "@lib/types.ts";
 import type { BoardChanges } from "@lib/db/kv.ts";
 import type { FakeEventSource } from "../eventSource.setup.ts";
 

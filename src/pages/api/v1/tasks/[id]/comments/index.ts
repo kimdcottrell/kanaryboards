@@ -12,7 +12,7 @@ import { sessionRoute } from "@lib/api/route.ts";
 import { parseBody } from "@lib/api/request.ts";
 import { ContentSchema } from "@lib/api/comments.ts";
 import { createId } from "@lib/db/uuid.ts";
-import type { TaskComment } from "@components/react/context/types.ts";
+import type { TaskComment } from "@lib/types.ts";
 
 // The comments on task `id` (its full id: the web app's, not the CLI's short
 // refs). Session-only, unlike the CLI's tasks/[id].ts next to this folder.

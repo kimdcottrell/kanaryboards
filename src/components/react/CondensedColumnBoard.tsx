@@ -1,5 +1,5 @@
 import ColumnSection from "./ColumnSection.tsx";
-import type { Column, Row } from "./context/types.ts";
+import type { Column, Row } from "@lib/types.ts";
 
 // Shown when exactly one column is selected from the BoardMenu. Pivots the
 // board: a single section titled with the column, where each project row

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { buildTasksFromTitles } from "@components/react/context/actions/shared.ts";
-import type { Column } from "@components/react/context/types.ts";
+import type { Column } from "@lib/types.ts";
 
 const col = (id: string, title: string, order: string): Column => ({
   id,

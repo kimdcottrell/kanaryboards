@@ -1,4 +1,10 @@
-import type { BoardState, TaskAIAction } from "../types.ts";
+import type { Task } from "@lib/types.ts";
+import type { BoardState } from "../types.ts";
+
+export type TaskAIAction =
+  | { type: "TASK_AI/GENERATE_START" }
+  | { type: "TASK_AI/GENERATE_SUCCESS"; payload: { tasks: Task[] } }
+  | { type: "TASK_AI/GENERATE_FAILURE"; payload: { error: string } };
 
 export function generateStart(state: BoardState): BoardState {
   return {

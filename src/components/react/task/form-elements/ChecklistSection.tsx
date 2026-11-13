@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import { beforeIdFromOrderedList, useDropTarget } from "@lib/dashboard/drag.ts";
-import type { ChecklistItem, Task } from "../../context/types.ts";
+import type { ChecklistItem, Task } from "@lib/types.ts";
 import type { DragEvent } from "react";
 import {
   handleChecklistKeyDown,

@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import type { Column, Row, Task } from "@components/react/context/types.ts";
+import type { Column, Row, Task } from "@lib/types.ts";
 import type {
   useBoardDataState,
   useBoardRefs,

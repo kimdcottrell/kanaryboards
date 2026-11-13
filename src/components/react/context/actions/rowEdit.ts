@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 import { useBoardDispatch, useRowEditState } from "../BoardContext.tsx";
 import { validateEntity } from "./shared.ts";
 import type { FieldError } from "./shared.ts";
-import type { Row } from "../types.ts";
+import type { Row } from "@lib/types.ts";
 
 export function useRowEditActions() {
   const dispatch = useBoardDispatch();

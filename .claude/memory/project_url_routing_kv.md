@@ -17,7 +17,7 @@ The board lives at `/dashboard`. Tasks are URL-addressable via `/dashboard/task/
 
 **KV structure (`src/lib/db/kv.ts`):**
 - `["user_board", userId]` → `boardId`
-- `["board", boardId]` → `PersistedBoard { rows, columns, tasks }` — one blob, must stay under KV's 64KiB value limit
+- `["board", boardId]` → `PersistedBoard { rows, columns, tasks }` (type now in `src/lib/types.ts`) — one blob, must stay under KV's 64KiB value limit
 - `["task_comment", boardId, taskId, commentId]` → `TaskComment` — one entry per comment, deliberately outside the board blob so comments don't count toward the 64KiB limit
 
 **Task comments (feature/notes, 2026-10):** not in reducer state. `src/components/react/task/comments/commentStore.ts` picks a backend mirroring the board: API (`/api/v1/tasks/{taskId}/comments`) when signed in, localStorage (`kanby-comments-v0-1-0`, `{[taskId]: TaskComment[]}`) when signed out, in-memory for demo. Content is Lexical JSON. Edit/delete of a single comment is author-only (403 otherwise). `schema.dbml` declares `task_comments.task_id > tasks.id [delete: cascade]`, but that's design intent for a future Postgres — KV enforces nothing. Cleanup is explicit: `deleteTask` calls `deleteAllComments` (immediate); `DELETE /api/v1/board` calls `deleteBoardComments`; every other way a task leaves the board (row/column delete, expiry on load, reset) is handled by orphan sweeps — KV in the purge, localStorage via `pruneLocalComments` on signed-out board load. Do NOT add per-path cleanup or reconcile on `PATCH /api/v1/board`; the user explicitly chose the daily sweep over cleanup-on-save (2026-10-08).

@@ -11,31 +11,12 @@ import { api, ApiError, validateField } from "../api.ts";
 import { config } from "../config.ts";
 import { CliError } from "../errors.ts";
 import { answer, askText, printTable, waiting } from "../prompts.ts";
-import type { RowView } from "./row.ts";
-
-interface ChecklistItem {
-  id: string;
-  text: string;
-  checked: boolean;
-}
-
-interface TaskView {
-  id: string;
-  shortId: string;
-  title: string;
-  description: string; // plain text
-  rowId: string;
-  rowTitle: string;
-  colId: string;
-  colTitle: string;
-  checklist: ChecklistItem[];
-  trashed: boolean;
-}
-
-interface ColumnView {
-  id: string;
-  title: string;
-}
+import type {
+  ChecklistItem,
+  ColumnView,
+  RowView,
+  TaskView,
+} from "../../src/lib/types.ts";
 
 const askTitle = (initialValue?: string) =>
   askText("Title", {

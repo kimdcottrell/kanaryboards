@@ -11,7 +11,7 @@ import {
   useRowEditState,
 } from "./context/hooks.ts";
 import { useRenderCount } from "@lib/dashboard/use-render-count.ts";
-import type { Row } from "./context/types.ts";
+import type { Row } from "@lib/types.ts";
 
 export default function RowSection(
   { row, isNew = false }: { row: Row; isNew?: boolean },

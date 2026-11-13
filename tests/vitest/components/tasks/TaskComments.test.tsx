@@ -7,7 +7,7 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import type { TaskComment } from "@components/react/context/types.ts";
+import type { TaskComment } from "@lib/types.ts";
 import { COMMENTS_STORAGE_KEY } from "@components/react/task/comments/commentStore.ts";
 
 vi.mock("@components/react/context/hooks.ts", () => ({

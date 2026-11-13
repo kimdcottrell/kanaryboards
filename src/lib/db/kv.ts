@@ -1,16 +1,12 @@
 import type {
   Column,
+  EntityKind,
+  PersistedBoard,
   Row,
   Task,
   TaskComment,
-} from "@components/react/context/types.ts";
+} from "@lib/types.ts";
 import { isTrashExpired } from "@components/react/context/constants.ts";
-
-export interface PersistedBoard {
-  rows: Row[];
-  columns: Column[];
-  tasks: Task[];
-}
 
 let _kv: Deno.Kv | null = null;
 
@@ -150,8 +146,6 @@ export async function applyBoardChanges(
   }
   await commit();
 }
-
-export type EntityKind = "row" | "column" | "task";
 
 // One row/column/task with its versionstamp, which the CLI API hands out as
 // an ETag so an edit can be rejected if the entity changed in the meantime.

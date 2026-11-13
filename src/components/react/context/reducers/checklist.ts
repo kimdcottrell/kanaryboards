@@ -1,5 +1,42 @@
-import type { BoardState, ChecklistAction, ChecklistItem } from "../types.ts";
+import type { ChecklistItem } from "@lib/types.ts";
+import type { BoardState } from "../types.ts";
 import { byOrder, insertKey, reorderKey } from "../ordering.ts";
+
+// Checklist item edits (target discriminates create-draft vs edit-draft).
+export type ChecklistAction =
+  | {
+    type: "CHECKLIST/ADD_ITEM";
+    payload: {
+      target: "draft" | "editDraft";
+      item: ChecklistItem;
+      insertBeforeIndex?: number;
+    };
+  }
+  | {
+    type: "CHECKLIST/UPDATE_ITEM";
+    payload: {
+      target: "draft" | "editDraft";
+      itemId: string;
+      field: "text" | "checked";
+      value: string | boolean;
+    };
+  }
+  | {
+    type: "CHECKLIST/DELETE_ITEM";
+    payload: { target: "draft" | "editDraft"; itemId: string };
+  }
+  // Unlike task drag-and-drop, checklist items only ever reorder within one
+  // fixed list local to a single draft, so drag state stays local to
+  // ChecklistSection and this single action (dispatched on drop) is enough to
+  // record the final position.
+  | {
+    type: "CHECKLIST/REORDER_ITEM";
+    payload: {
+      target: "draft" | "editDraft";
+      itemId: string;
+      beforeItemId: string | null;
+    };
+  };
 
 const mutateChecklist = (
   list: ChecklistItem[],

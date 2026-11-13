@@ -14,7 +14,7 @@ import {
   setBoardIdForUser,
   watchBoard,
 } from "@lib/db/kv.ts";
-import type { PersistedBoard } from "@lib/db/kv.ts";
+import type { PersistedBoard } from "@lib/types.ts";
 
 let memKv: Deno.Kv;
 

@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useBoardDispatch, useChecklistAIState } from "../BoardContext.tsx";
 import { fetchGeneratedItems } from "./shared.ts";
-import type { Task } from "../types.ts";
+import type { Task } from "@lib/types.ts";
 
 export function useChecklistAIActions() {
   const dispatch = useBoardDispatch();

@@ -1,6 +1,16 @@
-import type { BoardState, ChecklistAIAction, ChecklistItem } from "../types.ts";
+import type { ChecklistItem } from "@lib/types.ts";
+import type { BoardState } from "../types.ts";
 import { createId } from "../constants.ts";
 import { generateNKeysBetween } from "fractional-indexing";
+
+export type ChecklistAIAction =
+  | { type: "CHECKLIST_AI/SET_PROMPT"; payload: { prompt: string } }
+  | { type: "CHECKLIST_AI/GENERATE_START"; payload: { taskId: string | null } }
+  | { type: "CHECKLIST_AI/GENERATE_SUCCESS"; payload: { items: string[] } }
+  | { type: "CHECKLIST_AI/GENERATE_FAILURE"; payload: { error: string } }
+  | { type: "CHECKLIST_AI/APPLY_TO_EDIT_DRAFT" }
+  | { type: "CHECKLIST_AI/APPLY_TO_CREATE_DRAFT" }
+  | { type: "CHECKLIST_AI/RESET" };
 
 // Build checklist items for AI-generated text, appending fractional orders
 // after the last existing item so the array stays sorted by order.

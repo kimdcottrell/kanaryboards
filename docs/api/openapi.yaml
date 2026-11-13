@@ -891,7 +891,7 @@ components:
         error: { type: string }
         field: { type: string }
 
-    # Stored entities: src/components/react/context/types.ts, aligned with
+    # Stored entities: src/lib/types.ts, aligned with
     # src/db/schema.dbml. The API requires every field (non-null unless
     # marked), stricter than the dbml's nullability.
     Row:

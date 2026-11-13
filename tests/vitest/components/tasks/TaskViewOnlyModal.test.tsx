@@ -12,7 +12,7 @@ import {
   mockColumn,
   mockRow,
 } from "./setup.ts";
-import type { Task } from "@components/react/context/types.ts";
+import type { Task } from "@lib/types.ts";
 
 const mockNavigate = vi.fn();
 

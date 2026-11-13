@@ -1,5 +1,37 @@
-import type { BoardState, ColumnAction } from "../types.ts";
+import type { BoardState } from "../types.ts";
 import { generateKeyBetween } from "fractional-indexing";
+
+export type ColumnAction =
+  | {
+    type: "COLUMN/ADD";
+    payload: { id: string; title: string; order: string; icon: string | null };
+  }
+  | { type: "COLUMN/DELETE"; payload: { columnId: string } }
+  | {
+    type: "COLUMN/REORDER";
+    payload: { columnId: string; beforeColumnId: string | null };
+  }
+  | { type: "COLUMN/SET_INPUT"; payload: { value: string } }
+  | { type: "COLUMN/SET_ICON"; payload: { icon: string | null } }
+  | {
+    type: "COLUMN/SET_COLUMN_ICON";
+    payload: { columnId: string; icon: string | null };
+  }
+  | { type: "COLUMN/SET_DRAGGED_INDEX"; payload: { index: number | null } }
+  | {
+    type: "COLUMN/RENAME_START";
+    payload: { columnId: string; rowId: string | null; currentName: string };
+  }
+  | { type: "COLUMN/RENAME_CHANGE"; payload: { name: string } }
+  | { type: "COLUMN/RENAME_SAVE"; payload: { columnId: string; title: string } }
+  | { type: "COLUMN/RENAME_CANCEL" }
+  | { type: "COLUMN/TOGGLE_PIN_SHORTCUT"; payload: { columnId: string } }
+  | { type: "COLUMN/TOGGLE_PIN_DOCK"; payload: { columnId: string } }
+  | { type: "COLUMN/TOGGLE_ICON_IN_BOARD_MENU"; payload: { columnId: string } }
+  | {
+    type: "COLUMN/TOGGLE_ICON_NEAR_COLUMN_TITLE";
+    payload: { columnId: string };
+  };
 
 export function add(
   state: BoardState,

@@ -1,13 +1,36 @@
-import type {
-  BoardLifecycleAction,
-  BoardState,
-  Column,
-  StoredColumn,
-  StoredTask,
-  Task,
-} from "../types.ts";
+import type { Column, PersistedBoard, Row, Task } from "@lib/types.ts";
+import type { BoardState } from "../types.ts";
 import { createId, emptyTaskDraft, isTrashExpired } from "../constants.ts";
 import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
+
+// What BOARD/LOAD accepts: boards saved before the column pin/icon fields or
+// the Trash column existed lack them, and load() backfills them.
+export type StoredColumn =
+  & Pick<Column, "id" | "title" | "order">
+  & Partial<Column>;
+export type StoredTask =
+  & Omit<Task, "trashedAt" | "preTrashColId">
+  & Partial<Task>;
+
+export type BoardConfigAction =
+  | { type: "BOARD_CONFIG/OPEN_MODAL"; payload?: { scrollTarget?: string } }
+  | { type: "BOARD_CONFIG/CLOSE_MODAL" };
+
+export type BoardLifecycleAction =
+  | { type: "BOARD/RESET" }
+  | {
+    type: "BOARD/LOAD";
+    payload: {
+      rows: Row[];
+      columns: StoredColumn[];
+      tasks: StoredTask[];
+    };
+  }
+  // Another tab's autosaved board, received over BroadcastChannel.
+  | {
+    type: "BOARD/SYNC";
+    payload: PersistedBoard;
+  };
 
 export const createInitialState = (): BoardState => {
   return {

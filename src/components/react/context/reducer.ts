@@ -1,4 +1,4 @@
-import type { BoardAction, BoardState } from "./types.ts";
+import type { BoardState } from "./types.ts";
 import * as board from "./reducers/board.ts";
 import * as checklist from "./reducers/checklist.ts";
 import * as checklistAi from "./reducers/checklistAi.ts";
@@ -9,6 +9,17 @@ import * as tasks from "./reducers/tasks.ts";
 import * as view from "./reducers/view.ts";
 
 export { createInitialState } from "./reducers/board.ts";
+
+export type BoardAction =
+  | columns.ColumnAction
+  | rows.RowAction
+  | tasks.TaskAction
+  | checklist.ChecklistAction
+  | checklistAi.ChecklistAIAction
+  | taskAi.TaskAIAction
+  | board.BoardConfigAction
+  | board.BoardLifecycleAction
+  | view.ViewAction;
 
 export function boardReducer(
   state: BoardState,

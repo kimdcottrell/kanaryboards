@@ -5,18 +5,19 @@ metadata:
   type: project
 ---
 
-State lives under `src/components/react/context/`:
+State lives under `src/components/react/context/`. Types are split by how widely they're used (reorganized 2026-11-13): types used across app/server/CLI live in `src/lib/types.ts`; types only the reducer layer uses stay in `context/`:
 
-- `types.ts` — `BoardState` is an intersection of named per-slice interfaces (`BoardData`, `RowFormState`, `RowEditState`, `ColumnEditState`, `ColumnConfigState`, `TaskCreateState`, `TaskEditState`, `ChecklistAIState`, `DragState`, …); `BoardAction` is a union of named per-domain unions (`ColumnAction`, `RowAction`, `TaskAction`, `ChecklistAction`, `ChecklistAIAction`, `TaskAIAction`, `DragAction`, `BoardLifecycleAction`, …). Also `StoredColumn`/`StoredTask` (legacy-tolerant shapes accepted by `BOARD/LOAD`) and `TaskComment`.
-- `reducer.ts` — thin router; `createInitialState` plus a `boardReducer` switch that delegates each case to `reducers/<domain>.ts` (one-line `case "X/Y": return domain.fn(state, action.payload);`)
-- `reducers/` — `board.ts`, `columns.ts`, `rows.ts`, `tasks.ts`, `checklist.ts`, `checklistAi.ts`, `taskAi.ts`, `view.ts` — one function per action, typed via `Extract<XAction, {type: "..."}>["payload"]`
+- `src/lib/types.ts` (import as `@lib/types.ts`; the CLI imports it by relative path) — only the widely shared types: entities (`Row`/`Column`/`Task`/`ChecklistItem`/`TaskComment`), `PersistedBoard`, `EntityKind`, and the CLI API response shapes (`TaskView`/`RowView`/`ColumnView`/`Me`). Must stay import-free so `deno task cli:compile` works.
+- `context/types.ts` — state only: `BoardState` is an intersection of named per-slice interfaces (`BoardData extends PersistedBoard`, `RowFormState`, `RowEditState`, `ColumnEditState`, `ColumnConfigState`, `BoardConfigState`, `TaskCreateState`, `TaskEditState`, `ChecklistAIState`, `DragState`, `ColumnFilterState`). Slices are imported only by `BoardContext.tsx`.
+- `reducer.ts` — thin router; `createInitialState` plus a `boardReducer` switch that delegates each case to `reducers/<domain>.ts` (one-line `case "X/Y": return domain.fn(state, action.payload);`). Also exports `BoardAction`, composed from the per-domain unions via namespace imports (`columns.ColumnAction | rows.RowAction | …`); import it from here.
+- `reducers/` — `board.ts`, `columns.ts`, `rows.ts`, `tasks.ts`, `checklist.ts`, `checklistAi.ts`, `taskAi.ts`, `view.ts` — one function per action, typed via `Extract<XAction, {type: "..."}>["payload"]`. Each file defines and exports its own action union (`ColumnAction`, `RowAction`, `TaskAction`, `ChecklistAction`, `ChecklistAIAction`, `TaskAIAction`, `ViewAction`); `board.ts` also holds `BoardLifecycleAction`, `BoardConfigAction`, and `StoredColumn`/`StoredTask` (legacy-tolerant shapes accepted by `BOARD/LOAD`). To add an action: add it to its domain's union in that reducer file.
 - `actions/` — per-domain action hooks (`task.ts`, `taskCreate.ts`, `taskEdit.ts`, `row*.ts`, `column*.ts`, `boardConfig.ts`, `view.ts`, …); `shared.ts` has `buildTasksFromTitles`. (The old `useBoard.ts` / `useAsyncActions.ts` are gone.)
 - `selectors.ts` — `computeTasksByCell` (groups + sorts tasks by `order`), `findTodoColumnId`
 - `constants.ts` — `STORAGE_KEY` (`"kanby-v0-1-0"`), `createId`, `emptyTaskDraft()`, `TRASH_RETENTION_DAYS` (30), `isTrashExpired`, `daysUntilPurge`
 - `effects/` — side-effect hooks `BoardProvider` calls: `useBoardPersistence.ts` (load/migrate on mount, 500ms debounced autosave, cross-tab sync), `useDrawerRowMirror.ts` (rebuilds the Astro drawer's `#drawer-row-list` DOM), `useChecklistInputRefs.ts` (checklist input focus refs → `BoardRefsContext`)
 - `BoardContext.tsx` — `BoardProvider` plus many fine-grained contexts (BoardData, TasksByCell, Drag, TaskEdit, ColumnEdit, BoardMeta `{boardId, isAuthenticated}`, …) so components only re-render on their slice; consumers import hooks from `hooks.ts`
 
-**Key interfaces (all in `types.ts`):**
+**Key interfaces (in `src/lib/types.ts`):**
 ```ts
 interface Row    { id; title; color; order; }
 interface Column { id; title; order; pinnedToShortcut; pinnedToDock; icon: string|null; iconInBoardMenu; iconNearColumnTitle; isTrash: boolean; }
@@ -46,4 +47,4 @@ Import `generateKeyBetween` and `generateNKeysBetween` directly from `"fractiona
 
 **Why:** `globalThis.` used instead of `window.` (deno lint `no-window`). `defaultColumnNames` removed because schema.dbml has no such field — columns are the source of truth.
 
-**How to apply:** When adding fields: add to the interface in `types.ts`, `schema.dbml`, the `/api/v1/board` zod schema, and the `normalize*` backfill; handle the action in `reducers/<domain>.ts` and route it in `reducer.ts`. Keep per-column ephemeral UI (hover targets) in local `useState`, not the reducer.
+**How to apply:** When adding fields: add to the interface in `src/lib/types.ts`, `schema.dbml`, the `/api/v1/board` zod schema, and the `normalize*` backfill; handle the action in `reducers/<domain>.ts` (add it to that file's action union) and route it in `reducer.ts`. Keep per-column ephemeral UI (hover targets) in local `useState`, not the reducer.

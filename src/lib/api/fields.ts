@@ -1,5 +1,5 @@
 import { z } from "astro/zod";
-import type { PersistedBoard } from "@lib/db/kv.ts";
+import type { EntityKind, PersistedBoard } from "@lib/types.ts";
 import { rowColorOptions } from "@components/react/context/constants.ts";
 
 // One validator per field the web app or the kanby CLI can set. Each looks at
@@ -13,7 +13,6 @@ type FieldValidator = (value: unknown) => FieldResult;
 // Who is asking: requests with `X-Kanby-Client: cli` get the CLI's rules where
 // they differ from the app's (see cliValidators).
 export type Client = "app" | "cli";
-export type Entity = "task" | "row" | "column";
 
 const fromSchema = (schema: z.ZodType): FieldValidator => (value) => {
   const result = schema.safeParse(value);
@@ -57,7 +56,7 @@ const appChecklist = z.array(
   { error: "Checklist must be a list of items." },
 ).transform((items) => items.filter((item) => item.text.trim()));
 
-const appValidators: Record<Entity, Record<string, FieldValidator>> = {
+const appValidators: Record<EntityKind, Record<string, FieldValidator>> = {
   task: {
     title: fromSchema(title("Title")),
     description: fromSchema(z.string({ error: "Description must be text." })),
@@ -76,7 +75,7 @@ const appValidators: Record<Entity, Record<string, FieldValidator>> = {
 
 // Only where the CLI's rules differ from the app's.
 const cliValidators: Partial<
-  Record<Entity, Record<string, FieldValidator>>
+  Record<EntityKind, Record<string, FieldValidator>>
 > = {
   task: {
     checklist: fromSchema(
@@ -93,13 +92,13 @@ const cliValidators: Partial<
   },
 };
 
-export const isEntity = (value: unknown): value is Entity =>
+export const isEntity = (value: unknown): value is EntityKind =>
   value === "task" || value === "row" || value === "column";
 
 // The validator `client` gets for `entity`.`field`, or undefined if there is
 // no such field.
 export function fieldValidator(
-  entity: Entity,
+  entity: EntityKind,
   field: string,
   client: Client,
 ): FieldValidator | undefined {
@@ -113,7 +112,7 @@ export function fieldValidator(
 // fields are ignored. Returns the normalized fields, or the first error and
 // the field it is about.
 export function validateFields(
-  entity: Entity,
+  entity: EntityKind,
   body: Record<string, unknown>,
   client: Client,
   required: string[] = [],

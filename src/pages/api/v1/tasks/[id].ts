@@ -14,7 +14,7 @@ import { findByRef, taskView, updatedTask } from "@lib/api/board-ops.ts";
 import type { TaskInput } from "@lib/api/board-ops.ts";
 import { getEntity, saveEntity } from "@lib/db/kv.ts";
 import { normalizeTask } from "@components/react/context/reducers/board.ts";
-import type { Task } from "@components/react/context/types.ts";
+import type { Task } from "@lib/types.ts";
 
 // `id` is a full task id or its last characters (see findByRef).
 type Params = { id: string };

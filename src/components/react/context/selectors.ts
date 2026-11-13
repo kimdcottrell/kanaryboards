@@ -1,4 +1,4 @@
-import type { Column, Task } from "./types.ts";
+import type { Column, Task } from "@lib/types.ts";
 
 export const computeTasksByCell = (tasks: Task[]): Record<string, Task[]> => {
   const grouped: Record<string, Task[]> = {};

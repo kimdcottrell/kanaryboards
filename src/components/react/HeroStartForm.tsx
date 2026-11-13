@@ -18,9 +18,7 @@ import {
 } from "./context/actions/shared.ts";
 import { generateKeyBetween } from "fractional-indexing";
 import GeneratingTasksAlert from "./shared/GeneratingTasksAlert.tsx";
-import type { Column, Row, Task } from "./context/types.ts";
-
-type Board = { rows: Row[]; columns: Column[]; tasks: Task[] };
+import type { PersistedBoard, Row } from "@lib/types.ts";
 
 // Load the visitor's current board so we can append to it. Authenticated users'
 // board lives in KV (via /api/v1/board); anonymous visitors' in localStorage. When
@@ -28,9 +26,9 @@ type Board = { rows: Row[]; columns: Column[]; tasks: Task[] };
 // column to land in (ignoring reset()'s sample row, so the new project stands alone).
 async function loadBoard(
   isAuthenticated: ReturnType<typeof useAuth>["isSignedIn"],
-): Promise<Board> {
+): Promise<PersistedBoard> {
   let existing:
-    | { rows?: Row[]; columns?: Column[]; tasks?: Task[] }
+    | Partial<PersistedBoard>
     | null = null;
   if (isAuthenticated) {
     try {
@@ -80,7 +78,7 @@ export default function HeroStartForm() {
       };
       const titles = await fetchGeneratedItems(goal, 10);
       const newTasks = buildTasksFromTitles(titles, newRow.id, board.columns);
-      const merged: Board = {
+      const merged: PersistedBoard = {
         rows: [...board.rows, newRow],
         columns: board.columns,
         tasks: [...newTasks, ...board.tasks],

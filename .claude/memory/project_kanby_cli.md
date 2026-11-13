@@ -24,7 +24,7 @@ Run: `deno task cli <args>` · tests: `deno task cli:test` · binary: `deno task
 - Descriptions are Lexical JSON; `src/lib/lexical.ts` has `plainTextToLexical`/`lexicalToPlainText`. CLI only sends description when changed (round trip drops web formatting). Not yet verified that CLI-written descriptions render in Luthor editor.
 - AI checklist reuses existing `POST /api/v1/ai/task-titles` (unauthenticated).
 
-**CLI files:** `cli/main.ts`, `config.ts`, `auth.ts`, `api.ts` (Bearer; 401/402 messages; `ApiError`), `prompts.ts` (`ask`/`select`/`yesNo`/`printTable` on Deno `prompt()`), `commands/{user,row,task}.ts`, `errors.ts`, tests `*_test.ts` (node:assert). Row colors hardcoded as labels in `commands/row.ts` (CLI can't import `@components` aliases); server maps label→value.
+**CLI files:** `cli/main.ts`, `config.ts`, `auth.ts`, `api.ts` (Bearer; 401/402 messages; `ApiError`), `prompts.ts` (`ask`/`select`/`yesNo`/`printTable` on Deno `prompt()`), `commands/{user,row,task}.ts`, `errors.ts`, tests `*_test.ts` (node:assert). Row colors hardcoded as labels in `commands/row.ts` (CLI can't import `@components` aliases); server maps label→value. The CLI does import types from `../../src/lib/types.ts` by relative path (2026-11-13) — that file must stay import-free.
 
 **Gotchas hit:**
 - `commander` must be in package.json devDependencies (lint rule `no-import-prefix` rejects inline `npm:`).

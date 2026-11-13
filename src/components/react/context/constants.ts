@@ -1,4 +1,4 @@
-import type { Task } from "./types.ts";
+import type { Task } from "@lib/types.ts";
 import { createId } from "@lib/db/uuid.ts";
 import { generateKeyBetween } from "fractional-indexing";
 

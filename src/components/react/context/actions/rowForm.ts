@@ -13,7 +13,7 @@ import {
 import type { FieldError } from "./shared.ts";
 import { generateKeyBetween } from "fractional-indexing";
 import type { SubmitEvent } from "react";
-import type { RowAction } from "../types.ts";
+import type { RowAction } from "../reducers/rows.ts";
 
 type NewRow = Extract<RowAction, { type: "ROW/ADD" }>["payload"];
 

@@ -1,6 +1,6 @@
 import { z } from "astro/zod";
 import { getBoard } from "@lib/db/kv.ts";
-import type { PersistedBoard } from "@lib/db/kv.ts";
+import type { PersistedBoard } from "@lib/types.ts";
 import type { Client } from "@lib/api/fields.ts";
 import { jsonResponse } from "@lib/http/api-responses.ts";
 import { liveBoard } from "@lib/api/board-ops.ts";

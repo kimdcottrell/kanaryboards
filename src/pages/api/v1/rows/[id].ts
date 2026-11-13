@@ -12,7 +12,7 @@ import {
 } from "@lib/api/request.ts";
 import { findByRef, rowView } from "@lib/api/board-ops.ts";
 import { getEntity, saveEntity } from "@lib/db/kv.ts";
-import type { Row } from "@components/react/context/types.ts";
+import type { Row } from "@lib/types.ts";
 
 // `id` is a full row id or its last characters (see findByRef).
 type Params = { id: string };

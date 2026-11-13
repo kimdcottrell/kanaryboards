@@ -1,14 +1,57 @@
-import type {
-  BoardState,
-  ChecklistItem,
-  Column,
-  Task,
-  TaskAction,
-} from "../types.ts";
+import type { ChecklistItem, Column, Task } from "@lib/types.ts";
+import type { BoardState } from "../types.ts";
 import { createId, emptyTaskDraft } from "../constants.ts";
 import { reorderKey } from "../ordering.ts";
 import { findTodoColumnId } from "../selectors.ts";
 import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
+
+export type TaskAction =
+  | { type: "TASK/CREATE"; payload: { task: Task } }
+  | { type: "TASK/DELETE"; payload: { taskId: string } }
+  | {
+    type: "TASK/SAVE_EDIT";
+    payload: {
+      edits: Pick<
+        Task,
+        "title" | "description" | "rowId" | "colId" | "checklist"
+      >;
+    };
+  }
+  | { type: "TASK/MOVE_TO_COLUMN"; payload: { taskId: string; colId: string } }
+  | { type: "TASK/TRASH"; payload: { taskId: string } }
+  | { type: "TASK/RESTORE"; payload: { taskId: string } }
+  | {
+    type: "TASK/TOGGLE_CHECKLIST_ITEM";
+    payload: { taskId: string; itemId: string };
+  }
+  | {
+    type: "TASK/OPEN_CREATE_MODAL";
+    payload: { rowId: string; colId: string };
+  }
+  | { type: "TASK/CLOSE_CREATE_MODAL" }
+  | { type: "TASK/OPEN_EDIT_MODAL"; payload: { task: Task } }
+  | { type: "TASK/CLOSE_EDIT_MODAL" }
+  | { type: "TASK/UPDATE_DRAFT"; payload: { draft: Task } }
+  | { type: "TASK/UPDATE_EDIT_DRAFT"; payload: { draft: Task } }
+  // Task drag-and-drop spans 4 actions because dragging a task is a board-wide
+  // gesture: draggedTask lives in global BoardState so any column can render
+  // drop-zone highlights mid-drag, and a task can land in a different cell than
+  // it started in.
+  //   START_DRAG / END_DRAG - bookend the gesture (END_DRAG also acts as a
+  //                           cancel safety-net if no reorder/drop happened)
+  //   REORDER_IN_CELL       - same-cell reorder, precise before/after position
+  //   DROP_ON_CELL          - move to a different column, at the drop-indicator
+  //                           position (or appended to the end if none)
+  | {
+    type: "TASK/REORDER_IN_CELL";
+    payload: { taskId: string; beforeTaskId: string | null };
+  }
+  | { type: "TASK/START_DRAG"; payload: { task: Task } }
+  | { type: "TASK/END_DRAG" }
+  | {
+    type: "TASK/DROP_ON_CELL";
+    payload: { toRowId: string; toColId: string; beforeTaskId: string | null };
+  };
 
 // Regenerate fractional orders for a loaded checklist, preserving its current
 // array order. Guarantees valid keys even for tasks persisted before checklist

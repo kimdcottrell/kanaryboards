@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useBoardDispatch, useBoardMeta } from "../BoardContext.tsx";
 import { deleteAllComments } from "../../task/comments/commentStore.ts";
 import { clearEditDraft, readEditDraft } from "../../task/editDraftStore.ts";
-import type { Task } from "../types.ts";
+import type { Task } from "@lib/types.ts";
 import type { DragEvent } from "react";
 
 export function useTaskActions() {

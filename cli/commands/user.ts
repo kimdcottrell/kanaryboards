@@ -3,12 +3,7 @@ import { api } from "../api.ts";
 import { login, logout } from "../auth.ts";
 import { config } from "../config.ts";
 import { waiting } from "../prompts.ts";
-
-interface Me {
-  userId: string;
-  email: string | null;
-  name: string | null;
-}
+import type { Me } from "../../src/lib/types.ts";
 
 export async function whoami() {
   const { data } = await waiting(api<Me>("GET", "/api/v1/me"));

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Dispatch, RefObject } from "react";
-import type { BoardAction, BoardData, BoardState } from "../types.ts";
-import type { BoardChanges, PersistedBoard } from "@lib/db/kv.ts";
+import type { PersistedBoard } from "@lib/types.ts";
+import type { BoardState } from "../types.ts";
+import type { BoardAction } from "../reducer.ts";
+import type { BoardChanges } from "@lib/db/kv.ts";
 import { liveBoard } from "@lib/api/board-ops.ts";
 import { expiredTrashTaskIds } from "../reducers/board.ts";
 import { pruneLocalComments } from "../../task/comments/commentStore.ts";
@@ -28,7 +30,7 @@ export function toSavedBoard(board: Entities): SavedBoard {
 // those no longer on the board. null when nothing changed.
 export function diffBoard(
   saved: SavedBoard,
-  board: Pick<BoardData, "rows" | "columns" | "tasks">,
+  board: PersistedBoard,
 ): BoardChanges | null {
   const changed = <T extends { id: string }>(
     items: T[],
@@ -237,7 +239,7 @@ export function useBoardPersistence(
       `board-sync:${isAuthenticated ? "kv" : "local"}`,
     );
     channel.onmessage = (
-      e: MessageEvent<Pick<BoardData, "rows" | "columns" | "tasks">>,
+      e: MessageEvent<PersistedBoard>,
     ) => {
       const { rows, columns, tasks } = e.data;
       lastSyncedRef.current = JSON.stringify({ rows, columns, tasks });

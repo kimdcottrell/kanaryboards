@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { Row } from "../../context/types.ts";
+import type { Row } from "@lib/types.ts";
 
 // `error` is the save's validation message for the project, if any.
 export default function ProjectMenu({

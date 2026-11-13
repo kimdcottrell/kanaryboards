@@ -3,7 +3,8 @@ import {
   boardReducer,
   createInitialState,
 } from "@components/react/context/reducer.ts";
-import type { BoardState, Task } from "@components/react/context/types.ts";
+import type { Task } from "@lib/types.ts";
+import type { BoardState } from "@components/react/context/types.ts";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

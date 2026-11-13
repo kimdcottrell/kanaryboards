@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { CSSProperties } from "react";
-import type { Column } from "../../context/types.ts";
+import type { Column } from "@lib/types.ts";
 
 // `error` is the save's validation message for the status, if any.
 export default function StatusSteps({

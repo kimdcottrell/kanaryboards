@@ -10,7 +10,7 @@ import { createId } from "../constants.ts";
 import { generateKeyBetween } from "fractional-indexing";
 import { liveRowId, validateEntity } from "./shared.ts";
 import type { FieldError } from "./shared.ts";
-import type { Task } from "../types.ts";
+import type { Task } from "@lib/types.ts";
 
 export function useTaskCreateActions() {
   const dispatch = useBoardDispatch();

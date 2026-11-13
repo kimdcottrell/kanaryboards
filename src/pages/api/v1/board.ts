@@ -12,7 +12,7 @@ import { jsonResponse } from "@lib/http/api-responses.ts";
 import { HttpError, sessionRoute } from "@lib/api/route.ts";
 import { parseBody } from "@lib/api/request.ts";
 
-// Mirrors Row/Column/Task in @components/react/context/types.ts (required fields,
+// Mirrors Row/Column/Task in @lib/types.ts (required fields,
 // not schema.dbml's looser nullability — nothing downstream of this validator
 // is written to handle nulls here).
 const RowSchema = z.object({

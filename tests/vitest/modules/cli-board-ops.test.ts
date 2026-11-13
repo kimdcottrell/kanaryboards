@@ -9,8 +9,7 @@ import {
   newTask,
   updatedTask,
 } from "@lib/api/board-ops.ts";
-import type { PersistedBoard } from "@lib/db/kv.ts";
-import type { Column, Task } from "@components/react/context/types.ts";
+import type { Column, PersistedBoard, Task } from "@lib/types.ts";
 import { lexicalToPlainText, plainTextToLexical } from "@lib/lexical.ts";
 
 const column = (id: string, order: string, isTrash = false): Column => ({

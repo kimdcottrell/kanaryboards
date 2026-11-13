@@ -1,7 +1,7 @@
 import { createId } from "../constants.ts";
 import { findTodoColumnId } from "../selectors.ts";
 import { generateNKeysBetween } from "fractional-indexing";
-import type { Column, Row, Task } from "../types.ts";
+import type { Column, Row, Task } from "@lib/types.ts";
 
 export const buildTasksFromTitles = (
   titles: string[],

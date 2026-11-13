@@ -3,7 +3,8 @@ import {
   boardReducer,
   createInitialState,
 } from "@components/react/context/reducer.ts";
-import type { BoardState, Column } from "@components/react/context/types.ts";
+import type { Column } from "@lib/types.ts";
+import type { BoardState } from "@components/react/context/types.ts";
 
 const column = (id: string, order: string, isTrash = false): Column => ({
   id,

@@ -1,5 +1,24 @@
-import type { BoardState, RowAction } from "../types.ts";
+import type { BoardState } from "../types.ts";
 import { generateKeyBetween } from "fractional-indexing";
+
+export type RowAction =
+  | {
+    type: "ROW/ADD";
+    payload: { id: string; title: string; color: string; order: string };
+  }
+  | { type: "ROW/DELETE"; payload: { rowId: string } }
+  | { type: "ROW/MOVE"; payload: { fromIndex: number; toIndex: number } }
+  | { type: "ROW/UPDATE_COLOR"; payload: { rowId: string; color: string } }
+  | { type: "ROW/EDIT_START"; payload: { rowId: string; currentName: string } }
+  | { type: "ROW/EDIT_CHANGE"; payload: { name: string } }
+  | { type: "ROW/EDIT_SAVE"; payload: { rowId: string; title: string } }
+  | { type: "ROW/EDIT_CANCEL" }
+  | { type: "ROW/RENAME"; payload: { rowId: string; name: string } }
+  | { type: "ROW/SET_NEW_NAME"; payload: { name: string } }
+  | { type: "ROW/SET_NEW_PROMPT"; payload: { prompt: string } }
+  | { type: "ROW/RESET_FORM" }
+  | { type: "ROW/OPEN_CREATE_MODAL" }
+  | { type: "ROW/CLOSE_CREATE_MODAL" };
 
 export function add(
   state: BoardState,

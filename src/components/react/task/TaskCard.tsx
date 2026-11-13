@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useTaskActions } from "../context/hooks.ts";
 import { useRenderCount } from "@lib/dashboard/use-render-count.ts";
 import { shortId } from "@lib/dashboard/short-id.ts";
-import type { Row, Task } from "../context/types.ts";
+import type { Row, Task } from "@lib/types.ts";
 import { hasLexicalText } from "@lib/lexical.ts";
 import { daysUntilPurge } from "../context/constants.ts";
 import { useHasEditDraft } from "./editDraftStore.ts";

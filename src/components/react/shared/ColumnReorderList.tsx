@@ -5,7 +5,7 @@ import {
   useColumnConfigActions,
   useColumnConfigState,
 } from "../context/hooks.ts";
-import type { Column } from "../context/types.ts";
+import type { Column } from "@lib/types.ts";
 
 // Shared drag-to-reorder scaffolding for the board's columns: the flex track,
 // leading/trailing drop zones, draggable wrappers, hover indicators, and the

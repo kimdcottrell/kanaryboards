@@ -1,4 +1,9 @@
-import type { BoardState, ViewAction } from "../types.ts";
+import type { BoardState } from "../types.ts";
+
+export type ViewAction = {
+  type: "VIEW/TOGGLE_COLUMN_FILTER";
+  payload: { columnId: string };
+};
 
 export function toggleColumnFilter(
   state: BoardState,

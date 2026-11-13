@@ -1,8 +1,8 @@
 import { createContext } from "react";
 import { useContext, useMemo, useReducer } from "react";
 import type { Dispatch, ReactNode } from "react";
+import type { Task } from "@lib/types.ts";
 import type {
-  BoardAction,
   BoardConfigState,
   BoardData,
   ChecklistAIState,
@@ -12,11 +12,11 @@ import type {
   DragState,
   RowEditState,
   RowFormState,
-  Task,
   TaskCreateState,
   TaskEditState,
 } from "./types.ts";
 import { boardReducer, createInitialState } from "./reducer.ts";
+import type { BoardAction } from "./reducer.ts";
 import { computeTasksByCell } from "./selectors.ts";
 import { useBoardPersistence } from "./effects/useBoardPersistence.ts";
 import { useDrawerRowMirror } from "./effects/useDrawerRowMirror.ts";

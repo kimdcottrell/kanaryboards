@@ -6,7 +6,7 @@ import {
   useTaskEditState,
 } from "../BoardContext.tsx";
 import { createId } from "../constants.ts";
-import type { Task } from "../types.ts";
+import type { Task } from "@lib/types.ts";
 import { clearEditDraft } from "../../task/editDraftStore.ts";
 import { liveRowId, validateEntity } from "./shared.ts";
 import type { FieldError } from "./shared.ts";

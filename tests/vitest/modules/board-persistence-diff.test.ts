@@ -4,7 +4,7 @@ import {
   diffBoard,
   toSavedBoard,
 } from "@components/react/context/effects/useBoardPersistence.ts";
-import type { Column, Row, Task } from "@components/react/context/types.ts";
+import type { Column, Row, Task } from "@lib/types.ts";
 
 const row: Row = { id: "row-1", title: "Project", color: "", order: "a0" };
 const column: Column = {

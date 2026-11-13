@@ -2,14 +2,7 @@ import { confirm, intro, outro, select } from "@clack/prompts";
 import { api, ApiError, validateField } from "../api.ts";
 import { config } from "../config.ts";
 import { answer, askText, printTable, waiting } from "../prompts.ts";
-
-export interface RowView {
-  id: string;
-  shortId: string;
-  title: string;
-  color: string; // label, e.g. "Blue"
-  taskCount: number;
-}
+import type { RowView } from "../../src/lib/types.ts";
 
 // rowColorOptions' labels (src/components/react/context/constants.ts); the
 // server maps them to the stored values and rejects anything else.

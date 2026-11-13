@@ -4,7 +4,7 @@ import {
   useRowActions,
 } from "@components/react/context/hooks.ts";
 import { rowColorOptions } from "@components/react/context/constants.ts";
-import type { Row } from "@components/react/context/types.ts";
+import type { Row } from "@lib/types.ts";
 
 export default function RowSettingsSection() {
   const { rows } = useBoardDataState();
