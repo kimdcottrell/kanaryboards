@@ -1,0 +1,143 @@
+---
+title: Concurrent Edits - Cross-Tab, Cross-Device & CLI Races
+---
+sequenceDiagram
+    actor User
+    participant TabA as Browser tab A<br/>(BoardProvider -><br/>useBoardPersistence.ts)
+    participant Channel as BroadcastChannel<br/>board-sync:kv<br/>(same browser only)
+    participant TabB as Browser tab B<br/>(BoardProvider + TaskEditModal,<br/>BoardView, BoardContext.tsx)
+    participant BoardAPI@{ "type" : "boundary" } as /api/v1/board<br/>(sessionRoute)
+    participant Events@{ "type" : "boundary" } as /api/v1/board/events<br/>(sessionRoute, SSE)
+    participant KV@{ "type" : "database" } as Deno KV<br/>(lib/db/kv.ts)
+    participant CliAPI@{ "type" : "boundary" } as /api/v1/tasks, /api/v1/rows<br/>(cliRoute)
+    participant CLI as kanby CLI<br/>(cli/commands/task.ts, row.ts)
+
+    Note over TabA,CLI: Two kinds of version are in play. Every board write sets ["board_rev", boardId], whose versionstamp is the board revision<br/>(the web app's If-Match, revRef). Each entity has its own versionstamp too (the CLI's If-Match, from GET /api/v1/tasks/:id or /rows/:id).<br/>A browser save is rejected if anything on the board changed. A CLI save is rejected only if that one task or row changed.
+    Note over TabA,TabB: Each tab tracks savedRef (per-entity JSON the server has confirmed), revRef (the board revision it last saw),<br/>lastSyncedRef (the last board it received, so applying it isn't saved or broadcast back) and savePendingRef (an edit is on the 500ms autosave timer).
+
+    rect rgba(38, 140, 240, 0.15)
+        Note over User,CLI: 1. A task saved in tab A shows up in tab B through the BroadcastChannel
+        User->>TabA: Save in TaskEditModal
+        TabA->>TabA: saveTaskEdit -> POST /api/v1/validate/task (422 keeps the modal open)<br/>dispatch(TASK/SAVE_EDIT): task updated, editingTaskId = null, modal closed<br/>clearEditDraft(id), navigate("/dashboard")
+        TabA->>TabA: autosave effect: savePendingRef = true, 500ms timer
+        TabA->>TabA: timer fires: PATCH queued on saveChainRef
+        TabA->>Channel: postMessage({rows, columns, tasks})<br/>(sent as soon as the timer fires, not after the PATCH succeeds)
+        Channel->>TabB: onmessage(board)
+        TabB->>TabB: closeStaleEdit(tasks) (no-op unless tab B has this task open, see 2)<br/>lastSyncedRef = board, savedRef = board (assumes tab A saved it)<br/>dispatch(BOARD/SYNC) -> rows/columns/tasks replaced, TaskCard re-renders
+        TabB->>TabB: autosave effect: snapshot === lastSyncedRef -> no PATCH, no rebroadcast
+        TabA->>BoardAPI: PATCH /api/v1/board {upserts: [task]} If-Match: revRef
+        BoardAPI->>KV: applyBoardChanges(..., [revisionCheck(boardId, revRef)])<br/>atomic: check board_rev + set task + set board_rev
+        KV-->>BoardAPI: ok
+        BoardAPI-->>TabA: 200 + ETag -> revRef, savedRef updated
+        KV-->>Events: board_rev changed
+        Events-->>TabA: data: change -> refreshFromServer -> GET: matches savedRef, revRef = ETag
+        Events-->>TabB: data: change -> refreshFromServer -> GET: matches savedRef, revRef = ETag
+        Note over TabB: Until that SSE refetch, tab B's revRef is behind. A save from tab B in that window<br/>gets a 409 and merges without a notice (nothing collided).
+        %% KNOWN RACE (unfixed): a broadcast silently drops the receiving tab's pending edit.
+        %% Where: useBoardPersistence.ts, the BroadcastChannel effect's channel.onmessage.
+        %% It applies BOARD/SYNC without checking savePendingRef, unlike refreshFromServer,
+        %% which defers to the pending save via refreshQueuedRef.
+        %% Effect: a change tab B made less than 500ms before the message (drag, checklist toggle,
+        %% modal save) is replaced. The re-armed autosave timer then matches lastSyncedRef and skips
+        %% the save. Tab B's change is lost with no notice.
+        %% Not covered by a test yet.
+        Note over Channel,TabB: RACE: the broadcast isn't held back for tab B's pending save (onmessage doesn't check savePendingRef).<br/>If tab B made a board change (drag, checklist toggle, its own modal save) less than 500ms before the message,<br/>BOARD/SYNC replaces it, the re-armed timer then matches lastSyncedRef, and tab B's change is dropped with no notice.
+        Note over TabA,TabB: RACE: if tab A's PATCH then fails (409 or 4xx), tab B already shows tab A's version and holds it in savedRef.<br/>The next SSE refetch differs from savedRef, so BOARD/SYNC brings tab B back to what the server holds.
+    end
+
+    rect rgba(240, 163, 38, 0.15)
+        Note over User,CLI: 2. Tab A saves a task that tab B has open, with unsaved edits, in its modal
+        User->>TabB: open task T -> dispatch(TASK/OPEN_EDIT_MODAL)<br/>editingTaskId = T, editTaskDraft = copy of T, URL /dashboard/task/:shortId
+        User->>TabB: type edits (held in editTaskDraft only: nothing is saved, tasks unchanged)
+        User->>TabA: edit and Save task T (as in 1)
+        TabA->>Channel: postMessage(board with the new T)
+        Channel->>TabB: onmessage(board)
+        TabB->>TabB: closeStaleEdit(tasks): saved = savedRef.tasks[T], remote = incoming T<br/>canonical(saved) !== canonical(remote)
+        TabB->>TabB: clearEditDraft(T) (localStorage task+T)<br/>dispatch(TASK/CLOSE_EDIT_MODAL) -> editingTaskId / editTaskDraft = null<br/>setEditDiscarded(true)
+        TabB->>TabB: savedRef, lastSyncedRef = board, dispatch(BOARD/SYNC)
+        TabB->>TabB: BoardView: modal closed while URL is /dashboard/task/:id<br/>-> navigate("/dashboard", replace)
+        TabB-->>User: EditDiscardedAlert "This task was changed elsewhere."
+        Note over TabB,KV: Tab A's PATCH then bumps board_rev, and the SSE refetch in tab B matches savedRef (nothing more to do).
+        Note over TabB: The modal stays open when: a different task was saved, tab A's save didn't change T (canonical compare),<br/>or T was deleted elsewhere (saveEdit then adds it back at the end of its cell).
+        %% KNOWN RACE (unfixed): the same broadcast race as in section 1, seen from a modal save.
+        %% If tab B saves T and the save is still on its 500ms timer when tab A's broadcast arrives,
+        %% tab B's save is dropped with no notice. SAVE_EDIT already closed the modal, so
+        %% closeStaleEdit can't show EditDiscardedAlert either.
+        Note over TabA,TabB: RACE: tab B presses Save before the message arrives. Its modal is already closed (editingTaskId = null),<br/>so closeStaleEdit does nothing. If tab B's save is still on its 500ms timer, tab A's broadcast drops it with no notice (see 1).<br/>If both PATCHes are sent, the second to land gets a 409, and mergeFromServer keeps the server's T and shows SaveConflictAlert.
+    end
+
+    rect rgba(240, 38, 38, 0.12)
+        Note over User,CLI: 3. The CLI saves a task that a browser tab has open, with unsaved edits, in its modal
+        User->>TabB: open task T, type edits (editTaskDraft only, T's versionstamp unchanged)
+        User->>CLI: kanby task edit --id T
+        CLI->>CliAPI: GET /api/v1/tasks/T
+        CliAPI-->>CLI: 200 taskView + ETag v1 (T's versionstamp)
+        User->>CLI: answer prompts, confirm Save
+        CLI->>CliAPI: PATCH /api/v1/tasks/T {changes} If-Match: v1
+        CliAPI->>KV: saveEntity("task", boardId, T, v1)<br/>atomic: check T at v1 + set T + set board_rev
+        KV-->>CliAPI: ok, v2
+        CliAPI-->>CLI: 200 + ETag v2 -> "Saved task"
+        KV-->>Events: board_rev changed
+        Events-->>TabB: data: change
+        TabB->>TabB: refreshFromServer(), queued on saveChainRef
+        alt no edit on the 500ms timer
+            TabB->>BoardAPI: GET /api/v1/board
+            BoardAPI-->>TabB: 200 board + ETag -> revRef
+            TabB->>TabB: diffBoard(savedRef, remote) differs<br/>closeStaleEdit: savedRef's T !== the CLI's T<br/>-> clearEditDraft(T), TASK/CLOSE_EDIT_MODAL, setEditDiscarded(true)
+            TabB->>TabB: savedRef = remote, lastSyncedRef = board, dispatch(BOARD/SYNC)<br/>BoardView navigate("/dashboard", replace)
+            TabB-->>User: EditDiscardedAlert, the card shows the CLI's version
+        else an edit is on the timer (savePendingRef)
+            TabB->>TabB: refreshQueuedRef = true (refresh runs after that save)
+            TabB->>BoardAPI: that save's PATCH, If-Match: stale revRef
+            BoardAPI-->>TabB: 409 {conflict: true}
+            TabB->>TabB: mergeFromServer: GET board, closeStaleEdit(remote.tasks) (same close + alert as above)<br/>mergeConflict keeps this tab's changes to entities the CLI didn't touch
+        end
+        %% KNOWN RACE (unfixed): saving the modal just after the CLI saved the same task shows
+        %% SaveConflictAlert, not EditDiscardedAlert.
+        %% Where: useBoardPersistence.ts. TASK/SAVE_EDIT nulls editingTaskId before the SSE refetch,
+        %% so closeStaleEdit (in refreshFromServer and mergeFromServer) returns early.
+        %% Effect: the browser's edits are lost. The 409 merge keeps the CLI's version, and the user
+        %% gets the generic conflict notice instead of the "changed elsewhere" one.
+        %% Covered by board-save-conflict.spec.ts "a task changed on both sides keeps the CLI's version, with a notice".
+        Note over TabB,CLI: RACE: the user presses Save in the modal before the SSE refetch lands. SAVE_EDIT closes the modal, so<br/>closeStaleEdit has nothing to close. The autosave PATCH carries the stale revRef and gets a 409. mergeConflict sees T changed<br/>on both sides and keeps the CLI's version. The browser's edits are lost, with SaveConflictAlert instead of EditDiscardedAlert.<br/>(Playwright: board-save-conflict.spec.ts "a task changed on both sides keeps the CLI's version, with a notice")
+    end
+
+    rect rgba(38, 240, 58, 0.15)
+        Note over User,CLI: 4. A task or row saved in the CLI shows up in every open browser tab, on any device
+        alt kanby row edit / task edit (checked)
+            CLI->>CliAPI: PATCH /api/v1/rows/:id or /api/v1/tasks/:id, If-Match: entity versionstamp
+            CliAPI->>KV: saveEntity(kind, boardId, entity, expected)<br/>atomic: check entity + set entity + set board_rev
+        else kanby row create / task create (unchecked)
+            CLI->>CliAPI: POST /api/v1/rows or /api/v1/tasks
+            CliAPI->>KV: applyBoardChanges(boardId, {upserts}) with no checks<br/>(rows POST also writes the default columns if the board has none)<br/>atomic: set entities + set board_rev
+        end
+        KV-->>CliAPI: ok
+        CliAPI-->>CLI: 200 / 201
+        KV-->>Events: board_rev changed (one kv.watch per open tab)
+        Events-->>TabA: data: change
+        Events-->>TabB: data: change
+        TabB->>BoardAPI: refreshFromServer -> GET /api/v1/board
+        BoardAPI-->>TabB: 200 board + ETag
+        TabB->>TabB: revRef = ETag, savedRef = remote, lastSyncedRef = board<br/>dispatch(BOARD/SYNC) -> RowSection (row title / color) and TaskCard re-render
+        Note over TabA: Tab A does the same, from its own SSE stream. The BroadcastChannel isn't involved:<br/>a refresh sets lastSyncedRef, so nothing is saved or broadcast back.
+        Note over Events,TabB: A dropped stream reopens by itself. kv.watch sends the current board_rev on connect,<br/>so the tab refetches and picks up any writes it missed. Pending local edits defer the refresh (see 3).
+    end
+
+    rect rgba(160, 38, 240, 0.12)
+        Note over User,CLI: 5. The CLI has a task open while a browser saves it: the CLI save gets a 409
+        User->>CLI: kanby task edit --id T
+        CLI->>CliAPI: GET /api/v1/tasks/T
+        CliAPI-->>CLI: 200 + ETag v1 (no lock is held while the user answers prompts)
+        User->>TabB: change task T (modal save, drag to another cell, checklist toggle, ...)
+        TabB->>BoardAPI: autosave PATCH /api/v1/board {upserts: [T]} If-Match: revRef
+        BoardAPI->>KV: applyBoardChanges: set ["task", boardId, T] + set board_rev
+        KV-->>BoardAPI: ok (T's versionstamp is now v2)
+        User->>CLI: finish prompts, confirm Save
+        CLI->>CliAPI: PATCH /api/v1/tasks/T {changes} If-Match: v1
+        CliAPI->>KV: findTask again (T now in Trash -> 409 "Restore it in the web app first", deleted -> 404)<br/>validateFields, checkTaskRefs (422)
+        CliAPI->>KV: saveEntity("task", boardId, T, v1)<br/>atomic: check T at v1 + set T + set board_rev
+        KV--xCliAPI: check failed (T is at v2), nothing written
+        CliAPI--xCLI: 409 "This task changed since it was read."
+        CLI-->>User: "This task changed while you were editing.<br/>Re-run kanby task edit --id {shortId}." (the prompt answers are lost)
+        Note over TabB,CLI: Only a write to T itself blocks the CLI. The browser's autosave upserts just the entities whose JSON changed<br/>(diffBoard), so opening T in a modal or saving other tasks or rows doesn't. The check and the write are one atomic<br/>commit, with no gap between them. The same applies to kanby row edit (row versionstamp) and to two CLI sessions.
+    end

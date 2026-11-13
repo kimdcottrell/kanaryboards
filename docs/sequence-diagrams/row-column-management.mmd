@@ -90,7 +90,7 @@ sequenceDiagram
         else no titles / fetch error
             Actions->>Ctx: dispatch(TASK_AI/GENERATE_FAILURE, {error})
             Ctx->>Reducer: taskAi.generateFailure
-            Reducer-->>Ctx: isGeneratingTasks=false, taskGenerationFailed=true<br/>taskGenerationStatus=error<br/>(newRowName/newRowPrompt kept; no ROW/ADD)
+            Reducer-->>Ctx: isGeneratingTasks=false, taskGenerationFailed=true<br/>taskGenerationStatus=error<br/>(newRowName/newRowPrompt kept, no ROW/ADD)
             Ctx-->>RowModal: CreateRowModal re-renders<br/>-> modal stays open, GeneratingTasksAlert (error),<br/>inputs re-enabled, Add Row reappears for retry
         end
         Note over Board,RowModal: In RowBoard's inline empty state there is no modal:<br/>ROW/ADD swaps the empty state for the board, and the<br/>delayed ROW/CLOSE_CREATE_MODAL is a no-op.
@@ -283,11 +283,11 @@ sequenceDiagram
     alt 0 selected
         Board->>Row: render every RowSection with all columns
     else >=2 selected
-        Board->>Row: render every RowSection;<br/>RowSection filters columns to selectedColumnIds
+        Board->>Row: render every RowSection,<br/>RowSection filters columns to selectedColumnIds
         Row->>Cell: ColumnSections only for selected columns
     else exactly 1 selected
-        Board->>Board: render CondensedColumnBoard<br/>(CondensedColumnBoard.tsx)<br/>-> single section titled with the column;<br/>each row pivots into a horizontal ColumnSection<br/>(column fixed, headerLabel = row.title)
-        Note over Cell: open/edit (TASK/OPEN_EDIT_MODAL) and drag<br/>reuse existing ColumnSection logic; dragging a task<br/>to another project column dispatches<br/>TASK/DROP_ON_CELL {toRowId, toColId: this column}
+        Board->>Board: render CondensedColumnBoard<br/>(CondensedColumnBoard.tsx)<br/>-> single section titled with the column,<br/>each row pivots into a horizontal ColumnSection<br/>(column fixed, headerLabel = row.title)
+        Note over Cell: open/edit (TASK/OPEN_EDIT_MODAL) and drag<br/>reuse existing ColumnSection logic, dragging a task<br/>to another project column dispatches<br/>TASK/DROP_ON_CELL {toRowId, toColId: this column}
     end
     Note over Reducer: COLUMN/DELETE also prunes selectedColumnIds<br/>(columns.remove). selectedColumnIds is ephemeral —<br/>excluded from the autosave snapshot.
 
@@ -300,7 +300,7 @@ sequenceDiagram
     Ctx-->>Config: ColumnSettingsSection re-renders<br/>(BoardData: column.iconInBoardMenu changed)<br/>-> checkbox toggles
     Ctx-->>BoardMenu: BoardView re-renders<br/>(BoardData: columns changed)<br/>-> that column's item shows/hides its icon in<br/>#board-menu and (if dock-pinned) BoardDock<br/>(title+count badge unaffected)
 
-    Note over User,AI: Reorder column (drag, ColumnSettingsSection column badges.<br/>Drag scaffolding + drop zones live in the shared<br/>ColumnReorderList.tsx; same dispatches whether rendered<br/>by ColumnSettingsSection or the homepage DemoExperience)
+    Note over User,AI: Reorder column (drag, ColumnSettingsSection column badges.<br/>Drag scaffolding + drop zones live in the shared<br/>ColumnReorderList.tsx, same dispatches whether rendered<br/>by ColumnSettingsSection or the homepage DemoExperience)
     User->>Config: dragstart on column badge
     Config->>Actions: handleDefaultColumnDragStart(index)<br/>(actions/columnConfig.ts)
     Actions->>Ctx: dispatch(COLUMN/SET_DRAGGED_INDEX, {index})
@@ -325,7 +325,7 @@ sequenceDiagram
 
     Note over User,AI: Autosave (debounced, async)
     Ctx->>Ctx: useBoardPersistence: useEffect on rows/columns/tasks (500ms debounce)
-    Ctx->>Ctx: PATCH /api/v1/board {upserts, deletes} If-Match: board rev (only changed entities;<br/>409 -> merge and resend, see board-load-autosave)<br/>(or full localStorage write if unauthenticated)
+    Ctx->>Ctx: PATCH /api/v1/board {upserts, deletes} If-Match: board rev (only changed entities,<br/>409 -> merge and resend, see board-load-autosave)<br/>(or full localStorage write if unauthenticated)
 
     Note over User,AI: Sync drawer row list (DrawerMenu.astro,<br/>an Astro server island rendered outside the React tree —<br/>see BoardController's document-click-delegation note above)
     Ctx->>Ctx: useDrawerRowMirror (effects/useDrawerRowMirror.ts):<br/>useEffect on rows (after boardLoaded, skipped when boardId === "demo")

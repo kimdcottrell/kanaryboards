@@ -31,7 +31,7 @@ sequenceDiagram
             rect rgba(255, 255, 255, 0.5)
                 alt board exists (200)
                     rect rgba(38, 240, 58, 0.25)
-                        KV-->>API: list ["row"|"column"|"task", boardId]<br/>(no entities but a legacy ["board", id] entry: one atomic<br/>check(versionstamp) commit writes its entities + deletes it;<br/>conflict -> another request migrated it, re-list)
+                        KV-->>API: list ["row"|"column"|"task", boardId]<br/>(no entities but a legacy ["board", id] entry: one atomic<br/>check(versionstamp) commit writes its entities + deletes it,<br/>conflict -> another request migrated it, re-list)
                         API-->>Provider: 200 {rows, columns, tasks} + ETag (board revision)
                         Provider->>Provider: savedRef = per-entity JSON of the response<br/>revRef = ETag
                         Provider->>Reducer: dispatch(BOARD/LOAD, remote)<br/>-> board.load(state, payload)
@@ -48,7 +48,7 @@ sequenceDiagram
                         break legacy local data found
                             rect rgba(38, 240, 58, 0.25)
                                 LS-->>Provider: stored JSON
-                                Provider->>API: PATCH /api/v1/board {upserts: local, deletes: none}<br/>If-Match: "none" (no board may exist yet)<br/>(migrate local -> remote; split into chunks of 1000 like autosave)
+                                Provider->>API: PATCH /api/v1/board {upserts: local, deletes: none}<br/>If-Match: "none" (no board may exist yet)<br/>(migrate local -> remote, split into chunks of 1000 like autosave)
                                 API->>KV: applyBoardChanges(boardId, changes, [revisionCheck])<br/>(409 if another tab migrated first: treated as not ok,<br/>and the first autosave then gets a 409 and merges)
                                 opt PATCH ok
                                     Provider->>LS: localStorage.removeItem(STORAGE_KEY)
@@ -91,7 +91,7 @@ sequenceDiagram
     Reducer-->>Provider: columns backfilled (normalizeColumn: legacy<br/>boards missing pin/icon/isTrash fields), Trash column<br/>appended if missing, rows/columns sorted by order<br/>(Trash forced last), tasks backfilled (normalizeTask:<br/>trashedAt/preTrashColId = null), expired Trash tasks<br/>(trashedAt 30+ days old) dropped, tasks whose row or<br/>column is missing dropped (KV has no cascade),<br/>boardLoaded = true
     Provider->>View: BoardView, RowBoard, BoardConfigModal<br/>all re-render (BoardDataContext: rows/columns/<br/>tasks/boardLoaded changed)<br/>-> RowBoard mounts one RowSection per row<br/>(or, when rows is empty e.g. after BOARD/RESET,<br/>the empty state: prompt + inline CreateRowSection),<br/>BoardConfigModal's sections render row/column settings
     View->>View: BoardView useEffect[boardLoaded]<br/>-> document.documentElement.dataset.boardLoaded = "true"<br/>(for e2e hydration gating)
-    opt rowId param present (entered via "/dashboard/row/:shortId"; findByShortId(rows, rowId))
+    opt rowId param present (entered via "/dashboard/row/:shortId", findByShortId(rows, rowId))
         View->>View: BoardView finds row by id, then<br/>requestAnimationFrame -> document.getElementById<br/>("row-section-{rowId}").scrollIntoView({block:"start"})<br/>(unknown id -> navigate("/dashboard", replace))
     end
 
@@ -121,7 +121,7 @@ sequenceDiagram
                     else 409 conflict
                         Provider->>API: GET /api/v1/board -> remote + ETag
                         Note over Provider: closeStaleEdit(remote.tasks) first (see Live refresh)
-                        Provider->>Provider: mergeConflict(savedRef, latest state, remote):<br/>conflicted = this tab's changed entities whose server copy<br/>differs from savedRef (keys compared sorted);<br/>merged = remote + this tab's other changes<br/>savedRef = per-entity JSON of remote, revRef = ETag
+                        Provider->>Provider: mergeConflict(savedRef, latest state, remote):<br/>conflicted = this tab's changed entities whose server copy<br/>differs from savedRef (keys compared sorted),<br/>merged = remote + this tab's other changes<br/>savedRef = per-entity JSON of remote, revRef = ETag
                         Provider->>Reducer: dispatch(BOARD/SYNC, liveBoard(merged))<br/>(lastSyncedRef not set, so the autosave this triggers<br/>resends the surviving changes at the new revision)
                         opt conflicted not empty
                             Provider->>View: BoardProvider re-renders SaveConflictAlert<br/>(shared/SaveConflictAlert.tsx) until dismissed
@@ -144,14 +144,14 @@ sequenceDiagram
     end
     Note over Provider,KV: Every checked save names the board revision it was based on (If-Match).<br/>Any other write since then (another device, another tab, the CLI) means a 409:<br/>the app refetches and resends its changes to entities nobody else touched.<br/>Entities changed on both sides take the server's version, with a notice.<br/>A stale tab can no longer resurrect an entity deleted elsewhere.<br/>Other devices see the change live (see Live refresh below).
 
-    Note over User,Tab: Live refresh (authenticated, once boardLoaded; skipped for boardId "demo")
+    Note over User,Tab: Live refresh (authenticated, once boardLoaded, skipped for boardId "demo")
     Provider->>Events: new EventSource("/api/v1/board/events")
     Events->>KV: watchBoard(boardId) -> kv.watch([["board_rev", boardId]])
     Note over Events: ": ping" every 30s keeps proxies (Cloudflare: 100s idle)<br/>from closing the stream. EventSource reopens a dropped one.
     KV-->>Events: current entry (on connect)
     Events-->>Provider: data: change
     Note over Provider: The connect-time message covers writes made<br/>between GET /api/v1/board and the stream opening.
-    CLI->>KV: POST/PATCH /api/v1/rows|tasks -> applyBoardChanges<br/>(saveEntity = one entity + its versionstamp check, so a CLI edit<br/>fails with 409 if the app saved that task since the CLI read it;<br/>same atomic commit sets ["board_rev", boardId])
+    CLI->>KV: POST/PATCH /api/v1/rows|tasks -> applyBoardChanges<br/>(saveEntity = one entity + its versionstamp check, so a CLI edit<br/>fails with 409 if the app saved that task since the CLI read it,<br/>same atomic commit sets ["board_rev", boardId])
     Note over KV: Every board write bumps board_rev: this tab's and other devices'<br/>autosaves, the CLI, purgeExpiredTrash, and DELETE /api/v1/board<br/>(deletes it). getBoard's legacy migration doesn't.
     KV-->>Events: board_rev changed
     Events-->>Provider: data: change
@@ -168,7 +168,7 @@ sequenceDiagram
             Provider->>Provider: revRef = ETag (savedRef already matches remote)
             Note over Provider: nothing to apply
         else board changed elsewhere
-            opt closeStaleEdit(remote.tasks): a task modal is open and the server's<br/>copy of that task differs from savedRef (canonical compare;<br/>a task deleted elsewhere keeps its modal)
+            opt closeStaleEdit(remote.tasks): a task modal is open and the server's<br/>copy of that task differs from savedRef (canonical compare,<br/>a task deleted elsewhere keeps its modal)
                 Provider->>LS: clearEditDraft(editingTaskId) (task+id)
                 Provider->>Reducer: dispatch(TASK/CLOSE_EDIT_MODAL)<br/>-> editingTaskId/editTaskDraft = null, taskEditModalOpen = false
                 Provider->>View: BoardProvider re-renders EditDiscardedAlert<br/>(shared/EditDiscardedAlert.tsx) until dismissed<br/>BoardView: modal closed while URL is /dashboard/task/:id<br/>-> navigate("/dashboard", replace)
@@ -180,7 +180,7 @@ sequenceDiagram
         end
     end
 
-    Note over User,Tab: Cross-tab sync (same browser; skipped for boardId "demo")
+    Note over User,Tab: Cross-tab sync (same browser, skipped for boardId "demo")
     Tab->>Provider: channel message {rows, columns, tasks}
     Note over Provider: closeStaleEdit(tasks) first (see Live refresh):<br/>the other tab saving the open task closes its modal here.
     Provider->>Provider: lastSyncedRef = JSON.stringify(snapshot)<br/>savedRef = per-entity JSON of snapshot (the sender saved it)

@@ -74,6 +74,7 @@ When planning a change that touches this code (actions, reducers, `BoardContext`
 - Identify which diagram file(s) under `docs/sequence-diagrams/` are affected.
 - Draft the updated diagram content and present it as part of the plan, before the plan is accepted.
 - Once the plan is approved, update the corresponding file(s) under `docs/sequence-diagrams/` as part of the implementation.
+- After creating or editing any `.mmd` file, run `deno task mermaid:check <path>` and fix any parse errors before calling the work done. A common cause is a `;` inside message or note text, which Mermaid treats as the end of a statement.
 
 ## 6. Schema Alignment
 

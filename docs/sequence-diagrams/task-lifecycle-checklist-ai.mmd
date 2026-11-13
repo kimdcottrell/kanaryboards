@@ -5,7 +5,7 @@ sequenceDiagram
     actor User
     participant Cell as ColumnSection<br/>(ColumnSection.tsx)
     participant Card as TaskCard<br/>(task/TaskCard.tsx)
-    participant TaskModal as TaskCreateModal /<br/>TaskEditModal / TaskViewOnlyModal<br/>(task/modal/; Edit + ViewOnly share<br/>ExistingTaskModalWrapper)
+    participant TaskModal as TaskCreateModal /<br/>TaskEditModal / TaskViewOnlyModal<br/>(task/modal/, Edit + ViewOnly share<br/>ExistingTaskModalWrapper)
     participant Form as task fields<br/>(FieldsGrid: TitleInput,<br/>DescriptionEditor, StatusSteps,<br/>ProjectMenu, ChecklistSection)
     participant Actions as action hooks<br/>(actions/task*.ts, checklistAi.ts)
     participant Drafts as editDraftStore<br/>(task/editDraftStore.ts,<br/>localStorage `task+${id}`)
@@ -46,7 +46,7 @@ sequenceDiagram
 
     Note over User,AI: Create task: submit
     User->>Form: submit form
-    Form->>Actions: createTask(event, description)<br/>(description = editor getJSON();<br/>actions/taskCreate.ts, via useTaskFormSubmit)
+    Form->>Actions: createTask(event, description)<br/>(description = editor getJSON(),<br/>actions/taskCreate.ts, via useTaskFormSubmit)
     Actions->>Validate: POST /api/v1/validate/task<br/>{title, description (falls back to draft),<br/>rowId, colId, checklist}
     alt 422 / unreachable
         Validate-->>Actions: {error, field}<br/>(unreachable: "Couldn't check this — try again.")
@@ -73,7 +73,7 @@ sequenceDiagram
     Card->>Card: navigate(/dashboard/task/:shortId)<br/>(shortId = last 8 chars of task.id)
     Ctx-->>TaskModal: TaskEditModal re-renders<br/>(TaskEditContext: taskEditModalOpen=true)<br/>-> opens (task not in Trash)
     TaskModal-->>Form: task fields + ChecklistSection mount<br/>(taskDraft = editTaskDraft)
-    Note over TaskModal,Drafts: TaskEditModal passes PostEditPreSaveAlert(taskId) to the<br/>ExistingTaskModalWrapper alert slot; it reads updatedAt<br/>once per task id -> "last edited …" alert
+    Note over TaskModal,Drafts: TaskEditModal passes PostEditPreSaveAlert(taskId) to the<br/>ExistingTaskModalWrapper alert slot, it reads updatedAt<br/>once per task id -> "last edited …" alert
 
     Note over User,AI: Edit task: edit fields & checklist (target = "editDraft")
     User->>Form: edit title / description / status (colId) / row (rowId)<br/>(Status never lists the Trash column)
@@ -94,7 +94,7 @@ sequenceDiagram
     User->>TaskModal: close modal
     TaskModal->>TaskModal: compare {...editTaskDraft, description: getDescription()}<br/>with saved task (title/description/rowId/colId/non-empty checklist)
     alt changed
-        TaskModal->>Drafts: writeEditDraft(draft) (updatedAt = now;<br/>skipped if content equals stored draft)
+        TaskModal->>Drafts: writeEditDraft(draft) (updatedAt = now,<br/>skipped if content equals stored draft)
     else unchanged
         TaskModal->>Drafts: clearEditDraft(task.id)
     end
@@ -127,7 +127,7 @@ sequenceDiagram
     Ctx->>Drafts: useBoardPersistence closeStaleEdit: the open task's server copy<br/>changed since savedRef (live refresh, cross-tab sync or 409 merge)<br/>-> clearEditDraft(task.id)
     Drafts-->>Card: TaskCard re-renders (useHasEditDraft) -> indicator removed
     Ctx->>Reducer: dispatch(TASK/CLOSE_EDIT_MODAL), then BOARD/SYNC
-    Reducer-->>Ctx: editingTaskId = null, editTaskDraft = null,<br/>taskEditModalOpen = false; tasks = the server's
+    Reducer-->>Ctx: editingTaskId = null, editTaskDraft = null,<br/>taskEditModalOpen = false, tasks = the server's
     Ctx-->>TaskModal: modal closes, unsaved edits discarded<br/>BoardProvider shows EditDiscardedAlert (alert-info) until dismissed
     TaskModal->>TaskModal: BoardView: modal closed while URL is /dashboard/task/:id<br/>-> navigate(/dashboard, replace)
     Note over Ctx,Reducer: A task deleted elsewhere doesn't count: its modal stays open<br/>and saveEdit adds it back (above).
@@ -145,7 +145,7 @@ sequenceDiagram
     Note over Actions,CommentsAPI: Comments are kept. They are deleted with the task by<br/>POST /api/v1/cron/purge-trash (KV) once trashedAt is 30+ days old
 
     Note over User,AI: Open a trashed task (view-only) and Restore
-    Ctx-->>TaskModal: TaskViewOnlyModal re-renders<br/>(TaskEditContext: taskEditModalOpen=true,<br/>colId is the Trash column; isTaskTrashed)<br/>-> opens; TaskEditModal stays closed
+    Ctx-->>TaskModal: TaskViewOnlyModal re-renders<br/>(TaskEditContext: taskEditModalOpen=true,<br/>colId is the Trash column, isTaskTrashed)<br/>-> opens, TaskEditModal stays closed
     Note over TaskModal,Form: "Task is view-only" alert above Status/Project.<br/>ExistingTaskModalWrapper viewOnly wraps title/fields/comments<br/>in preventEdits (capture-phase preventDefault).<br/>Editor limited to "visual-only", Status shows preTrashColId,<br/>no AI checklist generation.<br/>Dock = Delete forever + Cancel + Restore
     User->>Form: click "Restore"
     Form->>Actions: restoreTask(taskId)<br/>(actions/task.ts)
@@ -169,8 +169,8 @@ sequenceDiagram
     Ctx-->>TaskModal: TaskViewOnlyModal re-renders<br/>(TaskEditContext: taskEditModalOpen=false)<br/>-> modal closes, unmounts Form
     Ctx-->>Cell: Trash ColumnSection re-renders<br/>(TasksByCellContext changed)<br/>-> TaskCard unmounts
 
-    Note over User,CommentsAPI: Task comments (edit + view-only modals; local state, outside the reducer)
-    TaskModal->>Comments: render TaskComments(taskId)<br/>(desktop: 30% sidebar; mobile: below form)
+    Note over User,CommentsAPI: Task comments (edit + view-only modals, local state, outside the reducer)
+    TaskModal->>Comments: render TaskComments(taskId)<br/>(desktop: 30% sidebar, mobile: below form)
     Comments->>Ctx: useBoardMeta() -> {boardId, isAuthenticated}
     Comments->>Store: listComments(taskId)
     alt isAuthenticated
@@ -185,7 +185,7 @@ sequenceDiagram
     Comments->>Store: createComment / updateComment / deleteComment
     Store->>CommentsAPI: POST /tasks/{taskId}/comments<br/>PATCH / DELETE /tasks/{taskId}/comments/{commentId}<br/>(or localStorage / in-memory demo)
     Comments->>Comments: setState -> only TaskComments re-renders
-    Note over Comments,Ctx: no dispatch; board autosave unaffected
+    Note over Comments,Ctx: no dispatch, board autosave unaffected
 
     Note over User,AI: Checklist AI: generate suggestions
     User->>Form: open "Generate checklist" panel,<br/>edit prompt (ChecklistSection)
@@ -243,4 +243,4 @@ sequenceDiagram
 
     Note over User,AI: Autosave (debounced, async)
     Ctx->>Ctx: useBoardPersistence: useEffect on tasks (500ms debounce)
-    Ctx->>Ctx: PATCH /api/v1/board {upserts, deletes} If-Match: board rev (only changed entities;<br/>409 -> merge and resend, see board-load-autosave)<br/>(or full localStorage write if unauthenticated)
+    Ctx->>Ctx: PATCH /api/v1/board {upserts, deletes} If-Match: board rev (only changed entities,<br/>409 -> merge and resend, see board-load-autosave)<br/>(or full localStorage write if unauthenticated)

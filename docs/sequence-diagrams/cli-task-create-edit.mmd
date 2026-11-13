@@ -1,0 +1,149 @@
+---
+title: CLI Task Create & Edit (and the live board refresh it triggers)
+---
+sequenceDiagram
+    actor User
+    participant CLI as kanby CLI<br/>(cli/commands/task.ts,<br/>cli/prompts.ts)
+    participant Client as CLI API client<br/>(cli/api.ts -> cli/auth.ts)
+    participant Validate@{ "type" : "boundary" } as /api/v1/validate/:entity/:field<br/>(publicRoute, fields.ts)
+    participant Route@{ "type" : "boundary" } as /api/v1/{rows,columns,tasks}<br/>(cliRoute -> cli-auth.ts,<br/>request.ts, fields.ts, board-ops.ts)
+    participant AI@{ "type" : "boundary" } as /api/v1/ai/task-titles<br/>(publicRoute)
+    participant KV@{ "type" : "database" } as Deno KV<br/>(lib/db/kv.ts)
+    participant Events@{ "type" : "boundary" } as /api/v1/board/events<br/>(sessionRoute, SSE)
+    participant Provider as BoardProvider<br/>(effects/useBoardPersistence.ts)
+    participant View as BoardView / RowBoard /<br/>open task modal
+
+    Note over Client,Route: Every Client request: getAccessToken() (stored Clerk OAuth token,<br/>refreshed first if about to expire) -> Authorization: Bearer + X-Kanby-Client: cli.<br/>401 -> "Not logged in", 402 -> "requires a paid plan", other non-2xx -> ApiError(status, body.error).<br/>Requests run one after another: parallel calls could both refresh with the same refresh token.
+    %% The CLI does not delete tasks at this time. There is no `kanby task delete` command and no
+    %% DELETE handler on /api/v1/tasks/:id (or /api/v1/rows/:id). The CLI can't trash a task either:
+    %% checkTaskRefs rejects the Trash column with a 422, and `task edit` refuses a task already in Trash
+    %% (the CLI checks task.trashed, and PATCH returns 409). Trashing, restoring and deleting stay in the web app,
+    %% and the daily purge removes expired Trash tasks (see board-load-autosave.mmd).
+    Note over Route,KV: Every cliRoute handler starts with authorizeCli: locals.auth({acceptsToken: "oauth_token"})<br/>(no user -> 401), isPaidUser (no -> 402), getBoardIdForUser (none -> createId + setBoardIdForUser).<br/>Handlers throw HttpError(status, error), which run() turns into a JSON {error} response.
+
+    rect rgba(38, 140, 240, 0.15)
+        Note over User,View: kanby task create
+        User->>CLI: kanby task create
+        CLI->>Client: rowsAndColumns()
+        Client->>Route: GET /api/v1/rows, then GET /api/v1/columns
+        Route->>KV: loadLiveBoard(boardId) -> getBoard + liveBoard()<br/>(normalized, sorted, expired-Trash and orphan tasks dropped)
+        Route-->>Client: 200 RowView[] / ColumnView[] (Trash column excluded)
+        alt no rows
+            CLI-->>User: CliError "No rows yet. Create one with kanby row create."
+        end
+        User->>CLI: pick Row, pick Column (select prompts)
+
+        loop each text answer (Title, Description), re-asked until valid
+            User->>CLI: type answer and submit
+            opt answer is not blank (blank: Title is "required", Description is optional)
+                CLI->>Client: validateField("task", field, value)
+                Client->>Validate: POST /api/v1/validate/task/{title|description} {value}
+                Validate->>Validate: fieldValidator(entity, field, clientOf(request) = "cli")<br/>runs the shared zod rule (title: newlines -> spaces, trim, min 1).<br/>Nothing is read or saved.
+                alt valid
+                    Validate-->>Client: 200 {ok: true, value: normalized}
+                    Client-->>CLI: {value}, stored so askText returns the normalized value
+                else invalid
+                    Validate-->>Client: 422 {error}
+                    Client-->>CLI: {error}, shown under the prompt
+                end
+            end
+        end
+        opt "create or edit a checklist?" yes
+            User->>CLI: type items, one per line ("[x] done", "[] not done")
+            CLI->>CLI: parseChecklist(text) -> items [{text, checked}]<br/>(not validated until the POST)
+        end
+        opt "Generate an AI checklist?" yes
+            loop until accepted or declined
+                User->>CLI: describe the checklist (starts from the title)
+                CLI->>AI: POST /api/v1/ai/task-titles {prompt, maxTasks: 10}<br/>(raw fetch: no token, no X-Kanby-Client)
+                AI-->>CLI: 200 {response: string[]} (error or empty -> warn and skip)
+                User->>CLI: accept, regenerate, or skip
+            end
+        end
+
+        CLI->>Client: api("POST", "/api/v1/tasks", {rowId, colId, title, description, items, checklist})
+        Client->>Route: POST /api/v1/tasks (no If-Match: a new task can't conflict)
+        Route->>Route: authorizeCli (401 / 402)<br/>readJsonObject(request) (400 "Invalid request body.")
+        Route->>KV: loadLiveBoard(boardId)
+        KV-->>Route: board
+        Route->>Route: validateFields("task", body, "cli", required [rowId, colId, title]):<br/>every present field re-checked with the same rules as /validate,<br/>CLI rules for checklist (string[]) and items ({id?, text, checked}[]).<br/>Missing or invalid -> 422 {error}
+        Route->>Route: checkTaskRefs(values, board): unknown row/column, or<br/>the Trash column -> 422 {error}
+        Route->>Route: newTask(board, input): createId(), order = top of its cell<br/>(as actions/taskCreate.ts), description -> plainTextToLexical,<br/>checklist = syncChecklist(items) + appendChecklistItems(AI texts),<br/>trashedAt / preTrashColId = null
+        Route->>KV: applyBoardChanges(boardId, {upserts: {tasks: [task]}})<br/>kv.atomic(): set ["task", boardId, id]<br/>+ set ["board_rev", boardId] (no checks)
+        KV-->>Route: ok, new board revision
+        Route-->>Client: 201 taskView(board, task)<br/>(shortId, plain-text description, row/column titles)
+        Client-->>CLI: {data}
+        CLI-->>User: Created task {shortId} + /dashboard/task/{shortId} URL
+    end
+
+    rect rgba(240, 163, 38, 0.15)
+        Note over User,View: kanby task edit --id <ref>
+        User->>CLI: kanby task edit --id <ref> (full id or its last 6+ characters)
+        CLI->>Client: api("GET", "/api/v1/tasks/:ref")
+        Client->>Route: GET /api/v1/tasks/:ref
+        Route->>KV: findTask: loadLiveBoard, then findByRef(board.tasks, ref)<br/>(under 6 chars or no match -> 404, ambiguous suffix -> 409)
+        Route->>KV: getEntity("task", boardId, id) -> {value, versionstamp}
+        KV-->>Route: task entry (gone since the board read -> 404)
+        Route-->>Client: 200 taskView + ETag "{task versionstamp}"
+        Client-->>CLI: {data: task, etag}
+        alt task.trashed
+            CLI-->>User: CliError "This task is in Trash. Restore it in the web app first."
+        end
+        CLI->>Client: rowsAndColumns() (as in create)
+        Note over User,Validate: Same prompt loop as create, prefilled with the current values:<br/>Title and Description validated per answer via /api/v1/validate,<br/>then Row, Column, checklist (an item keeps its id while its text is unchanged), AI checklist.
+        CLI->>CLI: changes = only the fields that differ from task<br/>(description only when edited: saving rewrites it as plain paragraphs,<br/>dropping web-app formatting). items only if ids, order or checked changed.
+        alt changes is empty
+            CLI-->>User: "No edits were made. Task remains unchanged."
+        else user declines "Save changes?"
+            CLI-->>User: "You have declined to save changes."
+        else save
+            CLI->>Client: saveTaskEdit(task, changes, etag)
+            Client->>Route: PATCH /api/v1/tasks/:id {changes}<br/>If-Match: "{versionstamp from GET}"
+            Route->>KV: findTask again (loadLiveBoard + getEntity)
+            Route->>Route: trashed since the GET -> 409<br/>no If-Match -> 428<br/>readJsonObject (400), validateFields("task", body, "cli") (422),<br/>checkTaskRefs (422)
+            Route->>Route: updatedTask(board, task, values): moved to another cell -><br/>order = end of that cell (insertKey). description rewritten only if sent.<br/>items -> syncChecklist (known ids kept, others new, missing removed),<br/>checked -> marks those ids done, checklist -> appended AI items
+            Route->>KV: saveEntity("task", boardId, task, expected)<br/>-> applyBoardChanges(..., checks [{key: ["task", boardId, id], versionstamp: expected}])<br/>kv.atomic(): check task versionstamp + set task + set ["board_rev", boardId]
+            alt task unchanged since the GET
+                KV-->>Route: ok, new versionstamp
+                Route-->>Client: 200 taskView + new ETag
+                CLI-->>User: Saved task {shortId}.
+            else task was written since (web app autosave, another CLI session)
+                KV--xRoute: check failed, nothing written
+                Route--xClient: 409 "This task changed since it was read."
+                Client--xCLI: ApiError(409)
+                CLI-->>User: "This task changed while you were editing.<br/>Re-run kanby task edit --id {shortId}."
+            end
+        end
+    end
+
+    rect rgba(38, 240, 58, 0.15)
+        Note over KV,View: Live refresh in every open, signed-in tab (any device) on the same board.<br/>Full detail in board-load-autosave.mmd ("Live refresh").
+        Note over Events,Provider: Opened once boardLoaded (not for boardId "demo"):<br/>new EventSource("/api/v1/board/events") -> watchBoard(boardId) = kv.watch([["board_rev", boardId]])
+        KV-->>Events: ["board_rev", boardId] changed (the CLI's commit above)
+        Events-->>Provider: data: change
+        Provider->>Provider: refreshFromServer(), queued on saveChainRef<br/>(runs after any PATCH this tab has in flight)
+        %% KNOWN RACE (unfixed): if the user saves the task modal just after the CLI saved the same
+        %% task (before this refresh lands), TASK/SAVE_EDIT has already nulled editingTaskId, so
+        %% closeStaleEdit can't fire. The autosave PATCH gets a 409, mergeConflict keeps the CLI's
+        %% version, and the user sees SaveConflictAlert instead of EditDiscardedAlert.
+        %% Details in concurrent-edits.mmd, section 3.
+        alt an edit is waiting on this tab's 500ms autosave timer
+            Provider->>Provider: refreshQueuedRef = true (refresh re-runs after that save)
+            Note over Provider,KV: That save's If-Match (revRef) is now stale, so PATCH /api/v1/board<br/>gets a 409: mergeFromServer keeps this tab's edits to entities the CLI<br/>didn't touch and takes the CLI's version of the rest (SaveConflictAlert if any).
+        else no pending edit
+            Provider->>KV: GET /api/v1/board -> getBoardRevision + getBoard
+            KV-->>Provider: 200 {rows, columns, tasks} + ETag (board revision)
+            Provider->>Provider: revRef = ETag
+            alt diffBoard(savedRef, remote) === null
+                Note over Provider: nothing changed for this tab, done
+            else the CLI's task differs
+                opt closeStaleEdit: the CLI edited the task open in this tab's modal
+                    Provider->>View: clearEditDraft(id), dispatch(TASK/CLOSE_EDIT_MODAL),<br/>EditDiscardedAlert shown, URL /dashboard/task/:id -> /dashboard
+                end
+                Provider->>Provider: board = liveBoard(remote), savedRef = remote,<br/>lastSyncedRef = JSON.stringify(board)
+                Provider->>Provider: dispatch(BOARD/SYNC, board) -> board.sync (rows/columns/tasks replaced)
+                Provider->>View: re-render (BoardDataContext changed):<br/>the new or edited TaskCard appears in its cell
+                Note over Provider: The autosave effect this triggers matches lastSyncedRef:<br/>no PATCH and no BroadcastChannel echo.
+            end
+        end
+    end
