@@ -115,6 +115,46 @@ describe("newTask / updatedTask", () => {
     expect(updatedTask(b, original, { title: "x" }).checklist).toBe(items);
   });
 
+  test("items on create sets the whole checklist with its checked state", () => {
+    const created = newTask(board(), {
+      rowId: "row-1",
+      colId: "col-1",
+      title: "New",
+      description: "",
+      checklist: ["ai"],
+      items: [{ text: "one", checked: true }, { text: "two", checked: false }],
+    });
+    expect(created.checklist.map((i) => [i.text, i.checked])).toEqual([
+      ["one", true],
+      ["two", false],
+      ["ai", false],
+    ]);
+  });
+
+  test("items replaces the checklist: keeps, renames-as-new, removes, reorders", () => {
+    const b = board();
+    const existing = appendChecklistItems([], ["one", "two", "three"]);
+    const original = { ...b.tasks[0], checklist: existing };
+    const edited = updatedTask(b, original, {
+      items: [
+        { id: existing[2].id, text: "three", checked: true },
+        { id: existing[0].id, text: "one", checked: false },
+        { id: "unknown", text: "new", checked: true },
+      ],
+    });
+    expect(edited.checklist.map((i) => [i.text, i.checked])).toEqual([
+      ["three", true],
+      ["one", false],
+      ["new", true],
+    ]);
+    expect(edited.checklist[0].id).toBe(existing[2].id);
+    expect(edited.checklist[1].id).toBe(existing[0].id);
+    expect(existing.some((e) => e.id === edited.checklist[2].id)).toBe(false);
+    expect(edited.checklist[0].order < edited.checklist[1].order).toBe(true);
+    expect(edited.checklist[1].order < edited.checklist[2].order).toBe(true);
+    expect(updatedTask(b, original, { items: [] }).checklist).toEqual([]);
+  });
+
   test("checklist items are appended after existing ones", () => {
     const existing = appendChecklistItems([], ["first"]);
     const items = appendChecklistItems(existing, ["second"]);

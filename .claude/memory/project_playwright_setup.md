@@ -16,41 +16,34 @@ Config: `playwright.config.ts`. Base URL: `http://localhost:8085` locally, `BASE
 deno task e2e-test   # runs --project=chromium --project=chromium-shared-account
 ```
 
-**`chromium-shared-account` project:** specs that wipe and re-seed the shared Clerk test account's KV board (`board-persistence`, `hero-start-form`, `drawer-row-list-mirror`, `drawer-row-nav`) are listed in `SHARED_ACCOUNT_SPECS` in `playwright.config.ts` and run in their own project with `workers: 1`, so they can't clobber each other's seed. A project-level `testIgnore` replaces the top-level one, so the `chromium` project repeats `**/preview-only/**` alongside `SHARED_ACCOUNT_SPECS`. Any new spec that touches the shared account's KV board belongs in that list.
+**`chromium-shared-account` project:** specs that wipe and re-seed the shared Clerk test account's KV board (`board-persistence`, `hero-start-form`, `drawer-row-list-mirror`, `drawer-row-nav`, `board-save-conflict`) are listed in `SHARED_ACCOUNT_SPECS` in `playwright.config.ts` and run in their own project with `workers: 1`, so they can't clobber each other's seed. A project-level `testIgnore` replaces the top-level one, so the `chromium` project repeats `**/preview-only/**` alongside `SHARED_ACCOUNT_SPECS`. Any new spec that touches the shared account's KV board belongs in that list.
 
 ## Test files (`tests/playwright/`)
 
-- `global.setup.ts` — one-time Clerk setup via `clerkSetup()` (runs as "setup" project, others depend on it)
-- `fixtures.ts` — exports `test` (with auto Clerk fixture), `testNoClerk` (plain base, no Clerk), and `openSecondTab(page)` (a second page in the same context — shared localStorage + BroadcastChannel — with the same Clerk token and analytics blocking; used for cross-tab tests)
+- `global.setup.ts` — "setup" project (others depend on it): `clerkSetup()`, then signs in as the shared E2E account and saves its storage state to `AUTH_FILE` for `testAuthed`; `global.teardown.ts` deletes the E2E test data
+- `fixtures.ts` — the four test variants (see Fixtures and Clerk below) and helpers, incl. `openSecondTab(page)` (a second page in the same context — shared localStorage + BroadcastChannel — used for cross-tab tests)
 - `board-crud.spec.ts` — column/row/task CRUD, checklist toggle, drag-and-drop, Trash/restore (seeds `kanby-v0-1-0` localStorage directly)
 - `board-cross-tab-sync.spec.ts` — BroadcastChannel / `BOARD/SYNC` between two tabs (uses `openSecondTab`)
 - `task-comments.spec.ts` — comment post/edit/delete in the task modals
 - `task-edit-drafts.spec.ts` — unsaved edit drafts (`task+${id}` localStorage), "edited but not saved" indicator, PostEditPreSaveAlert
 - `task-url.spec.ts` — task deep-link URL behaviour
-- `board-persistence.spec.ts` — localStorage→KV migration on sign-in (shared Clerk account; the only spec using the Clerk-wrapped `test`)
+- `board-persistence.spec.ts` — localStorage→KV migration on sign-in (shared Clerk account; uses the Clerk-wrapped `test`)
+- `board-save-conflict.spec.ts` — autosave vs a write made elsewhere: 409 then merged resend with no notice; a task changed on both sides keeps the server's version with `SaveConflictAlert` (shared Clerk account, `testAuthed`)
 - `board-config.spec.ts`, `board-menu*.spec.ts`, `board-dock.spec.ts`, `dashboard-empty-state.spec.ts`, `drawer-row-*.spec.ts`, `render-isolation.spec.ts`, `hero-start-form.spec.ts`, `theme-toggle.spec.ts`, `generate-tasks-api.spec.ts`, plus non-board specs (blog, cookie consent, Clerk sign-up, unauth `/api/v1/board`)
 - `preview-only/` — security specs; excluded by `testIgnore` in every project, so neither `e2e-test` nor CI currently runs them
 
 ## Fixtures and Clerk
 
-`fixtures.ts` exports two test variants:
+`fixtures.ts` exports four test variants (plus helpers `fillStable`, `fillControlled`, `gotoAndWaitForClerk`, `openCreateRowModal`, `openSecondTab`):
 
-```ts
-// Wraps every test with setupClerkTestingToken — use ONLY for tests that need auth
-export const test = base.extend<{ clerkSetup: void }>({
-  clerkSetup: [async ({ page }, use) => {
-    await setupClerkTestingToken({ page, options: { ... } });
-    await use();
-  }, { auto: true }],
-});
+- `test` — injects the Clerk testing token (FAPI route interception, retry-on-429); for specs that *become* signed in partway through (`board-persistence.spec.ts`: guest → account migration).
+- `testNoClerk` — also injects the token but never signs in; for guest specs that load `/dashboard` (without the token the dev-browser handshake reloads the page and flakes the `html[data-board-loaded='true']` gate). Most guest board specs import it `as test`.
+- `testNoClerkToken` — no route interception; for guest specs that never load `/dashboard` (blog, generate-tasks API). Fewer stranded-handler warnings at teardown.
+- `testAuthed` — `testNoClerkToken` + `storageState: AUTH_FILE` (`tests/playwright/.clerk/user.json`, written by `global.setup.ts` after its own `clerk.signIn()`); starts signed in as the shared E2E account. Used by the shared-account specs (except `board-persistence`), `clerk-sign-up-trigger`, and `preview-only/board-api-security`.
 
-// Plain base — no Clerk API calls, use for all non-auth tests
-export const testNoClerk = base;
-```
+**Seeding the shared account's KV board (signed-in specs):** `gotoAndWaitForClerk(page, "/blog")` first (refreshes the short-lived `__session` without mounting the board island, whose autosave would race the seed), then `page.request.delete("/api/v1/test-data")` and `page.request.patch("/api/v1/board", {data: {upserts, deletes}})` with no `If-Match` (unchecked). Seeds must satisfy the `fields.ts` rules (non-empty titles, a valid row color — labels like `"blue"` pass) or the PATCH returns 422. Clean up with `test-data` in `afterEach`. Such specs `test.skip(browserName !== "chromium")` and go in `SHARED_ACCOUNT_SPECS`.
 
-**Every spec except `board-persistence.spec.ts` uses `testNoClerk`**, because only that one tests a signed-in flow. `setupClerkTestingToken` hits `https://guided-bream-79.clerk.accounts.dev/v1/client` on every test; with 4 parallel browser workers it rate-limits (429) and causes React hydration delays in Firefox/WebKit, producing flaky or failing tests.
-
-**Rule:** only import `test` (Clerk-wrapped) from `fixtures.ts` in specs that actually test signed-in behaviour. Everything else uses `testNoClerk`.
+**Writes "from elsewhere" (e.g. the CLI):** the CLI's routes need a Clerk OAuth token the E2E session can't get, so `board-save-conflict.spec.ts` stands in an unchecked `PATCH /api/v1/board` (same server effect: entity rewritten, `board_rev` bumped) and blocks `**/api/v1/board/events` so live refresh can't apply the write before the user's edit.
 
 ## Standard test patterns
 
@@ -141,7 +134,14 @@ file (verified no conflicts with Deno's own globals):
 
 ## Simulating HTML5 drag-and-drop
 
-`locator.dragTo()` doesn't trigger this app's drag handlers (it tracks
+**Update 2026-11-13:** in Chromium (the only browser `e2e-test`/CI run),
+`locator.dragTo()` does work now: `board-save-conflict.spec.ts` drags
+`article#task-sc-b` onto `#column-section-row-sc-1-col-sc-doing` with it and
+asserts the move on screen and in KV. Try `dragTo` first; the manual dispatch
+below is the fallback (it was needed when this was written, and may still be
+for Firefox/WebKit — unverified).
+
+Original finding: `locator.dragTo()` didn't trigger this app's drag handlers (it tracks
 `draggedTask` in React state via `onDragStart`/`onDrop`, not
 `dataTransfer` payload). Dispatching `dragstart`/`dragover`/`drop`/`dragend`
 all in one `page.evaluate` also fails — React batches the `dragstart`

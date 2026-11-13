@@ -26,20 +26,21 @@ sequenceDiagram
     rect rgba(38, 240, 58, 0.25)
         critical isAuthenticated
             Provider->>API: GET /api/v1/board
+            API->>KV: getBoardRevision(boardId)<br/>(versionstamp of ["board_rev", boardId], read first)
             API->>KV: getBoard(boardId)
             rect rgba(255, 255, 255, 0.5)
                 alt board exists (200)
                     rect rgba(38, 240, 58, 0.25)
                         KV-->>API: list ["row"|"column"|"task", boardId]<br/>(no entities but a legacy ["board", id] entry: one atomic<br/>check(versionstamp) commit writes its entities + deletes it;<br/>conflict -> another request migrated it, re-list)
-                        API-->>Provider: 200 {rows, columns, tasks}
-                        Provider->>Provider: savedRef = per-entity JSON of the response
+                        API-->>Provider: 200 {rows, columns, tasks} + ETag (board revision)
+                        Provider->>Provider: savedRef = per-entity JSON of the response<br/>revRef = ETag
                         Provider->>Reducer: dispatch(BOARD/LOAD, remote)<br/>-> board.load(state, payload)
                     end
                 else no data (404)
                     
                     rect rgba(240, 38, 38, 0.25)
                         KV--xAPI: null
-                        API--xProvider: 404 {noData: true}
+                        API--xProvider: 404 {noData: true} + ETag "none"<br/>(revRef = "none")
                         Provider->>LS: localStorage.getItem(STORAGE_KEY)
                         activate Provider
                     end
@@ -47,8 +48,8 @@ sequenceDiagram
                         break legacy local data found
                             rect rgba(38, 240, 58, 0.25)
                                 LS-->>Provider: stored JSON
-                                Provider->>API: PATCH /api/v1/board {upserts: local, deletes: none}<br/>(migrate local -> remote; split into chunks of 1000 like autosave)
-                                API->>KV: applyBoardChanges(boardId, changes)
+                                Provider->>API: PATCH /api/v1/board {upserts: local, deletes: none}<br/>If-Match: "none" (no board may exist yet)<br/>(migrate local -> remote; split into chunks of 1000 like autosave)
+                                API->>KV: applyBoardChanges(boardId, changes, [revisionCheck])<br/>(409 if another tab migrated first: treated as not ok,<br/>and the first autosave then gets a 409 and merges)
                                 opt PATCH ok
                                     Provider->>LS: localStorage.removeItem(STORAGE_KEY)
                                     Provider->>Provider: savedRef = per-entity JSON of local<br/>(not ok: savedRef stays empty, so the<br/>first autosave sends everything)
@@ -105,14 +106,27 @@ sequenceDiagram
                 Provider->>Provider: queued on saveChainRef (one PATCH in flight)<br/>diffBoard(savedRef, snapshot): upserts = new/changed<br/>rows/columns/tasks (JSON compare), deletes = ids gone
                 opt diff not empty
                     loop each chunk of at most 1000 upserts + deletes<br/>(chunkChanges: rows, columns, tasks, then deletes)
-                        Provider->>API: PATCH /api/v1/board {upserts, deletes}
-                        API->>KV: applyBoardChanges(boardId, changes)<br/>kv.atomic(): set/delete per entity<br/>+ set ["board_rev", boardId]
-                        API-->>Provider: 200, or 4xx/5xx -> stop
+                        Provider->>API: PATCH /api/v1/board {upserts, deletes}<br/>If-Match: revRef
+                        API->>API: shape parse (400), then fields.ts rules on<br/>each upsert, reject-only (422 {field, error})
+                        API->>KV: applyBoardChanges(boardId, changes, [revisionCheck])<br/>kv.atomic(): check board_rev versionstamp<br/>+ set/delete per entity + set ["board_rev", boardId]
+                        alt board_rev unchanged
+                            API-->>Provider: 200 + ETag (new board revision)
+                            Provider->>Provider: revRef = ETag, chunk applied to savedRef
+                        else board written since revRef
+                            API-->>Provider: 409 {conflict: true} -> stop
+                        end
                     end
                     alt every chunk 200
-                        Provider->>Provider: diff applied to savedRef<br/>setSaveRejected(false)
-                    else a chunk rejected
-                        Provider->>Provider: savedRef unchanged (the next diff resends<br/>these changes), setSaveRejected(true)
+                        Provider->>Provider: setSaveRejected(false)
+                    else 409 conflict
+                        Provider->>API: GET /api/v1/board -> remote + ETag
+                        Provider->>Provider: mergeConflict(savedRef, latest state, remote):<br/>conflicted = this tab's changed entities whose server copy<br/>differs from savedRef (keys compared sorted);<br/>merged = remote + this tab's other changes<br/>savedRef = per-entity JSON of remote, revRef = ETag
+                        Provider->>Reducer: dispatch(BOARD/SYNC, liveBoard(merged))<br/>(lastSyncedRef not set, so the autosave this triggers<br/>resends the surviving changes at the new revision)
+                        opt conflicted not empty
+                            Provider->>View: BoardProvider re-renders SaveConflictAlert<br/>(shared/SaveConflictAlert.tsx) until dismissed
+                        end
+                    else 4xx/5xx
+                        Provider->>Provider: savedRef keeps only the accepted chunks (the next<br/>diff resends the rest), setSaveRejected(true)
                         Provider->>View: BoardProvider re-renders SaveErrorAlert<br/>(shared/SaveErrorAlert.tsx, same alert as ?unauthorized=1)<br/>until dismissed or a later save succeeds
                     end
                 end
@@ -127,7 +141,7 @@ sequenceDiagram
         end
         Note over Provider: The post-load save is not broadcast: other tabs<br/>already hold that board, or a newer one it would undo.<br/>loadedSnapshotRef is cleared after the first save.
     end
-    Note over Provider,KV: Edits from different devices to different entities both survive.<br/>Same entity: last write wins. A stale device's upsert can<br/>resurrect an entity another device deleted (accepted for now).<br/>Other devices see the change live (see Live refresh below).
+    Note over Provider,KV: Every checked save names the board revision it was based on (If-Match).<br/>Any other write since then (another device, another tab, the CLI) means a 409:<br/>the app refetches and resends its changes to entities nobody else touched.<br/>Entities changed on both sides take the server's version, with a notice.<br/>A stale tab can no longer resurrect an entity deleted elsewhere.<br/>Other devices see the change live (see Live refresh below).
 
     Note over User,Tab: Live refresh (authenticated, once boardLoaded; skipped for boardId "demo")
     Provider->>Events: new EventSource("/api/v1/board/events")
@@ -136,8 +150,8 @@ sequenceDiagram
     KV-->>Events: current entry (on connect)
     Events-->>Provider: data: change
     Note over Provider: The connect-time message covers writes made<br/>between GET /api/v1/board and the stream opening.
-    CLI->>KV: POST/PATCH /api/v1/rows|tasks -> applyBoardChanges / saveEntity<br/>(same atomic commit sets ["board_rev", boardId])
-    Note over KV: Every board write bumps board_rev: this tab's and other devices'<br/>autosaves, the CLI, and DELETE /api/v1/board (deletes it). getBoard's<br/>legacy migration and purgeExpiredTrash don't.
+    CLI->>KV: POST/PATCH /api/v1/rows|tasks -> applyBoardChanges<br/>(saveEntity = one entity + its versionstamp check, so a CLI edit<br/>fails with 409 if the app saved that task since the CLI read it;<br/>same atomic commit sets ["board_rev", boardId])
+    Note over KV: Every board write bumps board_rev: this tab's and other devices'<br/>autosaves, the CLI, purgeExpiredTrash, and DELETE /api/v1/board<br/>(deletes it). getBoard's legacy migration doesn't.
     KV-->>Events: board_rev changed
     Events-->>Provider: data: change
     Provider->>Provider: refreshFromServer() queued on saveChainRef<br/>(runs after any in-flight PATCH)
@@ -146,13 +160,14 @@ sequenceDiagram
     else no pending edit
         Provider->>API: GET /api/v1/board
         API->>KV: getBoard(boardId)
-        API-->>Provider: 200 {rows, columns, tasks} (non-200 -> stop)
+        API-->>Provider: 200 {rows, columns, tasks} + ETag (non-200 -> stop)
         alt an edit started during the GET
             Provider->>Provider: refreshQueuedRef = true
         else diffBoard(savedRef, remote) === null (e.g. this tab's own save)
+            Provider->>Provider: revRef = ETag (savedRef already matches remote)
             Note over Provider: nothing to apply
         else board changed elsewhere
-            Provider->>Provider: board = liveBoard(remote) (sorted, normalized)<br/>savedRef = per-entity JSON of remote<br/>lastSyncedRef = JSON.stringify(board)
+            Provider->>Provider: board = liveBoard(remote) (sorted, normalized)<br/>savedRef = per-entity JSON of remote, revRef = ETag<br/>lastSyncedRef = JSON.stringify(board)
             Provider->>Reducer: dispatch(BOARD/SYNC, board) -> board.sync<br/>(same handling as cross-tab sync below)
             Provider->>View: re-render (BoardData changed)
             Note over Provider: The autosave this triggers matches<br/>lastSyncedRef: no PATCH, no broadcast.
@@ -170,9 +185,9 @@ sequenceDiagram
         Reducer-->>Provider: taskDraft.rowId / editTaskDraft.rowId = ""<br/>(modal stays open with unsaved edits, Project shows no selection)
     end
     Provider->>View: re-render (BoardData changed)<br/>BoardMenu / BoardDock drop "Create new task" when rows is empty
-    Note over Provider,Tab: The sender's PATCH also bumps board_rev, so this tab gets an SSE<br/>event for the same save. Its refetch matches savedRef (set above),<br/>so it's a no-op. The channel stays: it's instant, and localStorage<br/>boards (board-sync:local) have no other sync path.
+    Note over Provider,Tab: The sender's PATCH also bumps board_rev, so this tab gets an SSE<br/>event for the same save. Its refetch matches savedRef (set above),<br/>so it only advances revRef. Until then revRef is behind: a save in that<br/>window gets a 409 and merges (nothing collides, so no notice). The channel stays: it's instant, and localStorage<br/>boards (board-sync:local) have no other sync path.
 
     Note over User,Purge: Daily trash purge (no client involved). Planned as a Deno.cron() on<br/>Deno Deploy, NOT scheduled yet: until then only board.load drops expired tasks.
     Purge->>Purge: check Authorization: Bearer CRON_SECRET
-    Purge->>KV: purgeExpiredTrash() (lib/db/kv.ts): for each ["task", boardId, taskId]<br/>with trashedAt 30+ days old: atomic check(versionstamp).delete<br/>(conflict -> task skipped, retried next run), then delete<br/>["task_comment", boardId, taskId, *] whose ["task", boardId, taskId]<br/>is missing and createdAt is 24h+ old. Boards still in a legacy<br/>["board", id] entry are migrated first (getBoard).
-    Note over Provider,KV: A tab still holding a purged task may re-PATCH it.<br/>board.load drops it again on the next load (and the<br/>next purge does too). KV boards never prune comments client-side:<br/>comments of any task that leaves the board (purged, expired on load,<br/>row/column deleted) are swept by the next purge. The 24h guard<br/>protects comments posted before their task's autosave lands.<br/>localStorage boards never reach the purge. BoardProvider<br/>prunes their comments on load instead.
+    Purge->>KV: purgeExpiredTrash() (lib/db/kv.ts): for each ["task", boardId, taskId]<br/>with trashedAt 30+ days old: atomic check(versionstamp).delete<br/>+ set ["board_rev", boardId] (open tabs refresh)<br/>(conflict -> task skipped, retried next run), then delete<br/>["task_comment", boardId, taskId, *] whose ["task", boardId, taskId]<br/>is missing and createdAt is 24h+ old. Boards still in a legacy<br/>["board", id] entry are migrated first (getBoard).
+    Note over Provider,KV: A tab still holding a purged task can't save it back:<br/>the purge bumped board_rev, so its PATCH gets a 409 and<br/>the merge keeps the task deleted. KV boards never prune comments client-side:<br/>comments of any task that leaves the board (purged, expired on load,<br/>row/column deleted) are swept by the next purge. The 24h guard<br/>protects comments posted before their task's autosave lands.<br/>localStorage boards never reach the purge. BoardProvider<br/>prunes their comments on load instead.

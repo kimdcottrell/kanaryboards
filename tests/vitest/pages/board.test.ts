@@ -5,7 +5,11 @@ import type { APIContext } from "astro";
 // Avoid touching Deno KV — these tests only exercise the auth gate.
 vi.mock("@lib/db/kv.ts", () => ({
   getBoard: vi.fn(async () => {}),
-  applyBoardChanges: vi.fn(async () => {}),
+  getBoardRevision: vi.fn(() => Promise.resolve(null)),
+  revisionCheck: vi.fn(() => ({})),
+  applyBoardChanges: vi.fn(() =>
+    Promise.resolve({ ok: true, versionstamp: "v2" })
+  ),
   deleteBoard: vi.fn(async () => {}),
   deleteBoardComments: vi.fn(async () => {}),
 }));
@@ -132,17 +136,53 @@ describe("/api/v1/board auth gate", () => {
       errorSpy.mockRestore();
     });
 
-    test("PATCH with valid changes returns 200", async () => {
+    test("PATCH with valid changes returns 200 and the new revision", async () => {
       vi.spyOn(console, "debug").mockImplementation(() => {});
       const res = await patch({
         upserts: {
-          rows: [{ id: "r", title: "Project", color: "", order: "a0" }],
+          rows: [{
+            id: "r",
+            title: "Project",
+            color: "var(--color-row-blue)",
+            order: "a0",
+          }],
           columns: [],
           tasks: [],
         },
         deletes: { ...noDeletes, taskIds: ["t1"] },
       });
       expect(res.status).toBe(200);
+      expect(res.headers.get("ETag")).toBe('"v2"');
+    });
+
+    test.each([
+      ["an empty title", { title: "  " }, "title"],
+      ["an unknown color", { color: "#ff6b6b" }, "color"],
+    ])("PATCH with %s returns 422", async (_label, change, field) => {
+      vi.spyOn(console, "debug").mockImplementation(() => {});
+      const res = await patch({
+        upserts: {
+          rows: [{
+            id: "r",
+            title: "Project",
+            color: "var(--color-row-blue)",
+            order: "a0",
+            ...change,
+          }],
+          columns: [],
+          tasks: [],
+        },
+        deletes: noDeletes,
+      });
+      expect(res.status).toBe(422);
+      expect(await res.json()).toMatchObject({ field });
+    });
+
+    test("GET with no stored board returns the no-revision ETag", async () => {
+      const res = await GET(
+        makeContext({ userId: "user_123", boardId: "board_1" }),
+      );
+      expect(res.headers.get("ETag")).toBe('"none"');
     });
   });
 });

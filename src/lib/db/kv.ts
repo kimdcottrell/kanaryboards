@@ -83,8 +83,24 @@ export async function getBoard(
 }
 
 // Set in the same commit as every board write, so watchBoard() has one key to
-// watch for changes made anywhere (this tab, another device, the CLI).
+// watch for changes made anywhere (this tab, another device, the CLI). Its
+// versionstamp is the board's revision, which the web app sends back with
+// each save (If-Match) so a save based on a stale board is rejected.
 const revisionKey = (boardId: string): Deno.KvKey => ["board_rev", boardId];
+
+// The board's revision, or null if nothing has written it yet.
+export async function getBoardRevision(
+  boardId: string,
+): Promise<string | null> {
+  const kv = await getKv();
+  return (await kv.get(revisionKey(boardId))).versionstamp;
+}
+
+// Passes only while the board is still at `revision` (null: never written).
+export const revisionCheck = (
+  boardId: string,
+  revision: string | null,
+): Deno.AtomicCheck => ({ key: revisionKey(boardId), versionstamp: revision });
 
 // Emits the board's revision entry once on subscribe, then after each write.
 export async function watchBoard(
@@ -99,12 +115,23 @@ export async function watchBoard(
 const MAX_COMMIT_MUTATIONS = 1000 - 1;
 const MAX_COMMIT_BYTES = 750 * 1024;
 
+// What applyBoardChanges takes: lists left out are empty.
+export interface BoardChangesInput {
+  upserts?: Partial<PersistedBoard>;
+  deletes?: Partial<BoardChanges["deletes"]>;
+}
+
 // Commits atomically, unless the changes exceed one commit's limits; then
-// each chunk is atomic on its own.
+// each chunk is atomic on its own. With `checks`, the first commit runs them
+// and each later one checks the board is still at the revision the commit
+// before it left, so nothing else lands between chunks. Returns the board's
+// new revision (null if there was nothing to write), or ok: false if a check
+// failed; chunks before the failed one stay committed.
 export async function applyBoardChanges(
   boardId: string,
-  { upserts, deletes }: BoardChanges,
-): Promise<void> {
+  { upserts = {}, deletes = {} }: BoardChangesInput,
+  checks?: Deno.AtomicCheck[],
+): Promise<{ ok: true; versionstamp: string | null } | { ok: false }> {
   const kv = await getKv();
   const set = (kind: string) => (value: { id: string }): Deno.KvMutation => ({
     type: "set",
@@ -116,35 +143,41 @@ export async function applyBoardChanges(
     key: [kind, boardId, id],
   });
   const mutations = [
-    ...upserts.rows.map(set("row")),
-    ...upserts.columns.map(set("column")),
-    ...upserts.tasks.map(set("task")),
-    ...deletes.rowIds.map(del("row")),
-    ...deletes.columnIds.map(del("column")),
-    ...deletes.taskIds.map(del("task")),
+    ...(upserts.rows ?? []).map(set("row")),
+    ...(upserts.columns ?? []).map(set("column")),
+    ...(upserts.tasks ?? []).map(set("task")),
+    ...(deletes.rowIds ?? []).map(del("row")),
+    ...(deletes.columnIds ?? []).map(del("column")),
+    ...(deletes.taskIds ?? []).map(del("task")),
   ];
   let batch: Deno.KvMutation[] = [];
   let bytes = 0;
+  let pending = checks;
+  let versionstamp: string | null = null;
   const commit = async () => {
-    if (batch.length > 0) {
-      await kv.atomic().mutate(...batch)
-        .set(revisionKey(boardId), Date.now())
-        .commit();
-    }
+    if (batch.length === 0) return true;
+    const res = await kv.atomic().check(...(pending ?? [])).mutate(...batch)
+      .set(revisionKey(boardId), Date.now())
+      .commit();
     batch = [];
     bytes = 0;
+    if (!res.ok) return false;
+    versionstamp = res.versionstamp;
+    if (checks) pending = [revisionCheck(boardId, versionstamp)];
+    return true;
   };
   for (const mutation of mutations) {
     const size = new TextEncoder().encode(JSON.stringify(mutation)).length;
     if (
       batch.length === MAX_COMMIT_MUTATIONS || bytes + size > MAX_COMMIT_BYTES
     ) {
-      await commit();
+      if (!await commit()) return { ok: false };
     }
     batch.push(mutation);
     bytes += size;
   }
-  await commit();
+  if (!await commit()) return { ok: false };
+  return { ok: true, versionstamp };
 }
 
 // One row/column/task with its versionstamp, which the CLI API hands out as
@@ -168,13 +201,11 @@ export async function saveEntity<T extends { id: string }>(
   value: T,
   expectedVersion: string,
 ): Promise<string | null> {
-  const kv = await getKv();
-  const key = [kind, boardId, value.id];
-  const res = await kv.atomic()
-    .check({ key, versionstamp: expectedVersion })
-    .set(key, value)
-    .set(revisionKey(boardId), Date.now())
-    .commit();
+  // T is the stored Row/Column/Task for `kind` (getEntity's caller picks it).
+  const upserts = { [`${kind}s`]: [value] } as Partial<PersistedBoard>;
+  const res = await applyBoardChanges(boardId, { upserts }, [
+    { key: [kind, boardId, value.id], versionstamp: expectedVersion },
+  ]);
   return res.ok ? res.versionstamp : null;
 }
 
@@ -289,7 +320,11 @@ export async function purgeExpiredTrash(now = Date.now()): Promise<{
     const boardId = entry.key[1] as string;
     scanned.add(boardId);
     if (!isTrashExpired(entry.value.trashedAt ?? null, now)) continue;
-    const res = await kv.atomic().check(entry).delete(entry.key).commit();
+    // Bumps the board's revision like any other board write, so open tabs
+    // refresh and a tab still holding the task can't save it back.
+    const res = await kv.atomic().check(entry).delete(entry.key)
+      .set(revisionKey(boardId), Date.now())
+      .commit();
     if (!res.ok) {
       result.conflicts++;
       continue;

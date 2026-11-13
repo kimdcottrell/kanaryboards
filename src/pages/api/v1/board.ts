@@ -7,22 +7,31 @@ import {
   deleteBoard,
   deleteBoardComments,
   getBoard,
+  getBoardRevision,
+  revisionCheck,
 } from "@lib/db/kv.ts";
 import { jsonResponse } from "@lib/http/api-responses.ts";
 import { HttpError, sessionRoute } from "@lib/api/route.ts";
-import { parseBody } from "@lib/api/request.ts";
+import {
+  ifMatchRevision,
+  jsonWithEtag,
+  parseBody,
+  revisionEtag,
+} from "@lib/api/request.ts";
+import { checklistItemSchema, validateFields } from "@lib/api/fields.ts";
+import type { Column, EntityKind, Row, Task } from "@lib/types.ts";
 
 // Mirrors Row/Column/Task in @lib/types.ts (required fields,
 // not schema.dbml's looser nullability — nothing downstream of this validator
 // is written to handle nulls here).
-const RowSchema = z.object({
+const RowSchema: z.ZodType<Row> = z.object({
   id: z.string(),
   title: z.string(),
   color: z.string(),
   order: z.string(),
 });
 
-const ColumnSchema = z.object({
+const ColumnSchema: z.ZodType<Column> = z.object({
   id: z.string(),
   title: z.string(),
   order: z.string(),
@@ -34,20 +43,13 @@ const ColumnSchema = z.object({
   isTrash: z.boolean(),
 });
 
-const ChecklistItemSchema = z.object({
-  id: z.string(),
-  text: z.string(),
-  checked: z.boolean(),
-  order: z.string(),
-});
-
-const TaskSchema = z.object({
+const TaskSchema: z.ZodType<Task> = z.object({
   id: z.string(),
   rowId: z.string(),
   colId: z.string(),
   title: z.string(),
   description: z.string(),
-  checklist: z.array(ChecklistItemSchema),
+  checklist: z.array(checklistItemSchema),
   order: z.string(),
   trashedAt: z.string().nullable(),
   preTrashColId: z.string().nullable(),
@@ -86,13 +88,44 @@ const BoardChangesSchema = z.object({
   { error: "Too many changes." },
 );
 
+// The field rules the app runs before saving (POST /api/v1/validate), checked
+// again on every upsert. Reject-only: what the app sent is saved as is, since
+// a normalized value echoed back by live refresh could overwrite what the
+// user sees.
+function checkFields({ upserts }: z.infer<typeof BoardChangesSchema>) {
+  const entities: [EntityKind, object[]][] = [
+    ["row", upserts.rows],
+    ["column", upserts.columns],
+    ["task", upserts.tasks],
+  ];
+  for (const [kind, items] of entities) {
+    for (const item of items) {
+      const result = validateFields(
+        kind,
+        item as Record<string, unknown>,
+        "app",
+      );
+      if (!result.ok) {
+        throw new HttpError(422, { field: result.field, error: result.error });
+      }
+    }
+  }
+}
+
+// ETag: the board's revision (see getBoardRevision), read before the board so
+// a write in between makes the next save conflict rather than go unnoticed.
 export const GET = sessionRoute(async (_context, { boardId }) => {
+  const revision = revisionEtag(await getBoardRevision(boardId));
   const board = await getBoard(boardId);
-  if (!board) throw new HttpError(404, { noData: true });
-  return jsonResponse(board, 200);
+  if (!board) return jsonWithEtag({ noData: true }, 404, revision);
+  return jsonWithEtag(board, 200, revision);
 }) satisfies APIRoute;
 
+// If-Match: the revision from GET (or a previous PATCH). 409 if the board was
+// written since. Without If-Match the save isn't checked (HeroStartForm,
+// test-data). ETag: the board's new revision.
 export const PATCH = sessionRoute(async ({ locals, request }, { boardId }) => {
+  const revision = ifMatchRevision(request);
   const body = await parseBody(request, BoardChangesSchema, { boardId });
   console.debug({
     method: "PATCH",
@@ -100,8 +133,18 @@ export const PATCH = sessionRoute(async ({ locals, request }, { boardId }) => {
     auth: locals.auth(),
     rows: body.upserts.rows.map((r) => r.title),
   });
-  await applyBoardChanges(boardId, body);
-  return jsonResponse({ ok: true }, 200);
+  checkFields(body);
+  const res = await applyBoardChanges(
+    boardId,
+    body,
+    revision === undefined ? undefined : [revisionCheck(boardId, revision)],
+  );
+  if (!res.ok) throw new HttpError(409, { conflict: true });
+  return jsonWithEtag(
+    { ok: true },
+    200,
+    revisionEtag(res.versionstamp ?? await getBoardRevision(boardId)),
+  );
 }) satisfies APIRoute;
 
 export const DELETE = sessionRoute(async ({ locals }, { boardId }) => {

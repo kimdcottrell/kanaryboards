@@ -73,6 +73,20 @@ export const toEtag = (versionstamp: string) => `"${versionstamp}"`;
 export const ifMatchVersion = (request: Request) =>
   request.headers.get("If-Match")?.replace(/^"|"$/g, "") ?? null;
 
+// The ETag of a board nothing has written yet (getBoardRevision() is null).
+export const NO_REVISION = "none";
+
+export const revisionEtag = (revision: string | null) =>
+  revision ?? NO_REVISION;
+
+// The board revision a save names in If-Match: undefined when there is no
+// If-Match (an unchecked save), null for NO_REVISION.
+export function ifMatchRevision(request: Request): string | null | undefined {
+  const value = ifMatchVersion(request);
+  if (value === null) return undefined;
+  return value === NO_REVISION ? null : value;
+}
+
 export function jsonWithEtag(
   body: object,
   status: number,

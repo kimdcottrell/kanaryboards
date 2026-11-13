@@ -24,7 +24,7 @@ export const GET = cliRoute(async ({ url }, { boardId }) => {
   return jsonResponse(tasks.map((task) => taskView(board, task)), 200);
 }) satisfies APIRoute;
 
-// Body: {rowId, colId, title, description?, checklist?: string[]}.
+// Body: {rowId, colId, title, description?, checklist?: string[], items?}.
 export const POST = cliRoute(async ({ request }, { boardId }) => {
   const body = await readJsonObject(request);
   const board = await loadLiveBoard(boardId);
@@ -43,9 +43,6 @@ export const POST = cliRoute(async ({ request }, { boardId }) => {
     checklist: [],
     ...fields.values,
   } as unknown as TaskInput);
-  await applyBoardChanges(boardId, {
-    upserts: { rows: [], columns: [], tasks: [task] },
-    deletes: { rowIds: [], columnIds: [], taskIds: [] },
-  });
+  await applyBoardChanges(boardId, { upserts: { tasks: [task] } });
   return jsonResponse(taskView(board, task), 201);
 }) satisfies APIRoute;

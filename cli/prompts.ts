@@ -51,8 +51,15 @@ export function fieldCheck(label: string, required: boolean, check?: Check) {
 // presses its [ submit ] button.
 export async function askText(
   label: string,
-  { initialValue, required = true, check, multiline: multi = false }: {
+  {
+    initialValue,
+    required = true,
+    check,
+    multiline: multi = false,
+    placeholder,
+  }: {
     initialValue?: string;
+    placeholder?: string;
     required?: boolean;
     check?: Check;
     multiline?: boolean;
@@ -65,7 +72,7 @@ export async function askText(
       ? await multiline({
         message: label,
         initialValue,
-        placeholder: `${optional}`,
+        placeholder: placeholder ?? optional,
         showSubmit: true,
         validate,
       })
@@ -77,6 +84,20 @@ export async function askText(
       }),
   ));
 }
+
+// A checklist typed one item per line: `[x] text` is done, `[] text` is not,
+// and a line without brackets is not. Blank lines are dropped.
+export function parseChecklist(text: string) {
+  return text.split("\n").flatMap((line) => {
+    const match = line.match(/^\s*\[\s*(x?)\s*\]\s*(.*)$/i);
+    const item = (match ? match[2] : line).trim();
+    return item ? [{ text: item, checked: !!match?.[1] }] : [];
+  });
+}
+
+// The inverse of parseChecklist, to prefill the box when editing.
+export const formatChecklist = (items: { text: string; checked: boolean }[]) =>
+  items.map((i) => `${i.checked ? "[x]" : "[]"} ${i.text}`).join("\n");
 
 // Shows a spinner until `promise` settles.
 export async function waiting<T>(promise: Promise<T>): Promise<T> {

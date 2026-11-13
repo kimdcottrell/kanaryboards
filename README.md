@@ -89,7 +89,7 @@ cp .env.sample .env
 
 Open `.env` and fill in the values indicated as REQUIRED in the comments.
 
-`CRON_SECRET` is only needed in production. It's the shared secret for `POST /api/v1/cron/purge-trash`, which permanently deletes Trash tasks older than 30 days, along with the comments of tasks that no longer exist on a board. The caller must send `Authorization: Bearer <CRON_SECRET>`. The daily schedule isn't set up yet (the plan is a `Deno.cron()` on Deno Deploy). Until it is, expired Trash tasks are only dropped when a board is loaded.
+`CRON_SECRET` is only needed in production. It's the shared secret for `POST /api/v1/cron/purge-trash`, which permanently deletes Trash tasks older than 30 days, along with the comments of tasks that no longer exist on a board. The caller must send `Authorization: Bearer <CRON_SECRET>`. Each purge counts as a board write: open tabs refresh, and a tab still holding a purged task can't save it back. The daily schedule isn't set up yet (the plan is a `Deno.cron()` on Deno Deploy). Until it is, expired Trash tasks are only dropped when a board is loaded.
 
 ### 4. Generate a Claude OAuth token
 
@@ -170,13 +170,19 @@ The app will be available at [http://localhost:4321](http://localhost:4321).
 |---|---|
 | `deno task astro` | Wrapper for the Astro CLI |
 | `deno task build` | Clear `.astro`/`dist` and build for production |
+| `deno task build:deploy` | `build`, then remove `node_modules` and `package.json` (Deno Deploy's build step) |
+| `deno task cli` | Run the `kanby` CLI from source against `http://localhost:4321` (see `cli/README.md`) |
+| `deno task cli:compile` | Build a standalone `kanby` binary at `cli/bin/kanby` |
+| `deno task cli:test` | Run the CLI's unit tests (`cli/tests/`) |
 | `deno task dev` | Start the Astro dev server with hot reload |
 | `deno task e2e-test` | Build + preview the app if nothing is serving `localhost:8085`, run the Playwright `chromium` and `chromium-shared-account` projects, then shut the server down |
 | `deno task e2e-test:ui` | Same as `e2e-test`, but opens the Playwright UI mode |
 | `deno task e2e-security` | Local-only security-header suite (`playwright.security.config.ts`) against a production build |
 | `deno task husky` | Wrapper for the Husky git hooks CLI |
+| `deno task optimize-images` | Run `scripts/optimize-images.ts` |
 | `deno task playwright` | Wrapper for the Playwright CLI, configured to connect to the remote `playwright` container |
 | `deno task preview` | Serve the production build from `dist/server/entry.mjs` |
+| `deno task preview:cf-headers` | Serve the production build behind `src/cf-header-included-proxy.ts` |
 | `deno task vitest` | Run the Vitest unit test suite |
 
 ## Make commands
@@ -241,13 +247,22 @@ This executes `playwright codegen` inside the `playwright` container against `ht
 
 ### Pre-commit enforcement
 
-Every commit runs six checks in sequence:
+The hook lives in `.husky/pre-commit` and is installed via `deno task husky`, which runs automatically when the dev container image is built. Which checks it runs depends on what the branch changes (commits since `main`, plus what's staged):
 
-```
-deno fmt → deno lint → deno check → deno task astro check → deno task vitest → deno task e2e-test
-```
+- **Only files under `cli/`:** the CLI's checks.
 
-The hook lives in `.husky/pre-commit` and is installed via `deno task husky`, which runs automatically when the dev container image is built. Type checking (`deno check` and `deno task astro check`) and the unit and E2E suites must all pass before a commit is accepted.
+  ```
+  deno fmt --check cli/ → deno lint cli/ → deno check cli/ → deno task cli:test
+  ```
+
+- **Anything else:** the full app suite.
+
+  ```
+  deno task build → deno fmt --check → deno lint → deno check → deno types > src/deno.d.ts
+    → deno task astro check → deno task vitest --run → deno task e2e-test → deno task e2e-security
+  ```
+
+Every check must pass before a commit is accepted.
 
 ### CI (GitHub Actions)
 
@@ -316,7 +331,7 @@ Runs [mcpdoc](https://github.com/lancedb/mcpdoc) as a Docker service, configured
 |---|---|
 | `task-drag-and-drop.mmd` | Dragging tasks within and between cells, including into and out of Trash |
 | `task-lifecycle-checklist-ai.mmd` | Creating and editing tasks, unsaved edit drafts, Trash / restore / delete forever, the view-only modal, task comments, and AI checklist generation |
-| `board-load-autosave.mmd` | Initial board load (KV, localStorage, demo), localStorage → KV migration, debounced autosave, cross-tab sync, and the Trash purge |
+| `board-load-autosave.mmd` | Initial board load (KV, localStorage, demo), localStorage → KV migration, debounced autosave and its board-revision check (409 → merge and resend), live refresh, cross-tab sync, and the Trash purge |
 | `row-column-management.mmd` | Board config and create-row modals, adding rows with AI-generated tasks, renaming / reordering / deleting rows and columns, pinning and filtering columns, and the drawer row list |
 
 These use [Mermaid](https://mermaid.js.org/) sequence diagram syntax — paste a file's contents into [mermaid.live](https://mermaid.live/) to render it visually, or preview with a Mermaid-compatible editor extension.

@@ -92,6 +92,29 @@ export function appendChecklistItems(
   ];
 }
 
+// A whole checklist, in order, as the CLI sends it. An `id` that matches an
+// existing item keeps that item; any other item is new, and existing items
+// left out are removed.
+export interface ChecklistInputItem {
+  id?: string;
+  text: string;
+  checked: boolean;
+}
+
+function syncChecklist(
+  existing: ChecklistItem[],
+  items: ChecklistInputItem[],
+): ChecklistItem[] {
+  const ids = new Set(existing.map((item) => item.id));
+  const orders = generateNKeysBetween(null, null, items.length);
+  return items.map((item, i) => ({
+    id: item.id && ids.has(item.id) ? item.id : createId(),
+    text: item.text,
+    checked: item.checked,
+    order: orders[i],
+  }));
+}
+
 const cellTasks = (board: PersistedBoard, rowId: string, colId: string) =>
   board.tasks.filter((t) => t.rowId === rowId && t.colId === colId);
 
@@ -101,6 +124,7 @@ export interface TaskInput {
   title: string;
   description: string; // plain text
   checklist: string[]; // new items' text
+  items?: ChecklistInputItem[]; // the whole checklist; applied before `checklist`
 }
 
 // New tasks go to the top of their cell, as in actions/taskCreate.ts.
@@ -113,7 +137,10 @@ export function newTask(board: PersistedBoard, input: TaskInput): Task {
     order: generateKeyBetween(null, first?.order ?? null),
     title: input.title,
     description: plainTextToLexical(input.description),
-    checklist: appendChecklistItems([], input.checklist),
+    checklist: appendChecklistItems(
+      input.items ? syncChecklist([], input.items) : [],
+      input.checklist,
+    ),
     trashedAt: null,
     preTrashColId: null,
   };
@@ -132,12 +159,15 @@ export function updatedTask(
   const colId = changes.colId ?? task.colId;
   const moved = rowId !== task.rowId || colId !== task.colId;
   const { checked } = changes;
+  const current = changes.items
+    ? syncChecklist(task.checklist, changes.items)
+    : task.checklist;
   const checklist = checked
-    ? task.checklist.map((item) => ({
+    ? current.map((item) => ({
       ...item,
       checked: checked.includes(item.id),
     }))
-    : task.checklist;
+    : current;
   return {
     ...task,
     rowId,

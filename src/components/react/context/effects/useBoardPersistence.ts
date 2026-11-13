@@ -112,18 +112,110 @@ export function chunkChanges(
   return chunks;
 }
 
+// The board's revision (ETag) as the server last reported it. Sent back as
+// If-Match, so a save based on a board written since gets a 409 instead of
+// overwriting the newer data. Only advanced alongside savedRef: a newer
+// revision with an older savedRef would let a stale save through.
+type RevisionRef = RefObject<string | null>;
+
+type SaveResult = "ok" | "conflict" | "rejected";
+
 // Sends `changes` as one or more PATCHes, stopping at the first one the
-// server rejects. Returns whether all were accepted.
-async function patchBoard(changes: BoardChanges): Promise<boolean> {
+// server rejects. `onSaved` runs for each accepted chunk.
+async function patchBoard(
+  changes: BoardChanges,
+  revRef: RevisionRef,
+  onSaved?: (chunk: BoardChanges) => void,
+): Promise<SaveResult> {
   for (const chunk of chunkChanges(changes)) {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (revRef.current) headers["If-Match"] = revRef.current;
     const res = await fetch("/api/v1/board", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(chunk),
     });
-    if (!res.ok) return false;
+    if (res.status === 409) return "conflict";
+    if (!res.ok) return "rejected";
+    revRef.current = res.headers.get("ETag") ?? revRef.current;
+    onSaved?.(chunk);
   }
-  return true;
+  return "ok";
+}
+
+// JSON with object keys sorted: PATCH /api/v1/board's validator reorders an
+// entity's keys, so what this tab sent and what the server returns for it
+// would otherwise never compare equal.
+const canonical = (value: unknown) =>
+  JSON.stringify(
+    value,
+    (_key, v) =>
+      v && typeof v === "object" && !Array.isArray(v)
+        ? Object.fromEntries(
+          Object.entries(v).sort(([a], [b]) => (a < b ? -1 : 1)),
+        )
+        : v,
+  );
+
+// After a 409: `remote` was written since `saved`. This tab's changes to
+// entities nobody else wrote are kept; entities also changed (or deleted)
+// on the server take the server's version and are listed in `conflicted`.
+export function mergeConflict(
+  saved: SavedBoard,
+  local: PersistedBoard,
+  remote: PersistedBoard,
+): { board: PersistedBoard; conflicted: Set<string> } {
+  const conflicted = new Set<string>();
+  const changes = diffBoard(saved, local);
+  if (!changes) return { board: remote, conflicted };
+  const merge = <T extends { id: string }>(
+    prev: Map<string, string>,
+    remoteItems: T[],
+    upserts: T[],
+    deletes: string[],
+  ): T[] => {
+    const remoteJson = new Map(
+      remoteItems.map((item) => [item.id, canonical(item)]),
+    );
+    // The server still has what this tab last saw (for a new entity:
+    // neither has it).
+    const untouched = (id: string) => {
+      const before = prev.get(id);
+      const same = (before && canonical(JSON.parse(before))) ===
+        remoteJson.get(id);
+      if (!same) conflicted.add(id);
+      return same;
+    };
+    const kept = new Map(
+      upserts.filter((item) => untouched(item.id)).map((item) => [
+        item.id,
+        item,
+      ]),
+    );
+    const deleted = new Set(deletes.filter(untouched));
+    return [
+      ...remoteItems.filter((item) => !deleted.has(item.id)).map((item) =>
+        kept.get(item.id) ?? item
+      ),
+      ...[...kept.values()].filter((item) => !remoteJson.has(item.id)),
+    ];
+  };
+  const { upserts, deletes } = changes;
+  return {
+    board: {
+      rows: merge(saved.rows, remote.rows, upserts.rows, deletes.rowIds),
+      columns: merge(
+        saved.columns,
+        remote.columns,
+        upserts.columns,
+        deletes.columnIds,
+      ),
+      tasks: merge(saved.tasks, remote.tasks, upserts.tasks, deletes.taskIds),
+    },
+    conflicted,
+  };
 }
 
 // The board saved in localStorage, or null if there is none or it's malformed.
@@ -143,8 +235,11 @@ function readLocalBoard() {
 // BOARD/LOAD normalized (or everything, if the migration failed).
 async function loadRemoteBoard(
   savedRef: RefObject<SavedBoard>,
+  revRef: RevisionRef,
 ): Promise<BoardAction | null> {
   const res = await fetch("/api/v1/board");
+  // Also on 404: the migration below then requires that no board exists yet.
+  revRef.current = res.headers.get("ETag");
   if (res.ok) {
     const remote = await res.json();
     savedRef.current = toSavedBoard(remote);
@@ -155,6 +250,8 @@ async function loadRemoteBoard(
 
   const local = readLocalBoard();
   if (!local) return { type: "BOARD/RESET" };
+  // A 409 (another tab migrated first) counts as a failed migration: the
+  // first autosave then gets a 409 too and merges with that board.
   const migrated = await patchBoard({
     upserts: {
       rows: local.rows ?? [],
@@ -162,7 +259,7 @@ async function loadRemoteBoard(
       tasks: local.tasks ?? [],
     },
     deletes: { rowIds: [], columnIds: [], taskIds: [] },
-  });
+  }, revRef) === "ok";
   if (migrated) {
     globalThis.localStorage?.removeItem(STORAGE_KEY);
     savedRef.current = toSavedBoard(local);
@@ -195,11 +292,14 @@ async function loadBoard(
   boardId: string | undefined,
   isAuthenticated: boolean,
   savedRef: RefObject<SavedBoard>,
+  revRef: RevisionRef,
 ): Promise<BoardAction | null> {
   if (boardId === "demo") {
     return { type: "BOARD/LOAD", payload: createDemoBoard() };
   }
-  return isAuthenticated ? await loadRemoteBoard(savedRef) : loadLocalBoard();
+  return isAuthenticated
+    ? await loadRemoteBoard(savedRef, revRef)
+    : loadLocalBoard();
 }
 
 export function useBoardPersistence(
@@ -209,10 +309,15 @@ export function useBoardPersistence(
   isAuthenticated: boolean,
 ) {
   const savedRef = useRef<SavedBoard>(emptySavedBoard());
+  const revRef = useRef<string | null>(null);
+  // The latest state, for merging after a 409 without losing edits made
+  // while the server's board was being fetched.
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   // Load board on mount.
   useEffect(() => {
-    loadBoard(boardId, isAuthenticated, savedRef)
+    loadBoard(boardId, isAuthenticated, savedRef, revRef)
       .then((action) => action && dispatch(action))
       .catch((error) => {
         // Whatever failed (fetch rejection, res.json() on a non-JSON body,
@@ -261,6 +366,8 @@ export function useBoardPersistence(
   const saveChainRef = useRef<Promise<void>>(Promise.resolve());
   // Whether the server rejected the latest save; cleared once one succeeds.
   const [saveRejected, setSaveRejected] = useState(false);
+  // Whether a merge after a 409 dropped some of this tab's changes.
+  const [saveConflict, setSaveConflict] = useState(false);
   // An edit is waiting on the 500ms autosave timer. A refresh then would
   // replace the board before the edit is saved, so it waits for the timer
   // (refreshQueuedRef) instead.
@@ -285,12 +392,34 @@ export function useBoardPersistence(
         refreshQueuedRef.current = true;
         return;
       }
+      // savedRef matches remote from here on, so the revision can advance.
+      revRef.current = res.headers.get("ETag") ?? revRef.current;
       if (!diffBoard(savedRef.current, remote)) return;
       const board = liveBoard(remote);
       savedRef.current = toSavedBoard(remote);
       lastSyncedRef.current = JSON.stringify(board);
       dispatch({ type: "BOARD/SYNC", payload: board });
     }).catch((error) => console.error("Failed to refresh board:", error));
+  }, [dispatch]);
+
+  // After a 409, on saveChainRef: the board was written elsewhere since
+  // revRef. Keeps this tab's changes to entities nobody else wrote and takes
+  // the server's version of the rest. lastSyncedRef is left alone, so
+  // autosave then resends what was kept, at the new revision.
+  const mergeFromServer = useCallback(async () => {
+    const res = await fetch("/api/v1/board");
+    if (!res.ok) return setSaveRejected(true);
+    const remote: PersistedBoard = await res.json();
+    const { rows, columns, tasks } = stateRef.current;
+    const { board, conflicted } = mergeConflict(
+      savedRef.current,
+      { rows, columns, tasks },
+      remote,
+    );
+    savedRef.current = toSavedBoard(remote);
+    revRef.current = res.headers.get("ETag");
+    dispatch({ type: "BOARD/SYNC", payload: liveBoard(board) });
+    if (conflicted.size > 0) setSaveConflict(true);
   }, [dispatch]);
 
   const runQueuedRefresh = useCallback(() => {
@@ -329,14 +458,18 @@ export function useBoardPersistence(
       if (body === lastSyncedRef.current) return runQueuedRefresh();
       if (isAuthenticated) {
         // Diffed when its turn comes, against what the server has confirmed
-        // by then. A failed save leaves savedRef alone, so the next one
-        // resends its changes.
+        // by then. A failed save leaves savedRef alone (beyond the chunks
+        // already accepted), so the next one resends its changes.
         saveChainRef.current = saveChainRef.current.then(async () => {
           const changes = diffBoard(savedRef.current, boardSnapshot);
           if (!changes) return;
-          const saved = await patchBoard(changes);
-          if (saved) applyToSaved(savedRef.current, changes);
-          setSaveRejected(!saved);
+          const result = await patchBoard(
+            changes,
+            revRef,
+            (chunk) => applyToSaved(savedRef.current, chunk),
+          );
+          if (result === "conflict") return mergeFromServer();
+          setSaveRejected(result === "rejected");
         }).catch((error) => console.error("Failed to save board:", error));
       } else {
         globalThis.localStorage?.setItem(STORAGE_KEY, body);
@@ -358,10 +491,13 @@ export function useBoardPersistence(
     isAuthenticated,
     boardId,
     runQueuedRefresh,
+    mergeFromServer,
   ]);
 
   return {
     saveRejected,
     dismissSaveRejected: useCallback(() => setSaveRejected(false), []),
+    saveConflict,
+    dismissSaveConflict: useCallback(() => setSaveConflict(false), []),
   };
 }

@@ -89,14 +89,28 @@ Put its client ID in `KANBY_CLERK_OAUTH_CLIENT_ID`.
   check `isPaidUser()` (`src/lib/api/billing.ts`, currently a stub). Their
   request and response shapes are in `docs/api/openapi.yaml`, browsable at
   `http://localhost:4321/api/docs` on the dev server.
+- Saves go through `applyBoardChanges` in `src/lib/db/kv.ts`, the same write
+  the web app's autosave uses, and run the same field rules
+  (`src/lib/api/fields.ts`; the CLI's differ only in how checklist items are
+  sent). Rows and tasks the CLI writes are stored exactly
+  like the web app's, so each client sees the other's.
 - Descriptions are stored as Lexical JSON. The CLI shows and edits them as plain
   text, so saving a changed description drops formatting added in the web app.
   An unchanged description is never rewritten.
 - The AI checklist uses the same `/api/v1/ai/task-titles` as the web app.
 
-## Known limitation
+## Editing from the CLI and the web app at once
 
-`edit` rejects your changes if the row or task changed on the server while you
-were answering prompts (you'll be asked to re-run it). But an already-open web
-tab shows CLI changes only after it reloads, and if that tab then edits the same
-task, its copy overwrites the CLI's edit.
+- `edit` reads the row or task's version (its ETag) when it starts, and saves
+  only if it's unchanged. If the row or task was saved anywhere else while you
+  were answering prompts (the web app, another CLI session), nothing is saved
+  and you're asked to re-run `edit`. Changes to other rows and tasks don't
+  count.
+- An open web tab shows CLI changes within moments, without reloading (it
+  refetches on each board write, over `/api/v1/board/events`).
+- If that tab saves an edit to the same task before it has the CLI's change,
+  its save is refused (409). The tab then reloads the board, keeps its changes
+  to anything the CLI didn't touch, and shows the CLI's version of that task
+  with a notice. Its copy never overwrites the CLI's edit.
+- If the row or column picked in `task edit` was deleted in the meantime, the
+  save fails with "No such row." / "No such column."

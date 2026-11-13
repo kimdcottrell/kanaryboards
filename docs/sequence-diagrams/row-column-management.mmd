@@ -325,7 +325,7 @@ sequenceDiagram
 
     Note over User,AI: Autosave (debounced, async)
     Ctx->>Ctx: useBoardPersistence: useEffect on rows/columns/tasks (500ms debounce)
-    Ctx->>Ctx: PATCH /api/v1/board {upserts, deletes} (only changed entities)<br/>(or full localStorage write if unauthenticated)
+    Ctx->>Ctx: PATCH /api/v1/board {upserts, deletes} If-Match: board rev (only changed entities;<br/>409 -> merge and resend, see board-load-autosave)<br/>(or full localStorage write if unauthenticated)
 
     Note over User,AI: Sync drawer row list (DrawerMenu.astro,<br/>an Astro server island rendered outside the React tree —<br/>see BoardController's document-click-delegation note above)
     Ctx->>Ctx: useDrawerRowMirror (effects/useDrawerRowMirror.ts):<br/>useEffect on rows (after boardLoaded, skipped when boardId === "demo")

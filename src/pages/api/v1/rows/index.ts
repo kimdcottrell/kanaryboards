@@ -24,10 +24,7 @@ export const POST = cliRoute(async ({ request }, { boardId }) => {
   // and "color" is normalized to a stored value.
   const row = newRow(board, fields.values as { title: string; color?: string });
   const columns = board.columns.length ? [] : defaultColumns();
-  await applyBoardChanges(boardId, {
-    upserts: { rows: [row], columns, tasks: [] },
-    deletes: { rowIds: [], columnIds: [], taskIds: [] },
-  });
+  await applyBoardChanges(boardId, { upserts: { rows: [row], columns } });
   return jsonResponse(
     rowView({ ...board, rows: [...board.rows, row], columns }, row),
     201,

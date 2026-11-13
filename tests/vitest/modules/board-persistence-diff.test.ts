@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   chunkChanges,
   diffBoard,
+  mergeConflict,
   toSavedBoard,
 } from "@components/react/context/effects/useBoardPersistence.ts";
 import type { Column, Row, Task } from "@lib/types.ts";
@@ -106,5 +107,67 @@ describe("chunkChanges", () => {
         deletes: { ...noDeletes, taskIds: ["b"] },
       },
     ]);
+  });
+});
+
+describe("mergeConflict", () => {
+  const saved = toSavedBoard(board);
+  const titles = (b: { tasks: Task[] }) => b.tasks.map((t) => t.title);
+
+  test("keeps local changes to entities the server didn't change", () => {
+    const local = { ...board, tasks: [task("a", "local"), task("b")] };
+    const remote = { ...board, tasks: [task("a"), task("b", "remote")] };
+    const { board: merged, conflicted } = mergeConflict(saved, local, remote);
+    expect(titles(merged)).toEqual(["local", "remote"]);
+    expect(conflicted.size).toBe(0);
+  });
+
+  test("an entity changed on both sides takes the server's version", () => {
+    const local = { ...board, tasks: [task("a", "local"), task("b")] };
+    const remote = { ...board, tasks: [task("a", "remote"), task("b")] };
+    const { board: merged, conflicted } = mergeConflict(saved, local, remote);
+    expect(titles(merged)).toEqual(["remote", "t"]);
+    expect([...conflicted]).toEqual(["a"]);
+  });
+
+  test("an entity deleted on the server stays deleted", () => {
+    const local = { ...board, tasks: [task("a", "local"), task("b")] };
+    const remote = { ...board, tasks: [task("b")] };
+    const { board: merged, conflicted } = mergeConflict(saved, local, remote);
+    expect(merged.tasks.map((t) => t.id)).toEqual(["b"]);
+    expect([...conflicted]).toEqual(["a"]);
+  });
+
+  test("a local delete of an entity changed on the server is undone", () => {
+    const local = { ...board, tasks: [task("b")] };
+    const remote = { ...board, tasks: [task("a", "remote"), task("b")] };
+    const { board: merged, conflicted } = mergeConflict(saved, local, remote);
+    expect(titles(merged)).toEqual(["remote", "t"]);
+    expect([...conflicted]).toEqual(["a"]);
+  });
+
+  test("a local delete of an untouched entity is kept", () => {
+    const local = { ...board, tasks: [task("b")] };
+    const remote = { ...board, rows: [row, { ...row, id: "row-2" }] };
+    const { board: merged, conflicted } = mergeConflict(saved, local, remote);
+    expect(merged.tasks.map((t) => t.id)).toEqual(["b"]);
+    expect(merged.rows.map((r) => r.id)).toEqual(["row-1", "row-2"]);
+    expect(conflicted.size).toBe(0);
+  });
+
+  test("new local entities are kept", () => {
+    const local = { ...board, tasks: [...board.tasks, task("c", "new")] };
+    const { board: merged, conflicted } = mergeConflict(saved, local, board);
+    expect(titles(merged)).toEqual(["t", "t", "new"]);
+    expect(conflicted.size).toBe(0);
+  });
+
+  test("the server reordering an entity's keys isn't a conflict", () => {
+    const local = { ...board, tasks: [task("a", "local"), task("b")] };
+    const { id, ...rest } = task("a");
+    const remote = { ...board, tasks: [{ ...rest, id } as Task, task("b")] };
+    const { board: merged, conflicted } = mergeConflict(saved, local, remote);
+    expect(titles(merged)).toEqual(["local", "t"]);
+    expect(conflicted.size).toBe(0);
   });
 });

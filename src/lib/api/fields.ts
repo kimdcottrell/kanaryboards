@@ -1,5 +1,5 @@
 import { z } from "astro/zod";
-import type { EntityKind, PersistedBoard } from "@lib/types.ts";
+import type { ChecklistItem, EntityKind, PersistedBoard } from "@lib/types.ts";
 import { rowColorOptions } from "@components/react/context/constants.ts";
 
 // One validator per field the web app or the kanby CLI can set. Each looks at
@@ -44,15 +44,19 @@ const color: FieldValidator = (value) => {
   };
 };
 
+// A checklist item as the task stores it. Also the shape PATCH /api/v1/board
+// checks for.
+export const checklistItemSchema: z.ZodType<ChecklistItem> = z.object({
+  id: z.string(),
+  text: z.string(),
+  checked: z.boolean(),
+  order: z.string(),
+});
+
 // The app sends checklist items as the task stores them; blank ones (such as
 // the always-present empty entry row) are dropped.
 const appChecklist = z.array(
-  z.object({
-    id: z.string(),
-    text: z.string(),
-    checked: z.boolean(),
-    order: z.string(),
-  }),
+  checklistItemSchema,
   { error: "Checklist must be a list of items." },
 ).transform((items) => items.filter((item) => item.text.trim()));
 
@@ -82,6 +86,17 @@ const cliValidators: Partial<
       z.array(z.string().trim().min(1), {
         error: "Checklist must be a list of non-empty items.",
       }),
+    ),
+    // CLI only: the whole checklist, in order (see syncChecklist).
+    items: fromSchema(
+      z.array(
+        z.object({
+          id: z.string().optional(),
+          text: z.string().trim().min(1),
+          checked: z.boolean().default(false),
+        }),
+        { error: "Items must be a list of checklist items with text." },
+      ),
     ),
     // CLI only: full ids of the existing items to mark done (PATCH).
     checked: fromSchema(

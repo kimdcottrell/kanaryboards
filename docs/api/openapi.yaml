@@ -60,12 +60,16 @@ paths:
       responses:
         "200":
           description: The board.
+          headers:
+            ETag: { $ref: "#/components/headers/BoardRevision" }
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Board" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404":
           description: The user has no saved board yet.
+          headers:
+            ETag: { $ref: "#/components/headers/BoardRevision" }
           content:
             application/json:
               schema:
@@ -79,18 +83,56 @@ paths:
       description: |
         Upserts and deletes rows, columns and tasks in one request (the web
         app's autosave). At most 1000 changes in total, and each entry must
-        serialize to under 65000 bytes.
+        serialize to under 65000 bytes. Each upserted entity must pass the
+        same field rules as `POST /api/v1/validate/{entity}`; values are
+        checked, never rewritten.
       operationId: patchBoard
       security: [{ clerkSession: [] }]
+      parameters:
+        - name: If-Match
+          in: header
+          required: false
+          description: |
+            The board revision (ETag) from `GET /api/v1/board` or the previous
+            PATCH, or `"none"` for a board that doesn't exist yet. The request
+            fails with 409 if anything wrote to the board since. Without it
+            the save isn't checked.
+          schema: { type: string }
       requestBody:
         required: true
         content:
           application/json:
             schema: { $ref: "#/components/schemas/BoardChanges" }
       responses:
-        "200": { $ref: "#/components/responses/Ok" }
+        "200":
+          description: Saved.
+          headers:
+            ETag: { $ref: "#/components/headers/BoardRevision" }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok: { const: true }
         "400": { $ref: "#/components/responses/InvalidBody" }
         "401": { $ref: "#/components/responses/Unauthorized" }
+        "409":
+          description: |
+            The board was written since the If-Match revision. Nothing in this
+            request was saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [conflict]
+                properties:
+                  conflict: { const: true }
+        "422":
+          description: The first upserted entity field that breaks a rule.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FieldError" }
     delete:
       tags: [board]
       summary: Delete the board
@@ -295,6 +337,7 @@ paths:
                 title: { $ref: "#/components/schemas/TitleInput" }
                 description: { type: string, description: Plain text. }
                 checklist: { $ref: "#/components/schemas/ChecklistInput" }
+                items: { $ref: "#/components/schemas/ChecklistItemsInput" }
       responses:
         "201":
           description: The new task.
@@ -330,7 +373,8 @@ paths:
       tags: [tasks]
       summary: Update a task
       description: |
-        Changes only the fields given. `checklist` items are appended;
+        Changes only the fields given. `items` replaces the whole checklist
+        (CLI only); then `checklist` items are appended;
         `checked` marks the listed existing items done and the others not. A
         task moved to another row/column cell goes to the end of it.
         `description` is replaced only when given, since the plain-text round
@@ -357,6 +401,7 @@ paths:
                 title: { $ref: "#/components/schemas/TitleInput" }
                 description: { type: string, description: Plain text. }
                 checklist: { $ref: "#/components/schemas/ChecklistInput" }
+                items: { $ref: "#/components/schemas/ChecklistItemsInput" }
                 checked:
                   type: array
                   items: { type: string }
@@ -537,7 +582,7 @@ paths:
         required: true
         description: |
           task: `title`, `description`, `rowId`, `colId`, `checklist`,
-          `checked` (CLI only);
+          `items`, `checked` (CLI only);
           row: `title`, `color`; column: `title`.
         schema: { type: string }
       - $ref: "#/components/parameters/KanbyClient"
@@ -693,8 +738,11 @@ paths:
       tags: [internal]
       summary: Purge expired Trash
       description: |
-        Called daily by a Deno Deploy cron. Permanently deletes Trash tasks
-        past retention (and their comments) on every user's board.
+        Meant to be called daily by a Deno Deploy cron (not scheduled yet).
+        Permanently deletes Trash tasks past retention on every user's board,
+        then comments 24h+ old whose task no longer exists. Each deleted task
+        advances its board's revision (the `GET /api/v1/board` ETag), so open
+        tabs refresh and a save based on an earlier revision gets a 409.
       operationId: purgeTrash
       security: [{ cronSecret: [] }]
       responses:
@@ -818,6 +866,12 @@ components:
   headers:
     ETag:
       description: The entity's version (a quoted Deno KV versionstamp). Send it back in If-Match.
+      schema: { type: string }
+    BoardRevision:
+      description: |
+        The board's revision: a quoted Deno KV versionstamp that changes on
+        every write to the board, or `"none"` if nothing has written it yet.
+        Send it back in If-Match on `PATCH /api/v1/board`.
       schema: { type: string }
 
   responses:
@@ -1094,6 +1148,21 @@ components:
       type: array
       description: New items' text, appended to the checklist.
       items: { type: string, minLength: 1 }
+    ChecklistItemsInput:
+      type: array
+      description: |
+        The whole checklist, in order (CLI only). On create it is the new
+        task's checklist. On update it replaces the task's checklist: an item
+        whose `id` matches an existing item keeps it, any other item is new,
+        and existing items left out are removed. Applied before `checklist`
+        and `checked`.
+      items:
+        type: object
+        required: [text]
+        properties:
+          id: { type: string, description: Full id of an existing item. }
+          text: { type: string, minLength: 1 }
+          checked: { type: boolean, default: false }
     CommentContent:
       type: string
       minLength: 1

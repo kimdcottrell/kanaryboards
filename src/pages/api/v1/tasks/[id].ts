@@ -39,7 +39,8 @@ export const GET = cliRoute<Params>(async ({ params }, caller) => {
 }) satisfies APIRoute<Record<string, unknown>, Params>;
 
 // Body: any of {rowId, colId, title, description, checklist: string[],
-// checked: string[]}. checklist items are appended; checked (full item ids)
+// checked: string[], items}. items replaces the whole checklist; checklist
+// items are appended after it; checked (full item ids)
 // marks those existing items done and the others not. Requires If-Match with
 // the ETag from GET; 409 if the task changed since.
 export const PATCH = cliRoute<Params>(async ({ params, request }, caller) => {

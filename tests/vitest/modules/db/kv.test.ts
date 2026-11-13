@@ -6,9 +6,11 @@ import {
   deleteBoard,
   getBoard,
   getBoardIdForUser,
+  getBoardRevision,
   getEntity,
   listTaskComments,
   purgeExpiredTrash,
+  revisionCheck,
   saveEntity,
   saveTaskComment,
   setBoardIdForUser,
@@ -354,6 +356,28 @@ describe("purgeExpiredTrash", () => {
     expect(await getBoard("untouched-board")).toEqual(sampleBoard);
   });
 
+  test("bumps the revision of each board it purges from, so a stale save is rejected", async () => {
+    await saveBoard(boardId, trashBoard());
+    await saveBoard("untouched-board", sampleBoard);
+    const stale = await getBoardRevision(boardId);
+    const untouched = await getBoardRevision("untouched-board");
+
+    await purgeExpiredTrash(now);
+
+    expect(await getBoardRevision(boardId)).not.toBe(stale);
+    expect(await getBoardRevision("untouched-board")).toBe(untouched);
+    // A tab that still holds the purged task can't save it back.
+    const res = await applyBoardChanges(
+      boardId,
+      { upserts: { tasks: [trashBoard().tasks[2]] } },
+      [revisionCheck(boardId, stale)],
+    );
+    expect(res.ok).toBe(false);
+    expect((await getBoard(boardId))?.tasks.map((t) => t.id)).not.toContain(
+      "expired",
+    );
+  });
+
   test("deletes comments whose task is no longer on the board, past a day old", async () => {
     await saveBoard(boardId, sampleBoard);
     const comment = (id: string, taskId: string, createdAt: string) => ({
@@ -468,6 +492,91 @@ describe("getEntity / saveEntity", () => {
 
   test("getEntity returns null for a missing entry", async () => {
     expect(await getEntity("task", boardId, "nope")).toBeNull();
+  });
+});
+
+describe("board revision checks", () => {
+  const renamed = (title: string) => ({
+    upserts: { tasks: [{ ...sampleBoard.tasks[0], title }] },
+  });
+
+  test("getBoardRevision is null until the board is written", async () => {
+    expect(await getBoardRevision(boardId)).toBeNull();
+    const res = await saveBoard(boardId, sampleBoard);
+    expect(res.ok && res.versionstamp).toBe(await getBoardRevision(boardId));
+  });
+
+  test("a save at the current revision commits and returns the new one", async () => {
+    await saveBoard(boardId, sampleBoard);
+    const rev = await getBoardRevision(boardId);
+    const res = await applyBoardChanges(boardId, renamed("Next"), [
+      revisionCheck(boardId, rev),
+    ]);
+    expect(res.ok).toBe(true);
+    expect(res.ok && res.versionstamp).not.toBe(rev);
+    expect(res.ok && res.versionstamp).toBe(await getBoardRevision(boardId));
+    expect((await getBoard(boardId))?.tasks[0].title).toBe("Next");
+  });
+
+  test("a save at a stale revision is rejected and writes nothing", async () => {
+    await saveBoard(boardId, sampleBoard);
+    const stale = await getBoardRevision(boardId);
+    await applyBoardChanges(boardId, { upserts: { rows: sampleBoard.rows } });
+    const res = await applyBoardChanges(boardId, renamed("Stale"), [
+      revisionCheck(boardId, stale),
+    ]);
+    expect(res.ok).toBe(false);
+    expect((await getBoard(boardId))?.tasks[0].title).toBe("Write tests");
+  });
+
+  test("a null revision is rejected once the board has been written", async () => {
+    await saveBoard(boardId, sampleBoard);
+    const res = await applyBoardChanges(boardId, renamed("New"), [
+      revisionCheck(boardId, null),
+    ]);
+    expect(res.ok).toBe(false);
+  });
+
+  test("saveEntity bumps the board revision", async () => {
+    await saveBoard(boardId, sampleBoard);
+    const rev = await getBoardRevision(boardId);
+    const read = await getEntity<{ id: string }>("row", boardId, "row-1");
+    const version = await saveEntity(
+      "row",
+      boardId,
+      read!.value,
+      read!.versionstamp,
+    );
+    expect(version).toBe(await getBoardRevision(boardId));
+    expect(version).not.toBe(rev);
+  });
+
+  test("a split save stops if another write lands between its chunks", async () => {
+    await saveBoard(boardId, sampleBoard);
+    const rev = await getBoardRevision(boardId);
+    const tasks = Array.from({ length: 1500 }, (_, i) => ({
+      ...sampleBoard.tasks[1],
+      id: `task-${String(i).padStart(4, "0")}`,
+    }));
+    // Lands right after the first chunk commits.
+    const atomic = memKv.atomic.bind(memKv);
+    let commits = 0;
+    memKv.atomic = () => {
+      const op = atomic();
+      const commit = op.commit.bind(op);
+      op.commit = async () => {
+        const res = await commit();
+        if (++commits === 1) await memKv.set(["board_rev", boardId], 0);
+        return res;
+      };
+      return op;
+    };
+    const res = await applyBoardChanges(boardId, { upserts: { tasks } }, [
+      revisionCheck(boardId, rev),
+    ]);
+    memKv.atomic = atomic;
+    expect(res.ok).toBe(false);
+    expect((await getBoard(boardId))?.tasks.length).toBe(2 + 999);
   });
 });
 

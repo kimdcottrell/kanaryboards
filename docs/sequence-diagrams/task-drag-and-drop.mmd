@@ -59,4 +59,4 @@ sequenceDiagram
 
     Note over User,Ctx: Autosave (debounced, async)
     Ctx->>Ctx: useBoardPersistence: useEffect on tasks/rows/columns (500ms debounce)
-    Ctx->>Ctx: PATCH /api/v1/board {upserts, deletes} (only changed entities)<br/>(or full localStorage write if unauthenticated)
+    Ctx->>Ctx: PATCH /api/v1/board {upserts, deletes} If-Match: board rev (only changed entities;<br/>409 -> merge and resend, see board-load-autosave)<br/>(or full localStorage write if unauthenticated)

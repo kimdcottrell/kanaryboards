@@ -12,6 +12,7 @@ const SHARED_ACCOUNT_SPECS = [
   "**/hero-start-form.spec.ts",
   "**/drawer-row-list-mirror.spec.ts",
   "**/drawer-row-nav.spec.ts",
+  "**/board-save-conflict.spec.ts",
 ];
 
 export default defineConfig({

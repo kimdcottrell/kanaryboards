@@ -1,16 +1,15 @@
-import {
-  confirm,
-  groupMultiselect,
-  intro,
-  log,
-  note,
-  outro,
-  select,
-} from "@clack/prompts";
+import { confirm, intro, log, note, outro, select } from "@clack/prompts";
 import { api, ApiError, validateField } from "../api.ts";
 import { config } from "../config.ts";
 import { CliError } from "../errors.ts";
-import { answer, askText, printTable, waiting } from "../prompts.ts";
+import {
+  answer,
+  askText,
+  formatChecklist,
+  parseChecklist,
+  printTable,
+  waiting,
+} from "../prompts.ts";
 import type {
   ChecklistItem,
   ColumnView,
@@ -31,6 +30,34 @@ const askDescription = (initialValue?: string) =>
     multiline: true,
     check: (value) => validateField("task", "description", value),
   });
+
+// Offers to type the checklist, one item per line (`[x] text` is done, `[]
+// text` is not, no brackets is not). When editing, `existing` prefills the
+// box. Returns the whole checklist, or undefined if declined.
+async function askChecklist(existing: ChecklistItem[] = []) {
+  const add = await confirm({
+    message: "Do you want to create or edit a checklist?",
+    initialValue: false,
+  });
+  if (!answer(add)) return undefined;
+  const text = await askText(
+    "Checklist. Add new items via Shift+Enter. Hit tab and then enter to submit",
+    {
+      initialValue: formatChecklist(existing) || undefined,
+      required: false,
+      multiline: true,
+      placeholder: "Optional.\n[x] selected item\n[] unselected item",
+    },
+  );
+  // An item keeps its id while its text is unchanged; a reworded one is a
+  // new item and the old one is removed.
+  const unused = [...existing];
+  return parseChecklist(text).map((item) => {
+    const at = unused.findIndex((e) => e.text === item.text);
+    const id = at === -1 ? undefined : unused.splice(at, 1)[0].id;
+    return { ...item, id };
+  });
+}
 
 // The rows and columns to pick from. Fetched one after the other: parallel
 // calls could both refresh an expired token with the same refresh token.
@@ -55,19 +82,6 @@ const pick = async (
       message,
       options: items.map((i) => ({ label: i.title, value: i.id })),
       initialValue,
-    }),
-  );
-
-// Which existing items are done. Returns the checked items' ids.
-const askChecked = async (items: ChecklistItem[]) =>
-  answer(
-    await groupMultiselect({
-      message: "Checklist (selected items are done)",
-      options: {
-        Checklist: items.map((i) => ({ label: i.text, value: i.id })),
-      },
-      initialValues: items.filter((i) => i.checked).map((i) => i.id),
-      required: false,
     }),
   );
 
@@ -150,9 +164,10 @@ export async function createTask() {
   const colId = await pick("Column", columns, columns[0]?.id);
   const title = await askTitle();
   const description = await askDescription();
+  const items = await askChecklist();
   const checklist = await aiChecklist(title);
   const { data } = await waiting(api<TaskView>("POST", "/api/v1/tasks", {
-    body: { rowId, colId, title, description, checklist },
+    body: { rowId, colId, title, description, items, checklist },
   }));
   outro(
     `Created task ${data.shortId} "${data.title}".\n` +
@@ -176,10 +191,7 @@ export async function editTask(ref: string) {
   const description = await askDescription(task.description);
   const rowId = await pick("Row", rows, task.rowId);
   const colId = await pick("Column", columns, task.colId);
-  const wasChecked = task.checklist.filter((i) => i.checked).map((i) => i.id);
-  const checked = task.checklist.length > 0
-    ? await askChecked(task.checklist)
-    : wasChecked;
+  const items = await askChecklist(task.checklist);
   const checklist = await aiChecklist(title);
 
   const changes: Record<string, unknown> = {};
@@ -190,10 +202,13 @@ export async function editTask(ref: string) {
   if (rowId !== task.rowId) changes.rowId = rowId;
   if (colId !== task.colId) changes.colId = colId;
   if (
-    checked.length !== wasChecked.length ||
-    checked.some((id) => !wasChecked.includes(id))
+    items && (items.length !== task.checklist.length ||
+      items.some((item, i) =>
+        item.id !== task.checklist[i].id ||
+        item.checked !== task.checklist[i].checked
+      ))
   ) {
-    changes.checked = checked;
+    changes.items = items;
   }
   if (checklist.length > 0) changes.checklist = checklist;
   if (Object.keys(changes).length === 0) {
@@ -204,11 +219,23 @@ export async function editTask(ref: string) {
     outro("You have declined to save changes. Task remains unchanged.");
     return;
   }
+  await waiting(saveTaskEdit(task, changes, etag));
+  outro(`Saved task ${task.shortId}.`);
+}
+
+// Saves `changes` only if the task is still as it was read (`etag`): if it
+// was saved elsewhere since (the web app, another CLI session), the server
+// answers 409 and nothing is saved.
+export async function saveTaskEdit(
+  task: TaskView,
+  changes: Record<string, unknown>,
+  etag: string | null,
+) {
   try {
-    await waiting(api<TaskView>("PATCH", `/api/v1/tasks/${task.id}`, {
+    await api<TaskView>("PATCH", `/api/v1/tasks/${task.id}`, {
       body: changes,
       headers: { "If-Match": etag ?? "" },
-    }));
+    });
   } catch (error) {
     if (error instanceof ApiError && error.status === 409) {
       throw new ApiError(
@@ -218,5 +245,4 @@ export async function editTask(ref: string) {
     }
     throw error;
   }
-  outro(`Saved task ${task.shortId}.`);
 }

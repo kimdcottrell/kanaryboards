@@ -13,6 +13,7 @@ const row = await import("@pages/api/v1/rows/[id].ts");
 const tasks = await import("@pages/api/v1/tasks/index.ts");
 const task = await import("@pages/api/v1/tasks/[id].ts");
 const columns = await import("@pages/api/v1/columns.ts");
+const board = await import("@pages/api/v1/board.ts");
 const validate = await import("@pages/api/v1/validate/[entity]/[field].ts");
 const validateAll = await import("@pages/api/v1/validate/[entity]/index.ts");
 
@@ -382,5 +383,98 @@ describe("tasks", () => {
     await seed();
     const res = await task.GET(ctx({ params: { id: "ffffffff" } }));
     expect(res.status).toBe(404);
+  });
+});
+
+describe("board revision (web app's PATCH /board vs the CLI)", () => {
+  // The web app's session request for the CLI user's board.
+  async function app(
+    method: "GET" | "PATCH",
+    { body, ifMatch }: { body?: unknown; ifMatch?: string } = {},
+  ) {
+    const boardId = (await memKv.get<string>(["user_board", "user_cli"]))
+      .value!;
+    const headers: Record<string, string> = {};
+    if (ifMatch) headers["If-Match"] = ifMatch;
+    const context = {
+      request: new Request("http://localhost/api/v1/board", {
+        method,
+        headers,
+        body: body === undefined ? undefined : JSON.stringify(body),
+      }),
+      locals: { auth: () => ({ userId: "user_cli" }), boardId },
+    } as unknown as APIContext;
+    return method === "GET" ? board.GET(context) : board.PATCH(context);
+  }
+
+  beforeEach(() => {
+    vi.spyOn(console, "debug").mockImplementation(() => {});
+  });
+
+  const renameTask = async (title: string, ifMatch?: string) => {
+    const { tasks: [stored] } = await (await app("GET")).json();
+    return app("PATCH", {
+      ifMatch,
+      body: {
+        upserts: { rows: [], columns: [], tasks: [{ ...stored, title }] },
+        deletes: { rowIds: [], columnIds: [], taskIds: [] },
+      },
+    });
+  };
+
+  test("a save at the current revision returns the next one", async () => {
+    await seed();
+    const etag = (await app("GET")).headers.get("ETag")!;
+    const res = await renameTask("From the app", etag);
+    expect(res.status).toBe(200);
+    const next = res.headers.get("ETag");
+    expect(next).not.toBe(etag);
+    expect((await app("GET")).headers.get("ETag")).toBe(next);
+  });
+
+  test("a save after a CLI edit is rejected with 409", async () => {
+    const { task: created } = await seed();
+    const etag = (await app("GET")).headers.get("ETag")!;
+    const params = { id: created.shortId };
+    const got = await task.GET(ctx({ params }));
+    await task.PATCH(ctx({
+      method: "PATCH",
+      params,
+      headers: { "If-Match": got.headers.get("ETag")! },
+      body: { title: "From the CLI" },
+    }));
+    const res = await renameTask("From the app", etag);
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ conflict: true });
+    expect((await (await tasks.GET(ctx())).json())[0].title).toBe(
+      "From the CLI",
+    );
+  });
+
+  test('"none" is rejected once the board exists', async () => {
+    await seed();
+    expect((await renameTask("x", '"none"')).status).toBe(409);
+  });
+
+  test("a save without If-Match isn't checked", async () => {
+    await seed();
+    expect((await renameTask("Unchecked")).status).toBe(200);
+  });
+
+  test("a CLI edit started before the app saved that task gets 409", async () => {
+    const { task: created } = await seed();
+    const params = { id: created.shortId };
+    const etag = (await task.GET(ctx({ params }))).headers.get("ETag")!;
+    expect((await renameTask("From the app")).status).toBe(200);
+    const res = await task.PATCH(ctx({
+      method: "PATCH",
+      params,
+      headers: { "If-Match": etag },
+      body: { title: "From the CLI" },
+    }));
+    expect(res.status).toBe(409);
+    expect((await (await tasks.GET(ctx())).json())[0].title).toBe(
+      "From the app",
+    );
   });
 });

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { fieldCheck } from "../prompts.ts";
+import { fieldCheck, formatChecklist, parseChecklist } from "../prompts.ts";
 import { CliError } from "../errors.ts";
 
 const server = (v: string) =>
@@ -43,4 +43,28 @@ Deno.test("fieldCheck: without a check, the answer is trimmed", async () => {
   const { validate, normalize } = fieldCheck("Prompt", true);
   assert.equal(await validate(" x "), undefined);
   assert.equal(normalize(" x "), "x");
+});
+
+Deno.test("parseChecklist: brackets set done; no brackets means not done", () => {
+  assert.deepEqual(
+    parseChecklist(
+      "[x] done\n[] todo\n[ ] spaced\n[X] upper\nplain\n\n  [x]  \n",
+    ),
+    [
+      { text: "done", checked: true },
+      { text: "todo", checked: false },
+      { text: "spaced", checked: false },
+      { text: "upper", checked: true },
+      { text: "plain", checked: false },
+    ],
+  );
+});
+
+Deno.test("formatChecklist: round-trips through parseChecklist", () => {
+  const items = [
+    { text: "a", checked: true },
+    { text: "b", checked: false },
+  ];
+  assert.equal(formatChecklist(items), "[x] a\n[] b");
+  assert.deepEqual(parseChecklist(formatChecklist(items)), items);
 });
