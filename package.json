@@ -25,7 +25,7 @@
     "animejs": "^4.5.0",
     "astro": "7.4.12",
     "astro-seo": "1.2.0",
-    "astro-seo-schema": "7.0.1",
+    "astro-seo-schema": "7.0.2",
     "dayjs": "1.11.23",
     "daisyui": "5.8.0",
     "fractional-indexing": "4.0.0",
